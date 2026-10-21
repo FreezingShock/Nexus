@@ -97,9 +97,10 @@ export default {
     function renderFly() {
       const f = $('fly'), st = sim.zoning.stats(), n = sim.zoning.painted;
       f.hidden = false;
-      f.innerHTML = `<div class="head"><h3>Zones</h3><span class="demand"><small>Demand</small> ${bars()}<small>${n} tile${n === 1 ? '' : 's'} painted · ${st.count} building${st.count === 1 ? '' : 's'}</small></span></div><div class="grid">` +
-        ZONE_DEFS.slice(1).map((z) => `<button class="opt" data-zone="${z.id}" aria-pressed="${brush === z.id}"><div class="sw" style="background:${z.paint}"></div><b>${z.name} <kbd class="k">${z.id}</kbd></b><small>${z.sub}</small><small><b style="color:var(--ink)">${z.cost} coins</b> per tile</small></button>`).join('') +
-        `</div><div class="lanes"><span class="sub" style="margin:0">Drag on the map to paint a rectangle. Buildings grow where a road is close.</span><span style="flex:1"></span><button class="tog" data-zone="0" aria-pressed="${brush === 0}">Eraser <kbd class="k">0</kbd></button></div>`;
+      f.classList.add('zfly');
+      f.innerHTML = `<div class="head"><h3>Zones</h3><span class="demand"><small>Demand</small> ${bars()}<small>${n} tile${n === 1 ? '' : 's'} painted · ${st.count} building${st.count === 1 ? '' : 's'}</small></span></div><div class="zrow">` +
+        ZONE_DEFS.slice(1).map((z) => `<button class="zbtn" data-zone="${z.id}" aria-pressed="${brush === z.id}"><i style="background:${z.paint}"></i><span><b>${z.name}</b><small>${z.cost} coins a tile</small></span></button>`).join('') +
+        `<button class="zbtn eraser" data-zone="0" aria-pressed="${brush === 0}"><i></i><span><b>Eraser</b><small>Free</small></span></button></div><p class="sub zhelp">Drag on the map to paint a rectangle · keys 1 to 4 pick a zone, 0 erases · buildings grow where a road is close.</p>`;
       f.querySelectorAll('[data-zone]').forEach((b) => { b.onclick = () => { setBrush(Number(b.dataset.zone)); }; });
     }
     function setBrush(z) {
@@ -117,6 +118,7 @@ export default {
       stage.classList.add('zoning');
     }
     function leave() {
+      $('fly').classList.remove('zfly');
       active = false; drag = null; hoverTile = null; tag.hidden = true;
       view().showGrid(false); view().clearPreview();
       stage.removeEventListener('pointerdown', onDown, true);

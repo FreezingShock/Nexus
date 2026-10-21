@@ -19,7 +19,7 @@ export function lotBuilding(zone, level, seed, tile, roadAt) {
   const pal = PALS[Math.floor(r3 * 4)];
   if (zone === 1) {
     b.type = 'house'; b.pal = pal;
-    b.floors = [2, 3 + Math.floor(r1 * 2), 5 + Math.floor(r2 * 2)][level - 1];
+    b.floors = [2, 3 + Math.floor(r1 * 2), 4 + Math.floor(r2 * 2)][level - 1];
     b.roof = level === 1 ? (r2 < 0.5 ? 'gable' : 'hip') : 'mansard';
     b.name = ['Terrace house', 'Mansard block', 'Tall block'][level - 1];
   } else if (zone === 2) {
