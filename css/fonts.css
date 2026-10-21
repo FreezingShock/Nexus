@@ -1,0 +1,15 @@
+/* Vendored fonts (SIL Open Font License, see vendor/fonts). No network requests. */
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("../vendor/fonts/fraunces-latin-full-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Capriola";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../vendor/fonts/capriola-latin-400-normal.woff2") format("woff2");
+}
