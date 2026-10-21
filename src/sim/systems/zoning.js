@@ -2,7 +2,7 @@
 // Owns grid.zone and grid.lot. Reads grid.road (the road system owns it). See docs/GRID.md.
 import { GRID_N, BASE, inBounds, rectTiles, tileIndex, tileOf } from '../../world/grid.js';
 import {
-  ZONE_DEFS, ZONE_COUNT, MAX_LOT_LEVEL, ROAD_REACH, encodeZones, decodeZones, validZonesString,
+  ZONE_DEFS, ZONE_COUNT, MAX_LOT_LEVEL, ROAD_REACH, PLACED_LOT_MIN, encodeZones, decodeZones, validZonesString,
   nextRand, lotStats, demandOf, lotIncome,
 } from '../zones.js';
 
@@ -87,7 +87,7 @@ export default {
         const i = tileIndex(gx, gz);
         if (!grid.zone[i]) continue;
         tiles++;
-        if (grid.lot[i]) { homes++; dead.add(i); grid.lot[i] = 0; }
+        if (grid.lot[i] === i + 1) { homes++; dead.add(i); grid.lot[i] = 0; } // a grown lot; placed buildings (>= PLACED_LOT_MIN) stay
         grid.zone[i] = 0;
       }
       if (!tiles) return;
@@ -146,9 +146,10 @@ export default {
 // Drop paint that a road now covers, and buildings whose paint is gone.
 function reconcile({ sim, grid, state }) {
   let dirty = false;
-  for (let i = 0; i < AREA; i++) if (grid.zone[i] && grid.road[i]) { grid.zone[i] = 0; dirty = true; }
+  // paint under a road or under a player-placed building is dropped; the building or road stays
+  for (let i = 0; i < AREA; i++) if (grid.zone[i] && (grid.road[i] || grid.lot[i] >= PLACED_LOT_MIN)) { grid.zone[i] = 0; dirty = true; }
   if (dirty || state.lots.some(([i]) => !grid.zone[i])) {
-    state.lots = state.lots.filter(([i]) => { const keep = grid.zone[i] > 0; if (!keep) grid.lot[i] = 0; return keep; });
+    state.lots = state.lots.filter(([i]) => { const keep = grid.zone[i] > 0; if (!keep && grid.lot[i] === i + 1) grid.lot[i] = 0; return keep; });
     state.zones = encodeZones(grid.zone); state.zoneRev++;
     sim.zoning.painted = countPaint(grid);
   }

@@ -3,6 +3,8 @@ import { GRID_N } from '../world/grid.js';
 
 export const ZONE_COUNT = 4;
 export const MAX_LOT_LEVEL = 3;
+// Values in grid.lot at or above this belong to player-placed buildings (src/world/placement.js). Zoning leaves them alone.
+export const PLACED_LOT_MIN = 40000;
 export const ROAD_REACH = 2; // buildings only grow when a road is within this many tiles
 
 // paint = the tint on the map; coins = cost per tile; income = coins per second per building level
