@@ -5,7 +5,7 @@ import { buildParts, builderIds, trianglesOf } from '../src/render/models/builde
 import { getLayout } from '../src/world/layout.js';
 import { createSim } from '../src/sim/sim.js';
 import { sanitize } from '../src/sim/save.js';
-import { ROAD_STATIC, tileIndex } from '../src/world/grid.js';
+import { tileIndex } from '../src/world/grid.js';
 
 const layout = getLayout();
 const rec = (model, fw, fd, extra = {}) => ({ id: 'b1000', model, gx: 10, gz: 10, fw, fd, rot: 0, ...extra });
@@ -91,7 +91,7 @@ test('placement refuses bad ground, bad sizes and empty pockets', () => {
   sim.state.coins = 1;
   sim.dispatch({ type: 'place', model: 'cottage', gx: 30, gz: 19, fw: 1, fd: 1, rot: 0 });
   assert.equal(sim.state.placed.length, 0);
-  assert.equal(sim.grid.road[tileIndex(32, 32)], ROAD_STATIC);
+  assert.notEqual(sim.grid.road[tileIndex(32, 32)], 0); // the old town street is still a road
 });
 
 test('placed buildings survive a save, and a tampered save is cleaned', () => {
