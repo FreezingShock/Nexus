@@ -18,7 +18,6 @@ import roads from './roads.js';
 import offlinePostcard from './offline-postcard.js';
 import zoning from './zoning.js';
 
-export const systems = [core, upgrades, roads, offlinePostcard, zoning];
 import placement from './placement.js';
 
-export const systems = [core, upgrades, roads, offlinePostcard, placement];
+export const systems = [core, upgrades, roads, offlinePostcard, zoning, placement];

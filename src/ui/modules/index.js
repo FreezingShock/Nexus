@@ -11,7 +11,6 @@
 // Add markup to index.html only inside your own container element, and styles to your own css file.
 import zoning from './zoning.js';
 
-export const uiModules = [zoning];
 import placement from './placement.js';
 
-export const uiModules = [placement];
+export const uiModules = [zoning, placement];

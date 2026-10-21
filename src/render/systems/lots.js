@@ -2,9 +2,10 @@
 // animation for each new or upgraded building. Reads state.lots; never writes sim state.
 import * as THREE from '../../../vendor/three/three.module.min.js';
 import { makeParts, worldMatrix } from '../buildings.js';
+import { toonVC } from '../models/materials.js';
 import { Batch } from '../geom.js';
 import { lineMat } from '../materials.js';
-import { lotBuilding } from '../../world/lots.js';
+import { lotDescription } from '../../world/lots.js';
 
 const POP_S = 0.62;
 const REBUILD_GAP_S = 0.3;
@@ -29,7 +30,7 @@ export default {
       const key = keyOf(l);
       let e = cache.get(key);
       if (!e) {
-        const b = lotBuilding(grid.zone[l[0]], l[1], l[2], l[0], roadAt);
+        const b = lotDescription(grid.zone[l[0]], l[1], l[2], l[0], roadAt);
         const parts = makeParts(b);
         const edges = parts.map((p) => (p.edge ? new THREE.EdgesGeometry(p.geo, 30).attributes.position.array : null));
         e = { key, b, parts, edges, world: worldMatrix(b) };
@@ -43,15 +44,17 @@ export default {
       cache.delete(key);
     }
 
+    // Same as buildings.js addToBatch (plain parts share the vertex-color material), with the ink edges cached.
     function addToBatch(batch, e) {
+      const vc = toonVC();
       e.parts.forEach((p, k) => {
         m.multiplyMatrices(e.world, p.local);
         if (p.body) {
           for (const s of p.splits) {
             const walls = s.materialIndex === 0 || s.materialIndex === 1 || s.materialIndex === 4 || s.materialIndex === 5;
-            batch.add(s.geo, walls ? p.facadeMat : p.mat, m);
+            if (walls) batch.add(s.geo, p.facadeMat, m); else batch.add(s.geo, vc, m, { color: p.color });
           }
-        } else batch.add(p.geo, p.mat, m);
+        } else batch.add(p.geo, vc, m, { color: p.color });
         const ed = e.edges[k];
         if (ed) {
           const v = new THREE.Vector3();
