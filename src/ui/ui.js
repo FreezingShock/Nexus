@@ -25,6 +25,7 @@ export function createUi({ sim, scene, actions }) {
   const mods = registryOf('ui modules', uiModules).list().map((d) => d.create({ sim, send, scene, toast: hud.toast, tool: () => tool }) || {});
 
   function select(id) {
+    if (id && !sim.alive(id)) id = null; // only a standing building can be inspected
     scene.select(id);
     if (id) panels.showInspect(id); else panels.hideInspect();
   }

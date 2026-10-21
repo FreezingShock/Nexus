@@ -17,7 +17,8 @@ export const buildCost = (base, owned, r = BALANCE.growth) => Math.round(base * 
 // Closed form for buying `k` more in a row: base x r^owned x (r^k - 1) / (r - 1). Used by the bulk preview; never loops.
 export const bulkCost = (base, owned, k, r = BALANCE.growth) => (r === 1 ? base * k : base * Math.pow(r, owned) * (Math.pow(r, k) - 1) / (r - 1));
 
-export const levelOf = (state, b) => state.levels[b.id] ?? b.level;
+// A building that is not there (stale id, undone placement) has no level. Callers treat 0 as "nothing here".
+export const levelOf = (state, b) => (b ? state.levels[b.id] ?? b.level : 0);
 
 // Rate is derived from levels, never stored, so it cannot drift from a save.
 export function coinRate(state, layout) {
