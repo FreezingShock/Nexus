@@ -91,4 +91,20 @@ export function rowOrigins(start, end, fw, fd, max = MAX_ROW) {
   return out;
 }
 
+// The front of a building faces +z at rot 0, and each quarter turn turns it the way the renderer does (rotation.y):
+// rot 1 faces +x, rot 2 faces -z, rot 3 faces -x. Pure.
+const FRONT = [[0, 1], [1, 0], [0, -1], [-1, 0]];
+
+// How many road tiles lie just outside the front of a lot (gx, gz, fw x fd) turned by rot. Zero means no street faces it.
+export function frontRoadCount(grid, gx, gz, fw, fd, rot) {
+  const [dx, dz] = FRONT[((rot % 4) + 4) % 4];
+  // the strip one tile beyond the front edge, along that edge
+  const strip = [];
+  if (dx === 0) { const z = dz > 0 ? gz + fd : gz - 1; for (let x = gx; x < gx + fw; x++) strip.push([x, z]); }
+  else { const x = dx > 0 ? gx + fw : gx - 1; for (let z = gz; z < gz + fd; z++) strip.push([x, z]); }
+  let n = 0;
+  for (const [x, z] of strip) if (inBounds(x, z) && grid.road[tileIndex(x, z)] !== 0) n++;
+  return n;
+}
+
 export { GRID_N };

@@ -5,7 +5,7 @@
 // This module only reads the sim and sends { type: 'place' } or { type: 'placeMany' }; the rules live in src/world/placement.js and the sim system.
 import { CATEGORIES, areaCost, canonicalDims, footprintsOf, modelById, modelsIn } from '../../world/models.js';
 import { worldToTile } from '../../world/grid.js';
-import { checkLot, planPlacement, problemText, rowOrigins } from '../../world/placement.js';
+import { checkLot, frontRoadCount, planPlacement, problemText, rowOrigins } from '../../world/placement.js';
 import { buildCost } from '../../sim/economy.js';
 import { $, fmt } from '../format.js';
 
@@ -20,7 +20,8 @@ export default {
     const tag = document.createElement('div');
     tag.id = 'placelabel'; tag.hidden = true; tag.setAttribute('aria-hidden', 'true');
     $('app').appendChild(tag);
-    const ui = { tool: null, cat: 'home', model: 'cottage', size: 0, rot: 0 };
+    // auto: the turn follows the street (until V is pressed); rot: the player's own turn, used when no street is near
+    const ui = { tool: null, cat: 'home', model: 'cottage', size: 0, rot: 0, auto: true };
     let hover = null, drag = null, pointer = { x: 0, y: 0 }, dirty = false, ticker = 0;
 
     const ghost = () => scene.sys('placement-ghost');
@@ -28,14 +29,14 @@ export default {
     const def = () => modelById(ui.model);
     const size = () => footprintsOf(def())[ui.size] || footprintsOf(def())[0];
     // the lot on the grid: the model's own dimensions, turned by `rot`
-    function lotDims() {
+    function lotDims(rot = ui.rot) {
       const [cw, cd] = canonicalDims(def(), size());
-      return ui.rot % 2 ? [cd, cw] : [cw, cd];
+      return rot % 2 ? [cd, cw] : [cw, cd];
     }
 
     // ---- flyout ----
     function pick(model) {
-      ui.model = model; ui.size = 0;
+      ui.model = model; ui.size = 0; ui.auto = true;
       render(); dirty = true;
     }
     function render() {
@@ -59,19 +60,35 @@ export default {
       else turn();
     }, true);
 
-    function turn() { ui.rot = (ui.rot + 1) % 4; dirty = true; }
+    function turn() { ui.rot = (ui.rot + 1) % 4; ui.auto = false; dirty = true; }
+
+    // The turn a new building takes at `tile`: the one whose front faces the most road. Ties keep the player's turn.
+    // Once V has been pressed, the turn is the player's own.
+    function turnFor(tile) {
+      if (!ui.auto) return ui.rot;
+      let best = ui.rot, score = 0;
+      for (let k = 0; k < 4; k++) {
+        const r = (ui.rot + k) % 4;
+        const [fw, fd] = lotDims(r);
+        const plan = planPlacement({ model: ui.model, gx: tile[0] - Math.floor((fw - 1) / 2), gz: tile[1] - Math.floor((fd - 1) / 2), fw, fd, rot: r });
+        if (plan.error) return ui.rot;
+        const s = frontRoadCount(sim.grid, plan.gx, plan.gz, plan.fw, plan.fd, plan.rot);
+        if (s > score) { score = s; best = plan.rot; }
+      }
+      return best;
+    }
 
     // ---- what a click or a drag would place ----
-    // The lots from tile `start` to tile `end`, each planned and checked the way the sim will do it.
-    function lotsFor(start, end) {
-      const [fw, fd] = lotDims();
+    // The lots from tile `start` to tile `end` at turn `rot`, each planned and checked the way the sim will do it.
+    function lotsFor(start, end, rot) {
+      const [fw, fd] = lotDims(rot);
       const out = [];
       for (const [gx, gz] of rowOrigins(start, end, fw, fd)) {
         const lot = { gx, gz, fw, fd };
-        const plan = planPlacement({ model: ui.model, ...lot, rot: ui.rot });
+        const plan = planPlacement({ model: ui.model, ...lot, rot });
         if (plan.error) continue;
         const check = checkLot(sim.grid, plan.gx, plan.gz, plan.fw, plan.fd);
-        out.push({ lot, plan, ok: check.ok, blocked: check.blocked, problem: check.problem });
+        out.push({ lot, plan, rot: plan.rot, ok: check.ok, blocked: check.blocked, problem: check.problem });
       }
       return out;
     }
@@ -110,7 +127,7 @@ export default {
       dirty = false;
       const g = ghost();
       if (!ui.tool || (!hover && !drag)) { if (g) g.hide(); tag.hidden = true; return; }
-      const lots = drag ? lotsFor(drag.start, drag.cur) : lotsFor(hover, hover);
+      const lots = drag ? lotsFor(drag.start, drag.cur, drag.rot) : lotsFor(hover, hover, turnFor(hover));
       if (g) {
         const next = sim.state.nextPlaced;
         g.showMany(lots.map((l) => ({ rec: { id: 'b' + next, model: ui.model, gx: l.plan.gx, gz: l.plan.gz, fw: l.plan.fw, fd: l.plan.fd, rot: l.plan.rot }, blocked: l.blocked })));
@@ -138,7 +155,7 @@ export default {
       look(e);
       const t = tileUnder(e);
       if (!t) return;
-      drag = { start: t, cur: t, id: e.pointerId };
+      drag = { start: t, cur: t, id: e.pointerId, rot: turnFor(t) };
       try { stage.setPointerCapture(e.pointerId); } catch { /* not capturable: fine */ }
       hover = t; dirty = true;
     }
@@ -147,12 +164,12 @@ export default {
       e.stopPropagation();
       const d = drag; drag = null; dirty = true;
       look(e);
-      const lots = lotsFor(d.start, tileUnder(e) || d.cur);
+      const lots = lotsFor(d.start, tileUnder(e) || d.cur, d.rot);
       if (!lots.length) return;
       const ok = lots.filter((l) => l.ok);
       if (!ok.length) { const w = problemText(lots[0].problem); if (w) toast(w); return; }
-      if (lots.length === 1) send({ type: 'place', model: ui.model, ...ok[0].lot, rot: ui.rot });
-      else send({ type: 'placeMany', items: ok.map((l) => ({ model: ui.model, ...l.lot, rot: ui.rot })) });
+      if (lots.length === 1) send({ type: 'place', model: ui.model, ...ok[0].lot, rot: ok[0].rot });
+      else send({ type: 'placeMany', items: ok.map((l) => ({ model: ui.model, ...l.lot, rot: l.rot })) });
     }
     const onLeave = () => { if (!drag) { hover = null; dirty = true; } };
 
