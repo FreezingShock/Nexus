@@ -48,7 +48,7 @@ test('the shipped town is stamped into the grid', () => {
 test('roadWithin and roadNeighbors', () => {
   const g = createGrid(getLayout());
   assert.ok(g.roadWithin(32, 31, 1));
-  assert.equal(g.roadNeighbors(32, 31), 1);
+  assert.equal(g.roadNeighbors(43, 31), 1);
   assert.ok(!g.roadWithin(2, 2, 2));
   assert.ok(g.canRoad(32, 31) === (g.baseAt(32, 31) === BASE.LAND));
 });
