@@ -2,7 +2,7 @@
 .goalsib{position:relative}
 .goalsib .chg{position:absolute;left:8px;right:8px;bottom:5px;height:5px;border-radius:3px;background:var(--paper);border:1.5px solid var(--ink);overflow:hidden}
 .goalsib .chg b{display:block;height:100%;width:0;background:var(--sage);transition:width .4s}
-#goals{position:absolute;top:108px;left:max(16px,env(safe-area-inset-left,0px));width:340px;padding:0;max-height:calc(100% - 260px);overflow:auto}
+#goals{width:auto;padding:0}
 #goals .band{padding:16px 62px 14px 18px;background:var(--paper-3);background-image:var(--grain);border-bottom:2.5px solid var(--ink);border-radius:17px 21px 0 0}
 #goals .band h2{font-size:25px}
 #goals .pad{padding:14px 18px 18px;display:flex;flex-direction:column;gap:12px}
@@ -19,6 +19,3 @@
 #goals .gp{color:var(--ink-soft);font-size:12px}
 #goals .btn{align-self:flex-start}
 #goals .btn:disabled{opacity:.5}
-@media (max-width:900px){
-  #goals{top:auto;bottom:140px;left:var(--gutter);right:var(--gutter);width:auto;max-height:42%}
-}

@@ -11,7 +11,7 @@ import { createDusk } from './dusk.js';
 
 const SNAP_W = 480, SNAP_H = 360;
 
-export function createScene({ stage, layout, grid, onPick }) {
+export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }) {
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -43,7 +43,7 @@ export function createScene({ stage, layout, grid, onPick }) {
 
   // pointer: drag to pan, click to pick, wheel to zoom
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
-  canvas.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, moved: 0 }; canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, moved: 0, button: e.button }; canvas.setPointerCapture(e.pointerId); });
   canvas.addEventListener('pointermove', (e) => {
     if (!drag) return;
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
@@ -53,6 +53,8 @@ export function createScene({ stage, layout, grid, onPick }) {
   canvas.addEventListener('pointerup', (e) => {
     const was = drag; drag = null; canvas.classList.remove('drag');
     if (!was || was.moved > 5) return;
+    if (was.button === 2) { onCancel(); return; } // right-click with no drag: cancel the tool or close a card
+    if (was.button !== 0) return;
     const r = canvas.getBoundingClientRect();
     ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(ndc, camera.cam);
@@ -90,6 +92,7 @@ export function createScene({ stage, layout, grid, onPick }) {
       const o = ray.ray.origin, d = ray.ray.direction;
       if (Math.abs(d.y) < 1e-6) return null;
       const k = -o.y / d.y;
+      if (k < 0) return null; // the ray points away from the ground
       return { x: o.x + d.x * k, z: o.z + d.z * k };
     },
     select: (id) => town.select(id),

@@ -58,6 +58,18 @@ export function createUi({ sim, scene, actions }) {
     else if (e.key === 'Escape') { if (panels.settingsOpen()) panels.hideSettings(); else if (tool) setTool(null); else select(null); }
   });
 
+  // The game is not a web page: no browser menu (Save image and so on) over the town or its cards.
+  // Text fields keep their own menu so copy and paste still work.
+  addEventListener('contextmenu', (e) => {
+    if (e.target.closest && e.target.closest('input,textarea,select,[contenteditable="true"]')) return;
+    e.preventDefault();
+  });
+  // The header wraps on narrow screens, so the floating cards start below whatever height it has.
+  const header = document.querySelector('header.top');
+  if (header && window.ResizeObserver) {
+    new ResizeObserver(() => document.documentElement.style.setProperty('--hud-bottom', header.offsetTop + header.offsetHeight + 'px')).observe(header);
+  }
+
   // sim events -> feedback
   sim.subscribe((e) => {
     if (e.text) hud.toast(e.text);
@@ -67,9 +79,16 @@ export function createUi({ sim, scene, actions }) {
     if (e.type === 'changed') hud.sync();
   });
 
+  // Right-click with no drag: leave the tool in hand, otherwise close the open card.
+  function onCancel() {
+    if (tool) setTool(null);
+    else if (panels.settingsOpen()) panels.hideSettings();
+    else select(null);
+  }
+
   return {
     tool: () => tool,
-    onPick,
+    onPick, onCancel,
     hud, postcard, toast: hud.toast,
     showPostcard: () => postcard.show(),
     // Opens Settings if needed and asks a question inside it (import uses this).
