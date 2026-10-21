@@ -82,6 +82,7 @@ export function createScene({ stage, layout, onPick }) {
       const on = blend > 0.5;
       if (on !== nightOn) { nightOn = on; town.setNight(on); for (const m of mods) if (m.setNight) m.setNight(on); }
       town.setRemoved(s.removed);
+      town.setState(s);
       town.update(dt);
       renderer.render(scene, camera.cam);
     },

@@ -15,5 +15,6 @@ import core from './core.js';
 import upgrades from './upgrades.js';
 import roads from './roads.js';
 import offlinePostcard from './offline-postcard.js';
+import placement from './placement.js';
 
-export const systems = [core, upgrades, roads, offlinePostcard];
+export const systems = [core, upgrades, roads, offlinePostcard, placement];

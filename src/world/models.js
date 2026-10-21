@@ -1,0 +1,157 @@
+// Building models as plain data: what exists, what sizes it fits, how a record becomes a drawable description.
+// Pure: no DOM, no THREE. The render side (src/render/models) turns a description into geometry.
+// The design language that goes with this lives in docs/BUILDINGS.md.
+import { makeRng } from './rng.js';
+import { TILE, GRID_HALF } from './grid.js';
+import { heightAt } from './terrain.js';
+
+export const LANG = {
+  FLOOR_H: 1.1,     // one storey, world units
+  PLINTH: 0.25,     // stone base every building stands on
+  MARGIN: 0.4,      // gap between a footprint's edge and the walls, so streets and neighbours breathe
+  BAY: 1.5,         // window rhythm: one bay per 1.5 units of wall
+  MAX_LEVEL: 5,
+};
+
+// Categories shown in the placement flyout. `tool` is the toolbar button that lists them.
+export const CATEGORIES = [
+  { id: 'home', name: 'Homes', tool: 'build' },
+  { id: 'shop', name: 'Shops', tool: 'build' },
+  { id: 'work', name: 'Workplaces', tool: 'build' },
+  { id: 'landmark', name: 'Landmarks', tool: 'build' },
+  { id: 'service', name: 'Services', tool: 'services' },
+];
+
+// foot: footprints the model was drawn for, in tiles [across, deep]. A model can be turned, so [1, 2] also means 2 x 1.
+// tile: 'row' means the model repeats as side-by-side units along its long side (terraces, shop rows), so any 1 x n works.
+// floors: [min, max] storeys on a 1 x 1 lot; `grow` adds storeys per extra tile of area.
+// cost: coins for a 1 x 1 lot, multiplied by the lot's area.
+export const MODELS = [
+  { id: 'cottage',      name: 'Cottage',        cat: 'home',     sub: 'Hipped roof, window boxes',        foot: [[1, 1]],                 floors: [1, 2], grow: 0.5,  cost: 90,   style: 'shutter' },
+  { id: 'terrace',      name: 'Terrace house',  cat: 'home',     sub: 'A row of narrow gables',           foot: [[1, 1], [1, 2]], tile: 'row', floors: [2, 3], grow: 0.4, cost: 120, style: 'sash' },
+  { id: 'mansard',      name: 'Mansard block',  cat: 'home',     sub: 'Dormers and a slate crown',        foot: [[1, 1], [1, 2], [2, 2]], floors: [4, 6], grow: 0.8,  cost: 340,  style: 'arched' },
+  { id: 'tower',        name: 'Tower block',    cat: 'home',     sub: 'Tall, with a rooftop garden',      foot: [[1, 1], [1, 2], [2, 2]], floors: [7, 9], grow: 1.2,  cost: 1200, style: 'ribbon' },
+  { id: 'shop-row',     name: 'Shop row',       cat: 'shop',     sub: 'Awnings and planters',             foot: [[1, 1], [1, 2]], tile: 'row', floors: [2, 3], grow: 0.3, cost: 200, style: 'sash' },
+  { id: 'cafe',         name: 'Corner cafe',    cat: 'shop',     sub: 'Terrace tables and string lights', foot: [[1, 1]],                 floors: [2, 3], grow: 0,    cost: 260,  style: 'arched' },
+  { id: 'market',       name: 'Market hall',    cat: 'shop',     sub: 'Open arches, a lantern roof',      foot: [[2, 2], [1, 2]],         floors: [1, 1], grow: 0,    cost: 520,  style: 'arched' },
+  { id: 'office',       name: 'Office block',   cat: 'work',     sub: 'Ribbon windows, stepped crown',    foot: [[1, 1], [1, 2], [2, 2]], floors: [4, 6], grow: 1,    cost: 560,  style: 'ribbon' },
+  { id: 'workshop',     name: 'Workshop',       cat: 'work',     sub: 'Sawtooth roof and a chimney',      foot: [[1, 2], [2, 2]],         floors: [1, 2], grow: 0.3,  cost: 300,  style: 'sash' },
+  { id: 'warehouse',    name: 'Warehouse',      cat: 'work',     sub: 'Big doors, plenty of room',        foot: [[1, 2], [2, 2]],         floors: [1, 2], grow: 0,    cost: 240,  style: 'ribbon' },
+  { id: 'clinic',       name: 'Clinic',         cat: 'service',  sub: 'A calm place with a green cross',  foot: [[1, 1], [1, 2]],         floors: [2, 3], grow: 0.4,  cost: 400,  style: 'sash' },
+  { id: 'school',       name: 'School',         cat: 'service',  sub: 'Bell tower and a flag',            foot: [[1, 2], [2, 2]],         floors: [2, 3], grow: 0.2,  cost: 520,  style: 'arched' },
+  { id: 'fire-station', name: 'Fire station',   cat: 'service',  sub: 'Wide doors, a hose tower',         foot: [[1, 2], [2, 2]],         floors: [2, 2], grow: 0,    cost: 480,  style: 'arched' },
+  { id: 'police',       name: 'Police station', cat: 'service',  sub: 'A steady blue lamp',               foot: [[1, 1], [1, 2]],         floors: [2, 3], grow: 0.3,  cost: 480,  style: 'sash' },
+  { id: 'town-hall',    name: 'Town hall',      cat: 'landmark', sub: 'Clock tower over the square',      foot: [[2, 1], [2, 2]],         floors: [3, 3], grow: 0,    cost: 1800, style: 'arched' },
+  { id: 'church',       name: 'Church',         cat: 'landmark', sub: 'A spire you can see from afar',    foot: [[1, 2], [2, 2]],         floors: [2, 2], grow: 0,    cost: 1500, style: 'arched' },
+];
+
+const byId = new Map(MODELS.map((m) => [m.id, m]));
+export const modelById = (id) => byId.get(id) || null;
+export const modelsIn = (cat) => MODELS.filter((m) => m.cat === cat);
+export const modelsForTool = (tool) => CATEGORIES.filter((c) => c.tool === tool).map((c) => ({ ...c, models: modelsIn(c.id) }));
+
+// ---- footprints ----
+
+// The sizes a model offers in the picker, as [across, deep] with across <= deep, plus 1 x 3 and 1 x 4 for row models.
+export function footprintsOf(def) {
+  const out = def.foot.map(([a, b]) => [Math.min(a, b), Math.max(a, b)]);
+  if (def.tile === 'row') for (const n of [3, 4]) out.push([1, n]);
+  return out;
+}
+
+// A picker size [a, b] (a <= b) as the [across, deep] dimensions the model is drawn in. Row models run their units
+// across the front, so their long side goes across; every other model keeps its long side deep.
+export const canonicalDims = (def, size) => (def.tile === 'row' ? [size[1], size[0]] : [size[0], size[1]]);
+
+// Fits a model onto a requested lot of fw x fd tiles. The model may be turned, so only the shape matters.
+// Returns { fw, fd, exact } where fw x fd is the footprint it will actually occupy (never larger than the lot,
+// same orientation as the request), or null when the model does not fit at all.
+//   exact: the lot is a size the model was drawn for (or a row of units)
+//   otherwise: the largest drawn size that fits inside the lot; the caller centers it or leaves the rest open
+export function fitFootprint(def, fw, fd) {
+  const want = [fw, fd];
+  const sizes = footprintsOf(def);
+  const has = (a, b) => sizes.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
+  if (has(fw, fd)) return { fw, fd, exact: true };
+  let best = null;
+  for (const [x, y] of sizes) {
+    for (const [a, b] of x === y ? [[x, y]] : [[x, y], [y, x]]) {
+      if (a <= want[0] && b <= want[1] && (!best || a * b > best.fw * best.fd)) best = { fw: a, fd: b, exact: false };
+    }
+  }
+  return best;
+}
+
+// Picks a model of a category for a lot, for growth and for hand placement with "any". Deterministic in `seed`.
+// Prefers models drawn for exactly that size, then the ones that fit with the least waste.
+export function pickModelForLot(cat, fw, fd, seed = 0) {
+  const fits = modelsIn(cat).map((def) => ({ def, fit: fitFootprint(def, fw, fd) })).filter((x) => x.fit);
+  if (!fits.length) return null;
+  const score = (x) => (x.fit.exact ? 1000 : 0) + x.fit.fw * x.fit.fd;
+  const top = Math.max(...fits.map(score));
+  const best = fits.filter((x) => score(x) === top);
+  return { def: best[(seed >>> 0) % best.length].def, fit: best[(seed >>> 0) % best.length].fit };
+}
+
+export const areaCost = (def, fw, fd) => Math.round(def.cost * fw * fd);
+
+// ---- seeds and traits ----
+
+// FNV-1a: a stable seed for a string id, so a saved building always rebuilds to the same shape.
+export function seedOf(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+
+// Twelve fixed rolls per building. Every builder reads the same slots, and the level never changes them,
+// so upgrading adds details to the same building instead of re-rolling it.
+export function traitsOf(seed) {
+  const r = makeRng(seed | 0), t = [];
+  for (let i = 0; i < 12; i++) t.push(r());
+  return t;
+}
+
+const PAL_KEYS = ['warm', 'pastel', 'slate', 'green'];
+
+// ---- descriptions ----
+
+// A placed building record is { id, model, gx, gz, fw, fd, rot, seed, pal?, floors? }.
+//   gx, gz: the lowest tile; fw x fd: tiles occupied on the grid (after turning)
+//   rot:    quarter turns (0..3); the front faces +z at rot 0
+// describe() turns it into everything the renderer needs. It is a pure function of the record and the level.
+export function describe(rec, level = 1) {
+  const def = byId.get(rec.model);
+  if (!def) return null;
+  const seed = rec.seed ?? seedOf(rec.id), t = traitsOf(seed);
+  const rot = ((rec.rot ?? 0) % 4 + 4) % 4;
+  const cw = rot % 2 ? rec.fd : rec.fw, cd = rot % 2 ? rec.fw : rec.fd; // footprint in the model's own frame
+  const area = rec.fw * rec.fd;
+  const [lo, hi] = def.floors;
+  const extra = Math.min(6, Math.floor(def.grow * (area - 1) + 0.0001));
+  const floors = rec.floors ?? Math.min(12, lo + Math.floor(t[0] * (hi - lo + 1)) + extra);
+  const x = (rec.gx + (rec.fw - 1) / 2 - GRID_HALF) * TILE, z = (rec.gz + (rec.fd - 1) / 2 - GRID_HALF) * TILE;
+  // stand on the highest corner so a building on a gentle slope never sinks; the kit's foundation fills the gap below
+  let y = 0.1;
+  for (const [ox, oz] of [[0, 0], [-1, -1], [1, -1], [-1, 1], [1, 1]]) y = Math.max(y, heightAt(x + ox * rec.fw * TILE / 2, z + oz * rec.fd * TILE / 2) + 0.05);
+  return {
+    id: rec.id, model: def.id, name: def.name, cat: def.cat, style: def.style,
+    seed, t, level, rot, floors, fw: rec.fw, fd: rec.fd, cw, cd,
+    w: cw * TILE - LANG.MARGIN, d: cd * TILE - LANG.MARGIN,
+    x, y, z,
+    rotY: rot * Math.PI / 2,
+    pal: rec.pal || PAL_KEYS[Math.floor(t[1] * 4)],
+  };
+}
+
+// The hand-made town predates the model catalog. Each of its buildings maps onto a model, keeping its size and look.
+export function describeLayoutBuilding(b, level = b.level) {
+  const model = b.type === 'hall' ? 'town-hall' : b.type === 'church' ? 'church' : b.type === 'factory' ? 'workshop'
+    : b.roof === 'flat' ? 'tower' : b.roof === 'mansard' ? 'mansard' : 'terrace';
+  const seed = seedOf(b.id), t = traitsOf(seed), def = byId.get(model);
+  return {
+    id: b.id, model, name: b.name, cat: def.cat, style: def.style, seed, t, level, rot: 0,
+    floors: b.floors, fw: 0, fd: 0, cw: 0, cd: 0, w: b.w, d: b.d, x: b.x, z: b.z, y: b.y, rotY: b.rotY,
+    pal: b.pal, roofKind: b.roof, dx: b.dx, awning: b.awning, legacy: true,
+  };
+}

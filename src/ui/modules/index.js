@@ -8,4 +8,6 @@
 //   onKey(e)              keydown outside inputs; return true to claim the key
 // Modules read sim snapshots and send commands. They never mutate sim.state.
 // Add markup to index.html only inside your own container element, and styles to your own css file.
-export const uiModules = [];
+import placement from './placement.js';
+
+export const uiModules = [placement];

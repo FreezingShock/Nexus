@@ -1,6 +1,9 @@
 // The town's buildings: merged meshes rebuilt from data, picking proxies, selection outline, upgrade pop, night windows.
+// Buildings come from the hand-made layout plus whatever the player has placed (state.placed). Their look follows
+// their level (state.levels), so an upgrade rebuilds the building with its new details.
 import * as THREE from '../../vendor/three/three.module.min.js';
-import { makeParts, worldMatrix, addToBatch } from './buildings.js';
+import { makeParts, describeLegacy, worldMatrix, addToBatch } from './buildings.js';
+import { describe } from '../world/models.js';
 import { Batch, disposeAll } from './geom.js';
 import { lineMat } from './materials.js';
 
@@ -14,21 +17,38 @@ export function mergeBuildings(parent, items, night) {
   return batch.build(parent);
 }
 
+// A click target for the whole building (tower and roof included), a box around its parts.
+function proxyFor(parts, world) {
+  const bb = new THREE.Box3(), tmp = new THREE.Box3();
+  for (const p of parts) { p.geo.computeBoundingBox(); tmp.copy(p.geo.boundingBox).applyMatrix4(p.local); bb.union(tmp); }
+  const size = bb.getSize(new THREE.Vector3()), c = bb.getCenter(new THREE.Vector3());
+  const proxy = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, size.z).translate(c.x, c.y, c.z), proxyMat);
+  proxy.matrixAutoUpdate = false;
+  proxy.matrix.copy(world); proxy.matrixWorld.copy(world);
+  return proxy;
+}
+
 export function createTown(root, layout) {
   const group = new THREE.Group(); root.add(group);
   const selGroup = new THREE.Group(); root.add(selGroup);
   const entries = new Map();
   let built = [], removed = new Set(), night = false, popping = null, selected = null;
+  let placedSig = '', wantPop = new Set();
 
-  for (const b of layout.buildings) {
-    const parts = makeParts(b), world = worldMatrix(b);
-    const bodyPart = parts.find((p) => p.body);
-    const proxy = new THREE.Mesh(bodyPart.geo, proxyMat);
-    proxy.matrixAutoUpdate = false;
-    proxy.matrix.multiplyMatrices(world, bodyPart.local);
-    proxy.matrixWorld.copy(proxy.matrix);
-    entries.set(b.id, { b, parts, world, proxy });
+  // desc -> entry. `base` is the level the building starts at before any upgrade.
+  function addEntry(desc, base) {
+    const world = worldMatrix(desc), parts = makeParts(desc);
+    entries.set(desc.id, { b: desc, desc, base, level: desc.level, parts, world, proxy: proxyFor(parts, world) });
   }
+  function regenerate(e, level) {
+    e.level = level;
+    e.desc = e.b = { ...e.desc, level };
+    e.parts = makeParts(e.desc);
+    e.proxy.geometry.dispose();
+    e.proxy = proxyFor(e.parts, e.world);
+  }
+
+  for (const b of layout.buildings) addEntry(describeLegacy(b), b.level);
 
   function applyNight() {
     for (const m of built) if (m.isMesh && m.userData.day.userData.night) m.material = night ? m.userData.day.userData.night : m.userData.day;
@@ -72,7 +92,7 @@ export function createTown(root, layout) {
     if (selected) placeSel(entries.get(selected).b, 1, 1, 1);
   }
   // Upgrade pop: the building leaves the merged mesh for half a second and squashes as its own group.
-  function pop(id) {
+  function startPop(id) {
     endPop();
     const e = entries.get(id); if (!e) return;
     rebuild(id);
@@ -98,9 +118,30 @@ export function createTown(root, layout) {
       removed = next; endPop(); rebuild();
       if (selected && removed.has(selected)) setHull(null);
     },
+    // Syncs placed buildings and levels from the sim snapshot. Cheap when nothing changed.
+    setState(s) {
+      let dirty = false;
+      const placed = s.placed || [], sig = placed.map((r) => r.id).join(',');
+      if (sig !== placedSig) {
+        placedSig = sig;
+        const keep = new Set(placed.map((r) => r.id));
+        for (const [id, e] of entries) if (!e.desc.legacy && !keep.has(id)) { e.proxy.geometry.dispose(); entries.delete(id); if (selected === id) setHull(null); }
+        for (const r of placed) if (!entries.has(r.id)) { const d = describe(r, 1); if (d) addEntry(d, 1); }
+        dirty = true;
+      }
+      let popId = null;
+      for (const e of entries.values()) {
+        const lv = (s.levels && s.levels[e.b.id]) ?? e.base;
+        if (lv === e.level) continue;
+        regenerate(e, lv);
+        if (selected === e.b.id) setHull(e.b.id);
+        if (wantPop.delete(e.b.id) && !removed.has(e.b.id)) popId = e.b.id; else dirty = true;
+      }
+      if (popId) startPop(popId); else if (dirty) { endPop(); rebuild(); }
+    },
     setNight(on) { if (on === night) return; night = on; applyNight(); },
     select: setHull,
-    pop,
+    pop(id) { wantPop.add(id); setTimeout(() => wantPop.delete(id), 1500); },
     update(dt) {
       if (!popping) return;
       popping.t += dt;

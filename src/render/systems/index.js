@@ -8,5 +8,6 @@
 // Render systems read sim state, never write it, and keep draw calls low (instance or merge geometry).
 import cars from './cars.js';
 import turbines from './turbines.js';
+import placementGhost from './placement-ghost.js';
 
-export const renderSystems = [cars, turbines];
+export const renderSystems = [cars, turbines, placementGhost];
