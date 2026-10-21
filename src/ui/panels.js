@@ -44,7 +44,7 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
   // ---- flyout ----
   function setFly(tool) {
     const f = $('fly');
-    if (!tool || tool === 'bulldoze') { f.hidden = true; return; }
+    if (!tool || tool === 'bulldoze' || tool === 'zones') { f.hidden = true; return; } // zones: src/ui/modules/zoning.js fills the flyout
     let h = '';
     if (tool === 'roads') {
       const t = ROAD_TYPES.find((r) => r.id === ui.road), total = RING_ROAD_TILES * t.cost;
