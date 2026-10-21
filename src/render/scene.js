@@ -11,7 +11,7 @@ import { createDusk } from './dusk.js';
 
 const SNAP_W = 480, SNAP_H = 360;
 
-export function createScene({ stage, layout, onPick }) {
+export function createScene({ stage, layout, grid, onPick }) {
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -29,7 +29,7 @@ export function createScene({ stage, layout, onPick }) {
   buildTrees(world, layout);
   const town = createTown(world, layout);
   const sysDefs = registryOf('render systems', renderSystems).list();
-  const mods = sysDefs.map((d) => d.create({ THREE, world, layout, camera, scene }) || {});
+  const mods = sysDefs.map((d) => d.create({ THREE, world, layout, grid, camera, scene }) || {});
   const byId = new Map(sysDefs.map((d, i) => [d.id, mods[i]]));
   let dusk = null, nightOn = false, drag = null;
 

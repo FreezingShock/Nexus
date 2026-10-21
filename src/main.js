@@ -23,7 +23,7 @@ else if (loaded.ok) sim.catchUp(loaded.savedAt);
 // ---- render ----
 let scene;
 try {
-  scene = createScene({ stage: $('stage'), layout, onPick: (id) => ui.onPick(id) });
+  scene = createScene({ stage: $('stage'), layout, grid: sim.grid, onPick: (id) => ui.onPick(id) });
 } catch (err) {
   const f = document.createElement('div');
   f.className = 'fallback';

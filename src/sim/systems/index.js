@@ -6,6 +6,7 @@ import offlinePostcard from './offline-postcard.js';
 import placement from './placement.js';
 import roads from './roads.js';
 import upgrades from './upgrades.js';
+import zoning from './zoning.js';
 
 export const systems = [
   core,
@@ -13,4 +14,5 @@ export const systems = [
   placement,
   roads,
   upgrades,
+  zoning,
 ];

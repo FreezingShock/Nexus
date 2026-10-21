@@ -3,8 +3,10 @@
 // Hook shapes are documented in docs/EXTENDING.md. Modules run in order of their optional `order` number, then file name.
 import placement from './placement.js';
 import roadTool from './road-tool.js';
+import zoning from './zoning.js';
 
 export const uiModules = [
   placement,
   roadTool,
+  zoning,
 ];

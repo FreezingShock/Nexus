@@ -79,6 +79,7 @@ export function createSim({ state = freshState(), layout = getLayout(), now = ()
     if (away <= 0) return null;
     const w = offlineWindow(away);
     const gainC = rate * w.effectiveS, gainP = PARTS_RATE * w.effectiveS;
+    registry.run('offline', ctx, w.effectiveS); // grown from here on; income above used the rate before growth
     if (away < MIN_POSTCARD_S) { state.coins += gainC; state.parts += gainP; prev = { coins: state.coins, parts: state.parts }; return null; }
     const o = state.offline;
     state.offline = o
