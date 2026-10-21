@@ -7,7 +7,7 @@ import { registryOf } from '../core/registry.js';
 import { uiModules } from './modules/index.js';
 
 // S is taken by the camera (WASD), so Services moves to C. Camera keys live in src/render/camera.js and modules/camera-modes.js.
-const TOOL_KEYS = { r: 'roads', z: 'zones', b: 'build', c: 'services', p: 'parks', t: 'traffic', x: 'bulldoze' };
+const TOOL_KEYS = { r: 'roads', z: 'zones', b: 'build', c: 'services', p: 'parks', t: 'traffic', x: 'bulldoze', n: 'districts' };
 
 export function createUi({ sim, scene, actions }) {
   const send = (cmd) => sim.dispatch(cmd);
