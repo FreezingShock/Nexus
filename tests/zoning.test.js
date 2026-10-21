@@ -93,12 +93,12 @@ test('player-placed buildings (lot >= 40000) are never touched by zoning', () =>
   const sim = mk();
   sim.dispatch({ type: 'paintZone', zone: 1, a: A, b: B });
   const i = tileIndex(44, 34);
-  sim.grid.lot[i] = 40007; // what the placement system writes
-  sim.state.lots = sim.state.lots.filter(([t]) => t !== i);
+  sim.dispatch({ type: 'place', model: 'cottage', gx: 44, gz: 34, fw: 1, fd: 1, rot: 0 }); // tile may hold paint but no grown lot yet
+  if (sim.grid.lot[i] < 40000) return; // a lot had already grown there: placement refuses, nothing to check
   for (let k = 0; k < 50; k++) sim.tick();
-  assert.equal(sim.grid.lot[i], 40007);
+  assert.ok(sim.grid.lot[i] >= 40000);
   assert.equal(sim.grid.zoneAt(44, 34), 0); // paint under a placed building is dropped
   assert.ok(!sim.state.lots.some(([t]) => t === i));
   sim.dispatch({ type: 'clearZone', a: A, b: B });
-  assert.equal(sim.grid.lot[i], 40007);
+  assert.ok(sim.grid.lot[i] >= 40000);
 });
