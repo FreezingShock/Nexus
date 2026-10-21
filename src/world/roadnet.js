@@ -55,51 +55,14 @@ export function shapeOf(mask) {
   }
 }
 
-// ---- pencil strokes ----
-// A stroke is an ordered list of 4-connected tiles [gx, gz]. It may revisit tiles (a loop that closes on itself).
+// ---- routes ----
+// A road is laid as a chain of pivots: the last committed tile, any pivots added while drawing, and the cursor.
+// Between two pivots the route is one L (a leg, a corner, a leg), or a ruler line when `straight`.
+// validateRoute then checks the grid rules, so a route can never loop, hug a street or zig-zag.
 
-// One step towards `target`, preferring the longer axis; on a tie it turns, so diagonals become even staircases.
-function nextToward(path, target) {
-  const last = path[path.length - 1], prev = path[path.length - 2];
-  const dx = target[0] - last[0], dz = target[1] - last[1];
-  let axis;
-  if (Math.abs(dx) > Math.abs(dz)) axis = 0;
-  else if (Math.abs(dz) > Math.abs(dx)) axis = 1;
-  else axis = prev && prev[1] === last[1] ? 1 : 0;
-  return axis === 0 ? [last[0] + Math.sign(dx), last[1]] : [last[0], last[1] + Math.sign(dz)];
-}
-
-// Extends (or rewinds) a stroke so it ends at `target`. Stepping back onto the previous tile erases the last tile,
-// so the pencil can be dragged backwards to undo. `canStep(tile)` decides what the pencil may enter; a refused tile
-// stops the stroke there and is reported in `blocked`.
-export function extendStroke(path, target, canStep = () => true) {
-  const out = path.slice();
-  let blocked = null;
-  for (let guard = 0; guard < 4 * GRID_N; guard++) {
-    const last = out[out.length - 1];
-    if (last[0] === target[0] && last[1] === target[1]) break;
-    const n = nextToward(out, target), prev = out[out.length - 2];
-    if (prev && prev[0] === n[0] && prev[1] === n[1]) { out.pop(); continue; }
-    if (out.length >= MAX_STROKE) break;
-    if (!inBounds(n[0], n[1]) || !canStep(n)) { blocked = n; break; }
-    out.push(n);
-  }
-  return { path: out, blocked };
-}
-
-// Straight line from a along the longer axis towards b (the shift ruler).
-export function rulerPath(a, b) {
-  const horiz = Math.abs(b[0] - a[0]) >= Math.abs(b[1] - a[1]);
-  const n = Math.min(MAX_STROKE - 1, horiz ? Math.abs(b[0] - a[0]) : Math.abs(b[1] - a[1]));
-  const s = horiz ? Math.sign(b[0] - a[0]) : Math.sign(b[1] - a[1]);
-  const out = [];
-  for (let k = 0; k <= n; k++) out.push(horiz ? [a[0] + s * k, a[1]] : [a[0], a[1] + s * k]);
-  return out;
-}
-
-// One-turn route from a to b: the longer leg first, then the shorter (click, move, click).
-export function elbowPath(a, b) {
-  const horizFirst = Math.abs(b[0] - a[0]) >= Math.abs(b[1] - a[1]);
+// The corner sits on the longer leg's far side, so an L reads as a street; `flip` swaps which leg comes first.
+export function elbowPath(a, b, flip = false) {
+  const horizFirst = (Math.abs(b[0] - a[0]) >= Math.abs(b[1] - a[1])) !== flip;
   const out = [[a[0], a[1]]];
   const walk = (axis, to) => {
     while (out.length < MAX_STROKE) {
@@ -112,7 +75,31 @@ export function elbowPath(a, b) {
   return out;
 }
 
-// Direction of travel on each stroke tile: towards the next tile, the last tile keeps the heading it arrived with.
+// Straight line from a along the longer axis towards b (the shift ruler).
+export function rulerPath(a, b) {
+  const horiz = Math.abs(b[0] - a[0]) >= Math.abs(b[1] - a[1]);
+  const n = Math.min(MAX_STROKE - 1, horiz ? Math.abs(b[0] - a[0]) : Math.abs(b[1] - a[1]));
+  const s = horiz ? Math.sign(b[0] - a[0]) : Math.sign(b[1] - a[1]);
+  const out = [];
+  for (let k = 0; k <= n; k++) out.push(horiz ? [a[0] + s * k, a[1]] : [a[0], a[1] + s * k]);
+  return out;
+}
+
+// One leg between two pivots: an L, or a ruler line when `straight`.
+export const legPath = (a, b, { straight = false, flip = false } = {}) => (straight ? rulerPath(a, b) : elbowPath(a, b, flip));
+
+// The whole chain through the pivots, as one ordered list of tiles. `stops[k]` is the index in `path` of points[k].
+export function routeThrough(points, opts = {}) {
+  const path = [[points[0][0], points[0][1]]], stops = [0];
+  for (let k = 1; k < points.length; k++) {
+    const leg = legPath(points[k - 1], points[k], opts);
+    for (let j = 1; j < leg.length && path.length < MAX_STROKE; j++) path.push(leg[j]);
+    stops.push(path.length - 1);
+  }
+  return { path, stops };
+}
+
+// Direction of travel on each route tile: towards the next tile, the last tile keeps the heading it arrived with.
 export function pathDirs(path) {
   const d = path.map((t, k) => (k < path.length - 1 ? dirOf(t, path[k + 1]) : -1));
   if (path.length === 1) return [0];
@@ -120,23 +107,95 @@ export function pathDirs(path) {
   return d;
 }
 
-// Turns a stroke into the list of tile edits it would make, plus what it costs.
-//   costOf(type) coins per tile. canRoad(gx, gz) says whether a tile may hold a road.
+// Tiles of the route that count as "new": the grid rules below apply only to these, and existing roads are
+// joins or crossings, which are always allowed.
+// Spacing between parallel streets: two roads may not sit one tile apart (the tile between would be a sliver lot).
+const SLIVER = 2;
+
+// The grid rules. Every problem is { reason, at, k } in path order; reason is a key of BLOCK_TEXT. `blockedBy(gx, gz)`
+// returns why a tile cannot hold a road (from roadBlock), or null.
+//   revisit  the route crosses itself
+//   loop     a tile touches the route somewhere other than its neighbors, or closes a 2 by 2 block of road
+//   hug      a new tile touches an existing street that the route does not join at that tile
+//   gap      a straight run sits one tile from a parallel street
+//   zigzag   two turns in a row with a single tile between them
+//   long     longer than one road may be
+export function validateRoute(path, roads, blockedBy = () => null) {
+  const n = path.length, problems = [], flag = (reason, k) => problems.push({ reason, at: path[k], k });
+  if (n > MAX_STROKE) flag('long', MAX_STROKE - 1);
+  const at = new Map(); // tile index -> position in the route
+  path.forEach(([gx, gz], k) => {
+    const idx = tileIndex(gx, gz);
+    if (at.has(idx)) flag('revisit', k); else at.set(idx, k);
+    const why = blockedBy(gx, gz);
+    if (why && at.get(idx) === k) flag(why, k);
+  });
+  const mine = (gx, gz) => at.has(tileIndex(gx, gz));
+  const roadish = (gx, gz) => hasRoad(roads, gx, gz) || mine(gx, gz);
+  const onStreet = (gx, gz, k) => {
+    const prev = path[k - 1], next = path[k + 1];
+    return [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dz]) => {
+      const nx = gx + dx, nz = gz + dz;
+      if (!hasRoad(roads, nx, nz)) return false;
+      const linked = (prev && prev[0] === nx && prev[1] === nz) || (next && next[0] === nx && next[1] === nz);
+      return !linked;
+    });
+  };
+
+  path.forEach(([gx, gz], k) => {
+    if (at.get(tileIndex(gx, gz)) !== k) return; // a revisit is already reported
+    const fresh = !hasRoad(roads, gx, gz);
+    for (const [dx, dz] of DIRS) {
+      const j = inBounds(gx + dx, gz + dz) ? at.get(tileIndex(gx + dx, gz + dz)) : undefined;
+      if (j !== undefined && Math.abs(j - k) > 1) { flag('loop', k); break; }
+    }
+    if (!fresh) return;
+    const prev = path[k - 1], next = path[k + 1];
+    const end = k === 0 || k === n - 1;
+    // Touching the network is expected only at the ends, where the road joins it.
+    if (!end && onStreet(gx, gz, k)) flag('hug', k);
+    for (const [ox, oz] of [[-1, -1], [0, -1], [-1, 0], [0, 0]]) {
+      const sq = [[gx + ox, gz + oz], [gx + ox + 1, gz + oz], [gx + ox, gz + oz + 1], [gx + ox + 1, gz + oz + 1]];
+      if (sq.every(([x, z]) => inBounds(x, z) && roadish(x, z))) { flag('loop', k); break; }
+    }
+    if (prev && next && (prev[0] === next[0] || prev[1] === next[1])) {
+      const horiz = prev[1] === gz;
+      for (const s of [-SLIVER, SLIVER]) {
+        const x = horiz ? gx : gx + s, z = horiz ? gz + s : gz;
+        const along = horiz ? roadish(x - 1, z) || roadish(x + 1, z) : roadish(x, z - 1) || roadish(x, z + 1);
+        if (roadish(x, z) && along) { flag('gap', k); break; }
+      }
+    }
+  });
+
+  let lastTurn = -Infinity;
+  for (let k = 1; k < n - 1; k++) {
+    if (dirOf(path[k - 1], path[k]) === dirOf(path[k], path[k + 1])) continue;
+    if (k - lastTurn === 1) flag('zigzag', k);
+    lastTurn = k;
+  }
+  return problems.sort((a, b) => a.k - b.k);
+}
+
+// Turns a route into the list of tile edits it would make, plus what it costs.
+//   costOf(type) coins per tile. blockedBy(gx, gz) is roadBlock's reason for a tile, or null.
 // Same type again is free and skipped; a different type is an upgrade that pays only the difference.
-export function planStroke({ path, type, roads, canRoad, costOf }) {
-  const dirs = pathDirs(path), seen = new Set(), tiles = [], blocked = [];
+// `joins` lists the route's tiles that already hold a road (where it meets the network). `problems` is validateRoute.
+export function planStroke({ path, type, roads, blockedBy = () => null, costOf }) {
+  const dirs = pathDirs(path), seen = new Set(), tiles = [], joins = [];
   path.forEach(([gx, gz], k) => {
     const idx = tileIndex(gx, gz);
     if (seen.has(idx)) return;
     seen.add(idx);
-    if (!canRoad(gx, gz)) { blocked.push([gx, gz]); return; }
-    const d = type === 'one' ? dirs[k] : undefined;
     const old = roads[idx] || null;
-    if (old && old.t === type && (type !== 'one' || old.d === d)) return;
+    if (old) joins.push([gx, gz]);
+    if (old && old.t === type && (type !== 'one' || old.d === dirs[k])) return;
+    const d = type === 'one' ? dirs[k] : undefined;
     const price = old ? Math.max(0, costOf(type) - costOf(old.t)) : costOf(type);
     tiles.push({ gx, gz, idx, t: type, d, price, old });
   });
-  return { tiles, blocked, cost: tiles.reduce((a, t) => a + t.price, 0), length: seen.size };
+  const problems = validateRoute(path, roads, blockedBy);
+  return { tiles, joins, problems, cost: tiles.reduce((a, t) => a + t.price, 0), length: seen.size };
 }
 
 export const tileOfKey = (k) => tileOf(Number(k));
@@ -195,7 +254,10 @@ export function roadBlock(grid, layout, state, gx, gz) {
   return null;
 }
 
+// Why a route or tile is refused, in words for the reason chip and the toast. Keys are the reasons from roadBlock and validateRoute.
 export const BLOCK_TEXT = {
   bounds: 'The map ends here', water: 'Water in the way', steep: 'Too steep for a road', farm: 'Farmland in the way',
   lot: 'A building is in the way', building: 'A building is in the way', park: 'A park is in the way',
+  revisit: 'The road would cross itself', loop: 'That would close a tiny loop', hug: 'Too close to another street',
+  gap: 'Leave room for a lot between streets', zigzag: 'No zig-zags: give each turn a tile to breathe', long: 'Too long for one road',
 };

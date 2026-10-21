@@ -1,21 +1,30 @@
-// The road tool: pencil strokes on the shared grid, click-to-click lines, a live cost label, bulldozing roads, undo.
+// The road tool: click-to-click routes on the shared grid, bulldozing roads, undo. A route is a chain of pivots, each
+// joined to the next by an L (a straight line with Shift). Space adds a pivot, L flips the bend, Esc or right-click
+// steps back one pivot. Routes are checked by the grid rules in src/world/roadnet.js (validateRoute), so the preview
+// and the sim always agree.
 // Pointer handling follows docs/GRID.md: capture-phase listeners on the stage while the tool is active, button 0 only,
 // so right and middle drag still pan and the wheel still zooms.
 import { ROAD_TYPES } from '../../sim/catalog.js';
 import { inBounds, tileIndex, worldToTile } from '../../world/grid.js';
-import { BLOCK_TEXT, elbowPath, extendStroke, planStroke, roadBlock, rulerPath } from '../../world/roadnet.js';
+import { BLOCK_TEXT, planStroke, roadBlock, routeThrough } from '../../world/roadnet.js';
 import { $, fmt } from '../format.js';
 import { roadSwatch, tileCard } from '../cards.js';
 
 const costOf = (id) => ROAD_TYPES.find((r) => r.id === id).cost;
-const BLUE = 0x8FB8D6, RED = 0xE3A08E, TERRA = 0xB8472E;
+const BLUE = 0x8FB8D6, RED = 0xE3A08E, TERRA = 0xB8472E, GOLD = 0xE6BC62;
+// The drawing keys. src/ui/shortcuts.js lists them with the file and literal the sheet checks.
+const PIVOT_KEY = ' ', FLIP_KEY = 'l';
+const PAINT_LAYERS = ['hover', 'start', 'pivot', 'join', 'bad'];
+const near = (a, b) => a[0] === b[0] && a[1] === b[1];
+const manhattan = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
 
 export default {
   id: 'road-tool',
   create({ sim, send, scene, toast, tool }) {
     const state = sim.state;
     const stage = scene.canvas.parentElement, canvas = scene.canvas;
-    let type = 'two', anchor = null, stroke = null, erase = null, hover = null, shift = false, pointer = { x: 0, y: 0 };
+    // anchor: the last committed tile, where the next segment starts. pivots: corners added while drawing this segment.
+    let type = 'two', anchor = null, pivots = [], erase = null, hover = null, shift = false, flip = false, pointer = { x: 0, y: 0 };
     let lastKey = '', rev = 0, lastRoads = state.roads;
     const label = document.createElement('div');
     label.id = 'roadlabel'; label.hidden = true; label.setAttribute('aria-hidden', 'true');
@@ -23,7 +32,7 @@ export default {
 
     const drawing = () => tool() === 'roads', erasing = () => tool() === 'bulldoze';
     const overlay = () => scene.sys('grid-overlay'), roadsView = () => scene.sys('roads');
-    const blockOf = (t) => roadBlock(sim.grid, sim.layout, state, t[0], t[1]);
+    const blockAt = (gx, gz) => roadBlock(sim.grid, sim.layout, state, gx, gz);
     const isRoad = (t) => state.roads[tileIndex(t[0], t[1])] !== undefined;
     const unlocked = (r) => !r.unlockParts || state.roadUnlocks.includes(r.id);
     const tileAt = (e) => {
@@ -32,10 +41,12 @@ export default {
       const t = worldToTile(g.x, g.z);
       return inBounds(t[0], t[1]) ? t : null;
     };
-    const evaluate = (path) => planStroke({ path, type, roads: state.roads, canRoad: (gx, gz) => !blockOf([gx, gz]), costOf });
+    // The route under the cursor: anchor, each pivot, then the cursor, joined by L legs (straight with Shift).
+    const routeNow = () => (anchor && hover ? routeThrough([anchor, ...pivots, hover], { straight: shift, flip }) : null);
+    const evaluate = (route) => planStroke({ path: route.path, type, roads: state.roads, blockedBy: blockAt, costOf });
     const claim = (e) => { e.stopPropagation(); e.preventDefault(); };
 
-    // ---- the label that follows the pencil ----
+    // ---- the label that follows the pointer ----
     function say(html, cls = '') {
       label.className = cls; label.innerHTML = html; label.hidden = false;
       const w = label.offsetWidth, h = label.offsetHeight;
@@ -43,88 +54,116 @@ export default {
     }
     const coin = '<i class="coin"></i>';
     const short = () => ROAD_TYPES.find((r) => r.id === type).short;
+    const paint = (grid, name, tiles, opts) => grid.paint(name, tiles, opts);
 
     // ---- preview: ghost road, tile highlights, label ----
-    function currentPath() {
-      if (stroke && stroke.down) return stroke.path;
-      if (anchor && hover) return shift ? rulerPath(anchor, hover) : elbowPath(anchor, hover);
-      return null;
-    }
     function refresh(force) {
       const grid = overlay(), rv = roadsView();
       if (!grid || !rv) return;
       if (!drawing() && !erasing()) { clearView(); return; }
       if (state.roads !== lastRoads) { lastRoads = state.roads; rev++; }
-      const path = drawing() ? currentPath() : null;
-      const key = (drawing() ? type : 'x') + '|' + (path ? path.map((p) => p[0] + ',' + p[1]).join(';') : '') + '|' + (hover ? hover.join(',') : '') + '|' + (erase ? erase.tiles.size : 0) + '|' + rev + '|' + (anchor || '') + '|' + (stroke && stroke.blocked || '');
+      const route = drawing() ? routeNow() : null;
+      const key = [drawing() ? type : 'x', route ? route.path.map((p) => p[0] + ',' + p[1]).join(';') : '', hover ? hover.join(',') : '',
+        pivots.length, erase ? erase.tiles.size : 0, rev, anchor ? anchor.join(',') : '', flip ? 1 : 0, shift ? 1 : 0].join('|');
       if (!force && key === lastKey) return;
       lastKey = key;
 
       if (erasing()) {
         const tiles = erase ? [...erase.tiles.values()] : (hover && isRoad(hover) ? [hover] : []);
-        grid.paint('hover', tiles.map((t) => [t[0], t[1], RED]), { opacity: 0.55, outline: true });
-        grid.paint('start', []); grid.paint('bad', []); rv.clearPreview();
+        paint(grid, 'hover', tiles.map((t) => [t[0], t[1], RED]), { opacity: 0.55, outline: true });
+        for (const n of PAINT_LAYERS.filter((n) => n !== 'hover')) paint(grid, n, []);
+        rv.clearPreview();
         if (!tiles.length) { label.hidden = true; return; }
         let back = 0; for (const t of tiles) back += Math.floor(state.roads[tileIndex(t[0], t[1])].p / 2);
         say(`${coin}<b>+₵ ${fmt(back)}</b><small>${tiles.length} ${tiles.length === 1 ? 'road' : 'roads'} back</small><em>Bulldoze</em>`);
         return;
       }
 
-      if (!path) {
-        // hovering with the pencil up
-        grid.paint('start', []); grid.paint('bad', []); rv.clearPreview();
-        if (!hover) { grid.paint('hover', []); label.hidden = true; return; }
-        const why = blockOf(hover);
-        grid.paint('hover', [[hover[0], hover[1], why ? RED : BLUE]], { opacity: 0.5, outline: true });
-        if (why) say(BLOCK_TEXT[why], 'bad'); else say(`${coin}<b>₵ ${costOf(type)}</b><small>per tile</small><em>${short()}</em>`);
+      if (!route) {
+        // no start yet: the tile under the cursor, and whether a road could start there
+        for (const n of PAINT_LAYERS.filter((n) => n !== 'hover')) paint(grid, n, []);
+        rv.clearPreview();
+        if (!hover) { paint(grid, 'hover', []); label.hidden = true; return; }
+        const why = blockAt(hover[0], hover[1]);
+        paint(grid, 'hover', [[hover[0], hover[1], why ? RED : BLUE]], { opacity: 0.5, outline: true });
+        if (why) say(BLOCK_TEXT[why], 'bad');
+        else say(`${coin}<b>₵ ${costOf(type)}</b><small>per tile</small><em>${short()}</em><small>Click to start</small>`);
         return;
       }
 
-      const plan = evaluate(path), bad = plan.blocked.length > 0;
+      const plan = evaluate(route), bad = plan.problems.length > 0;
       rv.preview({ key, tiles: plan.tiles.map((e) => ({ gx: e.gx, gz: e.gz, t: e.t, d: e.d })), bad });
-      grid.paint('bad', plan.blocked.map((t) => [t[0], t[1], RED]), { opacity: 0.6, outline: true });
-      const head = path[0];
-      grid.paint('start', [[head[0], head[1], TERRA]], { opacity: 0.55, outline: true });
-      grid.paint('hover', hover && !plan.blocked.some((t) => t[0] === hover[0] && t[1] === hover[1]) ? [[hover[0], hover[1], BLUE]] : [], { opacity: 0.4, outline: true });
-      if (bad) { say(BLOCK_TEXT[blockOf(plan.blocked[0])], 'bad'); return; }
-      if (stroke && stroke.blocked) { say(BLOCK_TEXT[blockOf(stroke.blocked)], 'bad'); return; }
+      paint(grid, 'bad', plan.problems.map((p) => [p.at[0], p.at[1], RED]), { opacity: 0.6, outline: true });
+      paint(grid, 'start', [[anchor[0], anchor[1], TERRA]], { opacity: 0.55, outline: true });
+      paint(grid, 'pivot', pivots.map((p) => [p[0], p[1], GOLD]), { opacity: 0.8, outline: true });
+      const joins = plan.joins.filter((t) => !near(t, anchor));
+      paint(grid, 'join', joins.map((t) => [t[0], t[1], BLUE]), { opacity: 0.5, outline: true });
+      const onCursor = plan.problems.some((p) => near(p.at, hover));
+      paint(grid, 'hover', [[hover[0], hover[1], onCursor ? RED : BLUE]], { opacity: 0.4, outline: true });
+
+      const first = plan.problems[0];
+      if (first) { say(BLOCK_TEXT[first.reason], 'bad'); return; }
       if (!plan.tiles.length) { say(`<b>Already there</b><small>${plan.length} tiles</small><em>${short()}</em>`); return; }
-      const short_ = state.coins < plan.cost;
-      say(`${coin}<b>−₵ ${fmt(plan.cost)}</b><small>${plan.length} ${plan.length === 1 ? 'tile' : 'tiles'}</small><em>${short()}</em>` + (short_ ? `<small class="need">need ₵ ${fmt(plan.cost - state.coins)} more</small>` : ''), short_ ? 'poor' : '');
+      const poor = state.coins < plan.cost;
+      const notes = [
+        pivots.length ? `${pivots.length} ${pivots.length === 1 ? 'pivot' : 'pivots'}` : '',
+        shift ? 'straight' : flip ? 'bend flipped' : '',
+        joins.length ? 'joins a road' : '',
+      ].filter(Boolean).map((s) => `<small>${s}</small>`).join('');
+      say(`${coin}<b>−₵ ${fmt(plan.cost)}</b><small>${plan.length} ${plan.length === 1 ? 'tile' : 'tiles'}</small><em>${short()}</em>${notes}` +
+        (poor ? `<small class="need">need ₵ ${fmt(plan.cost - state.coins)} more</small>` : ''), poor ? 'poor' : '');
     }
     function clearView() {
       const grid = overlay(), rv = roadsView();
-      if (grid) for (const n of ['hover', 'start', 'bad']) grid.paint(n, []);
+      if (grid) for (const n of PAINT_LAYERS) grid.paint(n, []);
       if (rv) rv.clearPreview();
       label.hidden = true; lastKey = '';
     }
-    function cancel() { anchor = null; stroke = null; erase = null; refresh(true); }
+    // Drops the pivot, then the start, then nothing. Returns false when there was nothing to step back from.
+    function stepBack() {
+      if (pivots.length) { pivots = pivots.slice(0, -1); return true; }
+      if (anchor) { anchor = null; return true; }
+      return false;
+    }
+    function cancel() { anchor = null; pivots = []; erase = null; refresh(true); }
 
     // ---- committing ----
-    function commit(path) {
-      const plan = evaluate(path);
-      if (plan.blocked.length) { toast(BLOCK_TEXT[blockOf(plan.blocked[0])]); return false; }
-      if (!plan.tiles.length) return false;
+    // Commits one segment (one undo step). Returns false when the route is refused, true when the anchor may move.
+    function commit(route) {
+      const plan = evaluate(route);
+      if (plan.problems.length) { toast(BLOCK_TEXT[plan.problems[0].reason]); return false; }
+      if (!plan.tiles.length) return true;
       if (state.coins < plan.cost) { toast('Not enough coins yet: need ' + fmt(plan.cost - state.coins) + ' more'); return false; }
-      send({ type: 'drawRoad', roadType: type, path });
+      send({ type: 'drawRoad', roadType: type, path: route.path });
+      return true;
+    }
+    // Space: a pivot at the cursor, or on the route nearest the cursor, after the last pivot.
+    function addPivot() {
+      if (!anchor || !hover) return false;
+      const route = routeThrough([anchor, ...pivots, hover], { straight: shift, flip });
+      const from = route.stops[route.stops.length - 2], to = route.stops[route.stops.length - 1];
+      let best = -1;
+      for (let i = from + 1; i <= to; i++) if (best < 0 || manhattan(route.path[i], hover) < manhattan(route.path[best], hover)) best = i;
+      if (best < 0) return false;
+      pivots = [...pivots, route.path[best]];
       return true;
     }
 
     // ---- pointer ----
     function onDown(e) {
-      if (e.button === 2 && (anchor || stroke)) { claim(e); cancel(); return; }
+      if (e.button === 2 && (anchor || erase)) { claim(e); if (erase) erase = null; else stepBack(); refresh(true); return; }
       if (e.button !== 0) return;
       const t = tileAt(e); if (!t) return;
       if (drawing()) {
-        claim(e); document.body.classList.add('no-select');
-        try { canvas.setPointerCapture(e.pointerId); } catch { /* not capturable */ }
-        if (anchor) {
-          const path = shift ? rulerPath(anchor, t) : elbowPath(anchor, t);
-          if (commit(path)) anchor = path[path.length - 1];
-          refresh(true); return;
+        claim(e);
+        hover = t;
+        if (!anchor) {
+          const why = blockAt(t[0], t[1]);
+          if (why) { toast(BLOCK_TEXT[why]); return; }
+          anchor = t; pivots = []; refresh(true); return;
         }
-        stroke = { path: [t], down: true, start: t, blocked: blockOf(t) ? t : null };
-        if (stroke.blocked) { toast(BLOCK_TEXT[blockOf(t)]); stroke = null; }
+        const route = routeThrough([anchor, ...pivots, t], { straight: shift, flip });
+        if (commit(route)) { anchor = route.path[route.path.length - 1]; pivots = []; }
         refresh(true);
       } else if (erasing() && isRoad(t)) {
         claim(e); document.body.classList.add('no-select');
@@ -138,26 +177,14 @@ export default {
       if (!drawing() && !erasing()) return;
       const t = tileAt(e);
       hover = t;
-      if (t && stroke && stroke.down) {
-        if (shift) { stroke.path = rulerPath(stroke.start, t); stroke.blocked = null; }
-        else {
-          const r = extendStroke(stroke.path, t, (n) => !blockOf(n));
-          stroke.path = r.path; stroke.blocked = r.blocked;
-        }
-      } else if (t && erase && isRoad(t)) erase.tiles.set(tileIndex(t[0], t[1]), t);
+      if (t && erase && isRoad(t)) erase.tiles.set(tileIndex(t[0], t[1]), t);
       refresh();
       if (!label.hidden) say(label.innerHTML, label.className);
     }
     function onUp(e) {
       if (e.button !== 0) return;
       document.body.classList.remove('no-select');
-      if (stroke && stroke.down) {
-        const path = stroke.path;
-        stroke = null;
-        if (path.length > 1) commit(path);
-        else anchor = path[0]; // a plain click starts a line: move, then click where it should end
-        refresh(true);
-      } else if (erase) {
+      if (erase) {
         const tiles = [...erase.tiles.values()];
         erase = null;
         send({ type: 'bulldozeRoad', tiles });
@@ -165,7 +192,7 @@ export default {
       }
     }
     for (const [n, fn] of [['pointerdown', onDown], ['pointermove', onMove], ['pointerup', onUp]]) stage.addEventListener(n, fn, true);
-    stage.addEventListener('pointercancel', () => { if (stroke || erase) cancel(); }, true);
+    stage.addEventListener('pointercancel', () => { if (erase) cancel(); }, true);
     stage.addEventListener('pointerleave', () => { hover = null; label.hidden = true; refresh(); });
     addEventListener('keyup', (e) => { if (e.key === 'Shift') { shift = false; refresh(true); } });
     addEventListener('keydown', (e) => {
@@ -183,7 +210,7 @@ export default {
           key: String(i + 1), locked: !open, pressed: type === r.id, data: { road: r.id },
         });
       }).join('');
-      f.innerHTML = `<div class="rhead"><b class="ptitle">Roads</b><span class="rhint">Drag to draw · click twice for a line · Shift straight · Esc stops</span><button class="btn" id="undoRoad">Undo</button><button class="btn primary" id="doneRoad">Done</button></div><div class="strip road-strip">${tiles}</div>`;
+      f.innerHTML = `<div class="rhead"><b class="ptitle">Roads</b><span class="rhint">Click, move, click · Space adds a pivot · L flips the bend · Shift straight · Esc steps back</span><button class="btn" id="undoRoad">Undo</button><button class="btn primary" id="doneRoad">Done</button></div><div class="strip road-strip">${tiles}</div>`;
       f.hidden = false; f.classList.add('road-fly');
       f.querySelectorAll('[data-road]').forEach((b) => {
         b.onclick = () => {
@@ -202,11 +229,10 @@ export default {
 
     return {
       onTool(t, was) {
-        const on = t === 'roads' || t === 'bulldoze';
-        if (was === 'roads' || was === 'bulldoze') { anchor = null; stroke = null; erase = null; }
+        if (was === 'roads' || was === 'bulldoze') { anchor = null; pivots = []; erase = null; }
         canvas.classList.toggle('pencil', t === 'roads');
         if (t !== 'roads') $('fly').classList.remove('road-fly');
-        const g = overlay(); if (g) g.show(on);
+        const g = overlay(); if (g) g.show(t === 'roads' || t === 'bulldoze');
         if (t === 'roads') renderFlyout();
         refresh(true);
       },
@@ -216,8 +242,15 @@ export default {
       },
       onKey(e) {
         if (e.key === 'Shift') { shift = true; refresh(true); return false; }
-        if (e.key === 'Escape' && (anchor || stroke || erase)) { cancel(); return true; }
-        if (drawing() && /^[1-5]$/.test(e.key)) {
+        if (erasing()) {
+          if (e.key === 'Escape' && erase) { erase = null; refresh(true); return true; }
+          return false;
+        }
+        if (!drawing()) return false;
+        if (e.key === 'Escape') { if (stepBack()) { refresh(true); return true; } return false; }
+        if (e.key === PIVOT_KEY) { e.preventDefault(); if (!e.repeat && addPivot()) refresh(true); return true; }
+        if (e.key.toLowerCase() === FLIP_KEY) { flip = !flip; refresh(true); return true; }
+        if (/^[1-5]$/.test(e.key)) {
           const r = ROAD_TYPES[Number(e.key) - 1];
           if (r && unlocked(r)) { type = r.id; renderFlyout(); refresh(true); return true; }
         }

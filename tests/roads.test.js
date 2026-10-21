@@ -6,7 +6,7 @@ import { sanitize, unwrap, wrap } from '../src/sim/save.js';
 import { getLayout } from '../src/world/layout.js';
 import { tileIndex, GRID_HALF } from '../src/world/grid.js';
 import {
-  DIRS, connMask, elbowPath, extendStroke, pathDirs, planStroke, roadBlock, rulerPath, shapeOf, starterRoads,
+  DIRS, connMask, elbowPath, pathDirs, planStroke, roadBlock, rulerPath, shapeOf, starterRoads,
 } from '../src/world/roadnet.js';
 
 const layout = getLayout();
@@ -37,37 +37,14 @@ test('shapes follow the connections', () => {
   assert.equal(shapeOf(connMask(r, 5, 5)).kind, 'tee');
 });
 
-test('pencil stroke follows the pointer, turns, and rewinds when dragged back', () => {
-  let p = [[10, 10]];
-  p = extendStroke(p, [13, 10]).path;
-  assert.deepEqual(p, [[10, 10], [11, 10], [12, 10], [13, 10]]);
-  p = extendStroke(p, [13, 12]).path; // a turn
-  assert.deepEqual(p.slice(-2), [[13, 11], [13, 12]]);
-  p = extendStroke(p, [12, 10]).path; // drag back: the end is erased tile by tile
-  assert.equal(p[p.length - 1].join(), '12,10');
-  assert.ok(p.every((t, i) => i === 0 || Math.abs(t[0] - p[i - 1][0]) + Math.abs(t[1] - p[i - 1][1]) === 1));
-});
-
-test('a fast flick across several tiles still makes a connected path, diagonals become staircases', () => {
-  const p = extendStroke([[0, 0]], [3, 3]).path;
-  assert.equal(p.length, 7);
-  assert.ok(p.every((t, i) => i === 0 || Math.abs(t[0] - p[i - 1][0]) + Math.abs(t[1] - p[i - 1][1]) === 1));
-  assert.deepEqual(p[p.length - 1], [3, 3]);
-});
-
-test('the pencil stops at a refused tile and reports it', () => {
-  const r = extendStroke([[0, 0]], [5, 0], (t) => t[0] < 3);
-  assert.deepEqual(r.path[r.path.length - 1], [2, 0]);
-  assert.deepEqual(r.blocked, [3, 0]);
-});
-
 test('ruler and elbow helpers', () => {
   assert.deepEqual(rulerPath([2, 2], [6, 3]), [[2, 2], [3, 2], [4, 2], [5, 2], [6, 2]]);
   assert.deepEqual(elbowPath([2, 2], [4, 4]).map((t) => t.join()), ['2,2', '3,2', '4,2', '4,3', '4,4']);
   assert.deepEqual(elbowPath([1, 1], [1, 1]), [[1, 1]]);
+  assert.deepEqual(elbowPath([2, 2], [4, 4], true).map((t) => t.join()), ['2,2', '2,3', '2,4', '3,4', '4,4']); // flipped: the vertical leg first
 });
 
-test('one-way directions follow the pencil and the last tile keeps its heading', () => {
+test('one-way directions follow the route and the last tile keeps its heading', () => {
   assert.deepEqual(pathDirs([[0, 0], [1, 0], [1, 1]]), [0, 1, 1]);
   assert.deepEqual(pathDirs([[4, 4]]), [0]);
 });
@@ -75,7 +52,7 @@ test('one-way directions follow the pencil and the last tile keeps its heading',
 test('planStroke: upgrades pay the difference, same type is free', () => {
   const roads = { [key(1, 1)]: { t: 'two', p: 20 }, [key(2, 1)]: { t: 'bike', p: 35 } };
   const path = [[1, 1], [2, 1], [3, 1]];
-  const plan = planStroke({ path, type: 'bike', roads, canRoad: () => true, costOf });
+  const plan = planStroke({ path, type: 'bike', roads, blockedBy: () => null, costOf });
   assert.deepEqual(plan.tiles.map((t) => [t.gx, t.price]), [[1, 15], [3, 35]]);
   assert.equal(plan.cost, 50);
   assert.equal(plan.length, 3);
