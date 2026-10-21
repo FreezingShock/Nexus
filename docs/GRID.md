@@ -29,3 +29,9 @@ Each system writes only its own layer and keeps its own saved fields in `state`.
 ## Pointer tools
 
 Drawing tools attach capture-phase pointer listeners to the stage element (`scene.canvas.parentElement`) while their tool is active, call `stopPropagation()` on the events they claim, and use button 0 only. Right and middle drag still pan, the wheel still zooms.
+
+## Zoning (what is built on the grid)
+
+- Sim: `src/sim/systems/zoning.js` (commands `paintZone {zone, a, b}` and `clearZone {a, b}`, tiles are `[gx, gz]`), pure rules in `src/sim/zones.js`. Zone paint is saved as a 4096-character string, grown buildings as `[tile, level, seed]`. `sim.zoning` exposes `demand()`, `stats()`, `costOf()`.
+- Buildings grow only on painted tiles with a road within 2 tiles (`grid.road` non-zero, any value). Demand never drops below 0.15, so growth only slows.
+- Render: `scene.sys('tileview')` draws the dashed grid on open ground (`showGrid(true)`; roads can reuse it), zone paint and the drag preview from one 64x64 data texture. `src/render/systems/lots.js` draws grown buildings.
