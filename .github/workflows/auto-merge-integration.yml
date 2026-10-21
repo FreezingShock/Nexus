@@ -56,7 +56,7 @@ jobs:
       - uses: actions/setup-node@v4
         if: steps.pr.outputs.number
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Merge, test, push
         id: merge
