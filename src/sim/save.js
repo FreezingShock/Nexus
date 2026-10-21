@@ -1,5 +1,6 @@
 // Versioned save envelope { v, savedAt, state } with ordered migrations.
 import { freshState } from './state.js';
+import { systems } from './systems/index.js';
 
 export const SAVE_KEY = 'nexus.save';
 export const SAVE_VERSION = 1;
@@ -22,7 +23,7 @@ export function sanitize(s) {
     for (const [k, v] of Object.entries(s.levels)) if (/^b\d+$/.test(k) && Number.isInteger(v)) levels[k] = Math.min(99, Math.max(1, v));
   }
   const off = s.offline && typeof s.offline === 'object' ? s.offline : null;
-  return {
+  const out = {
     coins: num(s.coins, f.coins), parts: num(s.parts, f.parts),
     levels,
     removed: Array.isArray(s.removed) ? s.removed.filter((x) => typeof x === 'string' && /^b\d+$/.test(x)).slice(0, 500) : [],
@@ -31,6 +32,12 @@ export function sanitize(s) {
     offline: off ? { coins: num(off.coins, 0), parts: num(off.parts, 0), awayS: num(off.awayS, 0), fullS: num(off.fullS, 0), easeS: num(off.easeS, 0) } : null,
     log: Array.isArray(s.log) ? s.log.filter((e) => e && typeof e.k === 'string').slice(-8).map((e) => ({ k: e.k.slice(0, 8), n: String(e.n ?? '').slice(0, 40) })) : [],
   };
+  // each system keeps and validates its own saved fields; missing ones fall back to fresh defaults
+  for (const d of systems) {
+    if (d.state) Object.assign(out, d.state());
+    if (d.sanitize) Object.assign(out, d.sanitize(s, f));
+  }
+  return out;
 }
 
 // Returns { ok, state, savedAt } or { ok:false, error }.

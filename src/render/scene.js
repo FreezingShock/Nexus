@@ -4,8 +4,9 @@ import { createCamera } from './camera.js';
 import { createLighting } from './night.js';
 import { buildTerrain, buildFarms } from './terrain.js';
 import { buildRoads } from './roads.js';
-import { buildStatic, buildTurbines, buildTrees, buildLamps, buildGhost } from './props.js';
-import { buildCars } from './cars.js';
+import { buildStatic, buildTrees, buildLamps, buildGhost } from './props.js';
+import { registryOf } from '../core/registry.js';
+import { renderSystems } from './systems/index.js';
 import { createTown } from './town.js';
 import { createDusk } from './dusk.js';
 
@@ -27,12 +28,11 @@ export function createScene({ stage, layout, onPick }) {
   buildFarms(world, layout.farms);
   const roads = buildRoads(world, layout);
   buildStatic(world, layout);
-  const hubs = buildTurbines(world, layout);
   buildTrees(world, layout);
   buildLamps(world, layout);
   const ghost = buildGhost(world);
-  const cars = buildCars(world, layout);
   const town = createTown(world, layout);
+  const mods = registryOf('render systems', renderSystems).list().map((d) => d.create({ THREE, world, layout, camera, scene }) || {});
   let dusk = null, nightOn = false, traffic = false, drag = null;
 
   function resize() {
@@ -71,14 +71,14 @@ export function createScene({ stage, layout, onPick }) {
     // Per-frame. `simDt` is wall dt scaled by game speed (0 when paused).
     frame(dt, t, simDt, s, tool) {
       camera.step(dt, drag && drag.moved > 5);
-      cars.update(simDt);
-      for (const h of hubs) h.hub.rotation.z += dt * h.speed;
+      const f = { dt, t, simDt, state: s, tool };
+      for (const m of mods) if (m.frame) m.frame(f);
       const want = tool === 'traffic';
       if (want !== traffic) { traffic = want; roads.setTraffic(want); }
       ghost.update(t, tool === 'roads', s.ringRoad);
       const blend = lighting.update(dt, s.night);
       const on = blend > 0.5;
-      if (on !== nightOn) { nightOn = on; town.setNight(on); }
+      if (on !== nightOn) { nightOn = on; town.setNight(on); for (const m of mods) if (m.setNight) m.setNight(on); }
       town.setRemoved(s.removed);
       town.update(dt);
       renderer.render(scene, camera.cam);

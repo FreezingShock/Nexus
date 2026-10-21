@@ -1,0 +1,115 @@
+name: Merge into integration
+
+# After "Tests" passes on a pull request, merge that exact commit into the `integration` branch.
+# Draft PRs are skipped. Conflicts and failing merged tests leave the PR untouched and add one comment.
+# Never force-pushes. Never touches main.
+#
+# workflow_run workflows always run from the default branch, so this file takes effect once it is on main.
+
+on:
+  workflow_run:
+    workflows: [Tests]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: merge-into-integration
+  cancel-in-progress: false
+
+jobs:
+  integrate:
+    if: >
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find the pull request
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const run = context.payload.workflow_run;
+            const { data: prs } = await github.rest.pulls.list({
+              ...context.repo, state: 'open', head: `${context.repo.owner}:${run.head_branch}`,
+            });
+            const pr = prs.find((p) => p.head.sha === run.head_sha) || null;
+            if (!pr) { core.info('No open PR at the tested commit (it moved on or closed). Skipping.'); }
+            else if (pr.draft) { core.info(`PR #${pr.number} is a draft. Skipping.`); }
+            else if (pr.base.ref !== 'main' && pr.base.ref !== 'integration') { core.info(`PR #${pr.number} targets ${pr.base.ref}. Skipping.`); }
+            else if (pr.head.ref === 'integration') { core.info('Head is integration. Skipping.'); }
+            else {
+              core.setOutput('number', String(pr.number));
+              core.setOutput('branch', pr.head.ref);
+              core.setOutput('sha', run.head_sha);
+            }
+
+      - uses: actions/checkout@v4
+        if: steps.pr.outputs.number
+        with:
+          ref: integration
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        if: steps.pr.outputs.number
+        with:
+          node-version: 20
+
+      - name: Merge, test, push
+        id: merge
+        if: steps.pr.outputs.number
+        env:
+          SHA: ${{ steps.pr.outputs.sha }}
+          BRANCH: ${{ steps.pr.outputs.branch }}
+          PR: ${{ steps.pr.outputs.number }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin "$SHA"
+          if git merge-base --is-ancestor "$SHA" HEAD; then
+            echo "result=already" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if ! git merge --no-ff -m "Merge PR #$PR ($BRANCH) into integration" "$SHA"; then
+            git diff --name-only --diff-filter=U > conflicts.txt
+            git merge --abort
+            echo "result=conflict" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if ! npm test > test.log 2>&1; then
+            tail -n 40 test.log > test-tail.txt
+            echo "result=testfail" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          git push origin HEAD:integration
+          echo "result=merged" >> "$GITHUB_OUTPUT"
+
+      - name: Comment on the PR when it could not be merged
+        if: steps.pr.outputs.number && (steps.merge.outputs.result == 'conflict' || steps.merge.outputs.result == 'testfail')
+        uses: actions/github-script@v7
+        env:
+          RESULT: ${{ steps.merge.outputs.result }}
+          PR: ${{ steps.pr.outputs.number }}
+          SHA: ${{ steps.pr.outputs.sha }}
+        with:
+          script: |
+            const fs = require('fs');
+            const sha = process.env.SHA.slice(0, 7);
+            const marker = `<!-- integration-merge:${process.env.RESULT}:${process.env.SHA} -->`;
+            const issue_number = Number(process.env.PR);
+            const { data: existing } = await github.rest.issues.listComments({ ...context.repo, issue_number, per_page: 100 });
+            if (existing.some((c) => c.body.includes(marker))) { core.info('Already commented for this commit.'); return; }
+            let body;
+            if (process.env.RESULT === 'conflict') {
+              const files = fs.readFileSync('conflicts.txt', 'utf8').trim().split('\n').map((f) => `- \`${f}\``).join('\n');
+              body = `Could not merge \`${sha}\` into \`integration\` because of conflicts in:\n\n${files}\n\n` +
+                'To fix: merge the latest `integration` into this branch (`git fetch origin && git merge origin/integration`), resolve the conflicts, and push. ' +
+                'The merge will be retried automatically after tests pass. Nothing was changed on `integration`.';
+            } else {
+              const tail = fs.readFileSync('test-tail.txt', 'utf8');
+              body = `\`${sha}\` passes its own tests but the tests fail once merged with the current \`integration\`. Nothing was changed on \`integration\`.\n\n` +
+                '<details><summary>Test output</summary>\n\n```\n' + tail + '\n```\n</details>\n\n' +
+                'To fix: merge the latest `integration` into this branch, make the tests pass, and push.';
+            }
+            body += `\n\n${marker}\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_`;
+            await github.rest.issues.createComment({ ...context.repo, issue_number, body });

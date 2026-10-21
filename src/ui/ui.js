@@ -3,6 +3,8 @@ import { $ } from './format.js';
 import { createHud } from './hud.js';
 import { createPanels } from './panels.js';
 import { createPostcard } from './postcard.js';
+import { registryOf } from '../core/registry.js';
+import { uiModules } from './modules/index.js';
 
 const TOOL_KEYS = { r: 'roads', z: 'zones', b: 'build', s: 'services', p: 'parks', t: 'traffic', x: 'bulldoze' };
 
@@ -17,6 +19,7 @@ export function createUi({ sim, scene, actions }) {
     setTool: (t) => setTool(t),
   });
   const postcard = createPostcard({ sim, send, scene });
+  const mods = registryOf('ui modules', uiModules).list().map((d) => d.create({ sim, send, scene, toast: hud.toast }) || {});
 
   function select(id) {
     scene.select(id);
@@ -48,6 +51,7 @@ export function createUi({ sim, scene, actions }) {
   addEventListener('keydown', (e) => {
     if (e.target.closest && e.target.closest('input,textarea,select')) return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (mods.some((m) => m.onKey && m.onKey(e))) return;
     const k = e.key.toLowerCase();
     if (k === 'q') scene.rotate(-1); else if (k === 'e') scene.rotate(1);
     else if (TOOL_KEYS[k]) setTool(tool === TOOL_KEYS[k] ? null : TOOL_KEYS[k]);
@@ -57,6 +61,7 @@ export function createUi({ sim, scene, actions }) {
   // sim events -> feedback
   sim.subscribe((e) => {
     if (e.text) hud.toast(e.text);
+    for (const m of mods) if (m.onEvent) m.onEvent(e);
     if (e.type === 'upgraded') { scene.pop(e.id); if (panels.ui.selected === e.id) panels.showInspect(e.id); }
     else if (e.type === 'bulldozed') { if (panels.ui.selected === e.id) select(null); }
     else if (e.type === 'roadBuilt') panels.setFly('roads');
@@ -70,6 +75,7 @@ export function createUi({ sim, scene, actions }) {
     showPostcard: () => postcard.show(),
     frame(dt, t, alpha) {
       const ticked = hud.frame(dt, alpha, false);
+      for (const m of mods) if (m.frame) m.frame(dt, t, alpha);
       if (ticked) panels.refreshInspect();
     },
   };

@@ -14,6 +14,17 @@ Then open http://localhost:8000/. Any static server works.
 
 Test URLs: `?away=24000` forces an offline return of that many seconds; `?debug` exposes `window.__nexus` (sim, scene, ui).
 
+## Seeing the latest work (`integration`)
+
+Finished pull requests are merged automatically into the `integration` branch once tests pass. To view it, run the refresh script. It pulls `integration` and restarts the server on http://localhost:8000.
+
+```
+powershell -ExecutionPolicy Bypass -File scripts\refresh.ps1      # Windows (PowerShell)
+scripts/refresh.sh                                               # macOS, Linux, Git Bash
+```
+
+Options: `-Branch main` (or `scripts/refresh.sh main`) to view another branch, `-Port 8001` (or a second argument) for another port, `-NoServer` (or `NO_SERVER=1`) to pull only. The script refuses to run if the folder has uncommitted changes. If the page looks stale, hard refresh with Ctrl+F5. How parallel work flows is in [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Controls
 
 Drag to pan, scroll to zoom, Q / E to rotate, click a building to inspect or upgrade it. Tools: R roads, Z zones, B buildings, S services, P parks, T traffic, X bulldoze. The moon button toggles night. The menu button has export, import and start over.
@@ -24,9 +35,13 @@ Drag to pan, scroll to zoom, Q / E to rotate, click a building to inspect or upg
 index.html, css/        markup and paper-card UI
 vendor/                 three.module.min.js (MIT), Fraunces and Capriola woff2 (SIL OFL), licenses
 src/world/              pure data: seeded rng, terrain height, town layout
-src/sim/                1 Hz sim, economy, closed-form offline, versioned saves, commands
+src/core/               tiny registry used by the three extension points below
+src/sim/                1 Hz sim, economy, closed-form offline, versioned saves
+src/sim/systems/        one file per sim feature (commands, state, rate, tick), listed in index.js
 src/render/             Three.js scene (merged geometry, instanced props)
+src/render/systems/     one file per visual feature, listed in index.js
 src/ui/                 DOM: HUD, panels, postcard
+src/ui/modules/         one file per panel or widget, listed in index.js
 src/main.js             wiring and the frame loop
 tests/                  npm test (node --test, no dependencies)
 docs/PORT-PLAN.md       port plan and milestones
