@@ -16,12 +16,13 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
     const box = $('inspect'), b = sim.building(id), lv = sim.level(id), cost = sim.cost(id);
     box.hidden = false;
     const dots = [1, 2, 3, 4, 5].map((i) => `<i class="${i <= lv ? 'on' : ''}"></i>`).join('');
-    const maxed = lv >= MAX_LEVEL;
+    const park = !b.floors; // parks are ground: no storeys, so nothing to upgrade
+    const maxed = lv >= MAX_LEVEL || park;
     box.innerHTML = `<button class="x" id="ix" aria-label="Close">${CLOSE_SVG}</button>
-    <div class="band"><h2 class="h-disp">${b.name}</h2><div class="sub">${b.floors} floors · ${PAL[b.pal].name} palette</div></div>
+    <div class="band"><h2 class="h-disp">${b.name}</h2><div class="sub">${park ? 'Park' : b.floors + ' floors'} · ${PAL[b.pal].name} palette</div></div>
     <div class="pad"><div class="lvl">Level ${dots}</div>
     <div class="stats"><div class="stat">Income<b>${income(b.floors, lv)}/s</b></div><div class="stat">Traffic<b>${trafficOf(b.floors)}/min</b></div><div class="stat info">Next level<b>${maxed ? 'Max' : '+' + nextLevelGain(lv) + '%'}</b></div></div>
-    <div class="row"><button class="btn primary grow" id="up" ${maxed || s.coins < cost ? 'disabled' : ''}>${maxed ? 'Top level' : 'Upgrade · ' + fmt(cost) + ' coins'}</button><button class="btn" id="mv">Move</button></div></div>`;
+    <div class="row"><button class="btn primary grow" id="up" ${maxed || s.coins < cost ? 'disabled' : ''}>${park ? 'Finished' : maxed ? 'Top level' : 'Upgrade · ' + fmt(cost) + ' coins'}</button><button class="btn" id="mv">Move</button></div></div>`;
     $('ix').onclick = onClose;
     $('up').onclick = () => send({ type: 'upgrade', id });
     $('mv').onclick = () => toast('Move mode comes with the placement grid');
@@ -31,7 +32,7 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
   function refreshInspect() {
     const up = $('up');
     if (!up || ui.selected === null || !sim.alive(ui.selected)) return;
-    up.disabled = sim.level(ui.selected) >= MAX_LEVEL || s.coins < sim.cost(ui.selected);
+    up.disabled = sim.level(ui.selected) >= MAX_LEVEL || !sim.building(ui.selected).floors || s.coins < sim.cost(ui.selected);
   }
 
   // ---- flyout ----
