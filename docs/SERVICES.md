@@ -11,6 +11,8 @@ Services (clinic, school, fire station, police), parks (green, plaza, playground
 | Sim system | `src/sim/systems/services.js` | Keeps the map current (placed list and zoning), adds the rate, exposes `sim.services`. No saved state of its own. |
 | Overlay | `src/render/systems/services-overlay.js` | One plane, one draw call: soft blue tint on covered tiles, warm haze on industry, stronger tint on the lot under the cursor, and a ripple that spreads after a placement. |
 | Hearts | `src/render/systems/happy-fx.js` | One Points object with a pool of 40 hearts and sparkles that rise from the homes a placement lifted. One draw call while anything is rising. |
+| Advice | `src/sim/happiness-advice.js` | Pure: the panel's level, what helps, what pulls down, and up to three tips with a spot. Words and thresholds in `ADVICE` in the config. |
+| Panel | `src/ui/modules/happiness.js` | The compact bar in the left column. Click it to open the panel. Show moves the camera to a tip and sends a ripple. Closes on a click, Esc or right-click. Styled in `css/happiness.css`. |
 | UI | `src/ui/modules/services.js` | Tooltips in the flyout, the coverage tint and haze while a tool is open, the celebration on placement, the Happiness card. |
 
 ## How the numbers work
@@ -23,6 +25,17 @@ Services (clinic, school, fire station, police), parks (green, plaza, playground
 - **Growth.** Zoning's growth chance is multiplied by `1 + (average − 0.5) × growthSwing`, clamped to 0.6 to 1.4. It is exactly 1 when nothing is built, so a new town grows at the old pace.
 - **Animation.** When a service, park or shop is placed, the next rebuild remembers which homes (grown Residential lots and placed homes) gained at least `MOOD.gainMin`. The UI spreads a ripple from the building and staggers a heart over up to `MOOD.gainCap` of those homes, biggest gains first, with a sparkle now and then. Hearts and ripple are skipped when the system asks for reduced motion. Placing industry does not animate.
 - **Save.** Nothing new is saved. The map is rebuilt from `state.placed`, so a reload gives the same numbers.
+
+## The Happiness panel
+
+The bar in the left column shows the average. Clicking it opens the panel in place, so the Goals card below moves down rather than being covered. The panel holds:
+
+- the level in cozy words (Cozy, Settled, Finding its feet, Just getting started), never a failure word;
+- what helps, counted per kind, with the homes each one reaches;
+- what pulls down: industry sites and homes with nothing nearby;
+- up to `ADVICE.tipsMax` tips. A tip needs at least `ADVICE.minHomes` homes in the same need, and points at their average spot. Show moves the camera there and sends a ripple.
+
+`sim.services.advice()` builds it from the homes and the per-kind coverage maps. It is cached until the placed list or zoning changes, so the panel's refresh costs almost nothing.
 
 ## Rules for changes
 

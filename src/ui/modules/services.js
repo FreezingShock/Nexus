@@ -1,4 +1,4 @@
-// Services, parks, landmarks, shops and industry on the map. While the Buildings, Services or Parks tool is open, the tiles
+// Services, parks, landmarks, shops and industry on the map. The Happiness panel lives in happiness.js. While the Buildings, Services or Parks tool is open, the tiles
 // that each kind reaches get a soft tint, and the tiles industry eases get a faint warm haze; the lot under the cursor gets
 // a stronger preview. When a service, park or shop is placed, its ripple spreads and little hearts rise from the homes it
 // lifted (skipped when the system asks for reduced motion). Each model in the flyout gets a tooltip, and a small paper card
@@ -6,7 +6,6 @@
 import { canonicalDims, footprintsOf, modelById } from '../../world/models.js';
 import { worldToTile } from '../../world/grid.js';
 import { describeModel, reachOf, sourceOf } from '../../sim/services.js';
-import { $ } from '../format.js';
 
 // Which kinds of coverage each tool shows. Buildings shows shops and landmarks; Services and Parks show their own kind.
 const KINDS_OF_TOOL = { build: ['shop', 'landmark'], services: ['service'], parks: ['park'] };
@@ -98,38 +97,11 @@ export default {
       fly.querySelectorAll('[data-pm]').forEach((b) => { const t = describeModel(b.dataset.pm); if (t) b.title = t; });
     }).observe(fly, { childList: true, subtree: true });
 
-    // ---- happiness card ----
-    const card = document.createElement('div');
-    card.id = 'services-card'; card.className = 'card';
-    card.innerHTML = '<div class="sv-head"><h3>Happiness</h3><span class="sv-pct"></span></div>' +
-      '<div class="sv-meter" role="img" aria-label="Average happiness"><i></i></div><p class="sub sv-note"></p>';
-    $('leftcol').appendChild(card);
-    const pct = card.querySelector('.sv-pct'), bar = card.querySelector('.sv-meter i'), note = card.querySelector('.sv-note');
-    function syncCard() {
-      const s = sim.services.summary(), p = Math.round(s.average * 100);
-      pct.textContent = s.built ? p + '%' : '—';
-      bar.style.width = s.built ? Math.max(4, p) + '%' : '0%';
-      if (!s.services && !s.parks && !s.landmarks && !s.shops && !s.industry) {
-        note.textContent = 'A clinic or a park lifts the streets around it. Shops lift the homes nearby; industry eases them a little.';
-      } else {
-        note.textContent = s.services + ' services · ' + s.parks + ' parks · ' + s.landmarks + ' landmarks · ' + s.shops + ' shops · ' +
-          s.industry + ' industry. Net ' + signed(s.moodCoins + s.landmarkCoins - s.upkeep) + ' from happy streets, landmarks and upkeep';
-      }
-    }
-    syncCard();
-    let acc = 0;
-
     return {
       onTool(t) {
         kinds = KINDS_OF_TOOL[t] || null;
         hover = null; coverKey = '';
         refreshCover();
-      },
-      frame(dt) {
-        acc += dt;
-        if (acc < 0.25) return;
-        acc = 0;
-        syncCard();
       },
       onEvent(e) {
         if (e.type === 'changed' || e.type === 'placed' || e.type === 'bulldozed') refreshCover();

@@ -6,6 +6,7 @@ import cameraModes from './camera-modes.js';
 import commute from './commute.js';
 import districts from './districts.js';
 import frameStats from './frame-stats.js';
+import happiness from './happiness.js';
 import notes from './notes.js';
 import onboarding from './onboarding.js';
 import placement from './placement.js';
@@ -22,6 +23,7 @@ export const uiModules = [
   commute,
   districts,
   frameStats,
+  happiness,
   notes,
   onboarding,
   placement,

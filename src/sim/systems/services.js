@@ -7,7 +7,8 @@ import { GRID_N, tileIndex } from '../../world/grid.js';
 import { modelById } from '../../world/models.js';
 import { lotTiles } from '../../world/placement.js';
 import { MOOD } from '../services-config.js';
-import { gainsOf, growthOf, happinessMap, lotSource, sourceOf } from '../services.js';
+import { adviceFrom } from '../happiness-advice.js';
+import { coverMaps, gainsOf, growthOf, happinessMap, lotSource, sourceOf } from '../services.js';
 
 const AREA = GRID_N * GRID_N;
 const caches = new WeakMap(); // sim -> derived numbers, rebuilt by refresh()
@@ -23,6 +24,7 @@ export default {
     caches.set(sim, {
       sig: null, ids: new Set(), placed: [], zoned: [], all: [], happy: new Float32Array(AREA),
       gains: null, gainsId: null, gainsSource: null,
+      live: null, advice: null, adviceSig: null,
       built: 0, avg: MOOD.base, moodCoins: 0, landmarkCoins: 0, upkeep: 0,
     });
     refresh(ctx);
@@ -38,6 +40,18 @@ export default {
       gainsFor: (id) => {
         const c = caches.get(sim);
         return c.gainsId === id && c.gains ? { source: c.gainsSource, gains: c.gains } : null;
+      },
+      // The Happiness panel's words and tips. Built only when the placed list or zoning changed since the last call.
+      advice: () => {
+        const c = caches.get(sim);
+        if (c.adviceSig !== c.sig || !c.advice) {
+          const { state, grid } = c.live;
+          const counts = { service: 0, park: 0, shop: 0, landmark: 0, industry: 0 };
+          for (const s of c.all) counts[s.kind]++;
+          c.advice = adviceFrom({ built: c.built, average: c.avg, homes: homesOf(state, grid), maps: coverMaps(c.all), counts });
+          c.adviceSig = c.sig;
+        }
+        return c.advice;
       },
       // Average happiness over built tiles, 0..1. The base when nothing is built yet.
       average: () => caches.get(sim).avg,
@@ -69,6 +83,7 @@ export default {
 // Rebuilds the sources and happiness map when the placed list or the zoning changes, then the numbers that depend on the grid.
 function refresh({ sim, state, grid }) {
   const c = caches.get(sim);
+  c.live = { state, grid };
   const sig = state.placed.map((r) => r.id).join(',') + '|' + state.zoneRev;
   if (sig !== c.sig) {
     c.sig = sig;
