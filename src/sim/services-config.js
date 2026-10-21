@@ -55,3 +55,17 @@ export const MOOD = {
   growthMin: 0.6,
   growthMax: 1.4,
 };
+
+// The Happiness panel's words and thresholds. A home counts as "reached" by a kind when that kind's weight there is at least
+// `touch`. A tip needs at least `minHomes` homes to be worth saying, and the panel shows at most `tipsMax` tips.
+export const ADVICE = {
+  touch: 0.02,
+  minHomes: 3,
+  tipsMax: 3,
+  levels: [
+    { min: 0.6, label: 'Cozy' },
+    { min: 0.45, label: 'Settled' },
+    { min: 0.3, label: 'Finding its feet' },
+    { min: 0, label: 'Just getting started' },
+  ],
+};

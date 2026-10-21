@@ -95,6 +95,17 @@ export function gainsOf(prev, next, homes, min = MOOD.gainMin, cap = MOOD.gainCa
   return out.slice(0, cap);
 }
 
+// Raw weight per kind for the Happiness panel: one Float32Array of GRID_N squared for each of service, park, shop,
+// industry and landmark. Built from the same sources as the happiness map.
+export function coverMaps(sources) {
+  const maps = { service: new Float32Array(AREA), park: new Float32Array(AREA), shop: new Float32Array(AREA), industry: new Float32Array(AREA), landmark: new Float32Array(AREA) };
+  for (const s of sources) {
+    const m = maps[s.kind];
+    if (m) eachReach(s, (x, z, w) => { m[z * GRID_N + x] += w; });
+  }
+  return maps;
+}
+
 // Zoning growth multiplier from the average happiness of built tiles. 1 with nothing built yet.
 export function growthOf(avg, built) {
   if (!built) return 1;
