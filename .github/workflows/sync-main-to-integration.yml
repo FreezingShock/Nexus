@@ -22,15 +22,19 @@ jobs:
         with:
           ref: integration
           fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
       - name: Merge main
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch origin main
-          if git merge-base --is-ancestor origin/main HEAD; then echo "integration already contains main"; exit 0; fi
-          if ! git merge --no-ff -m "Merge main into integration" origin/main; then
-            echo "::error::main conflicts with integration in: $(git diff --name-only --diff-filter=U | tr '\n' ' ')"
-            git merge --abort
-            exit 1
-          fi
+          BEFORE="$(git rev-parse HEAD)"
+          rc=0
+          scripts/ci-merge.sh origin/main "Merge main into integration" || rc=$?
+          if [ "$rc" = 10 ]; then echo "::error::main conflicts with integration in: $(tr '\n' ' ' < conflicts.txt)"; exit 1; fi
+          if [ "$rc" != 0 ]; then exit "$rc"; fi
+          if [ "$(git rev-parse HEAD)" = "$BEFORE" ]; then echo "integration already contains main"; exit 0; fi
+          npm test
           git push origin HEAD:integration
