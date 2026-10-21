@@ -1,6 +1,6 @@
-// The look shared by every build menu: a card grid with a picture, a name, one line of description, one effect line,
-// a cost or an unlock note, and a key badge where a key is bound. Pure string builders: no DOM, no THREE, so the
-// markup and the numbers can be tested in node. Colours and shapes live in css/menus.css.
+// The look shared by every build menu: compact tiles with a picture, a name, a price chip and a key badge, plus the
+// zone vignettes, road swatches and category icons. Pure string builders: no DOM, no THREE, so the markup and the
+// numbers can be tested in node. Colours and sizes live in css/menus.css.
 import { income } from '../sim/economy.js';
 import { INDUSTRY, LANDMARKS, PARKS, SERVICES, SHOPS } from '../sim/services-config.js';
 import { ZONE_DEFS } from '../sim/zones.js';
@@ -9,25 +9,40 @@ export const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', 
 
 export const mkey = (k) => `<kbd class="mkey">${esc(k)}</kbd>`;
 
-// One card. `pic` is HTML (an <img> or an inline <svg>). `data` becomes data-* attributes (data: { pm: 'cottage' } gives data-pm).
-// `unlock` replaces the cost line on a locked card. `short` marks a card the player cannot yet afford.
-export function optCard({ pic = '', title, line = '', note = '', cost = '', unlock = '', key = '', pressed = false, locked = false, short = false, data = {}, cls = '' }) {
+// The price in coins, as the sim charges it right now.
+export const coins = (n) => `${Math.floor(n).toLocaleString('en-US')} coins`;
+
+// One compact tile: picture on top, name, a price (or an unlock note when locked) and a key badge. `tip` is the
+// hover text. `data` becomes data-* attributes (data: { pm: 'cottage' } gives data-pm). `short` marks a price the
+// player cannot pay yet.
+export function tileCard({ pic = '', title, price = '', unlock = '', tip = '', key = '', pressed = false, locked = false, short = false, data = {}, cls = '' }) {
   const attrs = Object.entries(data).map(([k, v]) => ` data-${k}="${esc(v)}"`).join('');
   const state = [locked ? 'locked' : '', short ? 'short' : '', cls].filter(Boolean).join(' ');
-  const foot = unlock ? `<span class="unlock">${esc(unlock)}</span>` : cost ? `<span class="cost">${cost}</span>` : '';
-  return `<button type="button" class="opt mcard${state ? ' ' + state : ''}" aria-pressed="${pressed}"${attrs}>` +
+  const chip = unlock ? `<span class="price unlock">${esc(unlock)}</span>` : price ? `<span class="price">${esc(price)}</span>` : '';
+  return `<button type="button" class="tile${state ? ' ' + state : ''}" aria-pressed="${pressed}"${tip ? ` title="${esc(tip)}"` : ''}${attrs}>` +
     `<span class="pic">${pic}</span>` +
-    `<span class="txt"><b>${esc(title)}</b>${line ? `<small>${esc(line)}</small>` : ''}${note ? `<small class="fx">${esc(note)}</small>` : ''}</span>` +
-    `<span class="foot">${foot}${key ? mkey(key) : ''}</span></button>`;
+    `<span class="name">${esc(title)}</span>` +
+    `<span class="row">${chip}${key ? mkey(key) : ''}</span></button>`;
 }
 
-// A read-only tip card (the bulldoze help). Same plaque, no press state.
-export function tipCard({ title, line, key = '' }) {
-  return `<div class="mcard tip"><span class="txt"><b>${esc(title)}</b><small>${esc(line)}</small></span>` +
-    `<span class="foot">${key ? mkey(key) : ''}</span></div>`;
+// The line under the strip for the selected model: what it is and what it does.
+export function detailText(def) {
+  const fx = effectOf(def);
+  return fx ? `${def.sub} · ${fx}` : def.sub;
 }
 
-// ---- road swatches: a cross-section of each road type, drawn flat with ink outlines ----
+// ---- category icons (small, one colour, ink outline) ----
+const ICON_SHAPES = {
+  home: '<path d="M4 12L11 5l7 7v7H4z" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.8" stroke-linejoin="round"/><rect x="9" y="14" width="4" height="5" fill="#2B2620" opacity=".7"/>',
+  shop: '<rect x="4" y="9" width="14" height="10" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.8"/><path d="M3 9h16l-1.5-4h-13z" fill="#B8472E" stroke="#2B2620" stroke-width="1.8" stroke-linejoin="round"/>',
+  work: '<path d="M3 18V9l4-3 4 3 4-3 4 3v9z" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.8" stroke-linejoin="round"/><rect x="14" y="3" width="3" height="6" fill="#2B2620" opacity=".7"/>',
+  landmark: '<rect x="7" y="4" width="8" height="14" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.8"/><path d="M6 4h10l-5-3z" fill="#E6BC62" stroke="#2B2620" stroke-width="1.5" stroke-linejoin="round"/>',
+  service: '<rect x="3" y="3" width="16" height="16" rx="5" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.8"/><path d="M11 7v8M7 11h8" stroke="#B8472E" stroke-width="2.6" stroke-linecap="round"/>',
+  park: '<circle cx="11" cy="8" r="5" fill="#A8C179" stroke="#2B2620" stroke-width="1.8"/><path d="M11 13v6" stroke="#2B2620" stroke-width="2"/>',
+};
+export const categoryIcon = (id) => `<svg viewBox="0 0 22 22" aria-hidden="true">${ICON_SHAPES[id] || ICON_SHAPES.home}</svg>`;
+
+// ---- road swatches: a cross-section of each road type, flat with ink outlines ----
 const SW = '<svg viewBox="0 0 120 56" preserveAspectRatio="xMidYMid slice" aria-hidden="true">';
 const ASPHALT = '#8E8576', INK = '#2B2620', CREAM = '#FAF3E4', VERGE = '#A8C179';
 const ROAD_SWATCH = {
@@ -51,24 +66,37 @@ const ROAD_SWATCH = {
 };
 export const roadSwatch = (id) => ROAD_SWATCH[id] || '';
 
-// ---- zone pictograms: a small building in each zone's paint colour, on a paper tile ----
-const ZONE_SHAPE = {
-  // a cottage with a door
-  1: '<path d="M16 34V24l12-9 12 9v10z" fill="#FBF6EA"/><rect x="26" y="28" width="4" height="6" fill="#2B2620" opacity=".7"/>',
-  // a shop with a scalloped awning
-  2: '<rect x="15" y="20" width="26" height="14" fill="#FBF6EA"/><path d="M14 20h28l-2 5-3-3-3 3-3-3-3 3-3-3-3 3-3-3-3 3z" fill="#B8472E"/><rect x="22" y="27" width="12" height="7" fill="#7F98A6"/>',
-  // a sawtooth workshop with a chimney
-  3: '<path d="M14 34V22l6-5 6 5 6-5 6 5 6-5 2 2v20z" fill="#FBF6EA"/><rect x="34" y="12" width="4" height="10" fill="#2B2620" opacity=".7"/>',
-  // a civic hall with a pediment and columns
-  4: '<path d="M13 22L28 13L43 22z" fill="#FBF6EA"/><rect x="14" y="22" width="28" height="3" fill="#FBF6EA"/><rect x="17" y="25" width="3" height="9" fill="#FBF6EA"/><rect x="25" y="25" width="3" height="9" fill="#FBF6EA"/><rect x="33" y="25" width="3" height="9" fill="#FBF6EA"/><rect x="13" y="34" width="30" height="2" fill="#FBF6EA"/>',
+// ---- zone vignettes: a painted scene with tiny buildings, 96 by 64. Sky wash in the zone colour, sage ground. ----
+const HOUSE = (x, w, h, roof) => `<path d="M${x} ${52 - h}L${x + w / 2} ${40 - h}L${x + w} ${52 - h}z" fill="${roof}" stroke="#2B2620" stroke-width="1.5" stroke-linejoin="round"/>` +
+  `<rect x="${x + 2}" y="${52 - h}" width="${w - 4}" height="${h}" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.5"/>` +
+  `<rect x="${x + w / 2 - 2}" y="${52 - 7}" width="4" height="7" fill="#2B2620" opacity=".7"/>`;
+const SHOP = (x, w) => `<rect x="${x}" y="30" width="${w}" height="22" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.5"/>` +
+  `<path d="M${x - 2} 30H${x + w + 2}V35H${x - 2}z" fill="#B8472E" stroke="#2B2620" stroke-width="1.2" stroke-linejoin="round"/>` +
+  `<path d="M${x + 4} 35v3M${x + w / 2} 35v3M${x + w - 4} 35v3" stroke="#FBF6EA" stroke-width="2"/>` +
+  `<rect x="${x + w / 2 - 4}" y="40" width="8" height="12" fill="#7F98A6" stroke="#2B2620" stroke-width="1.2"/>`;
+const ZONE_SCENE = {
+  1: () => HOUSE(8, 26, 18, '#B8472E') + HOUSE(38, 22, 26, '#97553E') + HOUSE(64, 24, 14, '#B8472E'),
+  2: () => SHOP(6, 26) + SHOP(36, 24) + SHOP(64, 26),
+  3: () => `<path d="M10 52V34l8-7 8 7 8-7 8 7 8-7 8 7v18z" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.5" stroke-linejoin="round"/>` +
+    `<rect x="64" y="20" width="5" height="14" fill="#2B2620" opacity=".7"/><rect x="72" y="42" width="12" height="10" fill="#E6BC62" stroke="#2B2620" stroke-width="1.2"/>`,
+  4: () => `<path d="M18 34L40 20L62 34z" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.5" stroke-linejoin="round"/>` +
+    `<rect x="16" y="34" width="48" height="3" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.2"/>` +
+    [22, 32, 42, 52].map((x) => `<rect x="${x}" y="37" width="4" height="12" fill="#FBF6EA" stroke="#2B2620" stroke-width="1"/>`).join('') +
+    `<rect x="14" y="49" width="52" height="3" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.2"/><path d="M76 52V18" stroke="#2B2620" stroke-width="1.5"/><path d="M76 18h9l-2 3 2 3h-9" fill="#B8472E" stroke="#2B2620" stroke-width="1"/>`,
 };
-// zone 0 (the eraser): diagonal hatch on paper, no building
-export function zoneIcon(id) {
-  const paint = id ? ZONE_DEFS[id].paint : null;
-  const ground = paint ? `<rect width="56" height="44" fill="${paint}" opacity=".55"/>` :
-    '<defs><pattern id="zh" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#FBF6EA"/><rect width="3" height="8" fill="#E9D6B2"/></pattern></defs><rect width="56" height="44" fill="url(#zh)"/>';
-  const shape = id ? ZONE_SHAPE[id] : '<path d="M22 30l10-14 8 10-6 6h-6z" fill="#FBF6EA" stroke="#2B2620" stroke-width="2" stroke-linejoin="round"/>';
-  return `<svg viewBox="0 0 56 44" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${ground}<line x1="0" y1="40" x2="56" y2="40" stroke="#2B2620" stroke-width="2" opacity=".35"/>${shape}</svg>`;
+export function zoneVignette(id) {
+  const zone = id ? ZONE_DEFS[id] : null;
+  const sky = zone ? zone.paint : '#FBF6EA';
+  const hatch = '<defs><pattern id="zh" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#FBF6EA"/><rect width="3" height="8" fill="#E9D6B2"/></pattern></defs>';
+  const back = zone ? `<rect width="96" height="64" fill="${sky}" opacity=".5"/>` : `${hatch}<rect width="96" height="64" fill="url(#zh)"/>`;
+  const scene = zone ? ZONE_SCENE[id]() : '<path d="M36 40l16-22 13 15-9 9h-8z" fill="#FBF6EA" stroke="#2B2620" stroke-width="2.5" stroke-linejoin="round"/>';
+  return `<svg viewBox="0 0 96 64" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${back}` +
+    `<rect y="50" width="96" height="14" fill="#A8C179"/><line x1="0" y1="50" x2="96" y2="50" stroke="#2B2620" stroke-width="1.5" opacity=".4"/>${scene}</svg>`;
+}
+
+// A zone tile: vignette, name, price per tile, key badge. Demand lives in the top widget, not here.
+export function zoneCard({ id, name, price, key = '', pressed = false, tip = '' }) {
+  return tileCard({ pic: zoneVignette(id), title: name, price, key, pressed, tip, cls: id ? 'zone' : 'zone eraser', data: { zone: id } });
 }
 
 // ---- effect lines: one short line of what a model does ----
@@ -94,7 +122,7 @@ export function coverageEffect(id) {
   return line;
 }
 
-// The effect line a menu card shows for a model: coverage if it has one, otherwise what it earns.
+// The effect a menu shows for a model: coverage if it has one, otherwise what it earns.
 export function effectOf(def) {
   return coverageEffect(def.id) || buildingEffect(def);
 }

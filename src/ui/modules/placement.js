@@ -9,7 +9,7 @@ import { checkLot, frontRoadCount, planPlacement, problemText, rowOrigins } from
 import { buildCost } from '../../sim/economy.js';
 import { $, fmt } from '../format.js';
 import { thumbFor } from '../../render/thumbs.js';
-import { effectOf, optCard } from '../cards.js';
+import { categoryIcon, coins, detailText, effectOf, esc, tileCard } from '../cards.js';
 
 const TOOLS = { build: 'Buildings', services: 'Services', parks: 'Parks' };
 const COIN = '<i class="coin"></i>';
@@ -41,24 +41,25 @@ export default {
       ui.model = model; ui.size = 0; ui.auto = true;
       render(); dirty = true;
     }
-    // One card per model: a picture of the real building, its name, what it is for, what it does and what it costs.
-    // Cards keep data-pm, which the services module reads for its tooltips.
-    const picOf = (id) => { const url = thumbFor(id); return url ? `<img src="${url}" alt="" width="176" height="132" decoding="async">` : '<span class="pic-ph"></span>'; };
-    function cardFor(m) {
-      return optCard({
-        pic: picOf(m.id), title: m.name, line: m.sub, note: effectOf(m),
-        cost: `from ${fmt(m.cost)} coins`, short: sim.state.coins < m.cost,
-        pressed: m.id === ui.model, data: { pm: m.id },
-      });
-    }
+    // The compact strip: category icons, one tile per model with its real price at the chosen size, and a slim footer
+    // with the size, turn, what the selected model is and what it costs. Tiles keep data-pm; the services module reads it.
+    const picOf = (id) => { const url = thumbFor(id); return url ? `<img src="${url}" alt="" width="96" height="72" decoding="async">` : '<span class="pic-ph"></span>'; };
+    const footprintOf = (m) => { const s = footprintsOf(m); return s[Math.min(ui.size, s.length - 1)]; };
+    const modelPrice = (m) => { const [a, b] = footprintOf(m); return sim.placeCost(m, a, b); };
     function render() {
       const d = def(), c = cats();
       const sizes = footprintsOf(d), [a, b] = size();
-      fly.innerHTML = `<div class="head"><h3>${TOOLS[ui.tool]}</h3><span>Click to place · drag along a street for a row · V turns · Esc stops</span></div>` +
-        (c.length > 1 ? `<div class="ptabs">${c.map((x) => `<button class="tog" data-pcat="${x.id}" aria-pressed="${x.id === ui.cat}">${x.name}</button>`).join('')}</div>` : '') +
-        `<div class="grid menu-grid">${modelsIn(ui.cat).map(cardFor).join('')}</div>` +
-        `<div class="lanes"><span class="sub" style="margin:0">Size</span>${sizes.map((s, i) => `<button class="tog" data-psize="${i}" aria-pressed="${i === ui.size}">${s[0]} × ${s[1]}</button>`).join('')}` +
-        `<button class="tog" id="pturn" title="Turn the building (V)">Turn · V</button><span style="flex:1"></span><span class="sub" style="margin:0"><b style="color:var(--ink)">${fmt(sim.placeCost(d, a, b))} coins</b> for a ${a} × ${b} ${d.name.toLowerCase()}</span></div>`;
+      const tabs = c.length > 1 ? `<div class="ptabs" role="group" aria-label="Category">${c.map((x) => `<button type="button" class="tog ptab" data-pcat="${x.id}" aria-pressed="${x.id === ui.cat}" title="${esc(x.name)}" aria-label="${esc(x.name)}">${categoryIcon(x.id)}</button>`).join('')}</div>` : '';
+      const tiles = modelsIn(ui.cat).map((m) => tileCard({
+        pic: picOf(m.id), title: m.name, price: coins(modelPrice(m)), short: sim.state.coins < modelPrice(m),
+        tip: m.sub + (effectOf(m) ? ' · ' + effectOf(m) : ''), pressed: m.id === ui.model, data: { pm: m.id },
+      })).join('');
+      fly.innerHTML = `<div class="pbar">${tabs}<div class="strip">${tiles}</div></div>` +
+        `<div class="pfoot"><b class="ptitle">${TOOLS[ui.tool]}</b>` +
+        `<span class="psize" role="group" aria-label="Size">${sizes.map((s, i) => `<button type="button" class="tog" data-psize="${i}" aria-pressed="${i === ui.size}">${s[0]} × ${s[1]}</button>`).join('')}</span>` +
+        `<button type="button" class="tog" id="pturn" title="Turn the building (V)">Turn · V</button>` +
+        `<span class="pdetail" title="${esc(detailText(d))}">${esc(detailText(d))}</span>` +
+        `<b class="pprice">${coins(sim.placeCost(d, a, b))}</b></div>`;
       fly.hidden = false;
     }
     fly.addEventListener('click', (e) => {

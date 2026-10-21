@@ -1,55 +1,76 @@
-// The build menus: the card markup, the effect lines, the road and zone pictures, and the hooks other modules read.
+// The build menus: compact tiles, zone vignettes, road swatches, the footer and the demand widget, and the hooks
+// other modules read. Pictures are drawn in the browser; here we check the markup, the numbers and the wiring.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { optCard, tipCard, roadSwatch, zoneIcon, effectOf, coverageEffect, buildingEffect, esc, mkey } from '../src/ui/cards.js';
+import { tileCard, zoneCard, zoneVignette, roadSwatch, categoryIcon, coins, detailText, effectOf, coverageEffect, buildingEffect, esc, mkey } from '../src/ui/cards.js';
 import { thumbFor } from '../src/render/thumbs.js';
-import { MODELS, modelById } from '../src/world/models.js';
+import { buildParts } from '../src/render/models/builders.js';
+import { describe as describeModel } from '../src/world/models.js';
+import { MODELS, modelById, footprintsOf, canonicalDims } from '../src/world/models.js';
 import { ROAD_TYPES } from '../src/sim/catalog.js';
 import { ZONE_DEFS } from '../src/sim/zones.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (f) => readFileSync(join(ROOT, f), 'utf8');
 
-test('a card escapes its text and keeps its data hooks', () => {
-  const html = optCard({ title: 'A <b>&</b>', line: 'x"y', data: { pm: 'cottage' }, pressed: true });
-  assert.match(html, /<b>A &lt;b&gt;&amp;&lt;\/b&gt;<\/b>/);
-  assert.match(html, /x&quot;y/);
+test('a tile escapes its text, keeps its data hooks and shows its price', () => {
+  const html = tileCard({ title: 'A <b>&</b>', price: '842 coins', tip: 'x"y', data: { pm: 'cottage' }, pressed: true });
+  assert.match(html, /class="name">A &lt;b&gt;&amp;&lt;\/b&gt;</);
+  assert.match(html, /title="x&quot;y"/);
   assert.match(html, /data-pm="cottage"/);
   assert.match(html, /aria-pressed="true"/);
+  assert.match(html, /class="price">842 coins</);
   assert.doesNotMatch(html, /locked|short/);
 });
 
-test('a locked road shows its unlock in place of a cost and is marked locked', () => {
-  const html = optCard({ title: 'Freeway', unlock: 'Unlock · 900 Parts', cost: '90 coins a tile', locked: true });
-  assert.match(html, /class="opt mcard locked"/);
-  assert.match(html, /class="unlock">Unlock · 900 Parts</);
-  assert.doesNotMatch(html, /coins a tile/);
+test('a locked road shows its unlock in the price slot and is marked locked', () => {
+  const html = tileCard({ title: 'Freeway', unlock: 'Unlock · 900 Parts', price: '90 a tile', locked: true });
+  assert.match(html, /class="tile locked"/);
+  assert.match(html, /class="price unlock">Unlock · 900 Parts</);
+  assert.doesNotMatch(html, /90 a tile/);
 });
 
-test('a card the player cannot afford is marked short and shows its cost in the warm colour class', () => {
-  const html = optCard({ title: 'Tower block', cost: 'from 1,200 coins', short: true });
-  assert.match(html, /mcard short/);
-  assert.match(html, /class="cost">from 1,200 coins</);
+test('a tile the player cannot pay for is marked short', () => {
+  assert.match(tileCard({ title: 'Tower block', price: '1,200 coins', short: true }), /class="tile short"/);
 });
 
 test('a key badge appears only when a key is given', () => {
-  assert.match(optCard({ title: 'Street', key: '1' }), /<kbd class="mkey">1<\/kbd>/);
-  assert.doesNotMatch(optCard({ title: 'Clinic' }), /mkey/);
+  assert.match(tileCard({ title: 'Street', key: '1' }), /<kbd class="mkey">1<\/kbd>/);
+  assert.doesNotMatch(tileCard({ title: 'Clinic' }), /mkey/);
   assert.equal(mkey('Ctrl+Z'), '<kbd class="mkey">Ctrl+Z</kbd>');
-  assert.match(tipCard({ title: 'Stop', line: 'Leaves', key: 'Esc' }), /mkey">Esc</);
 });
 
-test('every road type has a picture', () => {
+test('prices are whole coins with a thousands separator', () => {
+  assert.equal(coins(842.9), '842 coins');
+  assert.equal(coins(1200), '1,200 coins');
+});
+
+test('the footer detail reads the description and the effect of the selected model', () => {
+  const text = detailText(modelById('clinic'));
+  assert.match(text, /^A calm place with a green cross · Cheers up homes within 4 tiles · upkeep 0\.25\/s$/);
+  assert.equal(detailText({ sub: 'Plain', floors: [0, 0], id: 'x' }), 'Plain');
+});
+
+test('every road type has a swatch and every zone has a vignette with its paint colour', () => {
   for (const r of ROAD_TYPES) assert.match(roadSwatch(r.id), /^<svg /, r.id);
   assert.equal(roadSwatch('nope'), '');
+  for (const z of ZONE_DEFS.slice(1)) assert.ok(zoneVignette(z.id).includes(z.paint), z.name);
+  assert.match(zoneVignette(0), /pattern/);
 });
 
-test('every zone and the eraser have a picture, with the paint colour on the zones', () => {
-  for (const z of ZONE_DEFS.slice(1)) assert.ok(zoneIcon(z.id).includes(z.paint), z.name);
-  assert.match(zoneIcon(0), /pattern/);
+test('zone tiles carry no demand bars: demand lives in the top widget', () => {
+  const html = zoneCard({ id: 2, name: 'Commercial', price: '8 coins a tile', key: '2' });
+  assert.match(html, /class="tile zone"/);
+  assert.match(html, /data-zone="2"/);
+  assert.doesNotMatch(html, /dbar|drow2|demand/);
+  assert.match(zoneCard({ id: 0, name: 'Eraser', price: 'Free', key: '0' }), /tile zone eraser/);
+});
+
+test('every category has an icon', () => {
+  for (const id of ['home', 'shop', 'work', 'landmark', 'service', 'park']) assert.match(categoryIcon(id), /^<svg /, id);
 });
 
 test('every model has an effect line, and coverage models name their radius', () => {
@@ -66,27 +87,57 @@ test('a building effect gives floors and what it earns at level 1', () => {
   assert.equal(buildingEffect(modelById('green')), '');
 });
 
+test('the green park has a model with lawn, trees and a bench, so its picture is not empty', () => {
+  const def = modelById('green');
+  const [cw, cd] = canonicalDims(def, footprintsOf(def)[footprintsOf(def).length - 1]);
+  const d = describeModel({ id: 'thumb-green', model: 'green', gx: 0, gz: 0, fw: cw, fd: cd, rot: 0 }, 1);
+  d.x = 0; d.z = 0; d.y = 0.1;
+  const parts = buildParts(d);
+  assert.ok(parts.length >= 8, 'green has ' + parts.length + ' parts');
+});
+
 test('esc turns the characters that matter into entities', () => {
   assert.equal(esc(`<a href="x">'&'</a>`), '&lt;a href=&quot;x&quot;&gt;&#39;&amp;&#39;&lt;/a&gt;');
 });
 
-test('thumbnails are not drawn without a document, so node tests and old browsers get the plain plate', () => {
+test('thumbnails are not drawn without a document, so node tests get no picture', () => {
   assert.equal(thumbFor('cottage'), null);
   assert.equal(thumbFor('no-such-model'), null);
 });
 
 test('the menus keep the hooks that other modules and tests read', () => {
   const placement = read('src/ui/modules/placement.js');
-  for (const hook of ['data-pm', 'data-psize', 'data-pcat', 'pturn', '#pturn']) assert.ok(placement.includes(hook), hook);
+  for (const hook of ['data-pm', 'data-psize', 'data-pcat', 'pturn']) assert.ok(placement.includes(hook), hook);
   assert.ok(read('src/ui/modules/road-tool.js').includes('data-road'));
+  assert.ok(read('src/ui/modules/road-tool.js').includes('undoRoad'));
   assert.ok(read('src/ui/modules/zoning.js').includes('data-zone'));
   assert.ok(read('src/ui/modules/districts.js').includes('drow'));
   assert.ok(read('src/ui/modules/services.js').includes('[data-pm]'));
 });
 
-test('the menu stylesheet is linked and the old pill-button styles are gone', () => {
+test('the footer shows the price of the chosen size, and tiles show their own price', () => {
+  const placement = read('src/ui/modules/placement.js');
+  assert.match(placement, /sim\.placeCost\(m, a, b\)/);
+  assert.match(placement, /class="pprice"/);
+  assert.match(placement, /class="pdetail"/);
+});
+
+test('the zoning module owns an always-visible demand widget with three zone rows', () => {
+  const zoning = read('src/ui/modules/zoning.js');
+  assert.match(zoning, /id = 'demandw'/);
+  assert.match(zoning, /\[1, 2, 3\]\.map/);
+  assert.match(read('index.html') + read('css/menus.css'), /\.demandw/);
+});
+
+test('bulldoze has no menu: only a hint chip, and no toast', () => {
+  const panels = read('src/ui/panels.js');
+  assert.match(panels, /bdchip/);
+  assert.doesNotMatch(panels, /tipCard/);
+  assert.doesNotMatch(read('src/ui/ui.js'), /Bulldoze: click a building/);
+});
+
+test('the menu stylesheet is linked and the old card styles are gone', () => {
   assert.ok(read('index.html').includes('css/menus.css'));
-  assert.doesNotMatch(read('src/ui/modules/zoning.js'), /zbtn|zrow/);
-  assert.doesNotMatch(read('css/zoning.css'), /zbtn|zrow/);
-  assert.doesNotMatch(read('css/roads.css'), /nth-of-type/);
+  assert.doesNotMatch(read('css/zoning.css'), /zbtn|zrow|\.dem\b/);
+  assert.doesNotMatch(read('css/roads.css'), /nth-of-type|road-fly \.head/);
 });

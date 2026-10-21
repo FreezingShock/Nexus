@@ -39,7 +39,6 @@ export function createUi({ sim, scene, actions }) {
     document.querySelectorAll('.tool').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tool === t)));
     panels.setFly(t);
     for (const m of mods) if (m.onTool) m.onTool(t, was);
-    if (t === 'bulldoze') hud.toast('Bulldoze: click a building or a tree to remove it');
   }
   function toggleSettings() {
     if (panels.settingsOpen()) { panels.hideSettings(); return; }

@@ -4,7 +4,6 @@ import { PAL } from '../world/palettes.js';
 import { speciesOf } from '../world/trees.js';
 import { $, fmt, fmtAgo } from './format.js';
 import { mountGraphics } from './graphics.js';
-import { tipCard } from './cards.js';
 
 const CLOSE_SVG = '<svg width="16" height="16" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2L12 12M12 2L2 12" stroke="#2B2620" stroke-width="2.2" stroke-linecap="round"/></svg>';
 
@@ -59,20 +58,18 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
   // ---- flyout ----
   // Roads, Zones, Districts, Buildings, Services and Parks fill the flyout themselves (their modules render it when they
   // open). This function fills it for Traffic and Bulldoze, and hides it for every other tool.
-  const WRECKING_BALL = '<svg viewBox="0 0 54 54" aria-hidden="true"><line x1="27" y1="2" x2="27" y2="26" stroke="#2B2620" stroke-width="2.5"/><circle cx="27" cy="36" r="15" fill="#E3A08E" stroke="#2B2620" stroke-width="2.5"/><path d="M19 30l6 6M30 27l4 4" stroke="#FBF6EA" stroke-width="2" stroke-linecap="round"/></svg>';
   const legend = (c, n) => `<span class="lchip"><i style="background:${c}"></i>${n}</span>`;
+  // Bulldoze has no menu: a single hint chip above the toolbar says what the tool does.
+  const BULLDOZE_HINT = 'Click a building or tree, or drag over roads · Ctrl+Z brings it back · Esc stops';
   function setFly(tool) {
     const f = $('fly');
+    f.classList.remove('bdchip');
     if (tool === 'traffic') {
-      f.innerHTML = `<div class="head"><h3>Traffic flow</h3><span>Roads are tinted by how full they are</span></div><div class="lanes">${legend('#9DB37C', 'Free')}${legend('#D9B45F', 'Busy')}${legend('#B8472E', 'Jammed')}</div>`;
+      f.innerHTML = `<div class="rhead"><b class="ptitle">Traffic</b><span class="rhint">Roads are tinted by how full they are</span></div><div class="lanes">${legend('#9DB37C', 'Free')}${legend('#D9B45F', 'Busy')}${legend('#B8472E', 'Jammed')}</div>`;
       f.hidden = false;
     } else if (tool === 'bulldoze') {
-      f.innerHTML = `<div class="head"><h3>Bulldoze</h3><span>Clear what you no longer need</span></div>` +
-        `<div class="bd-head">${WRECKING_BALL}<p>Click a building, or drag over roads, to clear them.</p></div>` +
-        `<div class="grid menu-grid">${tipCard({ title: 'Click a building', line: 'Clears that one building' })}` +
-        `${tipCard({ title: 'Drag over several', line: 'One drag is one undo step' })}` +
-        `${tipCard({ title: 'Bring it back', line: 'Undoes the last clearing', key: 'Ctrl+Z' })}` +
-        `${tipCard({ title: 'Stop', line: 'Leaves the tool', key: 'Esc' })}</div>`;
+      f.innerHTML = `<span class="bdtext">${BULLDOZE_HINT}</span>`;
+      f.classList.add('bdchip');
       f.hidden = false;
     } else f.hidden = true;
   }
