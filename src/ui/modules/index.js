@@ -2,12 +2,14 @@
 // To add a feature, create a file in this folder with a default export, then run `npm run registry`.
 // Hook shapes are documented in docs/EXTENDING.md. Modules run in order of their optional `order` number, then file name.
 import placement from './placement.js';
+import progress from './progress.js';
 import roadTool from './road-tool.js';
 import services from './services.js';
 import zoning from './zoning.js';
 
 export const uiModules = [
   placement,
+  progress,
   roadTool,
   services,
   zoning,

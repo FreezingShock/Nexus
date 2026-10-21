@@ -1,5 +1,6 @@
 // Zone data and the pure rules around it: costs, saved encoding, demand, income. No DOM, no THREE.
 import { GRID_N } from '../world/grid.js';
+import { BALANCE } from './balance.js';
 
 export const ZONE_COUNT = 4;
 export const MAX_LOT_LEVEL = 5;
@@ -10,11 +11,16 @@ export const ROAD_REACH = 2; // buildings only grow when a road is within this m
 // paint = the tint on the map; coins = cost per tile; income = coins per second per building level
 export const ZONE_DEFS = [
   null,
-  { id: 1, key: 'res', name: 'Residential', paint: '#8FCB9B', swatch: '#BFD8C4', cost: 5,  income: 0.40, sub: 'Homes and terraces grow here' },
-  { id: 2, key: 'com', name: 'Commercial',  paint: '#EE9F8D', swatch: '#E9C1B8', cost: 8,  income: 0.70, sub: 'Shop rows with awnings' },
-  { id: 3, key: 'ind', name: 'Industrial',  paint: '#E2C07C', swatch: '#E7D8BF', cost: 6,  income: 0.55, sub: 'Workshops and yards' },
-  { id: 4, key: 'civ', name: 'Civic',       paint: '#8DBEDD', swatch: '#DCE8EC', cost: 12, income: 0.10, sub: 'Halls and squares' },
+  { id: 1, key: 'res', name: 'Residential', paint: '#8FCB9B', swatch: '#BFD8C4', sub: 'Homes and terraces grow here', ...zoneNumbers('res') },
+  { id: 2, key: 'com', name: 'Commercial',  paint: '#EE9F8D', swatch: '#E9C1B8', sub: 'Shop rows with awnings', ...zoneNumbers('com') },
+  { id: 3, key: 'ind', name: 'Industrial',  paint: '#E2C07C', swatch: '#E7D8BF', sub: 'Workshops and yards', ...zoneNumbers('ind') },
+  { id: 4, key: 'civ', name: 'Civic',       paint: '#8DBEDD', swatch: '#DCE8EC', sub: 'Halls and squares', ...zoneNumbers('civ') },
 ];
+// cost = coins per tile; income = coins per second per building level; parts = Parts per second per building level. Numbers live in balance.js.
+function zoneNumbers(key) {
+  const z = BALANCE.zones[key];
+  return { cost: z.cost, income: z.coins, parts: z.parts };
+}
 
 const AREA = GRID_N * GRID_N;
 
@@ -65,5 +71,11 @@ export function demandOf(s) {
 export function lotIncome(lots, zoneAt) {
   let r = 0;
   for (const [i, level] of lots) { const d = ZONE_DEFS[zoneAt(i)]; if (d) r += d.income * level; }
+  return r;
+}
+// Parts per second from zone buildings (industry makes most of them).
+export function lotParts(lots, zoneAt) {
+  let r = 0;
+  for (const [i, level] of lots) { const d = ZONE_DEFS[zoneAt(i)]; if (d) r += d.parts * level; }
   return r;
 }

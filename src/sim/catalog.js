@@ -1,10 +1,12 @@
-// Static game data the UI lists and the sim validates against.
+// Static game data the UI lists and the sim validates against. Parts gates come from balance.js.
+import { BALANCE } from './balance.js';
+const T = BALANCE.tiers;
 export const ROAD_TYPES = [
   { id: 'two', short: 'Street',  name: 'Two-way street',        sub: '1 lane each way · 600 cars/h each', cost: 20 },
-  { id: 'bike', short: 'Bike street', name: 'Street with bike lanes', sub: 'Calmer traffic · greener lanes',    cost: 35 },
-  { id: 'one', short: 'Avenue',  name: 'One-way avenue',        sub: '2 lanes · 1,100 cars/h · follows your pencil', cost: 45 },
-  { id: 'bus', short: 'Bus avenue',  name: 'Bus avenue',            sub: 'Bus lanes · 600 Parts to unlock',   cost: 60, unlockParts: 600 },
-  { id: 'free', short: 'Freeway', name: 'Freeway',               sub: 'Fast and wide · 1,500 Parts to unlock', cost: 90, unlockParts: 1500 },
+  { id: 'bike', short: 'Bike street', name: 'Street with bike lanes', sub: 'Calmer traffic · greener lanes · ' + T.bike + ' Parts to unlock', cost: 35, unlockParts: T.bike },
+  { id: 'one', short: 'Avenue',  name: 'One-way avenue',        sub: '2 lanes · 1,100 cars/h · ' + T.one + ' Parts to unlock', cost: 45, unlockParts: T.one },
+  { id: 'bus', short: 'Bus avenue',  name: 'Bus avenue',            sub: 'Bus lanes · ' + T.bus + ' Parts to unlock',   cost: 60, unlockParts: T.bus },
+  { id: 'free', short: 'Freeway', name: 'Freeway',               sub: 'Fast and wide · ' + T.free.toLocaleString('en-US') + ' Parts to unlock', cost: 90, unlockParts: T.free },
 ];
 
 export const ZONES = [['Residential', '#BFD8C4'], ['Commercial', '#E9C1B8'], ['Industrial', '#E7D8BF'], ['Civic', '#DCE8EC']];

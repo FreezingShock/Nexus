@@ -20,7 +20,7 @@ export function createSim({ state = freshState(), layout = getLayout(), now = ()
       commands[name] = fn;
     }
   }
-  let rate = 0;
+  let rate = 0, partsRate = PARTS_RATE;
   const sim = { state, layout, lastTickMs: 0, ticks: 0 };
 
   const emit = (e) => listeners.forEach((fn) => fn(e));
@@ -32,17 +32,25 @@ export function createSim({ state = freshState(), layout = getLayout(), now = ()
     state.coins -= cost; prev.coins = Math.min(prev.coins, state.coins);
     return true;
   };
+  // Coins: buildings and systems' `rate`, then every system's `mult` (boost, Renewal). Parts: base plus systems' `partsRate`.
   const refresh = () => {
-    rate = coinRate(state, layout);
-    for (const d of registry.list()) if (d.rate) rate += d.rate(ctx);
-    rate = Math.round(rate * 10) / 10;
+    let coins = coinRate(state, layout), parts = PARTS_RATE, m = 1;
+    for (const d of registry.list()) {
+      if (d.rate) coins += d.rate(ctx);
+      if (d.partsRate) parts += d.partsRate(ctx);
+      if (d.mult) m *= d.mult(ctx);
+    }
+    rate = Math.round(coins * m * 10) / 10;
+    partsRate = Math.round(parts * 100) / 100;
   };
   const grid = createGrid(layout);
-  const ctx = { sim, state, layout, grid, emit, note, refresh, charge, syncDisplay };
+  // rebuild: re-runs every system's init after a Renewal wipes the state, so init must be safe to run twice.
+  const ctx = { sim, state, layout, grid, emit, note, refresh, charge, syncDisplay, rebuild: () => registry.run('init', ctx) };
 
   sim.subscribe = (fn) => { listeners.add(fn); return () => listeners.delete(fn); };
   sim.rate = () => rate;
-  sim.partsRate = () => PARTS_RATE;
+  sim.partsRate = () => partsRate;
+  sim.now = now;
   sim.building = (id) => byId.get(id);
   sim.alive = (id) => byId.has(id) && !state.removed.includes(id);
   sim.level = (id) => levelOf(state, byId.get(id));
@@ -54,9 +62,10 @@ export function createSim({ state = freshState(), layout = getLayout(), now = ()
   sim.tick = () => {
     const t0 = typeof performance !== 'undefined' ? performance.now() : 0;
     prev = { coins: state.coins, parts: state.parts };
-    state.coins += rate;
-    state.parts += PARTS_RATE;
-    registry.run('tick', ctx);
+    const gain = rate;
+    state.coins += gain;
+    state.parts += partsRate;
+    registry.run('tick', ctx, gain);
     sim.ticks++;
     sim.lastTickMs = (typeof performance !== 'undefined' ? performance.now() : 0) - t0;
   };
@@ -79,8 +88,8 @@ export function createSim({ state = freshState(), layout = getLayout(), now = ()
     const away = awaySeconds(savedAt, now());
     if (away <= 0) return null;
     const w = offlineWindow(away);
-    const gainC = rate * w.effectiveS, gainP = PARTS_RATE * w.effectiveS;
-    registry.run('offline', ctx, w.effectiveS); // grown from here on; income above used the rate before growth
+    const gainC = rate * w.effectiveS, gainP = partsRate * w.effectiveS;
+    registry.run('offline', ctx, w.effectiveS, gainC); // grown from here on; income above used the rate before growth
     if (away < MIN_POSTCARD_S) { state.coins += gainC; state.parts += gainP; prev = { coins: state.coins, parts: state.parts }; return null; }
     const o = state.offline;
     state.offline = o
