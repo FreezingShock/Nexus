@@ -48,7 +48,7 @@ export function createScene({ stage, layout, grid, onPick }) {
     if (!drag) return;
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
     drag.x = e.clientX; drag.y = e.clientY; drag.moved += Math.abs(dx) + Math.abs(dy);
-    if (drag.moved > 5) { canvas.classList.add('drag'); camera.pan(dx, dy, canvas.clientHeight); }
+    if (drag.moved > 5) { canvas.classList.add('drag'); camera.drag(dx, dy, canvas.clientHeight, e.shiftKey); }
   });
   canvas.addEventListener('pointerup', (e) => {
     const was = drag; drag = null; canvas.classList.remove('drag');
@@ -59,9 +59,9 @@ export function createScene({ stage, layout, grid, onPick }) {
     onPick(town.pick(ray));
   });
   canvas.addEventListener('pointercancel', () => { drag = null; canvas.classList.remove('drag'); });
-  canvas.addEventListener('wheel', (e) => { e.preventDefault(); camera.zoomBy(e.deltaY < 0 ? 1.12 : 0.89); }, { passive: false });
+  canvas.addEventListener('wheel', (e) => { e.preventDefault(); camera.wheel(e.deltaY); }, { passive: false });
 
-  resize(); camera.place();
+  resize(); camera.place(); camera.bindKeys();
 
   let snapTarget = null;
   return {
@@ -102,7 +102,7 @@ export function createScene({ stage, layout, grid, onPick }) {
     snapshot(dest) {
       if (!snapTarget) snapTarget = new THREE.WebGLRenderTarget(SNAP_W, SNAP_H);
       const v = camera.view, half = v.half / v.zoom * 0.6;
-      const c = camera.cam.clone();
+      const c = camera.iso.clone(); // the postcard always frames the classic view, even while flying
       c.left = -half * 4 / 3; c.right = half * 4 / 3; c.top = half; c.bottom = -half; c.zoom = 1; c.updateProjectionMatrix();
       town.hideSelection(true);
       const prev = renderer.getRenderTarget();
