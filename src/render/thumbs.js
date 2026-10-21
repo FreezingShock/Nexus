@@ -1,6 +1,7 @@
-// Building thumbnails for the build menus. Each model is drawn once, off screen, with the same kit, lights and
-// toon materials as the town, then kept as a PNG data URL. Menus read the cache, so there is no per-frame cost and
-// no new dependency. Without a document or WebGL this returns null and the menu shows a plain plate.
+// Building thumbnails for the build menus. Each model is drawn once, off screen, with the town's kit and warm light,
+// then composed on a cream paper ground with a sage ground disc and a thin ink outline, and kept as a PNG data URL.
+// Menus read the cache, so there is no per-frame cost and no new dependency. Without a document or WebGL this
+// returns null and the menu shows a plain plate.
 import * as THREE from '../../vendor/three/three.module.min.js';
 import { ISO, orbitPose } from './camera-math.js';
 import { addToBatch, makeParts, worldMatrix } from './buildings.js';
@@ -9,28 +10,36 @@ import { toon } from './materials.js';
 import { canonicalDims, describe, modelById, footprintsOf } from '../world/models.js';
 import { TILE } from '../world/grid.js';
 
-const W = 176, H = 132, SCALE = 2; // css pixels, drawn at 2x so the card stays sharp
+const W = 192, H = 144;          // drawn size in pixels; the cards show it at about 96 by 72
+const PAPER = '#F6EEDB', GROUND = '#CFDBA9', INK = '#2B2620', OUTLINE = 2.5;
 const cache = new Map();
-let renderer = null, broken = false;
+let renderer = null, broken = false, scratch = null, mask = null;
 
 function rendererOf() {
   if (!renderer) {
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(SCALE);
+    renderer.setPixelRatio(1);
     renderer.setSize(W, H, false);
     renderer.setClearColor(0x000000, 0);
   }
   return renderer;
 }
 
-// One model at one footprint and level, drawn on a cream plate and framed to fit. Returns a PNG data URL.
+// A 2D canvas for the composition. Created on first use; `make` is the document's canvas factory.
+function canvasOf(slot, make) {
+  if (!slot) { slot = make(); slot.width = W; slot.height = H; }
+  return slot;
+}
+
+// One model at one footprint and level. The model is drawn on a transparent WebGL canvas, then composed:
+// paper ground, a sage disc under it, an ink outline around the silhouette, and the picture on top.
 function draw(def, fw, fd, level) {
   const r = rendererOf();
   const d = describe({ id: 'thumb-' + def.id, model: def.id, gx: 0, gz: 0, fw, fd, rot: 0 }, level);
   d.x = 0; d.z = 0; d.y = 0.1;
   const scene = new THREE.Scene();
-  scene.add(new THREE.HemisphereLight(0xFFF3DC, 0x8A8F62, 1.0));
-  const sun = new THREE.DirectionalLight(0xFFE3B8, 0.9); sun.position.set(-40, 70, 30); scene.add(sun);
+  scene.add(new THREE.HemisphereLight(0xFFF3DC, 0x8A8F62, 0.75));
+  const sun = new THREE.DirectionalLight(0xFFE3B8, 0.95); sun.position.set(-40, 70, 30); scene.add(sun);
   const world = new THREE.Group(); scene.add(world);
   const batch = new Batch();
   addToBatch(batch, makeParts(d), worldMatrix(d), false);
@@ -41,13 +50,29 @@ function draw(def, fw, fd, level) {
   const box = new THREE.Box3().setFromObject(world);
   const c = box.getCenter(new THREE.Vector3());
   const radius = box.getSize(new THREE.Vector3()).length() / 2;
-  const half = Math.max(radius * 1.08, 4), aspect = W / H;
+  const half = Math.max(radius * 1.02, 4), aspect = W / H;
   const cam = new THREE.OrthographicCamera(-half * aspect, half * aspect, half, -half, 1, 600);
   const p = orbitPose(c.x, c.z, ISO.az, ISO.elev, 200);
   cam.position.set(p.x, p.y + c.y, p.z);
   cam.lookAt(c);
   r.render(scene, cam);
-  const url = r.domElement.toDataURL('image/png');
+
+  const picture = r.domElement;
+  scratch = canvasOf(scratch, () => document.createElement('canvas'));
+  mask = canvasOf(mask, () => document.createElement('canvas'));
+  const out = document.createElement('canvas'); out.width = W; out.height = H;
+  const g = out.getContext('2d');
+  g.fillStyle = PAPER; g.fillRect(0, 0, W, H);
+  g.fillStyle = GROUND; g.beginPath(); g.ellipse(W / 2, H * 0.82, W * 0.44, H * 0.1, 0, 0, Math.PI * 2); g.fill();
+  // silhouette in ink, pushed out in eight directions, then the picture on top: a hand-cut outline
+  const m = mask.getContext('2d');
+  m.clearRect(0, 0, W, H); m.drawImage(picture, 0, 0, W, H);
+  m.globalCompositeOperation = 'source-in'; m.fillStyle = INK; m.fillRect(0, 0, W, H); m.globalCompositeOperation = 'source-over';
+  for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [-0.7, -0.7], [0.7, -0.7], [-0.7, 0.7], [0.7, 0.7]]) {
+    g.drawImage(mask, dx * OUTLINE, dy * OUTLINE, W, H);
+  }
+  g.drawImage(picture, 0, 0, W, H);
+  const url = out.toDataURL('image/png');
   disposeAll(built, world);
   plate.geometry.dispose();
   return url;

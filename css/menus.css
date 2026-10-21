@@ -1,46 +1,72 @@
-/* Build menus: one card look for Roads, Buildings, Services, Parks, Zones, Districts and Bulldoze.
-   Cream paper plaques with an ink border and a hard offset shadow; terracotta marks the choice; sage marks what a
-   building does. Picture on top, name, one line, effect, then cost or unlock and any key badge. */
-.fly{max-height:min(46vh,440px);overflow-y:auto;overscroll-behavior:contain}
-.grid.menu-grid{grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:12px}
+/* Build menus: a compact strip of tiles above the toolbar. Cream paper, ink border, hard shadow, terracotta for the
+   chosen tile, sage for what a building does. Each tile: picture, name, price chip, key badge. The slim footer
+   holds the title, size, turn, the selected model's detail and its price. */
+.fly{max-height:min(44vh,400px);overflow-y:auto;overscroll-behavior:contain;padding:12px 14px 10px}
+.fly .rhead{display:flex;align-items:center;gap:10px;margin:0 0 8px;min-width:0}
+.fly .rhead .btn{height:36px;padding:0 14px;font-size:15px;flex:0 0 auto}
+.rhint{flex:1;min-width:0;font-size:12.5px;line-height:1.25;color:var(--ink-soft);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ptitle{font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:18px;line-height:1;flex:0 0 auto}
 
-.mcard{position:relative;display:flex;flex-direction:column;gap:8px;padding:8px 8px 10px;min-height:0;text-align:left;border-radius:16px 18px 14px 17px;background:var(--paper);border:2.5px solid var(--ink);box-shadow:0 3px 0 var(--ink);transition:transform .08s,box-shadow .08s}
-.mcard:hover{transform:translateY(-2px)}
-.mcard:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
-.mcard:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
-.mcard[aria-pressed="true"]{background:#F9DFC9;border-color:var(--action);box-shadow:0 3px 0 var(--action)}
-.mcard.locked{background:#EEE5D4;border-style:dashed;box-shadow:none;color:var(--ink-soft)}
-.mcard.locked:hover{transform:none}
-.mcard.tip{cursor:default}
-.mcard.tip:hover{transform:none}
+.pbar{display:flex;gap:10px;align-items:stretch;min-width:0}
+.ptabs{display:flex;flex-direction:column;gap:6px;flex:0 0 auto}
+.ptab{width:40px;height:40px;padding:0;display:grid;place-items:center;border-radius:12px}
+.ptab svg{width:22px;height:22px;display:block}
+.ptab[aria-pressed="true"]{background:var(--sky-soft)}
 
-.mcard .pic{display:grid;place-items:center;height:96px;border-radius:12px;border:2.5px solid var(--ink);background:linear-gradient(180deg,#DCE8EC 0%,#EFE6D2 68%,#D9D0AE 68%,#C9BE98 100%);overflow:hidden}
-.mcard .pic img,.mcard .pic svg{display:block;width:100%;height:100%;object-fit:contain}
-.mcard .pic-ph{display:block;width:100%;height:100%;border-radius:8px;border:2px dashed rgba(43,38,32,.25)}
-.mcard.locked .pic{filter:grayscale(.7);opacity:.75}
-.road-fly .mcard .pic{height:62px}
-.zfly .mcard .pic{height:70px}
-.zfly .mcard .pic svg{height:100%}
+.strip{display:flex;gap:9px;overflow-x:auto;overscroll-behavior-x:contain;padding:4px 4px 10px;min-width:0;flex:1 1 auto;scrollbar-width:thin}
+.strip>*{flex:0 0 auto}
 
-.mcard .txt{display:flex;flex-direction:column;gap:2px;min-width:0}
-.mcard .txt b{font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:17px;line-height:1.15}
-.mcard .txt small{font-size:13px;line-height:1.25;color:var(--ink-soft);font-weight:600}
-.mcard .txt small.fx{color:var(--sage-d);font-weight:700}
+.tile{width:118px;display:flex;flex-direction:column;gap:5px;padding:6px 6px 7px;border-radius:14px 15px 12px 14px;border:2.5px solid var(--ink);background:var(--paper);box-shadow:0 3px 0 var(--ink);text-align:left;transition:transform .08s,box-shadow .08s}
+.tile:hover{transform:translateY(-2px)}
+.tile:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.tile:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
+.tile[aria-pressed="true"]{background:#F9DFC9;border-color:var(--action);box-shadow:0 3px 0 var(--action)}
+.tile.locked{background:#EEE5D4;border-style:dashed;box-shadow:none}
+.tile.locked:hover{transform:none}
+.tile .pic{display:block;height:72px;border-radius:9px;border:2px solid var(--ink);overflow:hidden;background:#F6EEDB}
+.tile .pic img,.tile .pic svg{display:block;width:100%;height:100%;object-fit:cover}
+.tile .pic-ph{display:block;width:100%;height:100%;border-radius:6px;border:2px dashed rgba(43,38,32,.25)}
+.tile.locked .pic{filter:grayscale(.6);opacity:.8}
+.tile .name{font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:14px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+.tile .row{display:flex;align-items:center;justify-content:space-between;gap:4px;min-height:20px}
+.price{font-size:11.5px;font-weight:800;line-height:1;padding:3px 6px;border-radius:7px;border:1.5px solid var(--ink);background:var(--paper-2);color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.tile.short .price{background:#F6DDD0;color:var(--action);border-color:var(--action)}
+.price.unlock{background:var(--paper);color:var(--action);border-color:var(--action)}
 
-.mcard .foot{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:auto;min-height:24px}
-.mcard .cost{font-size:14px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
-.mcard.short .cost{color:var(--action)}
-.mcard .unlock{font-size:13px;font-weight:800;color:var(--action)}
+/* roads: swatches are wide and short; the tile stays narrow */
+.road-strip .tile{width:124px}
+.road-strip .tile .pic{height:44px}
+.road-strip .tile .name{font-size:13px}
+.road-fly{padding:10px 14px 10px}
 
-.mkey{display:inline-grid;place-items:center;min-width:24px;height:22px;padding:0 6px;border-radius:7px;border:2px solid var(--ink);background:var(--paper-2);box-shadow:0 2px 0 var(--ink);font:800 12px/1 var(--body);color:var(--ink);margin-left:auto}
+/* zones: a vignette per zone, the eraser hatched */
+.zone-strip .tile{width:112px}
+.zone-strip .tile .pic{height:64px}
+.zone-strip .tile.eraser .pic{background:none}
 
-/* legend chips (Traffic) and a plain tool button that shows the selected state */
+.mkey{display:inline-grid;place-items:center;min-width:22px;height:20px;padding:0 5px;border-radius:6px;border:2px solid var(--ink);background:var(--paper-2);box-shadow:0 2px 0 var(--ink);font:800 11.5px/1 var(--body);color:var(--ink);flex:0 0 auto}
+
+/* the footer: size, turn, what the selected model is, and its price */
+.pfoot{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;padding-top:8px;border-top:2px dashed var(--paper-3);min-width:0}
+.pfoot .psize{display:inline-flex;gap:6px;flex:0 0 auto}
+.pfoot .tog{height:32px;padding:0 10px;font-size:13px;border-radius:10px;flex:0 0 auto}
+.pdetail{flex:1 1 auto;min-width:0;font-size:12.5px;font-weight:700;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pprice{flex:0 0 auto;font-size:14px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* Bulldoze: one hint chip above the toolbar, no menu */
+.fly.bdchip{left:50%;right:auto;transform:translateX(-50%);width:max-content;max-width:calc(100vw - 32px);padding:7px 16px;border-radius:999px;bottom:122px;max-height:none;overflow:visible}
+.bdtext{display:block;font-size:14px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Traffic legend */
 .lchip{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 8px;border-radius:12px;border:2px solid var(--ink);background:var(--paper);font-size:14px;font-weight:800;box-shadow:0 2px 0 var(--ink)}
 .lchip i{display:block;width:22px;height:14px;border-radius:5px;border:2px solid var(--ink)}
 .btn[aria-pressed="true"]{background:#F9DFC9;box-shadow:0 4px 0 var(--action);border-color:var(--action)}
 
-/* Bulldoze: the wrecking ball beside four tip cards */
-.bd-head{display:flex;align-items:center;gap:12px;margin:0 0 12px}
-.bd-head svg{flex:0 0 auto;width:54px;height:54px}
-.bd-head p{margin:0;font-size:14px;font-weight:600;color:var(--ink-soft)}
-.mcard.tip .foot{justify-content:flex-start}
+/* Demand: always on, top centre under the HUD, three rows in the zone colours. Pointer events pass through it. */
+.demandw{position:absolute;top:calc(var(--hud-bottom,108px) + 12px);left:50%;transform:translateX(-50%);width:clamp(170px,calc(100vw - 2 * var(--side) - 48px),260px);padding:9px 14px 10px;pointer-events:none;z-index:8}
+.demandw h3{margin:0 0 6px;font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:15px;line-height:1}
+.drow2{display:grid;grid-template-columns:minmax(0,1fr) 84px 34px;align-items:center;gap:8px;padding:3px 0;font-size:12.5px;font-weight:800;color:var(--ink)}
+.drow2 b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dbar{display:block;height:12px;border-radius:7px;border:2px solid var(--ink);background:var(--paper);overflow:hidden}
+.dbar u{display:block;height:100%;text-decoration:none;transition:width .6s}
+.drow2 em{font-style:normal;text-align:right;color:var(--ink-soft);font-variant-numeric:tabular-nums}

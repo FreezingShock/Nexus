@@ -3,9 +3,8 @@
 import { inBounds, worldToTile } from '../../world/grid.js';
 import { ZONE_DEFS } from '../../sim/zones.js';
 import { $, fmt } from '../format.js';
-import { optCard, zoneIcon } from '../cards.js';
+import { zoneCard } from '../cards.js';
 
-const NAMES = ['R', 'C', 'I'];
 
 export default {
   id: 'zoning',
@@ -15,6 +14,10 @@ export default {
     const tag = document.createElement('div');
     tag.className = 'ztag card'; tag.hidden = true;
     $('app').appendChild(tag);
+    const demandEl = document.createElement('section');
+    demandEl.id = 'demandw'; demandEl.className = 'card demandw'; demandEl.setAttribute('aria-label', 'Zone demand');
+    $('app').appendChild(demandEl);
+    paintDemand();
 
     let active = false, brush = 1, drag = null, hoverTile = null, last = null, flashed = false, acc = 0;
 
@@ -90,20 +93,15 @@ export default {
     }
     function cancel() { drag = null; tag.hidden = true; view().clearPreview(); }
 
-    // ---- flyout ----
-    function bars() {
-      const d = sim.zoning.demand();
-      return [1, 2, 3].map((z, k) => `<span class="dem" title="${ZONE_DEFS[z].name} demand"><b>${NAMES[k]}</b><i><u style="width:${Math.round(d[z] * 100)}%;background:${ZONE_DEFS[z].paint}"></u></i></span>`).join('');
-    }
+    // ---- flyout: a strip of zone tiles. Demand lives in the top widget, so the tiles stay small ----
     function renderFly() {
       const f = $('fly'), st = sim.zoning.stats(), n = sim.zoning.painted;
       f.hidden = false;
       f.classList.add('zfly');
-      f.innerHTML = `<div class="head"><h3>Zones</h3><span class="demand"><small>Demand</small> ${bars()}<small>${n} tile${n === 1 ? '' : 's'} painted · ${st.count} building${st.count === 1 ? '' : 's'}</small></span></div>` +
-        `<div class="grid menu-grid">` +
-        ZONE_DEFS.slice(1).map((z, i) => optCard({ pic: zoneIcon(z.id), title: z.name, line: z.sub, cost: `${z.cost} coins a tile`, key: String(i + 1), pressed: brush === z.id, data: { zone: z.id } })).join('') +
-        optCard({ pic: zoneIcon(0), title: 'Eraser', line: 'Clears zones back to open ground', cost: 'Free', key: '0', pressed: brush === 0, data: { zone: 0 } }) +
-        `</div><p class="sub zhelp">Drag on the map to paint a rectangle · buildings grow where a road is close.</p>`;
+      const tiles = ZONE_DEFS.slice(1).map((z, i) => zoneCard({ id: z.id, name: z.name, price: `${z.cost} coins a tile`, key: String(i + 1), pressed: brush === z.id, tip: z.sub })).join('') +
+        zoneCard({ id: 0, name: 'Eraser', price: 'Free', key: '0', pressed: brush === 0, tip: 'Clears zones back to open ground' });
+      f.innerHTML = `<div class="rhead"><b class="ptitle">Zones</b><span class="rhint">Drag on the map to paint · buildings grow near roads · ${n} tile${n === 1 ? '' : 's'} · ${st.count} building${st.count === 1 ? '' : 's'}</span></div>` +
+        `<div class="strip zone-strip">${tiles}</div>`;
       f.querySelectorAll('[data-zone]').forEach((b) => { b.onclick = () => { setBrush(Number(b.dataset.zone)); }; });
     }
     function setBrush(z) {
@@ -135,7 +133,6 @@ export default {
       onTool(t, was) { if (t === 'zones') enter(); else if (was === 'zones') leave(); },
       onEvent(e) {
         if (e.type === 'zonePainted' || e.type === 'zoneCleared') { flashed = true; view().flash(); }
-        if (active && (e.type === 'changed')) { const d = $('fly').querySelector('.demand'); if (d) renderDemand(); }
       },
       onKey(e) {
         if (!active) return false;
@@ -144,17 +141,17 @@ export default {
         return false;
       },
       frame(dt) {
-        if (!active) return;
         acc += dt;
-        if (acc > 1) { acc = 0; renderDemand(); }
+        if (acc > 1) { acc = 0; paintDemand(); }
       },
     };
 
-    function renderDemand() {
-      const el = $('fly').querySelector('.demand');
-      if (!el) return;
-      const st = sim.zoning.stats(), n = sim.zoning.painted;
-      el.innerHTML = `<small>Demand</small> ${bars()}<small>${n} tile${n === 1 ? '' : 's'} painted · ${st.count} building${st.count === 1 ? '' : 's'}</small>`;
+    // The always-visible demand widget: three rows, one per zone with demand, in the zone colours.
+    function paintDemand() {
+      const d = sim.zoning.demand();
+      const rows = [1, 2, 3].map((z) => `<div class="drow2" title="${ZONE_DEFS[z].name} demand"><b>${ZONE_DEFS[z].name}</b>` +
+        `<i class="dbar"><u style="width:${Math.round(d[z] * 100)}%;background:${ZONE_DEFS[z].paint}"></u></i><em>${Math.round(d[z] * 100)}%</em></div>`).join('');
+      demandEl.innerHTML = `<h3>Demand</h3>${rows}`;
     }
   },
 };

@@ -5,7 +5,7 @@ import { ROAD_TYPES } from '../../sim/catalog.js';
 import { inBounds, tileIndex, worldToTile } from '../../world/grid.js';
 import { BLOCK_TEXT, elbowPath, extendStroke, planStroke, roadBlock, rulerPath } from '../../world/roadnet.js';
 import { $, fmt } from '../format.js';
-import { optCard, roadSwatch } from '../cards.js';
+import { roadSwatch, tileCard } from '../cards.js';
 
 const costOf = (id) => ROAD_TYPES.find((r) => r.id === id).cost;
 const BLUE = 0x8FB8D6, RED = 0xE3A08E, TERRA = 0xB8472E;
@@ -175,15 +175,15 @@ export default {
     // ---- flyout ----
     function renderFlyout() {
       const f = $('fly');
-      const cards = ROAD_TYPES.map((r, i) => {
+      const tiles = ROAD_TYPES.map((r, i) => {
         const open = unlocked(r);
-        return optCard({
-          pic: roadSwatch(r.id), title: r.name, line: r.sub,
-          cost: open ? `${r.cost} coins a tile` : '', unlock: open ? '' : `Unlock · ${fmt(r.unlockParts)} Parts`,
+        return tileCard({
+          pic: roadSwatch(r.id), title: r.name, tip: r.sub,
+          price: open ? `${r.cost} a tile` : '', unlock: open ? '' : `Unlock · ${fmt(r.unlockParts)} Parts`,
           key: String(i + 1), locked: !open, pressed: type === r.id, data: { road: r.id },
         });
       }).join('');
-      f.innerHTML = `<div class="head"><h3>Roads</h3><span>Drag to draw · click twice for a line · Shift keeps it straight · draw over a road to upgrade it · Esc stops</span><button class="btn" id="undoRoad">Undo</button><button class="btn primary" id="doneRoad">Done</button></div><div class="grid menu-grid">${cards}</div>`;
+      f.innerHTML = `<div class="rhead"><b class="ptitle">Roads</b><span class="rhint">Drag to draw · click twice for a line · Shift straight · Esc stops</span><button class="btn" id="undoRoad">Undo</button><button class="btn primary" id="doneRoad">Done</button></div><div class="strip road-strip">${tiles}</div>`;
       f.hidden = false; f.classList.add('road-fly');
       f.querySelectorAll('[data-road]').forEach((b) => {
         b.onclick = () => {
