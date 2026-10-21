@@ -24,7 +24,7 @@ export const SHORTCUT_GROUPS = [
   { title: 'While drawing roads', rows: [
     { keys: ['1–5'], text: 'Pick a road type', file: 'src/ui/modules/road-tool.js', needle: '/^[1-5]$/' },
     { keys: ['Shift'], text: 'Hold for a straight line', file: 'src/ui/modules/road-tool.js', needle: "e.key === 'Shift'" },
-    { keys: ['Ctrl', 'Z'], text: 'Undo the last step: road, building, zone, district or bulldoze', file: 'src/ui/modules/road-tool.js', needle: "send({ type: 'undo' })" },
+    { keys: ['Ctrl', 'Z'], text: 'Undo the last step: road, building, zone, district, tree or bulldoze', file: 'src/ui/modules/road-tool.js', needle: "send({ type: 'undo' })" },
   ] },
   { title: 'Zones and buildings', rows: [
     { keys: ['0–4'], text: '0 erases, 1 to 4 pick a zone', file: 'src/ui/modules/zoning.js', needle: '/^[0-4]$/' },

@@ -3,16 +3,22 @@
 // The rules and the serialization registry are documented in docs/SAVE.md.
 import { freshState } from './state.js';
 import { systems } from './systems/index.js';
+import { getLayout } from '../world/layout.js';
+import { seedTrees } from '../world/trees.js';
 
 export const SAVE_KEY = 'nexus.save';
 export const BACKUP_KEY = 'nexus.save.backup';
 export const UNREADABLE_PREFIX = 'nexus.save.unreadable.';
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 export const MAX_FILE_CHARS = 5 * 1024 * 1024; // a town is a few hundred kilobytes; anything bigger is not one
 export const BACKUP_EVERY_MS = 10 * 60 * 1000; // the backup slot is refreshed at most this often while playing
 
 // migrations[i] upgrades a state saved at version i+1 to version i+2. Append only; never edit one that has shipped.
-export const migrations = [];
+// v2: trees are objects (state.trees). A v1 town gets the trees the generator makes; the trees system then clears
+// any that stand on a road, paint or lot, the same way it does for a fresh town.
+export const migrations = [
+  (s) => ({ ...s, trees: seedTrees(getLayout()) }),
+];
 
 export function wrap(state, now) {
   return { v: SAVE_VERSION, savedAt: now, state };

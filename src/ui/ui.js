@@ -29,13 +29,17 @@ export function createUi({ sim, scene, actions }) {
     scene.select(id);
     if (id) panels.showInspect(id); else panels.hideInspect();
   }
+  function selectTree(id) {
+    scene.select(null);
+    panels.showTree(id);
+  }
   function setTool(t) {
     const was = tool;
     tool = t;
     document.querySelectorAll('.tool').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tool === t)));
     panels.setFly(t);
     for (const m of mods) if (m.onTool) m.onTool(t, was);
-    if (t === 'bulldoze') hud.toast('Bulldoze: click a building to remove it');
+    if (t === 'bulldoze') hud.toast('Bulldoze: click a building or a tree to remove it');
   }
   function toggleSettings() {
     if (panels.settingsOpen()) { panels.hideSettings(); return; }
@@ -44,11 +48,16 @@ export function createUi({ sim, scene, actions }) {
     panels.showSettings(actions);
   }
 
-  // the canvas reports a click; this decides what it means
-  function onPick(id) {
-    if (!id) { select(null); return; }
-    if (tool === 'bulldoze') { send({ type: 'bulldoze', id }); return; }
-    select(id);
+  // the canvas reports a click; this decides what it means. A tree comes as { tree: id }, a building as its id.
+  function onPick(hit) {
+    if (!hit) { select(null); return; }
+    if (typeof hit === 'object') {
+      if (tool === 'bulldoze') { send({ type: 'removeTree', id: hit.tree }); select(null); return; }
+      selectTree(hit.tree);
+      return;
+    }
+    if (tool === 'bulldoze') { send({ type: 'bulldoze', id: hit }); return; }
+    select(hit);
   }
 
   document.querySelectorAll('.tool').forEach((b) => { b.onclick = () => setTool(tool === b.dataset.tool ? null : b.dataset.tool); });

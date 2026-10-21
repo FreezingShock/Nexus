@@ -2,19 +2,20 @@
 import { ZONES, TOOL_LISTS } from '../sim/catalog.js';
 import { MAX_LEVEL, income, nextLevelGain, trafficOf } from '../sim/economy.js';
 import { PAL } from '../world/palettes.js';
+import { speciesOf } from '../world/trees.js';
 import { $, fmt, fmtAgo } from './format.js';
 
 const CLOSE_SVG = '<svg width="16" height="16" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2L12 12M12 2L2 12" stroke="#2B2620" stroke-width="2.2" stroke-linecap="round"/></svg>';
 
 export function createPanels({ sim, send, toast, onClose, setTool }) {
   const s = sim.state;
-  const ui = { selected: null };
+  const ui = { selected: null, tree: null };
 
   // ---- inspect card ----
   function showInspect(id) {
     const b = sim.building(id);
     if (!b || !sim.alive(id)) { hideInspect(); return; } // a pick with no building behind it closes the card
-    ui.selected = id;
+    ui.selected = id; ui.tree = null;
     const box = $('inspect'), lv = sim.level(id), cost = sim.cost(id);
     box.hidden = false;
     const dots = [1, 2, 3, 4, 5].map((i) => `<i class="${i <= lv ? 'on' : ''}"></i>`).join('');
@@ -29,9 +30,24 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
     $('up').onclick = () => send({ type: 'upgrade', id });
     $('mv').onclick = () => toast('Move mode comes with the placement grid');
   }
-  function hideInspect() { $('inspect').hidden = true; ui.selected = null; }
+  // A town tree: a small card with its species and a free bulldoze. Undo brings it back.
+  function showTree(id) {
+    const t = sim.tree(id);
+    if (!t) { hideInspect(); return; }
+    ui.selected = null; ui.tree = id;
+    const box = $('inspect');
+    box.hidden = false;
+    box.innerHTML = `<button class="x" id="ix" aria-label="Close">${CLOSE_SVG}</button>
+    <div class="band"><h2 class="h-disp">${speciesOf(t)}</h2><div class="sub">${t.k === 'p' ? 'Conifer' : 'Broadleaf'} · a town tree</div></div>
+    <div class="pad"><p class="sub">Trees give way when their ground is zoned, built on or paved. Undo brings one back.</p>
+    <div class="row"><button class="btn grow" id="trc">Bulldoze tree · free</button></div></div>`;
+    $('ix').onclick = onClose;
+    $('trc').onclick = () => { send({ type: 'removeTree', id }); onClose(); };
+  }
+  function hideInspect() { $('inspect').hidden = true; ui.selected = null; ui.tree = null; }
   // cheap refresh of the upgrade button as coins change
   function refreshInspect() {
+    if (ui.tree !== null) { if (!sim.tree(ui.tree)) onClose(); return; } // a tree that was cleared or undone: close the card
     const up = $('up');
     if (!up || ui.selected === null) return;
     const b = sim.building(ui.selected);
@@ -104,5 +120,5 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
   }
   function hideSettings() { $('settings').hidden = true; $('settingsbtn').setAttribute('aria-expanded', 'false'); }
 
-  return { ui, showInspect, hideInspect, refreshInspect, setFly, showSettings, askConfirm, hideSettings, settingsOpen: () => !$('settings').hidden };
+  return { ui, showInspect, showTree, hideInspect, refreshInspect, setFly, showSettings, askConfirm, hideSettings, settingsOpen: () => !$('settings').hidden };
 }

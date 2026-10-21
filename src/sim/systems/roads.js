@@ -2,6 +2,7 @@
 // Saved: state.roads (see src/world/roadnet.js) and state.roadUnlocks. The grid's `road` layer is rebuilt from them.
 import { ROAD_TYPES } from '../catalog.js';
 import { GRID_N, tileIndex } from '../../world/grid.js';
+import { putTrees, takeOnTiles } from '../../world/trees.js';
 import { MAX_STROKE, ROAD_IDS, ROAD_KIND, BLOCK_TEXT, planStroke, roadBlock, starterRoads } from '../../world/roadnet.js';
 
 const UNDO_DEPTH = 24;
@@ -56,7 +57,10 @@ export default {
         if (grid.zone[e.idx]) { grid.zone[e.idx] = 0; cleared.push([e.gx, e.gz]); }
       }
       state.roads = next;
-      sim.roadUndo.push({ prev, paid: plan.cost, seq: sim.nextSeq() }); if (sim.roadUndo.length > UNDO_DEPTH) sim.roadUndo.shift();
+      // Trees on the new road give way; the undo step brings them back.
+      const tk = takeOnTiles(state.trees, new Set(plan.tiles.map((e) => e.idx)));
+      if (tk.taken.length) state.trees = tk.kept;
+      sim.roadUndo.push({ prev, paid: plan.cost, trees: tk.taken, seq: sim.nextSeq() }); if (sim.roadUndo.length > UNDO_DEPTH) sim.roadUndo.shift();
       note('road');
       emit({ type: 'roadsChanged', kind: 'draw', tiles: plan.tiles.map((e) => [e.gx, e.gz]), cost: plan.cost });
       if (cleared.length) sim.dispatch({ type: 'clearZoneTiles', tiles: cleared });
@@ -92,6 +96,7 @@ export default {
         tiles.push([idx % GRID_N, Math.floor(idx / GRID_N)]);
       }
       state.roads = next; state.coins = Math.max(0, state.coins + e.paid); syncDisplay();
+      state.trees = putTrees(state.trees, e.trees || []);
       emit({ type: 'roadsChanged', kind: 'undo', tiles, cost: -e.paid });
     },
 

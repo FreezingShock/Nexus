@@ -10,8 +10,9 @@ import { getLayout } from '../src/world/layout.js';
 import { ensureInstanceColors } from '../src/render/geom.js';
 import { buildCars } from '../src/render/cars.js';
 import { buildTownsfolk } from '../src/render/townsfolk.js';
-import { buildStatic, buildTrees } from '../src/render/props.js';
+import { buildStatic } from '../src/render/props.js';
 import roads from '../src/render/systems/roads.js';
+import trees from '../src/render/systems/trees.js';
 
 test('every instanced mesh in the town has an instance colour buffer', () => {
   const layout = getLayout();
@@ -19,7 +20,8 @@ test('every instanced mesh in the town has an instance colour buffer', () => {
   const world = new THREE.Group();
   const camera = { view: { tx: 0, tz: 0, half: 46, zoom: 1 } };
   buildStatic(world, layout);
-  buildTrees(world, layout);
+  const treeSys = trees.create({ THREE, world, layout, grid: sim.grid, camera, scene: world, sys: () => null });
+  treeSys.frame({ state: sim.state });
   buildCars(world, sim.grid, camera);
   buildTownsfolk(world, sim.grid, camera);
   roads.create({ THREE, world, layout, grid: sim.grid, camera, scene: world });
@@ -39,7 +41,8 @@ test('every geometry the town builds has real attributes (no null or arrayless e
   const world = new THREE.Group();
   const camera = { view: { tx: 0, tz: 0, half: 46, zoom: 1 } };
   buildStatic(world, layout);
-  buildTrees(world, layout);
+  const treeSys = trees.create({ THREE, world, layout, grid: sim.grid, camera, scene: world, sys: () => null });
+  treeSys.frame({ state: sim.state });
   buildCars(world, sim.grid, camera);
   buildTownsfolk(world, sim.grid, camera);
   roads.create({ THREE, world, layout, grid: sim.grid, camera, scene: world });
@@ -61,7 +64,8 @@ test('instance buffers hold their full capacity and every draw count fits, while
   const world = new THREE.Group();
   const camera = { view: { tx: 0, tz: 0, half: 46, zoom: 1 } };
   buildStatic(world, layout);
-  buildTrees(world, layout);
+  const treeSys = trees.create({ THREE, world, layout, grid: sim.grid, camera, scene: world, sys: () => null });
+  treeSys.frame({ state: sim.state });
   const cars = buildCars(world, sim.grid, camera);
   const folk = buildTownsfolk(world, sim.grid, camera);
   const sys = roads.create({ THREE, world, layout, grid: sim.grid, camera, scene: world });

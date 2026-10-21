@@ -11,6 +11,7 @@ import puffs from './puffs.js';
 import roads from './roads.js';
 import servicesOverlay from './services-overlay.js';
 import tileview from './tileview.js';
+import trees from './trees.js';
 import turbines from './turbines.js';
 
 export const renderSystems = [
@@ -24,5 +25,6 @@ export const renderSystems = [
   roads,
   servicesOverlay,
   tileview,
+  trees,
   turbines,
 ];
