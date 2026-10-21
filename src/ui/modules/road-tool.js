@@ -118,7 +118,7 @@ export default {
 
     // ---- pointer ----
     function onDown(e) {
-      if (e.button === 2 && (anchor || stroke)) { cancel(); return; }
+      if (e.button === 2 && (anchor || stroke)) { claim(e); cancel(); return; }
       if (e.button !== 0) return;
       const t = tileAt(e); if (!t) return;
       if (drawing()) {

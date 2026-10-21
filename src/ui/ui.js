@@ -6,7 +6,8 @@ import { createPostcard } from './postcard.js';
 import { registryOf } from '../core/registry.js';
 import { uiModules } from './modules/index.js';
 
-const TOOL_KEYS = { r: 'roads', z: 'zones', b: 'build', s: 'services', p: 'parks', t: 'traffic', x: 'bulldoze' };
+// S is taken by WASD (camera), so Services sits on C.
+const TOOL_KEYS = { r: 'roads', z: 'zones', b: 'build', c: 'services', p: 'parks', t: 'traffic', x: 'bulldoze' };
 
 export function createUi({ sim, scene, actions }) {
   const send = (cmd) => sim.dispatch(cmd);
@@ -53,10 +54,21 @@ export function createUi({ sim, scene, actions }) {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (mods.some((m) => m.onKey && m.onKey(e))) return;
     const k = e.key.toLowerCase();
-    if (k === 'q') scene.rotate(-1); else if (k === 'e') scene.rotate(1);
-    else if (TOOL_KEYS[k]) setTool(tool === TOOL_KEYS[k] ? null : TOOL_KEYS[k]);
+    if (TOOL_KEYS[k]) setTool(tool === TOOL_KEYS[k] ? null : TOOL_KEYS[k]);
     else if (e.key === 'Escape') { if (panels.settingsOpen()) panels.hideSettings(); else if (tool) setTool(null); else select(null); }
   });
+
+  // The game is not a web page: no browser menu (Save image and so on) over the town or its cards.
+  // Text fields keep their own menu so copy and paste still work.
+  addEventListener('contextmenu', (e) => {
+    if (e.target.closest && e.target.closest('input,textarea,select,[contenteditable="true"]')) return;
+    e.preventDefault();
+  });
+  // The header wraps on narrow screens, so the floating cards start below whatever height it has.
+  const header = document.querySelector('header.top');
+  if (header && window.ResizeObserver) {
+    new ResizeObserver(() => document.documentElement.style.setProperty('--hud-bottom', header.offsetTop + header.offsetHeight + 'px')).observe(header);
+  }
 
   // sim events -> feedback
   sim.subscribe((e) => {
@@ -67,9 +79,16 @@ export function createUi({ sim, scene, actions }) {
     if (e.type === 'changed') hud.sync();
   });
 
+  // Right-click with no drag: leave the tool in hand, otherwise close the open card.
+  function onCancel() {
+    if (tool) setTool(null);
+    else if (panels.settingsOpen()) panels.hideSettings();
+    else select(null);
+  }
+
   return {
     tool: () => tool,
-    onPick,
+    onPick, onCancel,
     hud, postcard, toast: hud.toast,
     showPostcard: () => postcard.show(),
     // Opens Settings if needed and asks a question inside it (import uses this).

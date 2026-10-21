@@ -80,7 +80,7 @@ export default {
     card.id = 'services-card'; card.className = 'card';
     card.innerHTML = '<div class="sv-head"><h3>Happiness</h3><span class="sv-pct"></span></div>' +
       '<div class="sv-meter" role="img" aria-label="Average happiness"><i></i></div><p class="sub sv-note"></p>';
-    $('app').appendChild(card);
+    $('leftcol').appendChild(card);
     const pct = card.querySelector('.sv-pct'), bar = card.querySelector('.sv-meter i'), note = card.querySelector('.sv-note');
     function syncCard() {
       const s = sim.services.summary(), p = Math.round(s.average * 100);

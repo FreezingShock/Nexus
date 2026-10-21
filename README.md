@@ -27,7 +27,7 @@ Options: `-Branch main` (or `scripts/refresh.sh main`) to view another branch, `
 
 ## Controls
 
-Drag to pan, scroll to zoom, Q / E to rotate, click a building to inspect or upgrade it. Tools: R roads, Z zones, B buildings, S services, P parks, T traffic, X bulldoze. The moon button toggles night. The menu button has export, import and start over.
+WASD moves the camera, Q / E or right-drag turns it, scroll zooms, and F switches to free fly (walk through the town with WASD, Space and Shift, drag to look). Click a building to inspect or upgrade it. Right-click cancels a tool. Tools: R roads, Z zones, B buildings, C services, P parks, T traffic, X bulldoze. The moon button toggles night. The menu button has export, import and start over.
 
 ## Layout
 

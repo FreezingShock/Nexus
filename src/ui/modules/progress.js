@@ -42,7 +42,7 @@ export default {
           <p class="sub">Renewal starts the town over with fresh coins, Parts, roads and buildings. It keeps your points, unlocked roads, milestones and settings. Each point is +2% income, for good.</p>
         </section>
       </div>`;
-    $('app').appendChild(card);
+    $('leftcol').appendChild(card);
 
     const set = (id, text) => { const el = $(id); if (el.textContent !== text) el.textContent = text; };
     const todayKey = () => dayKey(sim.now());
