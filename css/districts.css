@@ -1,0 +1,28 @@
+/* Districts: the name labels over the town, and the flyout list. Colours come from the shared tokens in ui.css. */
+.dlayer{position:fixed;left:0;top:0;width:0;height:0;overflow:visible;pointer-events:none;z-index:11}
+.dlabel{position:absolute;left:0;top:0;display:flex;align-items:center;gap:6px;padding:3px 10px 3px 6px;white-space:nowrap;background:var(--paper);border:2px solid var(--ink);border-radius:11px 13px 10px 12px;box-shadow:0 2px 0 var(--ink);font:700 12.5px/1.2 var(--body);color:var(--ink)}
+.dlabel[hidden]{display:none}
+.dlabel i{flex:0 0 auto;width:12px;height:12px;border-radius:4px;border:1.5px solid var(--ink)}
+.dlabel span{max-width:200px;overflow:hidden;text-overflow:ellipsis}
+
+#stage.districts canvas{cursor:cell}
+
+.fly.dfly{padding:12px 16px 12px;width:min(440px,calc(100vw - 32px))}
+.dfly .head{margin-bottom:8px}
+.drow-top{display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;margin-bottom:6px}
+.drow-top .btn.primary{flex:1 1 180px;min-height:48px}
+.dbtn{flex:1 1 140px;min-height:48px}
+.dlist{list-style:none;margin:0;padding:0;max-height:min(44vh,360px);overflow:auto}
+.drow{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:2px dashed var(--paper-3)}
+.drow:last-child{border-bottom:0}
+.drow[aria-pressed="true"] .dname{border-color:var(--action)}
+.dpick{flex:0 0 auto;width:40px;height:34px;padding:0;border:0;background:none;border-radius:8px;cursor:pointer}
+.dswatch{display:block;width:100%;height:100%;border-radius:9px;border:2.5px solid var(--ink);box-shadow:0 2px 0 var(--ink)}
+.drow[aria-pressed="true"] .dpick{outline:3px solid var(--action);outline-offset:2px;border-radius:10px}
+.dtext{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.dname{width:100%;min-width:0;font:800 15px/1.2 var(--display);color:var(--ink);background:var(--paper);border:2px solid transparent;border-radius:10px;padding:4px 8px}
+.dname:hover{border-color:var(--paper-3)}
+.dname:focus{outline:none;border-color:var(--action);background:#FFFDF6}
+.dtext small{font-size:12.5px;color:var(--ink-soft);font-weight:700;padding-left:8px}
+.dsmall{flex:0 0 auto;padding:6px 9px;min-height:36px;font-size:13px}
+.dhelp{margin:8px 0 0;font-size:13px}

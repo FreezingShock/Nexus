@@ -3,6 +3,7 @@
 // Hook shapes are documented in docs/EXTENDING.md. Modules run in order of their optional `order` number, then file name.
 import cameraModes from './camera-modes.js';
 import commute from './commute.js';
+import districts from './districts.js';
 import notes from './notes.js';
 import onboarding from './onboarding.js';
 import placement from './placement.js';
@@ -16,6 +17,7 @@ import zoning from './zoning.js';
 export const uiModules = [
   cameraModes,
   commute,
+  districts,
   notes,
   onboarding,
   placement,

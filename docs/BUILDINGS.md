@@ -13,7 +13,7 @@ Every building is assembled from the same small kit (`src/render/models/kit.js`)
 
 ## Levels
 
-Levels only add details, in this order (`decorate` in the kit): 2 window boxes and door pots; 3 chimney, cornice, round gable window; 4 dormers, front hedges, lamp, balconies on tall blocks; 5 gold cornice, bunting, weathervane or flag. Some models add their own (second smokestack, flag).
+Each upgrade pops the building and throws a small ring of dust (`src/render/systems/puffs.js`); a new zoned building throws a little dust as it goes up. One instanced mesh, so a burst is one draw call. Levels only add details, in this order (`decorate` in the kit): 2 window boxes and door pots; 3 chimney, cornice, round gable window; 4 dormers, front hedges, lamp, balconies on tall blocks; 5 gold cornice, bunting, weathervane or flag. Some models add their own (second smokestack, flag).
 
 ## Footprints
 

@@ -38,7 +38,7 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
   // ---- flyout ----
   function setFly(tool) {
     const f = $('fly');
-    if (!tool || tool === 'bulldoze' || tool === 'zones') { f.hidden = true; return; } // zones: src/ui/modules/zoning.js fills the flyout
+    if (!tool || tool === 'bulldoze' || tool === 'zones' || tool === 'districts') { f.hidden = true; return; } // zones and districts: their modules fill the flyout
     let h = '';
     if (tool === 'roads') {
       return; // the road tool (src/ui/modules/road-tool.js) fills the flyout itself

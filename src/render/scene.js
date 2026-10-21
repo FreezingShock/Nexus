@@ -28,9 +28,10 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
   buildFarms(world, layout.farms);
   buildStatic(world, layout);
   buildTrees(world, layout);
-  const town = createTown(world, layout);
+  // Dust puffs come from the puffs system, which is created below: look it up when a building pops, not here.
+  const town = createTown(world, layout, { burst: (x, z, r, n) => byId.get('puffs')?.burst(x, z, r, n) });
   const sysDefs = registryOf('render systems', renderSystems).list();
-  const mods = sysDefs.map((d) => d.create({ THREE, world, layout, grid, camera, scene }) || {});
+  const mods = sysDefs.map((d) => d.create({ THREE, world, layout, grid, camera, scene, sys: (id) => byId.get(id) || null }) || {});
   const byId = new Map(sysDefs.map((d, i) => [d.id, mods[i]]));
   ensureInstanceColors(scene); // after the systems build: every instanced mesh in the town carries a colour buffer
   let dusk = null, nightOn = false, drag = null;
