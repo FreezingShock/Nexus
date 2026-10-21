@@ -3,6 +3,7 @@
 // junction. State machine: walk -> idle | enter -> inside -> exit -> walk.
 import * as THREE from '../../vendor/three/three.module.min.js';
 import { toon } from './materials.js';
+import { allocInstanceColors } from './geom.js';
 import { GRID_N, tileIndex } from '../world/grid.js';
 import { DIRS, connMask, dirsOfMask, opposite } from '../world/roadnet.js';
 import { makeRng } from '../world/rng.js';
@@ -17,7 +18,7 @@ const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
 
 export function buildTownsfolk(parent, grid, camera) {
   const rng = makeRng(131);
-  const body = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.17, 0.2, 0.6, 6), toon(0xffffff), MAX);
+  const body = allocInstanceColors(new THREE.InstancedMesh(new THREE.CylinderGeometry(0.17, 0.2, 0.6, 6), toon(0xffffff), MAX));
   const head = new THREE.InstancedMesh(new THREE.SphereGeometry(0.15, 6, 5), toon(SKIN), MAX);
   for (const m of [body, head]) { m.frustumCulled = false; m.castShadow = true; m.count = 0; }
   const col = new THREE.Color();

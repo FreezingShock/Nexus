@@ -5,15 +5,24 @@ import { lineMat } from './materials.js';
 const v = new THREE.Vector3();
 const nm = new THREE.Matrix3();
 
+// Gives an InstancedMesh a colour buffer sized to its full capacity (instanceMatrix.count), white where nothing sets
+// a colour. three.js sizes the buffer from `mesh.count` the first time setColorAt runs, so a mesh that starts empty gets
+// a zero-length buffer, and the draw call then fails with "Vertex buffer is not big enough". Call this before the first
+// setColorAt, and before the mesh's count grows.
+export function allocInstanceColors(mesh) {
+  const cap = mesh.instanceMatrix.count;
+  if (mesh.instanceColor && mesh.instanceColor.count >= cap) return mesh;
+  const arr = new Float32Array(cap * 3).fill(1);
+  if (mesh.instanceColor) arr.set(mesh.instanceColor.array.subarray(0, arr.length));
+  mesh.instanceColor = new THREE.InstancedBufferAttribute(arr, 3);
+  return mesh;
+}
+
 // three.js compiles one shader program per material and per instanceColor setting, and an InstancedMesh without
 // instanceColor can end up drawn with the program of one that has it. The first frame then throws and the town stays
-// black. Every instanced mesh gets a colour buffer, white where nothing sets a colour, so no two can disagree.
+// black. Every instanced mesh in the tree gets a full-capacity colour buffer, so no two can disagree.
 export function ensureInstanceColors(root) {
-  const white = new THREE.Color(0xffffff);
-  root.traverse((o) => {
-    if (!o.isInstancedMesh || o.instanceColor) return;
-    for (let i = 0; i < o.instanceMatrix.count; i++) o.setColorAt(i, white);
-  });
+  root.traverse((o) => { if (o.isInstancedMesh) allocInstanceColors(o); });
   return root;
 }
 

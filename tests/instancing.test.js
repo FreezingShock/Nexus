@@ -54,3 +54,42 @@ test('every geometry the town builds has real attributes (no null or arrayless e
   });
   assert.ok(seen > 0);
 });
+
+test('instance buffers hold their full capacity and every draw count fits, while cars, buses and townsfolk move', () => {
+  const layout = getLayout();
+  const sim = createSim({ state: freshState(), layout });
+  const world = new THREE.Group();
+  const camera = { view: { tx: 0, tz: 0, half: 46, zoom: 1 } };
+  buildStatic(world, layout);
+  buildTrees(world, layout);
+  const cars = buildCars(world, sim.grid, camera);
+  const folk = buildTownsfolk(world, sim.grid, camera);
+  const sys = roads.create({ THREE, world, layout, grid: sim.grid, camera, scene: world });
+  ensureInstanceColors(world);
+  const check = (tag) => {
+    world.traverse((o) => {
+      if (o.isInstancedMesh) {
+        const cap = o.instanceMatrix.count;
+        assert.ok(o.count <= cap, `${tag}: ${o.material.type} draws ${o.count} instances from a capacity of ${cap}`);
+        assert.ok(o.instanceColor.count >= cap, `${tag}: instanceColor holds ${o.instanceColor.count} of ${cap}`);
+      }
+      const g = o.geometry;
+      if (g && g.index) {
+        const pos = g.attributes.position ? g.attributes.position.count : 0;
+        let max = -1;
+        for (let i = 0; i < g.index.count; i++) max = Math.max(max, g.index.getX(i));
+        assert.ok(max < pos, `${tag}: ${o.type} index ${max} reaches past ${pos} vertices`);
+      }
+    });
+  };
+  check('start');
+  for (let f = 0; f < 600; f++) {
+    sim.tick();
+    cars.update(1 / 30, sim.state.roads);
+    folk.update(1 / 30, sim.state.roads);
+    if (sys && sys.frame) sys.frame({ dt: 1 / 30, t: f / 30, simDt: 1 / 30, state: sim.state, tool: null });
+    if (f % 30 === 0) check(`frame ${f}`);
+  }
+  check('end');
+  assert.ok(cars.carCount() > 0 && folk.count() > 0, 'the simulation should have produced traffic and townsfolk');
+});

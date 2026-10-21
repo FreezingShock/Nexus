@@ -7,6 +7,7 @@ import { GRID_N } from '../../world/grid.js';
 import { DIRS, connMask, shapeOf } from '../../world/roadnet.js';
 import { hash } from '../../world/terrain.js';
 import { Acc, ASPHALT, emitTiles, groundY, roadMaterial, tileWorld } from '../road-mesh.js';
+import { allocInstanceColors } from '../geom.js';
 
 const CHUNK = 16, PER_ROW = GRID_N / CHUNK;
 const TRAFFIC = [null, [0.616, 0.702, 0.486], [0.851, 0.706, 0.373], [0.722, 0.278, 0.18]]; // by class: free, busy, jammed
@@ -132,7 +133,7 @@ export default {
     }
 
     // ---- dust ----
-    const puffMesh = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.2, 0), new THREE.MeshToonMaterial({ color: 0xFFFFFF }), MAX_PUFFS);
+    const puffMesh = allocInstanceColors(new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.2, 0), new THREE.MeshToonMaterial({ color: 0xFFFFFF }), MAX_PUFFS));
     puffMesh.frustumCulled = false; puffMesh.count = 0; group.add(puffMesh);
     const puffs = [];
     const dummy = new THREE.Object3D(), colr = new THREE.Color();

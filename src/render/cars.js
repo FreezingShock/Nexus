@@ -8,6 +8,7 @@ import { GRID_N } from '../world/grid.js';
 import { DIRS, opposite } from '../world/roadnet.js';
 import { CAR_COLORS } from '../world/palettes.js';
 import { groundY, tileWorld } from './road-mesh.js';
+import { allocInstanceColors } from './geom.js';
 import { Fleet, BUS, DRIVE, KERB, KERB_TIME, SHRINK_TIME, laneOf, laneOffset } from './vehicle-agents.js';
 
 const CAR_MAX = 500, CAR_TARGET = 300, CARS_PER_FLOW = 0.35; // cars on screen = volume on the network x this
@@ -41,7 +42,7 @@ function modelGeometry(s) {
 // One model: instanced bodies and cabins, the ink edges as one line buffer, and the offsets that place them.
 function buildModel(parent, spec, cap, cabinColour) {
   const g = modelGeometry(spec);
-  const bodies = new THREE.InstancedMesh(g.body, toon(0xffffff), cap);
+  const bodies = allocInstanceColors(new THREE.InstancedMesh(g.body, toon(0xffffff), cap));
   const cabins = new THREE.InstancedMesh(g.cabin, toon(cabinColour), cap);
   for (const m of [bodies, cabins]) { m.frustumCulled = false; m.castShadow = true; m.receiveShadow = true; m.count = 0; }
 
