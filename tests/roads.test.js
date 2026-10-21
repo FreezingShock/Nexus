@@ -133,7 +133,8 @@ test('drawRoad refuses bad input: unaffordable, blocked, locked, disconnected', 
 
 test('one-way roads take their direction from the stroke', () => {
   const sim = createSim({ layout });
-  sim.state.coins = 1000;
+  sim.state.coins = 1000; sim.state.parts = 150;
+  sim.dispatch({ type: 'unlockRoad', roadType: 'one' });
   sim.dispatch({ type: 'drawRoad', roadType: 'one', path: [[free[0], free[1]], [free[0], free[1] + 1], [free[0] + 1, free[1] + 1]] });
   const r = sim.state.roads;
   assert.equal(r[key(free[0], free[1])].d, 1);

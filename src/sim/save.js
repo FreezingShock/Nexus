@@ -1,11 +1,17 @@
-// Versioned save envelope { v, savedAt, state } with ordered migrations.
+// Save envelope { v, savedAt, state }, ordered migrations, one backup slot, quarantine for unreadable saves,
+// and file import / export. Every storage call is wrapped: private windows and blocked storage throw.
+// The rules and the serialization registry are documented in docs/SAVE.md.
 import { freshState } from './state.js';
 import { systems } from './systems/index.js';
 
 export const SAVE_KEY = 'nexus.save';
+export const BACKUP_KEY = 'nexus.save.backup';
+export const UNREADABLE_PREFIX = 'nexus.save.unreadable.';
 export const SAVE_VERSION = 1;
+export const MAX_FILE_CHARS = 5 * 1024 * 1024; // a town is a few hundred kilobytes; anything bigger is not one
+export const BACKUP_EVERY_MS = 10 * 60 * 1000; // the backup slot is refreshed at most this often while playing
 
-// migrations[i] upgrades a state saved at version i+1 to version i+2.
+// migrations[i] upgrades a state saved at version i+1 to version i+2. Append only; never edit one that has shipped.
 export const migrations = [];
 
 export function wrap(state, now) {
@@ -13,16 +19,17 @@ export function wrap(state, now) {
 }
 
 const num = (x, d, lo = 0, hi = 1e18) => (Number.isFinite(x) ? Math.min(hi, Math.max(lo, x)) : d);
+const isObj = (x) => !!x && typeof x === 'object' && !Array.isArray(x);
 
-// Coerce an untrusted state into the current shape.
-export function sanitize(s) {
+// Coerce an untrusted state into the current shape. Each system keeps and validates its own fields.
+export function sanitize(s, defs = systems) {
   const f = freshState();
-  if (!s || typeof s !== 'object') return f;
+  if (!isObj(s)) return f;
   const levels = {};
-  if (s.levels && typeof s.levels === 'object') {
+  if (isObj(s.levels)) {
     for (const [k, v] of Object.entries(s.levels)) if (/^b\d+$/.test(k) && Number.isInteger(v)) levels[k] = Math.min(99, Math.max(1, v));
   }
-  const off = s.offline && typeof s.offline === 'object' ? s.offline : null;
+  const off = isObj(s.offline) ? s.offline : null;
   const out = {
     coins: num(s.coins, f.coins), parts: num(s.parts, f.parts),
     levels,
@@ -31,42 +38,163 @@ export function sanitize(s) {
     offline: off ? { coins: num(off.coins, 0), parts: num(off.parts, 0), awayS: num(off.awayS, 0), fullS: num(off.fullS, 0), easeS: num(off.easeS, 0) } : null,
     log: Array.isArray(s.log) ? s.log.filter((e) => e && typeof e.k === 'string').slice(-8).map((e) => ({ k: e.k.slice(0, 8), n: String(e.n ?? '').slice(0, 40) })) : [],
   };
-  // each system keeps and validates its own saved fields; missing ones fall back to fresh defaults
-  for (const d of systems) {
-    if (d.state) Object.assign(out, d.state());
+  for (const d of defs) {
+    if (d.state) {
+      const defaults = d.state();
+      if (d.sanitize) Object.assign(out, defaults); // its sanitize hook replaces whatever it keeps
+      else {
+        // No sanitize hook: keep a saved value only when its type matches the default. Prefer writing a sanitize hook.
+        for (const [k, v] of Object.entries(defaults)) {
+          const got = s[k];
+          const same = got !== undefined && got !== null && typeof got === typeof v && Array.isArray(got) === Array.isArray(v);
+          out[k] = same ? got : v;
+        }
+      }
+    }
     if (d.sanitize) Object.assign(out, d.sanitize(s, f));
   }
   return out;
 }
 
-// Returns { ok, state, savedAt } or { ok:false, error }.
-export function unwrap(raw) {
+// Returns { ok, state, savedAt, v } or { ok:false, error }. savedAt is null when the save has no usable time.
+// `version` and `steps` are injectable so tests can exercise migrations without shipping a new version.
+export function unwrap(raw, { version = SAVE_VERSION, steps = migrations } = {}) {
   let env;
   try { env = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch { return { ok: false, error: 'not JSON' }; }
-  if (!env || typeof env !== 'object' || !Number.isInteger(env.v) || env.v < 1) return { ok: false, error: 'not a Nexus save' };
-  if (env.v > SAVE_VERSION) return { ok: false, error: 'saved by a newer version' };
-  let state = env.state;
-  for (let v = env.v; v < SAVE_VERSION; v++) state = migrations[v - 1](state);
-  return { ok: true, state: sanitize(state), savedAt: Number.isFinite(env.savedAt) ? env.savedAt : 0 };
+  if (!isObj(env) || !Number.isInteger(env.v) || env.v < 1) return { ok: false, error: 'not a Nexus save' };
+  if (env.v > version) return { ok: false, error: 'saved by a newer version' };
+  if (!isObj(env.state)) return { ok: false, error: 'no town in this save' };
+  try {
+    let state = env.state;
+    for (let v = env.v; v < version; v++) {
+      const step = steps[v - 1];
+      if (typeof step !== 'function') return { ok: false, error: 'no upgrade from version ' + v };
+      state = step(state);
+      if (!isObj(state)) return { ok: false, error: 'an upgrade from version ' + v + ' failed' };
+    }
+    return {
+      ok: true, v: env.v, state: sanitize(state),
+      savedAt: Number.isFinite(env.savedAt) && env.savedAt > 0 ? env.savedAt : null,
+    };
+  } catch {
+    return { ok: false, error: 'could not read this save' };
+  }
 }
 
-// Every storage call is wrapped: private windows and blocked storage throw.
+function safeStorage() {
+  try { return globalThis.localStorage || null; } catch { return null; }
+}
+// Raw text of a key, or null when absent. Throws when storage is blocked; callers catch.
+const getRaw = (storage, key) => { const v = storage.getItem(key); return typeof v === 'string' ? v : null; };
+
+// Parses the envelope shape without the full sanitize. Used on hot paths (every autosave).
+function readEnvelope(raw) {
+  try {
+    const env = JSON.parse(raw);
+    return isObj(env) && Number.isInteger(env.v) && env.v >= 1 && isObj(env.state) ? env : null;
+  } catch { return null; }
+}
+
+// Primary slot only. Returns { ok, ... } and never throws.
 export function readSave(storage = safeStorage()) {
   try {
-    const raw = storage && storage.getItem(SAVE_KEY);
-    return raw ? unwrap(raw) : { ok: false, error: 'empty' };
+    if (!storage) return { ok: false, error: 'storage unavailable' };
+    const raw = getRaw(storage, SAVE_KEY);
+    return raw === null ? { ok: false, error: 'empty' } : unwrap(raw);
   } catch { return { ok: false, error: 'storage unavailable' }; }
 }
-export function writeSave(state, now, storage = safeStorage()) {
+
+// Writes the town to the primary slot. The previous save moves to the backup slot when it is at least
+// BACKUP_EVERY_MS old, or always with { forceBackup } (import and restore). A corrupt previous save never
+// replaces a good backup. Returns true when the primary write landed.
+export function writeSave(state, now, storage = safeStorage(), { forceBackup = false } = {}) {
   try {
     if (!storage) return false;
-    storage.setItem(SAVE_KEY, JSON.stringify(wrap(state, now)));
+    const raw = JSON.stringify(wrap(state, now));
+    const prev = getRaw(storage, SAVE_KEY);
+    if (prev !== null && prev !== raw) {
+      const env = readEnvelope(prev);
+      if (env && (forceBackup || now - (env.savedAt ?? 0) >= BACKUP_EVERY_MS)) keepBackup(storage, prev);
+    }
+    storage.setItem(SAVE_KEY, raw);
     return true;
   } catch { return false; }
 }
-export function clearSave(storage = safeStorage()) {
-  try { storage && storage.removeItem(SAVE_KEY); return true; } catch { return false; }
+function keepBackup(storage, raw) {
+  try { storage.setItem(BACKUP_KEY, raw); } catch { /* the primary write still goes ahead */ }
 }
-function safeStorage() {
-  try { return globalThis.localStorage || null; } catch { return null; }
+
+// The backup slot as { savedAt } when it holds a readable save, else null. Used by the settings card.
+export function backupInfo(storage = safeStorage()) {
+  try {
+    if (!storage) return null;
+    const raw = getRaw(storage, BACKUP_KEY);
+    const env = raw === null ? null : readEnvelope(raw);
+    return env ? { savedAt: Number.isFinite(env.savedAt) ? env.savedAt : null } : null;
+  } catch { return null; }
+}
+
+// Swaps the backup in as the current save, stamped `now` so the restored town is not credited with the time it was away.
+// The current save becomes the backup, so restoring is itself undoable. Returns false when there is no backup.
+export function restoreBackup(storage = safeStorage(), now = Date.now()) {
+  try {
+    if (!storage) return false;
+    const raw = getRaw(storage, BACKUP_KEY);
+    const env = raw === null ? null : readEnvelope(raw);
+    if (!env) return false;
+    const cur = getRaw(storage, SAVE_KEY);
+    if (cur !== null && readEnvelope(cur)) keepBackup(storage, cur);
+    storage.setItem(SAVE_KEY, JSON.stringify({ ...env, savedAt: now }));
+    return true;
+  } catch { return false; }
+}
+
+// Start over. The town moves to the backup slot first, so it can still be restored from Settings.
+export function clearSave(storage = safeStorage()) {
+  try {
+    if (!storage) return true;
+    const cur = getRaw(storage, SAVE_KEY);
+    if (cur !== null && readEnvelope(cur)) keepBackup(storage, cur);
+    storage.removeItem(SAVE_KEY);
+    return true;
+  } catch { return false; }
+}
+
+const STORAGE_OFF = 'This browser will not keep saves, so this town lasts only this visit. Export a copy from Settings.';
+const UNREADABLE = 'Your saved town could not be read. Its text is kept in this browser, and a new town starts here. Import a save file in Settings to bring a town back.';
+const FROM_BACKUP = 'Your latest save could not be read, so your town was restored from its backup.';
+
+// The town for this visit. Never throws. Source is 'save', 'backup' or 'new'; `notice` is text to show, or ''.
+export function loadGame(storage = safeStorage(), now = Date.now()) {
+  const fresh = (notice) => ({ state: freshState(), savedAt: null, source: 'new', notice });
+  let raw;
+  try { raw = storage ? getRaw(storage, SAVE_KEY) : null; } catch { return fresh(STORAGE_OFF); }
+  if (!storage) return fresh(STORAGE_OFF);
+  if (raw === null) return fresh('');
+  const main = unwrap(raw);
+  if (main.ok) return { state: main.state, savedAt: main.savedAt, source: 'save', notice: '' };
+  // Keep the unreadable text before anything overwrites it, then fall back to the backup.
+  try { storage.setItem(UNREADABLE_PREFIX + now, raw); } catch { /* nothing more we can do; the notice still says so */ }
+  let back = null;
+  try { const b = getRaw(storage, BACKUP_KEY); back = b === null ? null : unwrap(b); } catch { back = null; }
+  if (back && back.ok) return { state: back.state, savedAt: back.savedAt, source: 'backup', notice: FROM_BACKUP };
+  return fresh(UNREADABLE);
+}
+
+// Export text for a download. Stamped with the time of export.
+export function exportText(state, now) {
+  return JSON.stringify(wrap(state, now), null, 2);
+}
+
+// Validates a file's text before the player is asked to replace the current town. Pure: nothing is written.
+export function importText(text) {
+  if (typeof text !== 'string' || !text.length) return { ok: false, error: 'the file is empty' };
+  if (text.length > MAX_FILE_CHARS) return { ok: false, error: 'the file is too large to be a town' };
+  let env;
+  try { env = JSON.parse(text); } catch { return { ok: false, error: 'the file is not JSON' }; }
+  const r = unwrap(env);
+  if (!r.ok) return { ok: false, error: r.error };
+  const s = env.state;
+  if (!Number.isFinite(s.coins) || !isObj(s.roads)) return { ok: false, error: 'the file does not hold a Nexus town' };
+  return { ok: true, state: r.state, savedAt: r.savedAt };
 }

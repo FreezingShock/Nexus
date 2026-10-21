@@ -2,7 +2,7 @@
 import { ZONES, TOOL_LISTS } from '../sim/catalog.js';
 import { MAX_LEVEL, income, nextLevelGain, trafficOf } from '../sim/economy.js';
 import { PAL } from '../world/palettes.js';
-import { $, fmt } from './format.js';
+import { $, fmt, fmtAgo } from './format.js';
 
 const CLOSE_SVG = '<svg width="16" height="16" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2L12 12M12 2L2 12" stroke="#2B2620" stroke-width="2.2" stroke-linecap="round"/></svg>';
 
@@ -16,12 +16,13 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
     const box = $('inspect'), b = sim.building(id), lv = sim.level(id), cost = sim.cost(id);
     box.hidden = false;
     const dots = [1, 2, 3, 4, 5].map((i) => `<i class="${i <= lv ? 'on' : ''}"></i>`).join('');
-    const maxed = lv >= MAX_LEVEL;
+    const park = !b.floors; // parks are ground: no storeys, so nothing to upgrade
+    const maxed = lv >= MAX_LEVEL || park;
     box.innerHTML = `<button class="x" id="ix" aria-label="Close">${CLOSE_SVG}</button>
-    <div class="band"><h2 class="h-disp">${b.name}</h2><div class="sub">${b.floors} floors · ${PAL[b.pal].name} palette</div></div>
+    <div class="band"><h2 class="h-disp">${b.name}</h2><div class="sub">${park ? 'Park' : b.floors + ' floors'} · ${PAL[b.pal].name} palette</div></div>
     <div class="pad"><div class="lvl">Level ${dots}</div>
     <div class="stats"><div class="stat">Income<b>${income(b.floors, lv)}/s</b></div><div class="stat">Traffic<b>${trafficOf(b.floors)}/min</b></div><div class="stat info">Next level<b>${maxed ? 'Max' : '+' + nextLevelGain(lv) + '%'}</b></div></div>
-    <div class="row"><button class="btn primary grow" id="up" ${maxed || s.coins < cost ? 'disabled' : ''}>${maxed ? 'Top level' : 'Upgrade · ' + fmt(cost) + ' coins'}</button><button class="btn" id="mv">Move</button></div></div>`;
+    <div class="row"><button class="btn primary grow" id="up" ${maxed || s.coins < cost ? 'disabled' : ''}>${park ? 'Finished' : maxed ? 'Top level' : 'Upgrade · ' + fmt(cost) + ' coins'}</button><button class="btn" id="mv">Move</button></div></div>`;
     $('ix').onclick = onClose;
     $('up').onclick = () => send({ type: 'upgrade', id });
     $('mv').onclick = () => toast('Move mode comes with the placement grid');
@@ -31,7 +32,7 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
   function refreshInspect() {
     const up = $('up');
     if (!up || ui.selected === null || !sim.alive(ui.selected)) return;
-    up.disabled = sim.level(ui.selected) >= MAX_LEVEL || s.coins < sim.cost(ui.selected);
+    up.disabled = sim.level(ui.selected) >= MAX_LEVEL || !sim.building(ui.selected).floors || s.coins < sim.cost(ui.selected);
   }
 
   // ---- flyout ----
@@ -59,24 +60,45 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
   }
 
   // ---- settings ----
-  function showSettings({ exportSave, importPick, reset }) {
+  // Autosave status, export, import, restore and start over. Destructive steps ask first, inline.
+  let shown = null; // the actions the card was opened with, so "Not now" can return to it
+  function showSettings(actions) {
+    shown = actions;
+    const box = $('settings');
+    box.hidden = false;
+    const back = actions.backup();
+    box.innerHTML = `<button class="x" id="sx" aria-label="Close">${CLOSE_SVG}</button>
+    <div class="band"><h2 class="h-disp">Settings</h2><div class="sub">Your town is saved in this browser</div></div>
+    <div class="pad"><p class="sub">${actions.status()}</p>
+    <p class="sub">Export a copy to keep it safe or move it to another device.</p>
+    <button class="btn" id="exp">Export save</button><button class="btn" id="imp">Import save</button>
+    ${back ? `<button class="btn" id="rest">Restore the town from ${fmtAgo(back.savedAt)}</button>` : ''}
+    <button class="btn danger" id="rst">Start over</button></div>`;
+    $('sx').onclick = hideSettings;
+    $('exp').onclick = actions.exportSave;
+    $('imp').onclick = actions.importPick;
+    if (back) $('rest').onclick = () => askConfirm({
+      title: 'Go back to the backup?', ok: 'Restore it', onOk: actions.restore,
+      text: 'The town from ' + fmtAgo(back.savedAt) + ' comes back. The town you have now moves to the backup slot.',
+    });
+    $('rst').onclick = () => askConfirm({
+      title: 'Start over?', ok: 'Start over', onOk: actions.reset, danger: true,
+      text: 'This clears the town from this browser. The current town moves to the backup slot, so you can still restore it from here.',
+    });
+  }
+  // Replaces the settings body with a question and two choices. Used by import and the destructive steps above.
+  function askConfirm({ title, text, ok, onOk, danger = false }) {
     const box = $('settings');
     box.hidden = false;
     box.innerHTML = `<button class="x" id="sx" aria-label="Close">${CLOSE_SVG}</button>
-    <div class="band"><h2 class="h-disp">Settings</h2><div class="sub">Your town is saved in this browser</div></div>
-    <div class="pad"><p class="sub">Autosaves every 45 seconds. Export a copy to keep it safe or move it to another device.</p>
-    <button class="btn" id="exp">Export save</button><button class="btn" id="imp">Import save</button>
-    <button class="btn danger" id="rst">Start over</button></div>`;
+    <div class="band"><h2 class="h-disp">${title}</h2></div>
+    <div class="pad"><p class="sub">${text}</p>
+    <button class="btn ${danger ? 'danger' : 'primary'}" id="cy">${ok}</button><button class="btn" id="cn">Not now</button></div>`;
     $('sx').onclick = hideSettings;
-    $('exp').onclick = exportSave;
-    $('imp').onclick = importPick;
-    let armed = false;
-    $('rst').onclick = () => {
-      if (!armed) { armed = true; $('rst').textContent = 'Tap again to erase this town'; setTimeout(() => { armed = false; const r = $('rst'); if (r) r.textContent = 'Start over'; }, 4000); return; }
-      reset();
-    };
+    $('cn').onclick = () => showSettings(shown);
+    $('cy').onclick = onOk;
   }
   function hideSettings() { $('settings').hidden = true; $('settingsbtn').setAttribute('aria-expanded', 'false'); }
 
-  return { ui, showInspect, hideInspect, refreshInspect, setFly, showSettings, hideSettings, settingsOpen: () => !$('settings').hidden };
+  return { ui, showInspect, hideInspect, refreshInspect, setFly, showSettings, askConfirm, hideSettings, settingsOpen: () => !$('settings').hidden };
 }

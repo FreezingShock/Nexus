@@ -3,12 +3,16 @@
 // Hook shapes are documented in docs/EXTENDING.md. Modules run in order of their optional `order` number, then file name.
 import commute from './commute.js';
 import placement from './placement.js';
+import progress from './progress.js';
 import roadTool from './road-tool.js';
+import services from './services.js';
 import zoning from './zoning.js';
 
 export const uiModules = [
   commute,
   placement,
+  progress,
   roadTool,
+  services,
   zoning,
 ];

@@ -1,11 +1,12 @@
 // Placing buildings: the Buildings and Services tools. Pick a model and a size, move the mouse to see a see-through
 // preview on the grid (green fits, rose does not), click to place. V turns the building.
 // This module only reads the sim and sends { type: 'place' }; the rules live in src/world/placement.js and the sim system.
-import { CATEGORIES, areaCost, canonicalDims, footprintsOf, modelById, modelsIn } from '../../world/models.js';
+import { CATEGORIES, canonicalDims, footprintsOf, modelById, modelsIn } from '../../world/models.js';
 import { worldToTile } from '../../world/grid.js';
 import { checkLot, problemText } from '../../world/placement.js';
+import { fmt } from '../format.js';
 
-const TOOLS = { build: 'Buildings', services: 'Services' };
+const TOOLS = { build: 'Buildings', services: 'Services', parks: 'Parks' };
 
 export default {
   id: 'placement',
@@ -37,7 +38,7 @@ export default {
         (c.length > 1 ? `<div class="ptabs">${c.map((x) => `<button class="tog" data-pcat="${x.id}" aria-pressed="${x.id === ui.cat}">${x.name}</button>`).join('')}</div>` : '') +
         `<div class="grid">${modelsIn(ui.cat).map((m) => `<button class="opt" data-pm="${m.id}" aria-pressed="${m.id === ui.model}"><b>${m.name}</b><small>${m.sub}</small><small><b style="color:var(--ink)">from ${m.cost} coins</b></small></button>`).join('')}</div>` +
         `<div class="lanes"><span class="sub" style="margin:0">Size</span>${sizes.map((s, i) => `<button class="tog" data-psize="${i}" aria-pressed="${i === ui.size}">${s[0]} × ${s[1]}</button>`).join('')}` +
-        `<button class="tog" id="pturn" title="Turn the building (V)">Turn · V</button><span style="flex:1"></span><span class="sub" style="margin:0"><b style="color:var(--ink)">${areaCost(d, a, b)} coins</b> for a ${a} × ${b} ${d.name.toLowerCase()}</span></div>`;
+        `<button class="tog" id="pturn" title="Turn the building (V)">Turn · V</button><span style="flex:1"></span><span class="sub" style="margin:0"><b style="color:var(--ink)">${fmt(sim.placeCost(d, a, b))} coins</b> for a ${a} × ${b} ${d.name.toLowerCase()}</span></div>`;
       fly.hidden = false;
     }
     fly.addEventListener('click', (e) => {

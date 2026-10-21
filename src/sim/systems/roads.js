@@ -29,6 +29,8 @@ export default {
       }
     } else return { roads: fresh.roads, roadUnlocks: [] };
     const unlocks = Array.isArray(raw.roadUnlocks) ? raw.roadUnlocks.filter((id) => typeOf(id) && typeOf(id).unlockParts) : [];
+    // Roads already on the map stay open: a tier added after a save was made never locks that save's streets.
+    for (const r of Object.values(roads)) if (typeOf(r.t) && typeOf(r.t).unlockParts) unlocks.push(r.t);
     return { roads, roadUnlocks: [...new Set(unlocks)] };
   },
   init(ctx) { ctx.sim.roadUndo = []; syncGrid(ctx); },
