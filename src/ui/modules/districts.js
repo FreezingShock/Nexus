@@ -4,6 +4,7 @@
 import { inBounds, worldToTile, rectTiles, GRID_N, BASE } from '../../world/grid.js';
 import { DISTRICT_COLORS, FLAG_STYLES, MAX_DISTRICTS, NAME_MAX, flagColor, lotsByDistrict } from '../../world/districts.js';
 import { $ } from '../format.js';
+import { OBSTACLES, isBlocked } from '../label-fit.js';
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const ERASE = 'erase';
@@ -205,6 +206,23 @@ export default {
         }
       }
       for (const [slot, el] of labelEls) if (!seen.has(slot)) { el.remove(); labelEls.delete(slot); }
+      const now = performance.now();
+      if (now - fitAt > FIT_EVERY_MS) { fitAt = now; fitLabels(); }
+    }
+    // A label that would sit on the interface is hidden (visibility, so it keeps its place for the next check).
+    // Obstacles are read a few times a second, not every frame.
+    let fitAt = -Infinity;
+    const FIT_EVERY_MS = 200;
+    function fitLabels() {
+      const shown = (el) => { const cs = getComputedStyle(el); return el.getClientRects().length > 0 && cs.visibility !== 'hidden' && cs.display !== 'none' && Number(cs.opacity) > 0; };
+      const obstacles = [];
+      for (const el of document.querySelectorAll(OBSTACLES.join(','))) {
+        if (!layer.contains(el) && shown(el)) obstacles.push(el.getBoundingClientRect());
+      }
+      for (const el of labelEls.values()) {
+        if (el.hidden) { el.classList.remove('blocked'); continue; }
+        el.classList.toggle('blocked', isBlocked(el.getBoundingClientRect(), obstacles));
+      }
     }
 
     // ---- tool on/off ----

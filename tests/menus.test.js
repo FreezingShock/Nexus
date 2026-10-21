@@ -7,6 +7,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tileCard, zoneCard, zoneVignette, roadSwatch, categoryIcon, coins, detailText, effectOf, coverageEffect, buildingEffect, esc, mkey } from '../src/ui/cards.js';
 import { thumbFor } from '../src/render/thumbs.js';
+import { overlaps, isBlocked, OBSTACLES } from '../src/ui/label-fit.js';
 import { buildParts } from '../src/render/models/builders.js';
 import { describe as describeModel } from '../src/world/models.js';
 import { MODELS, modelById, footprintsOf, canonicalDims } from '../src/world/models.js';
@@ -122,11 +123,23 @@ test('the footer shows the price of the chosen size, and tiles show their own pr
   assert.match(placement, /class="pdetail"/);
 });
 
-test('the zoning module owns an always-visible demand widget with three zone rows', () => {
+test('the demand widget sits in the top HUD row, and the zoning module fills its rows', () => {
+  const html = read('index.html');
+  const chips = html.slice(html.indexOf('<div class="chips">'), html.indexOf('<div class="ctrl card">'));
+  assert.match(chips, /id="demandw"/);
+  assert.match(chips, /id="demandrows"/);
   const zoning = read('src/ui/modules/zoning.js');
-  assert.match(zoning, /id = 'demandw'/);
+  assert.match(zoning, /getElementById\('demandrows'\)/);
   assert.match(zoning, /\[1, 2, 3\]\.map/);
-  assert.match(read('index.html') + read('css/menus.css'), /\.demandw/);
+  assert.match(read('css/menus.css'), /\.chip\.demand/);
+  assert.doesNotMatch(read('css/menus.css'), /\.demandw/);
+});
+
+test('district labels hide when they would sit on the interface, and the fit runs a few times a second', () => {
+  const d = read('src/ui/modules/districts.js');
+  assert.match(d, /from '\.\.\/label-fit\.js'/);
+  assert.match(d, /FIT_EVERY_MS = 200/);
+  assert.match(read('css/districts.css'), /\.dlabel\.blocked\{visibility:hidden\}/);
 });
 
 test('bulldoze has no menu: only a hint chip, and no toast', () => {
@@ -140,4 +153,20 @@ test('the menu stylesheet is linked and the old card styles are gone', () => {
   assert.ok(read('index.html').includes('css/menus.css'));
   assert.doesNotMatch(read('css/zoning.css'), /zbtn|zrow|\.dem\b/);
   assert.doesNotMatch(read('css/roads.css'), /nth-of-type|road-fly \.head/);
+});
+
+test('a label overlaps a rectangle it touches, with a margin, and is clear of one far away', () => {
+  const r = (left, top, w, h) => ({ left, top, right: left + w, bottom: top + h });
+  assert.equal(overlaps(r(0, 0, 50, 20), r(40, 10, 50, 20)), true);
+  assert.equal(overlaps(r(0, 0, 50, 20), r(200, 200, 50, 20)), false);
+  assert.equal(overlaps(r(0, 0, 50, 20), r(53, 0, 50, 20)), true, 'within the margin counts as touching');
+  assert.equal(overlaps(r(0, 0, 50, 20), r(60, 0, 50, 20)), false);
+  assert.equal(isBlocked(r(10, 10, 30, 10), [r(500, 500, 5, 5), r(20, 12, 5, 5)]), true);
+  assert.equal(isBlocked(r(10, 10, 30, 10), []), false);
+});
+
+test('the obstacles list covers the top HUD, the open cards, the flyouts and the postcard', () => {
+  for (const sel of ['.top > *', '#fly', '#inspect', '#settings', '.leftcol > *', '.postcard', '.envelope', '#tools']) {
+    assert.ok(OBSTACLES.includes(sel), sel);
+  }
 });
