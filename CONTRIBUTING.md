@@ -21,13 +21,15 @@ your branch ──PR──> tests pass + PR is not a draft ──bot──> inte
 
 New systems are new files, registered with one line.
 
-| You are adding | Create | Register in | Hooks |
-| --- | --- | --- | --- |
-| Rules, state, income, per-tick logic, commands | `src/sim/systems/<name>.js` | `src/sim/systems/index.js` | `state`, `sanitize`, `commands`, `rate`, `tick` |
-| Meshes, animation, visual effects | `src/render/systems/<name>.js` | `src/render/systems/index.js` | `create(ctx)` returning `frame`, `setNight` |
-| Panels, HUD widgets, shortcuts | `src/ui/modules/<name>.js` | `src/ui/modules/index.js` | `create(ctx)` returning `frame`, `onEvent`, `onKey` |
+| You are adding | Create | Hooks |
+| --- | --- | --- |
+| Rules, state, income, per-tick logic, commands | `src/sim/systems/<name>.js` | `state`, `sanitize`, `commands`, `rate`, `tick` |
+| Meshes, animation, visual effects | `src/render/systems/<name>.js` | `create(ctx)` returning `frame`, `setNight` |
+| Panels, HUD widgets, shortcuts | `src/ui/modules/<name>.js` | `create(ctx)` returning `frame`, `onEvent`, `onKey` |
 
-The comment at the top of each `index.js` documents the exact shape. `.gitattributes` merges those three index files with `merge=union`, so two threads each adding one line rarely conflict.
+Each file has a default export. After adding, renaming or removing one, run **`npm run registry`**: it regenerates the three `index.js` lists from the folder contents (one import and one list entry per file, sorted by file name). Never edit those index files by hand. A test fails if they are stale or contain conflict markers. Helpers go in a subfolder or outside these folders; only module files live directly in them. Full hook shapes: [docs/EXTENDING.md](docs/EXTENDING.md).
+
+If two PRs both add modules and a registry `index.js` conflicts, the bot resolves it by regenerating when it merges into `integration`. When you resolve the conflict yourself, run `npm run registry` instead of picking lines.
 
 Layers stay separate: the sim never touches the DOM or Three.js, the UI sends commands (`sim.dispatch({ type, ... })`), and render reads sim state. New saved fields come from a system's `state()` and `sanitize()`; a change to existing saved fields needs a migration in `src/sim/save.js` and a `SAVE_VERSION` bump.
 
@@ -52,4 +54,4 @@ When a design decision or budget changes, update the Development Plan artifact a
 - Settings > Actions > General: Workflow permissions = "Read and write permissions".
 - Settings > Branches: protect `main` (require a PR; tests check optional). Do not protect `integration`, or the bot cannot push to it.
 - Merge PRs into `main` with "Create a merge commit" rather than squash, so `integration` and `main` do not drift apart.
-- The bot workflows run from `main`, so they start working once this setup is merged.
+- Set the default branch to `main` (Settings > General > Default branch). It is currently a stale `claude/...` branch; scheduled and `workflow_run` workflows only run from the default branch.
