@@ -19,7 +19,7 @@ export function createUi({ sim, scene, actions }) {
     setTool: (t) => setTool(t),
   });
   const postcard = createPostcard({ sim, send, scene });
-  const mods = registryOf('ui modules', uiModules).list().map((d) => d.create({ sim, send, scene, toast: hud.toast }) || {});
+  const mods = registryOf('ui modules', uiModules).list().map((d) => d.create({ sim, send, scene, toast: hud.toast, tool: () => tool }) || {});
 
   function select(id) {
     scene.select(id);
@@ -30,7 +30,7 @@ export function createUi({ sim, scene, actions }) {
     tool = t;
     document.querySelectorAll('.tool').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tool === t)));
     panels.setFly(t);
-    if (t === 'roads') scene.focus(-12, 0); else if (was === 'roads') scene.focus(0, 0);
+    for (const m of mods) if (m.onTool) m.onTool(t, was);
     if (t === 'bulldoze') hud.toast('Bulldoze: click a building to remove it');
   }
   function toggleSettings() {
@@ -64,7 +64,6 @@ export function createUi({ sim, scene, actions }) {
     for (const m of mods) if (m.onEvent) m.onEvent(e);
     if (e.type === 'upgraded') { scene.pop(e.id); if (panels.ui.selected === e.id) panels.showInspect(e.id); }
     else if (e.type === 'bulldozed') { if (panels.ui.selected === e.id) select(null); }
-    else if (e.type === 'roadBuilt') panels.setFly('roads');
     if (e.type === 'changed') hud.sync();
   });
 

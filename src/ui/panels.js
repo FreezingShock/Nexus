@@ -1,21 +1,14 @@
 // Inspect card, tool flyouts and the settings card. They read sim data and send commands.
-import { ROAD_TYPES, RING_ROAD_TILES, ZONES, TOOL_LISTS } from '../sim/catalog.js';
+import { ZONES, TOOL_LISTS } from '../sim/catalog.js';
 import { MAX_LEVEL, income, nextLevelGain, trafficOf } from '../sim/economy.js';
 import { PAL } from '../world/palettes.js';
 import { $, fmt } from './format.js';
 
-const ROAD_SVG = {
-  two: '<svg width="100%" height="34" viewBox="0 0 120 34" preserveAspectRatio="none" aria-hidden="true"><rect x="0" y="9" width="120" height="20" fill="#8E8576" stroke="#2B2620" stroke-width="1.5"/><rect x="0" y="4" width="120" height="5" fill="#DDD3C0" stroke="#2B2620"/><rect x="0" y="29" width="120" height="4" fill="#DDD3C0" stroke="#2B2620"/><line x1="0" y1="19" x2="120" y2="19" stroke="#FAF3E4" stroke-width="2" stroke-dasharray="8 6"/></svg>',
-  bike: '<svg width="100%" height="34" viewBox="0 0 120 34" preserveAspectRatio="none" aria-hidden="true"><rect x="0" y="4" width="120" height="26" fill="#8E8576" stroke="#2B2620" stroke-width="1.5"/><rect x="0" y="4" width="120" height="6" fill="#BFD8C4" stroke="#2B2620"/><rect x="0" y="24" width="120" height="6" fill="#BFD8C4" stroke="#2B2620"/><line x1="0" y1="17" x2="120" y2="17" stroke="#FAF3E4" stroke-width="2" stroke-dasharray="8 6"/></svg>',
-  one: '<svg width="100%" height="34" viewBox="0 0 120 34" preserveAspectRatio="none" aria-hidden="true"><rect x="0" y="4" width="120" height="26" fill="#8E8576" stroke="#2B2620" stroke-width="1.5"/><path d="M16 17H46M38 11L46 17L38 23M64 17H94M86 11L94 17L86 23" stroke="#FAF3E4" stroke-width="2" fill="none" stroke-linecap="round"/></svg>',
-  bus: '<svg width="100%" height="34" viewBox="0 0 120 34" preserveAspectRatio="none" aria-hidden="true"><rect x="0" y="4" width="120" height="26" fill="#B5AB98" stroke="#2B2620" stroke-width="1.5"/><rect x="0" y="4" width="120" height="7" fill="#EBD9A0" stroke="#2B2620"/></svg>',
-  free: '<svg width="100%" height="34" viewBox="0 0 120 34" preserveAspectRatio="none" aria-hidden="true"><rect x="0" y="4" width="120" height="26" fill="#B5AB98" stroke="#2B2620" stroke-width="1.5"/><line x1="0" y1="17" x2="120" y2="17" stroke="#2B2620" stroke-width="2.5"/></svg>',
-};
 const CLOSE_SVG = '<svg width="16" height="16" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2L12 12M12 2L2 12" stroke="#2B2620" stroke-width="2.2" stroke-linecap="round"/></svg>';
 
 export function createPanels({ sim, send, toast, onClose, setTool }) {
   const s = sim.state;
-  const ui = { road: 'two', lane: { bike: false, dir: true }, selected: null };
+  const ui = { selected: null };
 
   // ---- inspect card ----
   function showInspect(id) {
@@ -44,13 +37,10 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
   // ---- flyout ----
   function setFly(tool) {
     const f = $('fly');
-    if (!tool || tool === 'bulldoze') { f.hidden = true; return; }
+    if (!tool || tool === 'bulldoze' || tool === 'zones') { f.hidden = true; return; } // zones: src/ui/modules/zoning.js fills the flyout
     let h = '';
     if (tool === 'roads') {
-      const t = ROAD_TYPES.find((r) => r.id === ui.road), total = RING_ROAD_TILES * t.cost;
-      h = `<div class="head"><h3>Road type</h3><span>Ring road · ${RING_ROAD_TILES} tiles · <b style="color:var(--ink)">${fmt(total)} coins</b></span></div><div class="grid">` +
-        ROAD_TYPES.map((r) => `<button class="opt${r.locked ? ' locked' : ''}" data-road="${r.id}" aria-pressed="${ui.road === r.id}">${ROAD_SVG[r.id]}<b>${r.name}</b><small>${r.sub}</small>${r.locked ? '' : `<small><b style="color:var(--ink)">${r.cost} coins</b> per tile</small>`}</button>`).join('') +
-        `</div><div class="lanes"><span class="sub" style="margin:0">Lanes</span><button class="tog" data-lane="dir" aria-pressed="${ui.lane.dir}">Two directions</button><button class="tog" data-lane="bike" aria-pressed="${ui.lane.bike}">Bike lane</button><button class="tog" disabled>Bus lane · 600 Parts</button><span style="flex:1"></span><button class="btn" id="cancelRoad">${s.ringRoad ? 'Close' : 'Cancel'}</button><button class="btn primary" id="buildRoad" ${s.ringRoad ? 'disabled' : ''}>${s.ringRoad ? 'Ring road built' : 'Build road · ' + fmt(total) + ' coins'}</button></div>`;
+      return; // the road tool (src/ui/modules/road-tool.js) fills the flyout itself
     } else if (tool === 'zones') {
       h = `<div class="head"><h3>Zones</h3><span>Paint areas; buildings grow on their own</span></div><div class="grid">` +
         ZONES.map((z, i) => `<button class="opt" aria-pressed="${i === 0}"><div class="sw" style="background:${z[1]}"></div><b>${z[0]}</b><small>Low, medium or high density</small></button>`).join('') + '</div>';
@@ -63,21 +53,9 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
         TOOL_LISTS[tool].map((b, i) => `<button class="opt" aria-pressed="${i === 0}"><b>${b[0]}</b><small>${b[1]}</small><small><b style="color:var(--ink)">${b[2]} coins</b></small></button>`).join('') + '</div>';
     }
     f.innerHTML = h; f.hidden = false;
-    f.querySelectorAll('[data-road]').forEach((b) => {
-      b.onclick = () => {
-        const r = ROAD_TYPES.find((x) => x.id === b.dataset.road);
-        if (r.locked) { toast('Needs ' + r.sub.replace('Locked · ', '') + ' to unlock'); return; }
-        ui.road = r.id; setFly('roads');
-      };
-    });
-    f.querySelectorAll('[data-lane]').forEach((b) => {
-      b.onclick = () => { ui.lane[b.dataset.lane] = !ui.lane[b.dataset.lane]; b.setAttribute('aria-pressed', ui.lane[b.dataset.lane]); };
-    });
-    f.querySelectorAll('.opt:not([data-road])').forEach((b) => {
+    f.querySelectorAll('.opt').forEach((b) => {
       b.onclick = () => { b.parentNode.querySelectorAll('.opt').forEach((o) => o.setAttribute('aria-pressed', 'false')); b.setAttribute('aria-pressed', 'true'); };
     });
-    const br = $('buildRoad'); if (br) br.onclick = () => { send({ type: 'buildRoad', roadType: ui.road }); setFly('roads'); };
-    const cr = $('cancelRoad'); if (cr) cr.onclick = () => setTool(null);
   }
 
   // ---- settings ----

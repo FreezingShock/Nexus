@@ -1,6 +1,7 @@
 // The simulation: plain data in, plain data out. No DOM, no THREE.
 import { getLayout } from '../world/layout.js';
 import { registryOf } from '../core/registry.js';
+import { createGrid } from '../world/grid.js';
 import { systems as systemDefs } from './systems/index.js';
 import { PARTS_RATE, coinRate, levelOf, upgradeCost } from './economy.js';
 import { MIN_POSTCARD_S, awaySeconds, offlineWindow } from './offline.js';
@@ -36,7 +37,8 @@ export function createSim({ state = freshState(), layout = getLayout(), now = ()
     for (const d of registry.list()) if (d.rate) rate += d.rate(ctx);
     rate = Math.round(rate * 10) / 10;
   };
-  const ctx = { sim, state, layout, emit, note, refresh, charge, syncDisplay };
+  const grid = createGrid(layout);
+  const ctx = { sim, state, layout, grid, emit, note, refresh, charge, syncDisplay };
 
   sim.subscribe = (fn) => { listeners.add(fn); return () => listeners.delete(fn); };
   sim.rate = () => rate;
@@ -77,6 +79,7 @@ export function createSim({ state = freshState(), layout = getLayout(), now = ()
     if (away <= 0) return null;
     const w = offlineWindow(away);
     const gainC = rate * w.effectiveS, gainP = PARTS_RATE * w.effectiveS;
+    registry.run('offline', ctx, w.effectiveS); // grown from here on; income above used the rate before growth
     if (away < MIN_POSTCARD_S) { state.coins += gainC; state.parts += gainP; prev = { coins: state.coins, parts: state.parts }; return null; }
     const o = state.offline;
     state.offline = o
@@ -91,6 +94,8 @@ export function createSim({ state = freshState(), layout = getLayout(), now = ()
     fn(ctx, cmd);
     emit({ type: 'changed' });
   };
+  sim.grid = grid;
+  registry.run('init', ctx); // systems fill the grid layers they own from saved state
   refresh();
   return sim;
 }
