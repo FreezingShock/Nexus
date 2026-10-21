@@ -5,6 +5,18 @@ import { lineMat } from './materials.js';
 const v = new THREE.Vector3();
 const nm = new THREE.Matrix3();
 
+// three.js compiles one shader program per material and per instanceColor setting, and an InstancedMesh without
+// instanceColor can end up drawn with the program of one that has it. The first frame then throws and the town stays
+// black. Every instanced mesh gets a colour buffer, white where nothing sets a colour, so no two can disagree.
+export function ensureInstanceColors(root) {
+  const white = new THREE.Color(0xffffff);
+  root.traverse((o) => {
+    if (!o.isInstancedMesh || o.instanceColor) return;
+    for (let i = 0; i < o.instanceMatrix.count; i++) o.setColorAt(i, white);
+  });
+  return root;
+}
+
 export class Batch {
   constructor() { this.buckets = new Map(); this.lines = []; }
 

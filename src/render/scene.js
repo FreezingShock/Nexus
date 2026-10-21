@@ -4,6 +4,7 @@ import { createCamera } from './camera.js';
 import { createLighting } from './night.js';
 import { buildTerrain, buildFarms } from './terrain.js';
 import { buildStatic, buildTrees } from './props.js';
+import { ensureInstanceColors } from './geom.js';
 import { registryOf } from '../core/registry.js';
 import { renderSystems } from './systems/index.js';
 import { createTown } from './town.js';
@@ -31,6 +32,7 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
   const sysDefs = registryOf('render systems', renderSystems).list();
   const mods = sysDefs.map((d) => d.create({ THREE, world, layout, grid, camera, scene }) || {});
   const byId = new Map(sysDefs.map((d, i) => [d.id, mods[i]]));
+  ensureInstanceColors(scene); // after the systems build: every instanced mesh in the town carries a colour buffer
   let dusk = null, nightOn = false, drag = null;
 
   function resize() {
