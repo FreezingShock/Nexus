@@ -8,5 +8,7 @@
 // Render systems read sim state, never write it, and keep draw calls low (instance or merge geometry).
 import cars from './cars.js';
 import turbines from './turbines.js';
+import gridOverlay from './grid-overlay.js';
+import roads from './roads.js';
 
-export const renderSystems = [cars, turbines];
+export const renderSystems = [cars, turbines, gridOverlay, roads];
