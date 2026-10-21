@@ -1,6 +1,7 @@
 // Generates the three registry index files from the files in their folders.
 //   node scripts/gen-registry.mjs          write the index files
 //   node scripts/gen-registry.mjs --check  exit 1 if any index file is out of date
+//   --root <dir>                           act on another checkout (used by CI)
 // Every .js file directly inside a registry folder (other than index.js) is a module with a default export.
 // Helpers belong in a subfolder or elsewhere. Run `npm run registry` after adding, renaming or removing a module.
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -46,7 +47,8 @@ export function generate(root) {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+  const ri = process.argv.indexOf('--root');
+  const root = ri > 0 ? resolve(process.argv[ri + 1]) : resolve(dirname(fileURLToPath(import.meta.url)), '..');
   const stale = [];
   for (const { path, content } of generate(root)) {
     let cur = '';

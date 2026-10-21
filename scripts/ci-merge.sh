@@ -6,6 +6,9 @@
 # conflicting files in conflicts.txt), anything else = error. Never pushes and never force-anything.
 set -u
 REF="$1"; MSG="$2"
+# TOOLS = a checkout holding this script and gen-registry.mjs; lets CI run the newest tooling against an older integration branch.
+TOOLS="${TOOLS:-$(cd "$(dirname "$0")/.." && pwd)}"
+GEN="node $TOOLS/scripts/gen-registry.mjs --root ."
 INDEXES="src/sim/systems/index.js src/render/systems/index.js src/ui/modules/index.js"
 
 if git merge-base --is-ancestor "$REF" HEAD; then echo "already contains $REF"; exit 0; fi
@@ -15,14 +18,14 @@ if ! git merge --no-ff -m "$MSG" "$REF"; then
   OTHER="$(grep -vxF -e src/sim/systems/index.js -e src/render/systems/index.js -e src/ui/modules/index.js conflicts.txt || true)"
   if [ -n "$OTHER" ]; then git merge --abort; exit 10; fi
   # only generated files conflict: rebuild them from the folders and finish the merge
-  node scripts/gen-registry.mjs || { git merge --abort; exit 10; }
+  $GEN || { git merge --abort; exit 10; }
   git add $INDEXES
   git -c core.editor=true commit --no-edit || exit 1
   rm -f conflicts.txt
 fi
 
 # a clean merge can still leave a stale index (two PRs adding files): regenerate and commit if so
-node scripts/gen-registry.mjs || exit 1
+$GEN || exit 1
 if ! git diff --quiet -- $INDEXES; then
   git add $INDEXES
   git commit -m "Regenerate registry indexes" || exit 1

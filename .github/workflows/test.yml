@@ -42,10 +42,15 @@ jobs:
       group: merge-into-integration
       cancel-in-progress: false
     steps:
+      # tooling comes from the PR's own checkout, so it works before these scripts exist on integration
+      - uses: actions/checkout@v4
+        with:
+          path: tools
       - uses: actions/checkout@v4
         with:
           ref: integration
           fetch-depth: 0
+          path: work
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -56,13 +61,14 @@ jobs:
           SHA: ${{ github.event.pull_request.head.sha }}
           BRANCH: ${{ github.event.pull_request.head.ref }}
           PR: ${{ github.event.pull_request.number }}
+        working-directory: work
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch origin "$SHA"
           BEFORE="$(git rev-parse HEAD)"
           rc=0
-          scripts/ci-merge.sh "$SHA" "Merge PR #$PR ($BRANCH) into integration" || rc=$?
+          TOOLS="$GITHUB_WORKSPACE/tools" bash "$GITHUB_WORKSPACE/tools/scripts/ci-merge.sh" "$SHA" "Merge PR #$PR ($BRANCH) into integration" || rc=$?
           if [ "$rc" = 10 ]; then echo "result=conflict" >> "$GITHUB_OUTPUT"; exit 0; fi
           if [ "$rc" != 0 ]; then exit "$rc"; fi
           if [ "$(git rev-parse HEAD)" = "$BEFORE" ]; then echo "result=already" >> "$GITHUB_OUTPUT"; exit 0; fi
@@ -90,12 +96,12 @@ jobs:
             if (existing.some((c) => c.body.includes(marker))) { core.info('Already commented for this commit.'); return; }
             let body;
             if (process.env.RESULT === 'conflict') {
-              const files = fs.readFileSync('conflicts.txt', 'utf8').trim().split('\n').map((f) => `- \`${f}\``).join('\n');
+              const files = fs.readFileSync('work/conflicts.txt', 'utf8').trim().split('\n').map((f) => `- \`${f}\``).join('\n');
               body = `Could not merge \`${sha}\` into \`integration\` because of conflicts in:\n\n${files}\n\n` +
                 'To fix: merge the latest `integration` into this branch (`git fetch origin && git merge origin/integration`), resolve the conflicts, run `npm run registry` if a registry `index.js` conflicts, and push. ' +
                 'The merge is retried automatically after tests pass. Nothing was changed on `integration`.';
             } else {
-              const tail = fs.readFileSync('test-tail.txt', 'utf8');
+              const tail = fs.readFileSync('work/test-tail.txt', 'utf8');
               body = `\`${sha}\` passes its own tests but the tests fail once merged with the current \`integration\`. Nothing was changed on \`integration\`.\n\n` +
                 '<details><summary>Test output</summary>\n\n```\n' + tail + '\n```\n</details>\n\n' +
                 'To fix: merge the latest `integration` into this branch, make the tests pass, and push.';
