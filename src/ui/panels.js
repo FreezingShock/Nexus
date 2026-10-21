@@ -12,8 +12,10 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
 
   // ---- inspect card ----
   function showInspect(id) {
+    const b = sim.building(id);
+    if (!b || !sim.alive(id)) { hideInspect(); return; } // a pick with no building behind it closes the card
     ui.selected = id;
-    const box = $('inspect'), b = sim.building(id), lv = sim.level(id), cost = sim.cost(id);
+    const box = $('inspect'), lv = sim.level(id), cost = sim.cost(id);
     box.hidden = false;
     const dots = [1, 2, 3, 4, 5].map((i) => `<i class="${i <= lv ? 'on' : ''}"></i>`).join('');
     const park = !b.floors; // parks are ground: no storeys, so nothing to upgrade
@@ -31,8 +33,10 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
   // cheap refresh of the upgrade button as coins change
   function refreshInspect() {
     const up = $('up');
-    if (!up || ui.selected === null || !sim.alive(ui.selected)) return;
-    up.disabled = sim.level(ui.selected) >= MAX_LEVEL || !sim.building(ui.selected).floors || s.coins < sim.cost(ui.selected);
+    if (!up || ui.selected === null) return;
+    const b = sim.building(ui.selected);
+    if (!b || !sim.alive(ui.selected)) { onClose(); return; } // demolished, undone or renewed away: close, don't keep a stale card
+    up.disabled = sim.level(ui.selected) >= MAX_LEVEL || !b.floors || s.coins < sim.cost(ui.selected);
   }
 
   // ---- flyout ----

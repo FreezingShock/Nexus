@@ -71,8 +71,9 @@ export default {
     // Each placed building costs more than the last: base x growth^placed (see balance.js).
     sim.placeCost = (def, fw, fd) => buildCost(areaCost(def, fw, fd), state.placed.length);
     const rec = (id) => state.placed.find((r) => r.id === id) || (sim.goneRecords && sim.goneRecords.get(id));
-    const cache = new Map();
-    const desc = (r) => { let d = cache.get(r.id); if (!d) { d = describe(r, 1); cache.set(r.id, d); } return d; };
+    // Keyed by the record itself: a Renewal starts ids over at b1001, and a cache by id would show the old building.
+    const descs = new WeakMap();
+    const desc = (r) => { let d = descs.get(r); if (!d) { d = describe(r, 1); if (d) descs.set(r, d); } return d; };
     sim.building = (id) => { const r = rec(id); return r ? desc(r) : base.building(id); };
     sim.alive = (id) => (rec(id) ? !state.removed.includes(id) : base.alive(id));
     sim.placedRecords = () => state.placed;

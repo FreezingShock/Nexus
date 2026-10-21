@@ -53,8 +53,9 @@ export function createSim({ state = freshState(), layout = getLayout(), now = ()
   sim.now = now;
   sim.building = (id) => byId.get(id);
   sim.alive = (id) => byId.has(id) && !state.removed.includes(id);
-  sim.level = (id) => levelOf(state, byId.get(id));
-  sim.cost = (id) => { const b = byId.get(id); return upgradeCost(b.floors, levelOf(state, b)); };
+  // Go through sim.building, not the layout map: placed records override it (see systems/placement.js).
+  sim.level = (id) => levelOf(state, sim.building(id));
+  sim.cost = (id) => { const b = sim.building(id); return b ? upgradeCost(b.floors, levelOf(state, b)) : 0; };
   // Interpolated currency for display: between the previous and current tick.
   sim.display = (alpha) => ({ coins: prev.coins + (state.coins - prev.coins) * alpha, parts: prev.parts + (state.parts - prev.parts) * alpha });
 
