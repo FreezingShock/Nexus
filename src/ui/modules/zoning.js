@@ -3,6 +3,7 @@
 import { inBounds, worldToTile } from '../../world/grid.js';
 import { ZONE_DEFS } from '../../sim/zones.js';
 import { $, fmt } from '../format.js';
+import { optCard, zoneIcon } from '../cards.js';
 
 const NAMES = ['R', 'C', 'I'];
 
@@ -98,9 +99,11 @@ export default {
       const f = $('fly'), st = sim.zoning.stats(), n = sim.zoning.painted;
       f.hidden = false;
       f.classList.add('zfly');
-      f.innerHTML = `<div class="head"><h3>Zones</h3><span class="demand"><small>Demand</small> ${bars()}<small>${n} tile${n === 1 ? '' : 's'} painted · ${st.count} building${st.count === 1 ? '' : 's'}</small></span></div><div class="zrow">` +
-        ZONE_DEFS.slice(1).map((z) => `<button class="zbtn" data-zone="${z.id}" aria-pressed="${brush === z.id}"><i style="background:${z.paint}"></i><span><b>${z.name}</b><small>${z.cost} coins a tile</small></span></button>`).join('') +
-        `<button class="zbtn eraser" data-zone="0" aria-pressed="${brush === 0}"><i></i><span><b>Eraser</b><small>Free</small></span></button></div><p class="sub zhelp">Drag on the map to paint a rectangle · keys 1 to 4 pick a zone, 0 erases · buildings grow where a road is close.</p>`;
+      f.innerHTML = `<div class="head"><h3>Zones</h3><span class="demand"><small>Demand</small> ${bars()}<small>${n} tile${n === 1 ? '' : 's'} painted · ${st.count} building${st.count === 1 ? '' : 's'}</small></span></div>` +
+        `<div class="grid menu-grid">` +
+        ZONE_DEFS.slice(1).map((z, i) => optCard({ pic: zoneIcon(z.id), title: z.name, line: z.sub, cost: `${z.cost} coins a tile`, key: String(i + 1), pressed: brush === z.id, data: { zone: z.id } })).join('') +
+        optCard({ pic: zoneIcon(0), title: 'Eraser', line: 'Clears zones back to open ground', cost: 'Free', key: '0', pressed: brush === 0, data: { zone: 0 } }) +
+        `</div><p class="sub zhelp">Drag on the map to paint a rectangle · buildings grow where a road is close.</p>`;
       f.querySelectorAll('[data-zone]').forEach((b) => { b.onclick = () => { setBrush(Number(b.dataset.zone)); }; });
     }
     function setBrush(z) {

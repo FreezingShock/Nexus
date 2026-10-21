@@ -5,14 +5,8 @@ import { ROAD_TYPES } from '../../sim/catalog.js';
 import { inBounds, tileIndex, worldToTile } from '../../world/grid.js';
 import { BLOCK_TEXT, elbowPath, extendStroke, planStroke, roadBlock, rulerPath } from '../../world/roadnet.js';
 import { $, fmt } from '../format.js';
+import { optCard, roadSwatch } from '../cards.js';
 
-const ICON = {
-  two: '<svg width="100%" height="34" viewBox="0 0 120 34" preserveAspectRatio="none" aria-hidden="true"><rect x="0" y="9" width="120" height="20" fill="#8E8576" stroke="#2B2620" stroke-width="1.5"/><rect x="0" y="4" width="120" height="5" fill="#DDD3C0" stroke="#2B2620"/><rect x="0" y="29" width="120" height="4" fill="#DDD3C0" stroke="#2B2620"/><line x1="0" y1="19" x2="120" y2="19" stroke="#FAF3E4" stroke-width="2" stroke-dasharray="8 6"/></svg>',
-  bike: '<svg width="100%" height="34" viewBox="0 0 120 34" preserveAspectRatio="none" aria-hidden="true"><rect x="0" y="4" width="120" height="26" fill="#8E8576" stroke="#2B2620" stroke-width="1.5"/><rect x="0" y="4" width="120" height="6" fill="#A8C179" stroke="#2B2620"/><rect x="0" y="24" width="120" height="6" fill="#A8C179" stroke="#2B2620"/><line x1="0" y1="17" x2="120" y2="17" stroke="#FAF3E4" stroke-width="2" stroke-dasharray="8 6"/></svg>',
-  one: '<svg width="100%" height="34" viewBox="0 0 120 34" preserveAspectRatio="none" aria-hidden="true"><rect x="0" y="4" width="120" height="26" fill="#8E8576" stroke="#2B2620" stroke-width="1.5"/><path d="M16 17H46M38 11L46 17L38 23M64 17H94M86 11L94 17L86 23" stroke="#FAF3E4" stroke-width="2" fill="none" stroke-linecap="round"/></svg>',
-  bus: '<svg width="100%" height="34" viewBox="0 0 120 34" preserveAspectRatio="none" aria-hidden="true"><rect x="0" y="4" width="120" height="26" fill="#8E8576" stroke="#2B2620" stroke-width="1.5"/><rect x="0" y="4" width="120" height="8" fill="#EBD9A0" stroke="#2B2620"/><rect x="0" y="22" width="120" height="8" fill="#EBD9A0" stroke="#2B2620"/></svg>',
-  free: '<svg width="100%" height="34" viewBox="0 0 120 34" preserveAspectRatio="none" aria-hidden="true"><rect x="0" y="4" width="120" height="26" fill="#6F685A" stroke="#2B2620" stroke-width="1.5"/><line x1="0" y1="15" x2="120" y2="15" stroke="#2B2620" stroke-width="2"/><line x1="0" y1="19" x2="120" y2="19" stroke="#2B2620" stroke-width="2"/></svg>',
-};
 const costOf = (id) => ROAD_TYPES.find((r) => r.id === id).cost;
 const BLUE = 0x8FB8D6, RED = 0xE3A08E, TERRA = 0xB8472E;
 
@@ -181,12 +175,15 @@ export default {
     // ---- flyout ----
     function renderFlyout() {
       const f = $('fly');
-      const cards = ROAD_TYPES.map((r) => {
+      const cards = ROAD_TYPES.map((r, i) => {
         const open = unlocked(r);
-        return `<button class="opt${open ? '' : ' locked'}" data-road="${r.id}" aria-pressed="${type === r.id}">${ICON[r.id]}<b>${r.name}</b><small>${r.sub}</small>` +
-          (open ? `<small><b style="color:var(--ink)">${r.cost} coins</b> per tile</small>` : `<small><b style="color:var(--action)">Unlock · ${fmt(r.unlockParts)} Parts</b></small>`) + '</button>';
+        return optCard({
+          pic: roadSwatch(r.id), title: r.name, line: r.sub,
+          cost: open ? `${r.cost} coins a tile` : '', unlock: open ? '' : `Unlock · ${fmt(r.unlockParts)} Parts`,
+          key: String(i + 1), locked: !open, pressed: type === r.id, data: { road: r.id },
+        });
       }).join('');
-      f.innerHTML = `<div class="head"><h3>Roads</h3><span>Drag to draw · click twice for a line · Shift keeps it straight · draw over a road to upgrade it · Esc stops · Ctrl+Z undoes</span><button class="btn" id="undoRoad">Undo</button><button class="btn primary" id="doneRoad">Done</button></div><div class="grid">${cards}</div>`;
+      f.innerHTML = `<div class="head"><h3>Roads</h3><span>Drag to draw · click twice for a line · Shift keeps it straight · draw over a road to upgrade it · Esc stops</span><button class="btn" id="undoRoad">Undo</button><button class="btn primary" id="doneRoad">Done</button></div><div class="grid menu-grid">${cards}</div>`;
       f.hidden = false; f.classList.add('road-fly');
       f.querySelectorAll('[data-road]').forEach((b) => {
         b.onclick = () => {

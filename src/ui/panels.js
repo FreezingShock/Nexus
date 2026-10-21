@@ -1,9 +1,9 @@
 // Inspect card, tool flyouts and the settings card. They read sim data and send commands.
-import { ZONES, TOOL_LISTS } from '../sim/catalog.js';
 import { MAX_LEVEL, income, nextLevelGain, trafficOf } from '../sim/economy.js';
 import { PAL } from '../world/palettes.js';
 import { $, fmt, fmtAgo } from './format.js';
 import { mountGraphics } from './graphics.js';
+import { tipCard } from './cards.js';
 
 const CLOSE_SVG = '<svg width="16" height="16" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2L12 12M12 2L2 12" stroke="#2B2620" stroke-width="2.2" stroke-linecap="round"/></svg>';
 
@@ -41,27 +41,24 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
   }
 
   // ---- flyout ----
+  // Roads, Zones, Districts, Buildings, Services and Parks fill the flyout themselves (their modules render it when they
+  // open). This function fills it for Traffic and Bulldoze, and hides it for every other tool.
+  const WRECKING_BALL = '<svg viewBox="0 0 54 54" aria-hidden="true"><line x1="27" y1="2" x2="27" y2="26" stroke="#2B2620" stroke-width="2.5"/><circle cx="27" cy="36" r="15" fill="#E3A08E" stroke="#2B2620" stroke-width="2.5"/><path d="M19 30l6 6M30 27l4 4" stroke="#FBF6EA" stroke-width="2" stroke-linecap="round"/></svg>';
+  const legend = (c, n) => `<span class="lchip"><i style="background:${c}"></i>${n}</span>`;
   function setFly(tool) {
     const f = $('fly');
-    if (!tool || tool === 'bulldoze' || tool === 'zones' || tool === 'districts') { f.hidden = true; return; } // zones and districts: their modules fill the flyout
-    let h = '';
-    if (tool === 'roads') {
-      return; // the road tool (src/ui/modules/road-tool.js) fills the flyout itself
-    } else if (tool === 'zones') {
-      h = `<div class="head"><h3>Zones</h3><span>Paint areas; buildings grow on their own</span></div><div class="grid">` +
-        ZONES.map((z, i) => `<button class="opt" aria-pressed="${i === 0}"><div class="sw" style="background:${z[1]}"></div><b>${z[0]}</b><small>Low, medium or high density</small></button>`).join('') + '</div>';
-    } else if (tool === 'traffic') {
-      const chip = (c, n) => `<span class="opt" style="flex-direction:row;align-items:center;gap:8px"><i style="width:22px;height:12px;border-radius:4px;background:${c};border:1.5px solid #2B2620"></i>${n}</span>`;
-      h = `<div class="head"><h3>Traffic flow</h3><span>Roads are tinted by how full they are</span></div><div class="lanes">${chip('#9DB37C', 'Free')}${chip('#D9B45F', 'Busy')}${chip('#B8472E', 'Jammed')}</div>`;
-    } else {
-      const names = { build: 'Buildings', services: 'Services', parks: 'Parks' };
-      h = `<div class="head"><h3>${names[tool]}</h3><span>Pick one, then click the map</span></div><div class="grid">` +
-        TOOL_LISTS[tool].map((b, i) => `<button class="opt" aria-pressed="${i === 0}"><b>${b[0]}</b><small>${b[1]}</small><small><b style="color:var(--ink)">${b[2]} coins</b></small></button>`).join('') + '</div>';
-    }
-    f.innerHTML = h; f.hidden = false;
-    f.querySelectorAll('.opt').forEach((b) => {
-      b.onclick = () => { b.parentNode.querySelectorAll('.opt').forEach((o) => o.setAttribute('aria-pressed', 'false')); b.setAttribute('aria-pressed', 'true'); };
-    });
+    if (tool === 'traffic') {
+      f.innerHTML = `<div class="head"><h3>Traffic flow</h3><span>Roads are tinted by how full they are</span></div><div class="lanes">${legend('#9DB37C', 'Free')}${legend('#D9B45F', 'Busy')}${legend('#B8472E', 'Jammed')}</div>`;
+      f.hidden = false;
+    } else if (tool === 'bulldoze') {
+      f.innerHTML = `<div class="head"><h3>Bulldoze</h3><span>Clear what you no longer need</span></div>` +
+        `<div class="bd-head">${WRECKING_BALL}<p>Click a building, or drag over roads, to clear them.</p></div>` +
+        `<div class="grid menu-grid">${tipCard({ title: 'Click a building', line: 'Clears that one building' })}` +
+        `${tipCard({ title: 'Drag over several', line: 'One drag is one undo step' })}` +
+        `${tipCard({ title: 'Bring it back', line: 'Undoes the last clearing', key: 'Ctrl+Z' })}` +
+        `${tipCard({ title: 'Stop', line: 'Leaves the tool', key: 'Esc' })}</div>`;
+      f.hidden = false;
+    } else f.hidden = true;
   }
 
   // ---- settings ----

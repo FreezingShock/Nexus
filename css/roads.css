@@ -17,6 +17,3 @@ body.no-select,body.no-select *{-webkit-user-select:none;user-select:none}
 .road-fly .head{flex-wrap:nowrap;align-items:center;gap:10px;margin-bottom:10px}
 .road-fly .head span{flex:1;font-size:13px;line-height:1.25}
 .road-fly .head .btn{height:40px;padding:0 14px;font-size:15px;flex:0 0 auto}
-.road-fly .opt{padding:8px 10px;gap:3px;min-height:0}
-.road-fly .opt svg{height:24px}
-.road-fly .opt small:nth-of-type(1){display:none}

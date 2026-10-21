@@ -8,6 +8,8 @@ import { worldToTile } from '../../world/grid.js';
 import { checkLot, frontRoadCount, planPlacement, problemText, rowOrigins } from '../../world/placement.js';
 import { buildCost } from '../../sim/economy.js';
 import { $, fmt } from '../format.js';
+import { thumbFor } from '../../render/thumbs.js';
+import { effectOf, optCard } from '../cards.js';
 
 const TOOLS = { build: 'Buildings', services: 'Services', parks: 'Parks' };
 const COIN = '<i class="coin"></i>';
@@ -39,12 +41,22 @@ export default {
       ui.model = model; ui.size = 0; ui.auto = true;
       render(); dirty = true;
     }
+    // One card per model: a picture of the real building, its name, what it is for, what it does and what it costs.
+    // Cards keep data-pm, which the services module reads for its tooltips.
+    const picOf = (id) => { const url = thumbFor(id); return url ? `<img src="${url}" alt="" width="176" height="132" decoding="async">` : '<span class="pic-ph"></span>'; };
+    function cardFor(m) {
+      return optCard({
+        pic: picOf(m.id), title: m.name, line: m.sub, note: effectOf(m),
+        cost: `from ${fmt(m.cost)} coins`, short: sim.state.coins < m.cost,
+        pressed: m.id === ui.model, data: { pm: m.id },
+      });
+    }
     function render() {
       const d = def(), c = cats();
       const sizes = footprintsOf(d), [a, b] = size();
-      fly.innerHTML = `<div class="head"><h3>${TOOLS[ui.tool]}</h3><span>Click to place one, or drag along a street for a row · V turns it · Esc stops</span></div>` +
+      fly.innerHTML = `<div class="head"><h3>${TOOLS[ui.tool]}</h3><span>Click to place · drag along a street for a row · V turns · Esc stops</span></div>` +
         (c.length > 1 ? `<div class="ptabs">${c.map((x) => `<button class="tog" data-pcat="${x.id}" aria-pressed="${x.id === ui.cat}">${x.name}</button>`).join('')}</div>` : '') +
-        `<div class="grid">${modelsIn(ui.cat).map((m) => `<button class="opt" data-pm="${m.id}" aria-pressed="${m.id === ui.model}"><b>${m.name}</b><small>${m.sub}</small><small><b style="color:var(--ink)">from ${m.cost} coins</b></small></button>`).join('')}</div>` +
+        `<div class="grid menu-grid">${modelsIn(ui.cat).map(cardFor).join('')}</div>` +
         `<div class="lanes"><span class="sub" style="margin:0">Size</span>${sizes.map((s, i) => `<button class="tog" data-psize="${i}" aria-pressed="${i === ui.size}">${s[0]} × ${s[1]}</button>`).join('')}` +
         `<button class="tog" id="pturn" title="Turn the building (V)">Turn · V</button><span style="flex:1"></span><span class="sub" style="margin:0"><b style="color:var(--ink)">${fmt(sim.placeCost(d, a, b))} coins</b> for a ${a} × ${b} ${d.name.toLowerCase()}</span></div>`;
       fly.hidden = false;

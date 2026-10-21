@@ -138,7 +138,7 @@ export default {
       f.innerHTML = `<div class="head"><h3>Districts</h3><span>Name a neighbourhood, then drag on the map to paint it</span></div>
         <div class="drow-top">
           <button class="btn primary" id="dNew" ${list.length >= MAX_DISTRICTS ? 'disabled' : ''}>${list.length >= MAX_DISTRICTS ? 'All ' + MAX_DISTRICTS + ' named' : 'New district'}</button>
-          <button class="zbtn eraser dbtn" data-brush="${ERASE}" aria-pressed="${brush === ERASE}"><i></i><span><b>Eraser</b><small>Free</small></span></button>
+          <button class="btn dbtn" data-brush="${ERASE}" aria-pressed="${brush === ERASE}" title="Clears district paint; free">Eraser</button>
         </div>
         ${list.length ? `<ul class="dlist">${rows}</ul>` : '<p class="sub dhelp">Start a district and it gets a flag and a name over the town. Districts are free and never change what a building costs.</p>'}
         <p class="sub dhelp">Drag to paint a rectangle, click one tile at a time. Rivers keep their own names.</p>`;
