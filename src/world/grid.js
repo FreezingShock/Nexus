@@ -41,6 +41,7 @@ export function createGrid(layout) {
   const road = new Uint8Array(GRID_N * GRID_N);   // owned by the road system (0 none, ROAD_STATIC, else a road kind)
   const zone = new Uint8Array(GRID_N * GRID_N);   // owned by zoning (0 none, else a zone id)
   const lot = new Uint16Array(GRID_N * GRID_N);   // owned by zoning (0 none, else growth lot number)
+  const district = new Uint8Array(GRID_N * GRID_N); // owned by districts (0 none, else a district slot 1 to 15)
 
   for (let gz = 0; gz < GRID_N; gz++) for (let gx = 0; gx < GRID_N; gx++) {
     const [cx, cz] = tileCenter(gx, gz);
@@ -72,12 +73,13 @@ export function createGrid(layout) {
   }
 
   const grid = {
-    N: GRID_N, TILE, base, road, zone, lot,
+    N: GRID_N, TILE, base, road, zone, lot, district,
     inBounds, tileIndex, tileCenter, worldToTile, snapToTile, rectTiles,
     baseAt: (gx, gz) => (inBounds(gx, gz) ? base[tileIndex(gx, gz)] : BASE.STEEP),
     roadAt: (gx, gz) => (inBounds(gx, gz) ? road[tileIndex(gx, gz)] : 0),
     zoneAt: (gx, gz) => (inBounds(gx, gz) ? zone[tileIndex(gx, gz)] : 0),
     lotAt: (gx, gz) => (inBounds(gx, gz) ? lot[tileIndex(gx, gz)] : 0),
+    districtAt: (gx, gz) => (inBounds(gx, gz) ? district[tileIndex(gx, gz)] : 0),
     // Open ground: land, nothing built on it. Roads and zoning both ask this before taking a tile.
     isOpen: (gx, gz) => inBounds(gx, gz) && base[tileIndex(gx, gz)] === BASE.LAND && road[tileIndex(gx, gz)] === 0 && lot[tileIndex(gx, gz)] === 0,
     // Roads may take open land, and may paint over a zone (the zone clears). They never take a grown lot.

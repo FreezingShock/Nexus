@@ -16,6 +16,7 @@ Roads and zones are two systems on one grid. `src/world/grid.js` is the only def
 | `road` | the road system | `0` none, `ROAD_STATIC` (255, the streets that ship with the town), anything else is a road kind the road system defines |
 | `zone` | zoning | `0` none, `1..4` a zone id |
 | `lot` | zoning | `0` none, else the grown lot number on that tile |
+| `district` | districts | `0` none, else a district slot 1 to 15 (see [DISTRICTS.md](DISTRICTS.md)) |
 
 Each system writes only its own layer and keeps its own saved fields in `state`. It rebuilds its layer from state in an `init(ctx)` hook, which `createSim` calls once. Derived layers are never saved.
 

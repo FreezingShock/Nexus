@@ -28,7 +28,8 @@ function proxyFor(parts, world) {
   return proxy;
 }
 
-export function createTown(root, layout) {
+// hooks.burst(x, z, radius, count): a dust puff when a building levels up (the puffs system).
+export function createTown(root, layout, hooks = {}) {
   const group = new THREE.Group(); root.add(group);
   const selGroup = new THREE.Group(); root.add(selGroup);
   const entries = new Map();
@@ -107,6 +108,7 @@ export function createTown(root, layout) {
     }
     root.add(g);
     popping = { id, group: g, t: 0 };
+    if (hooks.burst) hooks.burst(e.b.x, e.b.z, 3.4, 16);
   }
 
   rebuild();

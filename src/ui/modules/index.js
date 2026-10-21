@@ -4,19 +4,29 @@
 import bulldozeSweep from './bulldoze-sweep.js';
 import cameraModes from './camera-modes.js';
 import commute from './commute.js';
+import districts from './districts.js';
+import notes from './notes.js';
+import onboarding from './onboarding.js';
 import placement from './placement.js';
 import progress from './progress.js';
 import roadTool from './road-tool.js';
 import services from './services.js';
+import shortcutSheet from './shortcut-sheet.js';
+import tooltips from './tooltips.js';
 import zoning from './zoning.js';
 
 export const uiModules = [
   bulldozeSweep,
   cameraModes,
   commute,
+  districts,
+  notes,
+  onboarding,
   placement,
   progress,
   roadTool,
   services,
+  shortcutSheet,
+  tooltips,
   zoning,
 ];
