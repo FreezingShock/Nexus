@@ -1,0 +1,6 @@
+# Registry index files are append-only lists; let parallel one-line additions merge without conflicts.
+src/sim/systems/index.js merge=union
+src/render/systems/index.js merge=union
+src/ui/modules/index.js merge=union
+# Keep shell scripts LF on Windows checkouts.
+*.sh text eol=lf

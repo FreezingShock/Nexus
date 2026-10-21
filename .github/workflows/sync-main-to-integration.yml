@@ -1,0 +1,36 @@
+name: Sync main into integration
+
+# When nate merges something into main, bring main into integration so integration is never behind it.
+# A conflict fails this run (red X, email) and changes nothing. Never force-pushes.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: merge-into-integration
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: integration
+          fetch-depth: 0
+      - name: Merge main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          if git merge-base --is-ancestor origin/main HEAD; then echo "integration already contains main"; exit 0; fi
+          if ! git merge --no-ff -m "Merge main into integration" origin/main; then
+            echo "::error::main conflicts with integration in: $(git diff --name-only --diff-filter=U | tr '\n' ' ')"
+            git merge --abort
+            exit 1
+          fi
+          git push origin HEAD:integration

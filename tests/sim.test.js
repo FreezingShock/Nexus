@@ -93,3 +93,26 @@ test('a tick stays far under the 2 ms budget', () => {
   for (let i = 0; i < 2000; i++) { sim.tick(); worst = Math.max(worst, sim.lastTickMs); }
   assert.ok(worst < 2, 'worst tick ' + worst + ' ms');
 });
+
+test('a system can add state, rate, tick and command hooks (registry contract)', async () => {
+  const { systems } = await import('../src/sim/systems/index.js');
+  const { freshState } = await import('../src/sim/state.js');
+  const { sanitize } = await import('../src/sim/save.js');
+  const probe = {
+    id: 'probe',
+    state: () => ({ probe: 0 }),
+    sanitize: (raw) => ({ probe: Number.isFinite(raw.probe) ? raw.probe : 0 }),
+    rate: () => 5,
+    tick: ({ state }) => { state.probe++; },
+    commands: { probeBump({ state }) { state.probe += 10; } },
+  };
+  systems.push(probe);
+  try {
+    const sim = createSim({ layout, state: freshState() });
+    assert.equal(sim.rate(), BASE_RATE + 5);
+    sim.tick(); sim.dispatch({ type: 'probeBump' });
+    assert.equal(sim.state.probe, 11);
+    assert.equal(sanitize({ probe: 7 }).probe, 7);
+    assert.equal(sanitize({}).probe, 0);
+  } finally { systems.pop(); }
+});
