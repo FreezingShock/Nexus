@@ -1,52 +1,106 @@
-// Cars are visual agents only: they wander the road network tile by tile, and nothing in the sim depends on them.
-// Bodies and cabins are two InstancedMeshes; the ink edges are one dynamic line buffer.
+// Cars and buses are visual agents only. Cars follow the sim's flow fields (one tree per destination zone) and spawn on
+// road edges in proportion to their volume. Each bus loops once round its bus network. Nothing here feeds back into the sim.
+// Bodies and cabins are InstancedMeshes; the ink edges are one dynamic line buffer per kind.
 import * as THREE from '../../vendor/three/three.module.min.js';
 import { toon, lineMat } from './materials.js';
-import { GRID_N } from '../world/grid.js';
-import { DIRS, connMask, dirsOfMask, opposite, shapeOf } from '../world/roadnet.js';
+import { GRID_N, inBounds, tileIndex } from '../world/grid.js';
+import { DIRS, opposite } from '../world/roadnet.js';
 import { CAR_COLORS } from '../world/palettes.js';
 import { makeRng } from '../world/rng.js';
 import { groundY, tileWorld } from './road-mesh.js';
+import { stepBetween } from '../sim/traffic.js';
 
-const BODY = new THREE.BoxGeometry(1.5, 0.45, 0.8), CABIN = new THREE.BoxGeometry(0.8, 0.4, 0.7);
-const MAX_CARS = 64, LANE = 0.6, HALF = 1.5;
+const CAR_MAX = 500, CAR_TARGET = 300, CARS_PER_FLOW = 0.35; // cars on screen = volume on the network x this
+const BUS_MAX = 16;
+const LANE = 0.6, HALF = 1.5;
+const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
 
-export function buildCars(parent, layout) {
-  const n = MAX_CARS;
-  const rng = makeRng(77);
-  const bodies = new THREE.InstancedMesh(BODY, toon(0xffffff), n);
-  const cabins = new THREE.InstancedMesh(CABIN, toon(0xFAF3E4), n);
-  for (const m of [bodies, cabins]) { m.frustumCulled = false; m.castShadow = true; m.receiveShadow = true; }
+const CAR = { body: new THREE.BoxGeometry(1.5, 0.45, 0.8), cabin: new THREE.BoxGeometry(0.8, 0.4, 0.7), bodyY: 0.4, cabinX: -0.1, cabinY: 0.78 };
+const BUS = { body: new THREE.BoxGeometry(2.3, 0.85, 1.05), cabin: new THREE.BoxGeometry(2.0, 0.22, 0.92), bodyY: 0.55, cabinX: 0, cabinY: 1.04 };
+
+// Shared state every vehicle reads: the roads, the sim's traffic model and the view box for culling.
+// `tr` is grid.traffic (fields, spawn table, dests); `view` is camera.view.
+export function buildCars(parent, grid, camera) {
+  const cars = makeVehicles(parent, { max: CAR_MAX, geo: CAR, colors: CAR_COLORS, cabinColor: 0xFAF3E4, speed: [2.2, 3.8], seed: 7 });
+  const buses = makeVehicles(parent, { max: BUS_MAX, geo: BUS, colors: [0xD98C7A, 0xEBD9A0], cabinColor: 0xFAF3E4, speed: [2.0, 2.0], seed: 9 });
+  let roads = null, tours = [];
+  return {
+    // dt is already scaled by game speed; paused passes 0.
+    update(dt, next) {
+      if (next !== roads) { roads = next; tours = busTours(next); }
+      const tr = grid.traffic || null, view = camera.view;
+      const want = tr ? Math.min(CAR_TARGET, Math.round(tr.vehicles * CARS_PER_FLOW)) : 0;
+      cars.update(dt, { roads, tr, view, want, tours: null });
+      buses.update(dt, { roads, tr, view, want: Math.min(BUS_MAX, tours.length), tours });
+    },
+    count: () => cars.count() + buses.count(),
+    carCount: () => cars.count(),
+    busCount: () => buses.count(),
+  };
+}
+
+// A bus loop per connected run of bus tiles: a depth-first walk of the run's spanning tree gives a closed tour that
+// visits every tile (each street is driven both ways). Runs of a single tile have no loop.
+export function busTours(roads) {
+  const seen = new Set(), tours = [];
+  const isBus = (i) => !!roads[i] && roads[i].t === 'bus';
+  for (const key of Object.keys(roads)) {
+    const root = Number(key);
+    if (!isBus(root) || seen.has(root)) continue;
+    const tour = [root], stack = [[root, 0]];
+    seen.add(root);
+    while (stack.length) {
+      const top = stack[stack.length - 1], u = top[0], gx = u % GRID_N, gz = Math.floor(u / GRID_N);
+      let advanced = false;
+      while (top[1] < 4 && !advanced) {
+        const d = top[1]++, vx = gx + DIRS[d][0], vz = gz + DIRS[d][1];
+        if (!inBounds(vx, vz)) continue;
+        const v = tileIndex(vx, vz);
+        if (!isBus(v) || seen.has(v)) continue;
+        seen.add(v); tour.push(v); stack.push([v, 0]); advanced = true;
+      }
+      if (!advanced) { stack.pop(); if (stack.length) tour.push(stack[stack.length - 1][0]); }
+    }
+    if (tour.length > 2) tours.push(tour.slice(0, -1)); // the walk ends back at the root
+  }
+  return tours;
+}
+
+// One kind of vehicle: instanced bodies and cabins, plus the ink edges, and the logic that moves them along.
+function makeVehicles(parent, spec) {
+  const { max, geo, colors, cabinColor, speed, seed } = spec;
+  const rng = makeRng(seed);
+  const bodies = new THREE.InstancedMesh(geo.body, toon(0xffffff), max);
+  const cabins = new THREE.InstancedMesh(geo.cabin, toon(cabinColor), max);
+  for (const m of [bodies, cabins]) { m.frustumCulled = false; m.castShadow = true; m.receiveShadow = true; m.count = 0; }
   const col = new THREE.Color();
-  const palette = layout.cars.map((c) => c.col).concat(CAR_COLORS);
-  for (let i = 0; i < n; i++) bodies.setColorAt(i, col.setHex(palette[i % palette.length]));
-  bodies.count = cabins.count = 0; // grows with the road network
+  for (let i = 0; i < max; i++) bodies.setColorAt(i, col.setHex(colors[i % colors.length]));
 
+  // Ink edges: template vertices with the body offsets baked in, transformed per vehicle.
   const tmpl = [];
-  const addEdges = (geo, x, y, z) => {
-    const p = new THREE.EdgesGeometry(geo, 30).attributes.position;
+  const addEdges = (g, x, y, z) => {
+    const p = new THREE.EdgesGeometry(g, 30).attributes.position;
     for (let i = 0; i < p.count; i++) tmpl.push(p.getX(i) + x, p.getY(i) + y, p.getZ(i) + z);
   };
-  addEdges(BODY, 0, 0.4, 0); addEdges(CABIN, -0.1, 0.78, 0);
+  addEdges(geo.body, 0, geo.bodyY, 0); addEdges(geo.cabin, geo.cabinX, geo.cabinY, 0);
   const per = tmpl.length;
   const lineGeo = new THREE.BufferGeometry();
-  const lp = new Float32Array(per * n);
+  const lp = new Float32Array(per * max);
   lineGeo.setAttribute('position', new THREE.BufferAttribute(lp, 3));
   const lines = new THREE.LineSegments(lineGeo, lineMat);
   lines.frustumCulled = false; lineGeo.setDrawRange(0, 0);
   parent.add(bodies, cabins, lines);
 
   const m = new THREE.Matrix4(), local = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), pos = new THREE.Vector3(), sc = new THREE.Vector3(), v = new THREE.Vector3();
-
-  let roads = null, tiles = [], cars = [];
+  const bodyOff = new THREE.Matrix4().makeTranslation(0, geo.bodyY, 0), cabinOff = new THREE.Matrix4().makeTranslation(geo.cabinX, geo.cabinY, 0);
+  const cars = [];
+  let roads = null;
   const at = (gx, gz) => (gx >= 0 && gz >= 0 && gx < GRID_N && gz < GRID_N ? roads[gz * GRID_N + gx] : undefined);
 
   // A one-way tile only takes traffic going its way; a corner also refuses the arm it exits by.
-  const accepts = (rec, out) => !rec || rec.t !== 'one' || rec.d !== opposite(out);
-  const strictOk = (rec, out, shape) => accepts(rec, out) && (!rec || rec.t !== 'one' || shape.kind !== 'straight' || rec.d === out);
   const laneFor = (rec, car) => (rec && rec.t === 'one' ? car.side * LANE : LANE);
 
-  // Builds the curve through tile (gx, gz): enter moving `mv`, leave moving `out`.
+  // Builds the curve through the car's tile: enter moving `mv`, leave moving `out`.
   function plan(car) {
     const [cx, cz] = tileWorld(car.gx, car.gz), mv = DIRS[car.mv], out = DIRS[car.out];
     const rm = [-mv[1], mv[0]], ro = [-out[1], out[0]];
@@ -63,81 +117,123 @@ export function buildCars(parent, layout) {
     car.nextLane = l1;
   }
 
-  // Picks where to go from the tile the car is in. Returns false when it is stuck.
-  function choose(car) {
-    const rec = at(car.gx, car.gz), shape = shapeOf(connMask(roads, car.gx, car.gz));
-    let opts = dirsOfMask(connMask(roads, car.gx, car.gz)).filter((d) => d !== opposite(car.mv));
-    if (rec.t === 'one' && shape.kind !== 'cross' && shape.kind !== 'tee') opts = opts.filter((d) => d === rec.d);
-    opts = opts.filter((d) => { const nr = at(car.gx + DIRS[d][0], car.gz + DIRS[d][1]); return nr && strictOk(nr, d, shapeOf(connMask(roads, car.gx + DIRS[d][0], car.gz + DIRS[d][1]))); });
-    if (!opts.length) {
-      const back = opposite(car.mv), nr = at(car.gx + DIRS[back][0], car.gz + DIRS[back][1]);
-      if (rec.t === 'one' || !nr || nr.t === 'one') return false; // one-way roads never turn cars around
-      opts = [back];
+  // Cars: the next tile is the flow field's next hop towards the car's destination. Buses: the next stop on the loop.
+  // Returns false at the end of a route (the destination, or no way on), which makes the car respawn.
+  function choose(car, ctx) {
+    const u = car.gz * GRID_N + car.gx;
+    let nx;
+    if (car.tour) nx = car.tour[(car.k + 1) % car.tour.length];
+    else {
+      const f = ctx.tr && ctx.tr.fields[car.dest];
+      nx = f ? f.next[u] : -1;
     }
-    // prefer going on over turning, now and then take a turn
-    const straight = opts.includes(car.mv);
-    car.out = straight && (opts.length === 1 || rng() < 0.55) ? car.mv : opts[Math.floor(rng() * opts.length)];
+    if (nx === undefined || nx < 0) return false;
+    const out = stepBetween(u, nx);
+    if (out < 0 || !at(nx % GRID_N, Math.floor(nx / GRID_N))) return false;
+    car.out = out;
     plan(car);
     return true;
   }
 
-  function respawn(car) {
-    for (let tries = 0; tries < 30; tries++) {
-      const t = tiles[Math.floor(rng() * tiles.length)];
-      if (!t) break;
-      const mask = connMask(roads, t[0], t[1]), dirs = dirsOfMask(mask);
-      if (!dirs.length) continue;
-      const rec = at(t[0], t[1]);
-      let mv = dirs[Math.floor(rng() * dirs.length)];
-      if (rec.t === 'one') { if (!dirs.includes(rec.d)) continue; mv = rec.d; }
-      car.gx = t[0]; car.gz = t[1]; car.mv = mv; car.side = rng() < 0.5 ? -1 : 1; car.lane = laneFor(rec, car);
-      car.u = 0; car.age = 0; car.speed = 2.2 + rng() * 1.6;
-      if (choose(car)) return true;
-    }
+  // Cars spawn on an edge picked in proportion to its volume, heading along it, towards a destination that routes
+  // through that edge. Buses start at a random stop of their loop.
+  function respawn(car, ctx) {
     car.alive = false;
+    car.age = 0; car.speed = speed[0] + rng() * (speed[1] - speed[0]); car.side = rng() < 0.5 ? -1 : 1; car.u = 0;
+    if (car.tour) {
+      const tour = car.tour, k = Math.floor(rng() * tour.length), t = tour[k];
+      car.k = k; car.gx = t % GRID_N; car.gz = Math.floor(t / GRID_N);
+      car.mv = stepBetween(tour[(k - 1 + tour.length) % tour.length], t);
+      if (car.mv < 0) car.mv = 0;
+      car.lane = laneFor(ctx.roads[t], car);
+      car.out = stepBetween(t, tour[(k + 1) % tour.length]);
+      if (car.out < 0) return false;
+      plan(car); car.alive = true;
+      return true;
+    }
+    const tr = ctx.tr;
+    if (!tr || !tr.spawnN) return false;
+    const total = tr.spawnCum[tr.spawnN - 1];
+    for (let tries = 0; tries < 6; tries++) {
+      const r = rng() * total;
+      let lo = 0, hi = tr.spawnN - 1;
+      while (lo < hi) { const mid = (lo + hi) >> 1; if (tr.spawnCum[mid] < r) lo = mid + 1; else hi = mid; }
+      const edge = tr.spawnEdge[lo], u = edge >> 2, d = edge & 3;
+      const v = u + DIRS[d][0] + DIRS[d][1] * GRID_N;
+      const options = [];
+      for (const j of tr.dests) { const f = tr.fields[j]; if (f && f.next[u] === v) options.push(j); }
+      if (!options.length) continue;
+      car.dest = options[Math.floor(rng() * options.length)];
+      car.gx = u % GRID_N; car.gz = Math.floor(u / GRID_N);
+      car.mv = d; car.out = d;
+      car.lane = laneFor(ctx.roads[u], car);
+      plan(car); car.alive = true;
+      return true;
+    }
     return false;
   }
 
-  function sync(next) {
-    roads = next;
-    tiles = Object.keys(next).map((k) => [Number(k) % GRID_N, Math.floor(Number(k) / GRID_N)]);
-    const want = Math.min(n, Math.round(tiles.length * 0.26));
-    while (cars.length < want) cars.push({ alive: false, u: 0, age: 0, side: 1, lane: LANE });
+  function sync(want) {
+    while (cars.length < want) cars.push({ alive: false, hidden: false, tour: null, k: 0, dest: -1, seg: null, lane: LANE, nextLane: LANE, u: 0, age: 0, speed: 1, side: 1, gx: 0, gz: 0, mv: 0, out: 0 });
     if (cars.length > want) cars.length = want;
-    for (const c of cars) if (!c.alive || !at(c.gx, c.gz) || !at(c.gx + DIRS[c.out][0], c.gz + DIRS[c.out][1])) { c.alive = true; respawn(c); } else { plan(c); }
-    bodies.count = cabins.count = cars.length; lineGeo.setDrawRange(0, per * cars.length);
+  }
+
+  function hide(i) {
+    bodies.setMatrixAt(i, ZERO); cabins.setMatrixAt(i, ZERO);
+    lp.fill(0, i * per, (i + 1) * per);
   }
 
   return {
-    // dt is already scaled by game speed; paused passes 0. `next` is state.roads.
-    update(dt, next) {
-      if (next !== roads) sync(next);
+    count: () => cars.filter((c) => c.alive).length,
+    update(dt, ctx) {
+      roads = ctx.roads;
+      const tours = ctx.tours; // buses: slot i drives loop i; cars leave this null
+      sync(ctx.want);
       cars.forEach((c, i) => {
-        if (!c.alive) { cars[i].alive = respawn(c); if (!c.alive) { bodies.setMatrixAt(i, local.makeScale(0, 0, 0)); cabins.setMatrixAt(i, local.makeScale(0, 0, 0)); return; } }
+        if (tours) {
+          const loop = tours.length ? tours[i % tours.length] : null;
+          if (c.tour !== loop) { c.tour = loop; c.alive = false; } // the roads changed under this bus: start it again
+          if (!loop) { hide(i); return; }
+        }
+        if (c.alive && !at(c.gx, c.gz)) c.alive = false;
+        if (!c.alive) { respawn(c, ctx); if (!c.alive) { hide(i); c.hidden = true; return; } }
         c.age += dt; c.u += (c.speed * dt) / c.seg.len;
         let guard = 0;
         while (c.u >= 1 && guard++ < 3) {
           const nx = c.gx + DIRS[c.out][0], nz = c.gz + DIRS[c.out][1];
-          if (!at(nx, nz)) { respawn(c); break; }
+          if (!at(nx, nz)) { c.alive = false; break; }
           c.gx = nx; c.gz = nz; c.mv = c.out; c.lane = c.nextLane; c.u -= 1;
-          if (!choose(c)) { respawn(c); break; }
+          if (c.tour) c.k = (c.k + 1) % c.tour.length;
+          if (!choose(c, ctx)) { c.alive = false; break; }
         }
+        if (!c.alive) { respawn(c, ctx); if (!c.alive) { hide(i); c.hidden = true; return; } }
         const { p0, c: cp, p2 } = c.seg, u = Math.min(1, c.u), w = 1 - u;
         const x = w * w * p0[0] + 2 * w * u * cp[0] + u * u * p2[0], z = w * w * p0[1] + 2 * w * u * cp[1] + u * u * p2[1];
         const tx = 2 * w * (cp[0] - p0[0]) + 2 * u * (p2[0] - cp[0]), tz = 2 * w * (cp[1] - p0[1]) + 2 * u * (p2[1] - cp[1]);
+        if (!inView(ctx.view, x, z)) { if (!c.hidden) hide(i); c.hidden = true; return; }
+        c.hidden = false;
         const grow = Math.min(1, c.age * 2.5);
         q.setFromEuler(e.set(0, Math.atan2(-tz, tx), 0)); pos.set(x, 0.1 + groundY(x, z), z); sc.set(grow, grow, grow);
         m.compose(pos, q, sc);
-        bodies.setMatrixAt(i, local.makeTranslation(0, 0.4, 0).premultiply(m));
-        cabins.setMatrixAt(i, local.makeTranslation(-0.1, 0.78, 0).premultiply(m));
+        bodies.setMatrixAt(i, local.copy(bodyOff).premultiply(m));
+        cabins.setMatrixAt(i, local.copy(cabinOff).premultiply(m));
         for (let k = 0; k < per; k += 3) {
           v.set(tmpl[k], tmpl[k + 1], tmpl[k + 2]).applyMatrix4(m);
           lp[i * per + k] = v.x; lp[i * per + k + 1] = v.y; lp[i * per + k + 2] = v.z;
         }
       });
+      bodies.count = cabins.count = cars.length;
+      lineGeo.setDrawRange(0, per * cars.length);
       bodies.instanceMatrix.needsUpdate = cabins.instanceMatrix.needsUpdate = true;
       lineGeo.attributes.position.needsUpdate = true;
     },
-    count: () => cars.filter((c) => c.alive).length,
   };
 }
+
+// Cheap culling: a circle around the view centre, wide enough for the widest screen at this zoom.
+function inView(view, x, z) {
+  const r = (view.half / view.zoom) * 2.2 + 4;
+  const dx = x - view.tx, dz = z - view.tz;
+  return dx * dx + dz * dz < r * r;
+}
+
