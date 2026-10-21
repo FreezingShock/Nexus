@@ -169,6 +169,7 @@ export default {
 function undoPlacement(ctx, entries) {
   const { state, grid, emit, refresh, syncDisplay, sim } = ctx;
   for (const e of entries.reverse()) {
+    if (e.revert) { e.revert(ctx); continue; } // zone paint, erase and district paint undo themselves
     if (e.kind === 'place') {
       const gone = new Set(e.ids);
       state.placed = state.placed.filter((r) => !gone.has(r.id));
