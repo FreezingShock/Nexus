@@ -42,7 +42,7 @@ Renewal is a fresh start. Points = `floor(cbrt(runEarned / divisor))`. Each kept
 - Resets: coins, Parts, buildings (levels and removals), zones, roads, the run's coins, Parts placed.
 - Keeps: points, renewals, lifetime coins, unlocked road tiers, milestones, goals, Charge, night and speed.
 
-**Divisor is 1e9, as the brief says.** At 1,000 coins/s the first point takes about 278 hours, which is far beyond the "about 5 active hours" in the design notes. See the PR for the decision on this.
+**Divisor is 1e7 (10 million coins this run per point), decided by nate.** That gives the first point in about 5 active hours, matching the design notes. At 1e9 the first point took about 278 hours at 1,000 coins/s.
 
 ## Saved state
 

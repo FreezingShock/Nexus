@@ -28,7 +28,7 @@ export const BALANCE = {
   charge: { max: 100, regenPerS: 1 / 30, perAction: 1, boostCost: 25, boostS: 60, boostMult: 2 },
 
   // Renewal: a fresh start that keeps points. Points = floor(cbrt(coins earned this run / divisor)).
-  renewal: { divisor: 1e9, bonusPerPoint: 0.02 },
+  renewal: { divisor: 1e7, bonusPerPoint: 0.02 }, // 10 million coins this run per point: about 5 hours to the first, decided by nate
 
   // Goals: three open at a time. Progress is kept until a goal is done, so nothing is lost by logging off.
   // Finishing all three in one local day pays a bonus; a missed day only resets the bonus streak, never coins or goals.

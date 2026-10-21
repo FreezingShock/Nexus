@@ -218,3 +218,9 @@ test('day keys use the local calendar; yesterday crosses a month boundary', () =
   assert.equal(dayKey(d), '2026-03-01');
   assert.equal(yesterdayKey(d), '2026-02-28');
 });
+
+test('Renewal pacing: 10 million coins this run is about five hours at 550 coins/s, the first point', () => {
+  assert.equal(BALANCE.renewal.divisor, 1e7);
+  const hours = BALANCE.renewal.divisor / 550 / 3600;
+  assert.ok(hours > 4.5 && hours < 5.5, 'got ' + hours.toFixed(2) + ' h');
+});
