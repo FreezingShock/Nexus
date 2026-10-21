@@ -238,3 +238,17 @@ test('visual smoke: cars, buses and townsfolk run on the warmed sim without erro
   const meshes = world.children.length;
   assert.ok(meshes <= 8, 'a few instanced meshes, not one per vehicle');
 });
+
+test('the commute penalty and efficiency are saved: a reload restores them, and bad saved values are clamped', async () => {
+  const { sanitize } = await import('../src/sim/save.js');
+  const clean = sanitize({ commutePenalty: 5, commuteEff: 0.2 });
+  assert.equal(clean.commutePenalty, 0);            // a penalty never adds income
+  assert.equal(clean.commuteEff, 0.6);              // the efficiency floor
+  assert.equal(sanitize({ commutePenalty: 'x' }).commuteEff, 1);
+  const sim = createSim({ state: freshState(), layout: getLayout() });
+  sim.state.commutePenalty = -3.5; sim.state.commuteEff = 0.8;
+  const back = createSim({ state: JSON.parse(JSON.stringify(sim.state)), layout: getLayout() });
+  assert.equal(back.traffic.penalty, -3.5);
+  assert.equal(back.traffic.eff, 0.8);
+  assert.equal(back.state.commutePenalty, -3.5);
+});

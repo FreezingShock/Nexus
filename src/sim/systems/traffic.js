@@ -113,6 +113,7 @@ function finish({ state, grid, refresh }, m) {
   const penalty = (m.eff - 1) * lotIncome(state.lots, (i) => grid.zone[i]);
   const changed = Math.abs(penalty - m.penalty) > 0.01;
   m.penalty = penalty;
+  state.commutePenalty = penalty; state.commuteEff = m.eff;
   const net = m.net, load = grid.load;
   let vehicles = 0, cum = 0; m.spawnN = 0;
   for (let u = 0; u < T.TILES; u++) {
@@ -141,16 +142,28 @@ function stepPhase(ctx, m, n) {
 export default {
   id: 'traffic',
   order: 1, // after zoning's init, which fills grid.zone
+  // The last committed commute penalty and efficiency are saved, so a reload pays exactly what the saved town paid.
+  // Flows, colours and the spawn table are still derived and rebuilt on load.
+  state: () => ({ commutePenalty: 0, commuteEff: 1 }),
+  sanitize(raw) {
+    const pen = Number.isFinite(raw.commutePenalty) ? Math.min(0, raw.commutePenalty) : 0;
+    const eff = Number.isFinite(raw.commuteEff) ? Math.min(1, Math.max(T.MIN_EFF, raw.commuteEff)) : 1;
+    return { commutePenalty: pen, commuteEff: eff };
+  },
   rate: ({ sim }) => (sim.traffic ? sim.traffic.penalty : 0),
   init(ctx) {
     const m = createModel();
     ctx.sim.traffic = m; ctx.grid.traffic = m;
     ctx.grid.load = new Uint8Array(T.TILES); ctx.grid.loadRev = 0;
+    const saved = { penalty: ctx.state.commutePenalty, eff: ctx.state.commuteEff };
     // a full warm-up at load, so the first frame already has cars and colours (never in a tick)
     for (let k = 0; k < WARM_CYCLES; k++) {
       beginCycle(ctx, m);
       while (m.phase !== 'idle') stepPhase(ctx, m, Infinity);
     }
+    // the warm-up is not the saved history: restore the committed numbers so the income matches the save
+    m.penalty = saved.penalty; m.eff = saved.eff;
+    ctx.state.commutePenalty = saved.penalty; ctx.state.commuteEff = saved.eff;
   },
   tick(ctx) {
     const m = ctx.sim.traffic;

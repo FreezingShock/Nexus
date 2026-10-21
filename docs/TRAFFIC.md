@@ -1,6 +1,6 @@
 # Traffic
 
-Traffic is derived from the roads and zoning on the shared grid (see GRID.md and ROADS.md). Nothing here is saved; it rebuilds from `state.roads` and zoning when the game loads.
+Traffic is derived from the roads and zoning on the shared grid (see GRID.md and ROADS.md). Only two numbers are saved: the last committed commute penalty and efficiency (`state.commutePenalty`, `state.commuteEff`). A reload restores them, so income matches the save. Flows, colours and the spawn table are derived and rebuild on load.
 
 ## Layers
 
