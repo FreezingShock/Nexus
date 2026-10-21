@@ -6,7 +6,8 @@ Traffic is derived from the roads and zoning on the shared grid (see GRID.md and
 
 - `src/sim/traffic.js`: pure math. BPR travel time, congestion classes, the directed network, Dijkstra flow fields, gravity trip split, assignment, tree times, zone anchors and demand. No DOM, no THREE.
 - `src/sim/systems/traffic.js`: the budgeted cycle and the commit. Sets `sim.traffic` and `grid.traffic` (the same object, read only by render), writes `grid.load` (congestion class per road tile) and bumps `grid.loadRev`. Its `rate` hook adds the commute income penalty.
-- `src/render/cars.js`: cars and buses. `src/render/townsfolk.js`: pedestrians. Both are visual only.
+- `src/render/vehicle-agents.js`: the car and bus agents. Pure logic (no THREE, no DOM), tested in node. Reads the sim's network, flow fields and trip table; never writes to them.
+- `src/render/cars.js`: draws the agents as instanced meshes. `src/render/townsfolk.js`: pedestrians. Both are visual only.
 - `src/render/systems/roads.js`: tints roads with the Traffic overlay from `grid.load`.
 - `src/ui/modules/commute.js`: one line in the Traffic flyout with commute efficiency and what the jams cost.
 
@@ -37,14 +38,23 @@ A cycle takes about 35 ticks with all 64 zones active, fewer on a small town. A 
 
 ## Visuals
 
-- Cars spawn on an edge picked in proportion to its volume, then drive their destination's flow field. They respawn (despawn on arrival) at the end of their route. Target 300 cars, instance cap 500, `0.35 x` the total volume on the network.
-- Buses: each connected run of bus tiles gets one closed loop (a depth-first walk of its spanning tree, so every street is driven both ways). One bus per loop, up to 16.
-- Townsfolk: walk, idle at junctions, sometimes slip into a building (shrink, hidden for a few seconds, come back out). Target 300, instance cap 500. Their count follows road tiles.
-- Culling: vehicles and townsfolk outside a circle around the view centre are hidden and skip their line updates.
-- Draw calls added: cars 3, buses 3, townsfolk 2.
+Cars and buses are agents that drive the sim's routes lane by lane (`src/render/vehicle-agents.js`). They are visual only: they never change the economy, the saves or the sim.
+
+- **Trips.** A car's origin and destination come from the sim's zone-to-zone trip table (`total`, the gravity split). The origin is a random road tile of the origin zone, so cars do not all start from one anchor. The destination is the zone's anchor. The route is the destination's flow field (`next`), so cars drive the same routes the congestion model assumes.
+- **Following.** Cars use the intelligent driver model (IDM) against the nearest car ahead on their lane, up to four tiles ahead. They keep a safe gap, slow for the car in front, and queue. A car never moves past the car ahead: the position is clamped to the leader's position at the start of the step.
+- **Junctions.** A straight road takes any car. A bend or junction takes one entry arm at a time, and the car that has waited longest goes first. Waiting cars stop at a line before the tile. A car blocked for 15 s leaves the road (a gridlock breaker).
+- **Slowing.** Cars slow for the congestion on their road (BPR travel time against free flow, the same numbers the commute uses), and for bends on the tile they are on and the next one.
+- **Lanes.** Lane 0 is the right-hand lane on every road type, so a car keeps its side of the road across tile types. Cars keep to the right: lane changes are not modelled yet, and cars never sweep across a road.
+- **Arrival.** A car stops in the middle of its destination tile, stands at the kerb for half a second, then shrinks away over 0.7 s. A bus drives its loop for ever.
+- **Spawning.** Cars spawn in proportion to the network's volume (target 300, cap 500, `0.35 x` the volume). Buses: one per loop, up to 16. A spawn attempt tries a few trips before giving up.
+- **Culling.** Vehicles outside a circle around the view centre are not written to the GPU; they still move, so traffic carries on when the camera turns.
+- **Models.** Three car models (hatchback, saloon, van) and one bus. Each is a body and a cabin, instanced, with ink edges in one dynamic line buffer. Colours come from the palette, one per vehicle. Draw calls: 9 for cars, 3 for buses, 2 for townsfolk.
+- **Cost.** The agent step is O(vehicles x 4): the tile occupancy list is the spatial hash, so neighbour checks never scan the whole fleet. On the shipped town a frame's car update takes about 0.16 ms in node (not on a phone).
 
 ## Not done yet
 
+- Lane changes and overtaking. Cars use one lane per direction.
 - Flow fields are re-solved for every destination each cycle. The spec asked for re-solving only the affected region after a road change; that needs incremental tree repair and is a follow-up.
-- Visual cars are sampled from the sim's volumes, so they do not queue or collide. That matches the spec.
-- Budgets are checked in node, not on a phone. See the PR for the measured numbers.
+- Cars do not stop for bus stops, traffic lights or pedestrians. Junctions use first-come-first-served instead of signals.
+- Budgets are checked in node, not on a phone. Frame cost on the shipped town is about 0.16 ms in node; the rest of the frame is not measured.
+- The shipped town has no bus loop yet, so buses only appear on a town with bus roads.

@@ -234,9 +234,9 @@ test('visual smoke: cars, buses and townsfolk run on the warmed sim without erro
   assert.ok(cars.busCount() <= 16);
   assert.ok(folk.count() <= 300);
   assert.ok(folk.count() > 0);
-  // draw calls: cars (bodies, cabins, lines), buses (3), townsfolk (2). Instancing keeps them flat.
+  // draw calls: three car models (bodies, cabins, lines = 9), buses (3), townsfolk (2). Instancing keeps them flat.
   const meshes = world.children.length;
-  assert.ok(meshes <= 8, 'a few instanced meshes, not one per vehicle');
+  assert.ok(meshes <= 14, 'a few instanced meshes, not one per vehicle');
 });
 
 test('the commute penalty and efficiency are saved: a reload restores them, and bad saved values are clamped', async () => {
