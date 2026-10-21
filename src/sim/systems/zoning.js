@@ -47,6 +47,12 @@ export default {
   rate: ({ grid, state }) => lotIncome(state.lots, (i) => grid.zone[i]),
   partsRate: ({ grid, state }) => lotParts(state.lots, (i) => grid.zone[i]),
 
+  // A road drawn over paint clears the grid but not the saved layer. Rebuild the saved zones and lots before saving.
+  beforeSave(ctx) {
+    reconcile(ctx);
+    ctx.state.zones = encodeZones(ctx.grid.zone);
+  },
+
   commands: {
     // Paint the rectangle between tiles a and b. Costs per painted tile; stops when coins run out.
     paintZone(ctx, { zone, a, b }) {
@@ -111,7 +117,7 @@ export default {
       if (!list.length) continue;
       const tries = 1 + Math.floor(list.length / 20);
       for (let k = 0; k < tries && list.length; k++) {
-        if (nextRand(state) >= dem[z] * 0.7) continue;
+        if (nextRand(state) >= dem[z] * 0.7 * growthMul(ctx)) continue;
         spawn(ctx, list.splice(Math.floor(nextRand(state) * list.length), 1)[0]);
         changed = true;
       }
@@ -135,7 +141,7 @@ export default {
     const dem = demandOf(stats);
     for (let z = 1; z <= ZONE_COUNT; z++) {
       const list = cand[z];
-      const n = Math.min(list.length, Math.floor(seconds * dem[z] * 0.35 * (1 + list.length / 20)));
+      const n = Math.min(list.length, Math.floor(seconds * dem[z] * 0.35 * (1 + list.length / 20) * growthMul(ctx)));
       for (let k = 0; k < n; k++) spawn(ctx, list.splice(Math.floor(nextRand(state) * list.length), 1)[0]);
     }
     const gain = Math.floor(seconds * 0.01);
@@ -155,6 +161,8 @@ function reconcile({ sim, grid, state }) {
     sim.zoning.painted = countPaint(grid);
   }
 }
+// Happiness from services and parks speeds growth up or down a little (see src/sim/services.js). 1 without them.
+const growthMul = ({ sim }) => (sim.services ? sim.services.growth() : 1);
 function countPaint(grid) { let n = 0; for (let i = 0; i < AREA; i++) if (grid.zone[i]) n++; return n; }
 
 // Painted, empty tiles with a road in reach, per zone. Tiles right next to a road come first.

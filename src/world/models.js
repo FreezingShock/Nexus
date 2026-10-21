@@ -20,6 +20,7 @@ export const CATEGORIES = [
   { id: 'work', name: 'Workplaces', tool: 'build' },
   { id: 'landmark', name: 'Landmarks', tool: 'build' },
   { id: 'service', name: 'Services', tool: 'services' },
+  { id: 'park', name: 'Parks', tool: 'parks' },
 ];
 
 // foot: footprints the model was drawn for, in tiles [across, deep]. A model can be turned, so [1, 2] also means 2 x 1.
@@ -43,6 +44,11 @@ export const MODELS = [
   { id: 'police',       name: 'Police station', cat: 'service',  sub: 'A steady blue lamp',               foot: [[1, 1], [1, 2]],         floors: [2, 3], grow: 0.3,  cost: 480,  style: 'sash' },
   { id: 'town-hall',    name: 'Town hall',      cat: 'landmark', sub: 'Clock tower over the square',      foot: [[2, 1], [2, 2]],         floors: [3, 3], grow: 0,    cost: 1800, style: 'arched' },
   { id: 'church',       name: 'Church',         cat: 'landmark', sub: 'A spire you can see from afar',    foot: [[1, 2], [2, 2]],         floors: [2, 2], grow: 0,    cost: 1500, style: 'arched' },
+  // Parks have no storeys (floors 0): they are ground, not buildings. Their upgrade is refused in the upgrades system.
+  { id: 'green',        name: 'Green',          cat: 'park',     sub: 'Lawn and trees',                   foot: [[1, 1], [2, 2]],         floors: [0, 0], grow: 0,    cost: 60,   style: 'sash' },
+  { id: 'plaza',        name: 'Plaza',          cat: 'park',     sub: 'Paving, lamps and a fountain',     foot: [[1, 1], [2, 2]],         floors: [0, 0], grow: 0,    cost: 90,   style: 'sash' },
+  { id: 'playground',   name: 'Playground',     cat: 'park',     sub: 'Swings and a little slide',        foot: [[1, 1], [1, 2]],         floors: [0, 0], grow: 0,    cost: 140,  style: 'sash' },
+  { id: 'pond',         name: 'Pond',           cat: 'park',     sub: 'Water, reeds and a bench',         foot: [[2, 2]],                 floors: [0, 0], grow: 0,    cost: 180,  style: 'sash' },
 ];
 
 const byId = new Map(MODELS.map((m) => [m.id, m]));

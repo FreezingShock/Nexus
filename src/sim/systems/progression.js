@@ -167,11 +167,11 @@ export default {
   },
 
   // Closed-form catch-up: gainC is the coins the absence paid. Boosts never run while away.
+  // Milestones are left to the next tick, so a welcome-back never pops rewards in the middle of loading.
   offline(ctx, seconds, gainC = 0) {
     const { state } = ctx;
     state.earned += gainC; state.runEarned += gainC;
     progressGoal(ctx, 'earn', gainC);
-    checkMilestones(ctx);
   },
 
   mult: ({ state }) => (state.boostS > 0 ? CH.boostMult : 1) * pointsMult(state.points),

@@ -4,11 +4,13 @@
 import placement from './placement.js';
 import progress from './progress.js';
 import roadTool from './road-tool.js';
+import services from './services.js';
 import zoning from './zoning.js';
 
 export const uiModules = [
   placement,
   progress,
   roadTool,
+  services,
   zoning,
 ];

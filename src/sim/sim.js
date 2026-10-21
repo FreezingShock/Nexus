@@ -84,6 +84,7 @@ export function createSim({ state = freshState(), layout = getLayout(), now = ()
 
   // Offline catch-up on load: closed form, one evaluation.
   sim.catchUp = (savedAt) => {
+    if (savedAt == null) return null; // no usable save time: nothing to catch up on (never treat it as the epoch)
     const away = awaySeconds(savedAt, now());
     if (away <= 0) return null;
     const w = offlineWindow(away);
@@ -96,6 +97,9 @@ export function createSim({ state = freshState(), layout = getLayout(), now = ()
       : { coins: gainC, parts: gainP, awayS: away, fullS: w.fullS, easeS: w.easeS };
     return state.offline;
   };
+
+  // Every save and export goes through here: systems rebuild their saved layers from the grid first (beforeSave hook).
+  sim.prepareSave = () => { registry.run('beforeSave', ctx); return state; };
 
   sim.dispatch = (cmd) => {
     const fn = cmd && Object.prototype.hasOwnProperty.call(commands, cmd.type) ? commands[cmd.type] : null;

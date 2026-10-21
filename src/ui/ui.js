@@ -72,6 +72,8 @@ export function createUi({ sim, scene, actions }) {
     onPick,
     hud, postcard, toast: hud.toast,
     showPostcard: () => postcard.show(),
+    // Opens Settings if needed and asks a question inside it (import uses this).
+    askConfirm: (opts) => { if (!panels.settingsOpen()) toggleSettings(); panels.askConfirm(opts); },
     frame(dt, t, alpha) {
       const ticked = hud.frame(dt, alpha, false);
       for (const m of mods) if (m.frame) m.frame(dt, t, alpha);

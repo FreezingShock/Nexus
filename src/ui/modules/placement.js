@@ -6,7 +6,7 @@ import { worldToTile } from '../../world/grid.js';
 import { checkLot, problemText } from '../../world/placement.js';
 import { fmt } from '../format.js';
 
-const TOOLS = { build: 'Buildings', services: 'Services' };
+const TOOLS = { build: 'Buildings', services: 'Services', parks: 'Parks' };
 
 export default {
   id: 'placement',
