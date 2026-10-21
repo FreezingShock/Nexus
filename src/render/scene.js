@@ -32,7 +32,9 @@ export function createScene({ stage, layout, onPick }) {
   buildLamps(world, layout);
   const ghost = buildGhost(world);
   const town = createTown(world, layout);
-  const mods = registryOf('render systems', renderSystems).list().map((d) => d.create({ THREE, world, layout, camera, scene }) || {});
+  const sysDefs = registryOf('render systems', renderSystems).list();
+  const mods = sysDefs.map((d) => d.create({ THREE, world, layout, camera, scene }) || {});
+  const byId = new Map(sysDefs.map((d, i) => [d.id, mods[i]]));
   let dusk = null, nightOn = false, traffic = false, drag = null;
 
   function resize() {
@@ -82,6 +84,19 @@ export function createScene({ stage, layout, onPick }) {
       town.setRemoved(s.removed);
       town.update(dt);
       renderer.render(scene, camera.cam);
+    },
+    // The object a render system returned from create(), for UI modules that drive it (e.g. zoning's brush).
+    sys: (id) => byId.get(id) || null,
+    // World point under a screen position on the ground plane (y = 0), or null. Shared by every drawing tool.
+    ground(clientX, clientY) {
+      const r = canvas.getBoundingClientRect();
+      if (!r.width || !r.height) return null;
+      ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
+      ray.setFromCamera(ndc, camera.cam);
+      const o = ray.ray.origin, d = ray.ray.direction;
+      if (Math.abs(d.y) < 1e-6) return null;
+      const k = -o.y / d.y;
+      return { x: o.x + d.x * k, z: o.z + d.z * k };
     },
     select: (id) => town.select(id),
     pop: (id) => town.pop(id),
