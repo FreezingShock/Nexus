@@ -175,7 +175,7 @@ export default {
     stage.addEventListener('pointerleave', () => { hover = null; label.hidden = true; refresh(); });
     addEventListener('keyup', (e) => { if (e.key === 'Shift') { shift = false; refresh(true); } });
     addEventListener('keydown', (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey && !(e.target.closest && e.target.closest('input,textarea,select'))) { e.preventDefault(); send({ type: 'undoRoad' }); }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey && !(e.target.closest && e.target.closest('input,textarea,select'))) { e.preventDefault(); send({ type: 'undo' }); }
     });
 
     // ---- flyout ----
@@ -199,7 +199,7 @@ export default {
           type = r.id; renderFlyout(); refresh(true);
         };
       });
-      $('undoRoad').onclick = () => send({ type: 'undoRoad' });
+      $('undoRoad').onclick = () => send({ type: 'undo' }); // the last thing done, road or building
       $('doneRoad').onclick = () => { cancel(); document.querySelector('.tool[data-tool="roads"]').click(); };
     }
 

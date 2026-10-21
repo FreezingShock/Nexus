@@ -97,6 +97,14 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
       if (k < 0) return null; // the ray points away from the ground
       return { x: o.x + d.x * k, z: o.z + d.z * k };
     },
+    // The building under a screen position (its id), or null. Used by the bulldoze sweep.
+    pickAt(clientX, clientY) {
+      const r = canvas.getBoundingClientRect();
+      if (!r.width || !r.height) return null;
+      ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
+      ray.setFromCamera(ndc, camera.cam);
+      return town.pick(ray);
+    },
     select: (id) => town.select(id),
     pop: (id) => town.pop(id),
     rotate: (d) => camera.rotate(d),

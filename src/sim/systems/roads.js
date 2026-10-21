@@ -56,7 +56,7 @@ export default {
         if (grid.zone[e.idx]) { grid.zone[e.idx] = 0; cleared.push([e.gx, e.gz]); }
       }
       state.roads = next;
-      sim.roadUndo.push({ prev, paid: plan.cost }); if (sim.roadUndo.length > UNDO_DEPTH) sim.roadUndo.shift();
+      sim.roadUndo.push({ prev, paid: plan.cost, seq: sim.nextSeq() }); if (sim.roadUndo.length > UNDO_DEPTH) sim.roadUndo.shift();
       note('road');
       emit({ type: 'roadsChanged', kind: 'draw', tiles: plan.tiles.map((e) => [e.gx, e.gz]), cost: plan.cost });
       if (cleared.length) sim.dispatch({ type: 'clearZoneTiles', tiles: cleared });
@@ -77,7 +77,7 @@ export default {
       }
       if (!gone.length) return;
       state.roads = next; state.coins += refund; syncDisplay();
-      sim.roadUndo.push({ prev, paid: -refund }); if (sim.roadUndo.length > UNDO_DEPTH) sim.roadUndo.shift();
+      sim.roadUndo.push({ prev, paid: -refund, seq: sim.nextSeq() }); if (sim.roadUndo.length > UNDO_DEPTH) sim.roadUndo.shift();
       emit({ type: 'roadsChanged', kind: 'erase', tiles: gone, cost: -refund });
     },
 

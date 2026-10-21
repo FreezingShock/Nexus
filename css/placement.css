@@ -1,2 +1,12 @@
 /* placement flyout: category tabs sit above the model cards */
 .ptabs{display:flex;gap:8px;margin:0 0 12px;flex-wrap:wrap}
+
+/* the price label that follows the cursor while placing (same look as the road label) */
+#placelabel{position:fixed;left:0;top:0;z-index:20;display:flex;align-items:center;gap:8px;padding:6px 14px 6px 8px;border:2.5px solid var(--ink);border-radius:999px;background:var(--paper);box-shadow:0 3px 0 var(--ink),0 10px 18px rgba(43,38,32,.2);font-weight:800;font-size:15px;white-space:nowrap;pointer-events:none;font-variant-numeric:tabular-nums}
+#placelabel b{font-size:16px}
+#placelabel small{font-size:13px;color:var(--ink-soft);font-weight:700}
+#placelabel .need{color:var(--action)}
+#placelabel.bad{background:#F6D9CF;padding-left:14px}
+#placelabel.poor b{color:var(--action)}
+#placelabel .coin{width:22px;height:22px;border-radius:50%;border:2.5px solid var(--ink);background:radial-gradient(circle at 50% 50%,var(--paper) 0 28%,var(--mustard) 30%);flex:0 0 auto}
+#placelabel[hidden]{display:none}

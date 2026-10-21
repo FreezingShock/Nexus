@@ -73,4 +73,22 @@ export function planPlacement(cmd) {
   return { def, gx, gz, fw: fit.fw, fd: fit.fd, rot, exact: fit.exact, x, z, pal: districtPal(x, z) };
 }
 
+// Lot origins for a row dragged from tile `start` to tile `end`. Lots of fw x fd sit edge to edge along the longer
+// drag direction, the first one centered on `start`. A plain click (start == end) gives one lot. Pure.
+export const MAX_ROW = 40;
+export function rowOrigins(start, end, fw, fd, max = MAX_ROW) {
+  const dx = end[0] - start[0], dz = end[1] - start[1];
+  const along = Math.abs(dx) >= Math.abs(dz);
+  const step = along ? fw : fd, len = along ? dx : dz, dir = len < 0 ? -1 : 1;
+  const n = Math.min(max, Math.floor(Math.abs(len) / step) + 1);
+  const ox = Math.floor((fw - 1) / 2), oz = Math.floor((fd - 1) / 2);
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const k = dir * i * step;
+    const cx = along ? start[0] + k : start[0], cz = along ? start[1] : start[1] + k;
+    out.push([cx - ox, cz - oz]);
+  }
+  return out;
+}
+
 export { GRID_N };
