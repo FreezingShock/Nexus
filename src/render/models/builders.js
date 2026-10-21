@@ -11,6 +11,14 @@ const awn = (k, i = 0) => AWNINGS[(Math.floor(k.t[5] * AWNINGS.length) + i) % AW
 const units = (k) => Math.max(1, k.d.legacy ? 1 : k.d.cw);
 const clampRise = (w, lo, hi, f) => Math.max(lo, Math.min(hi, w * f));
 
+// Park helpers: a lawn slab, a little tree, and a position given as fractions of the footprint (-1..1 each way).
+const lawn = (k, color = C.leaf) => k.box(k.w, 0.06, k.dep, 0, PLINTH, 0, color, { edge: false });
+const at = (k, fx, fz) => [fx * k.w / 2, fz * k.dep / 2];
+const tree = (k, x, z, s = 1) => {
+  k.cyl(0.07 * s, 0.09 * s, 0.7 * s, 6, x, PLINTH, z, C.wood, { edge: false });
+  k.dome(0.55 * s, x, PLINTH + 0.55 * s, z, s > 0.9 ? C.leaf : C.moss);
+};
+
 const B = {
   cottage(k) {
     k.body(); k.door();
@@ -240,6 +248,39 @@ const B = {
     decorate(k, { skip: ['chimney', 'gableWindow', 'garden', 'lamp', 'bunting', 'crown', 'boxes'] });
     if (k.level >= 4) for (const sx of [-1, 1]) { k.cyl(0.05, 0.05, 0.7, 5, sx * (tw / 2 + 0.5), 0, tz + tw / 2 + 0.2, C.slate, { edge: false }); k.box(0.16, 0.2, 0.16, sx * (tw / 2 + 0.5), 0.7, tz + tw / 2 + 0.2, C.lamp, { edge: false }); }
     if (k.level >= 5) k.box(0.9, 0.9, 0.12, 0, k.top + 0.2, k.dep / 2 + 0.04, C.glass, { edge: false });
+  },
+
+  // ---- parks: ground, not buildings. The lawn or paving sits on the plinth; trees, lamps and water are the details ----
+  green(k) {
+    lawn(k);
+    tree(k, ...at(k, -0.45, -0.4), 1.0); tree(k, ...at(k, 0.5, 0.25), 0.8); tree(k, ...at(k, -0.1, 0.6), 0.6);
+    k.box(0.9, 0.06, 0.28, ...at(k, 0.35, -0.7), C.wood, { edge: false });                        // a bench on the path
+  },
+
+  plaza(k) {
+    k.box(k.w - 0.3, 0.06, k.dep - 0.3, 0, PLINTH, 0, C.paper, { edge: false });                 // paving
+    k.cyl(0.85, 0.9, 0.22, 12, 0, PLINTH + 0.06, 0, C.stone);                                    // fountain basin
+    k.cyl(0.66, 0.66, 0.05, 12, 0, PLINTH + 0.18, 0, C.water, { edge: false });
+    for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) k.lamp(sx * (k.w / 2 - 0.3), sz * (k.dep / 2 - 0.3), 1.0);
+  },
+
+  playground(k) {
+    lawn(k);
+    const bz = -0.4 * k.dep / 2;                                                                  // swing set toward the back
+    for (const sx of [-1, 1]) k.cyl(0.05, 0.05, 1.2, 5, sx * 0.55, PLINTH, bz, C.slate, { edge: false });
+    k.box(1.2, 0.08, 0.1, 0, PLINTH + 1.2, bz, C.slate, { edge: false });
+    for (const sx of [-0.2, 0.2]) k.box(0.28, 0.05, 0.18, sx, PLINTH + 0.6, bz, C.wood, { edge: false });
+    k.box(0.4, 0.06, 1.0, 0.45, PLINTH + 0.45, 0.5 * k.dep / 2, C.gold, { rx: -0.45 });            // a little slide
+    tree(k, ...at(k, -0.7, 0.7), 0.7);
+  },
+
+  pond(k) {
+    const r = k.w * 0.36;
+    lawn(k);
+    k.cyl(r + 0.14, r + 0.14, 0.14, 16, 0, PLINTH, 0, C.stone);                                  // stone rim
+    k.cyl(r, r, 0.04, 16, 0, PLINTH + 0.1, 0, C.water, { edge: false });
+    for (const [fx, fz] of [[-0.7, 0.3], [0.55, -0.45], [0.2, 0.7]]) k.cyl(0.03, 0.03, 0.5, 4, fx * r, PLINTH + 0.14, fz * r, C.leaf, { edge: false });
+    k.box(0.9, 0.08, 0.3, 0, PLINTH + 0.3, k.dep / 2 - 0.3, C.wood, { edge: false });               // a bench by the water
   },
 };
 

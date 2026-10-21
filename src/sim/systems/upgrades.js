@@ -7,6 +7,7 @@ export default {
     upgrade({ sim, state, layout, emit, note, refresh, charge }, { id }) {
       if (!sim.alive(id)) return;
       const b = sim.building(id), lv = levelOf(state, b), c = upgradeCost(b.floors, lv);
+      if (!b.floors) return emit({ type: 'toast', text: b.name + ' is finished as it is' }); // parks have no storeys to add
       if (lv >= MAX_LEVEL) return emit({ type: 'toast', text: b.name + ' is at the top level' });
       if (!charge(c)) return;
       state.levels[id] = lv + 1;

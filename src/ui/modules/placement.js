@@ -5,7 +5,7 @@ import { CATEGORIES, areaCost, canonicalDims, footprintsOf, modelById, modelsIn 
 import { worldToTile } from '../../world/grid.js';
 import { checkLot, problemText } from '../../world/placement.js';
 
-const TOOLS = { build: 'Buildings', services: 'Services' };
+const TOOLS = { build: 'Buildings', services: 'Services', parks: 'Parks' };
 
 export default {
   id: 'placement',

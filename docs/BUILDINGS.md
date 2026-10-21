@@ -23,6 +23,10 @@ Each model lists the sizes it was drawn for. A turned building swaps its sides. 
 
 Placed buildings write their tiles into the grid's `lot` layer with numbers from 40000 up (`LOT_BASE`), so roads and zoning treat the tiles as built. Placed ids look like `b1001` so the save's level and removed fields accept them.
 
+## Parks
+
+Parks are ground, not buildings: `floors: [0, 0]`, so they never get storeys or levels and the upgrade is refused. A park is still a model (`cat: 'park'`) so it places, saves and bulldozes like any other. Its lawn or paving sits on the plinth; trees (a chunky trunk and a round crown), lamps, benches and water are the details. Keep parks to four or five trees so they stay inside the triangle budget. Services, parks and landmarks and what they do for the tiles around them are in [SERVICES.md](SERVICES.md).
+
 ## Budgets
 
 Plain parts share one vertex-colored material (one draw call). Textured walls add one material per palette and window style used. Triangle caps are enforced in `tests/models.test.js` (650 per building, rows get more per extra unit).
