@@ -11,11 +11,11 @@ your branch ──PR──> tests pass + PR is not a draft ──bot──> inte
 1. **Never push to `main` or `integration`.** The bot owns `integration`. nate owns `main`.
 2. **Branch names:** `claude/<short-topic>` (for example `claude/road-curves`). One topic per branch.
 3. **Start from the latest `integration`** so you build on what nate is already looking at: `git fetch origin && git checkout -b claude/<topic> origin/integration`. Fall back to `main` if `integration` does not exist yet.
-4. **Open the PR against `main`.** Keep it small and visible: one improvement a person can see or feel. A PR that is several screens of diff should probably be two.
+4. **Open the PR against `main`** (a PR against `integration` also merges, see [Bases and merges](#bases-and-merges)). Keep it small and visible: one improvement a person can see or feel. A PR that is several screens of diff should probably be two.
 5. **Run `npm test` before every push.** The CI check runs the same command. Add tests for sim, economy, save and migration changes.
-6. **Open as draft while it is rough.** Mark it ready for review when it is done and the bot will merge it into `integration` once tests pass. Drafts are never merged.
+6. **Open as draft while it is rough.** Mark it ready for review when it is done and the bot will merge it into `integration` once tests pass. Drafts are never merged. Every run updates one status comment on the PR that says what happened, including why a run skipped.
 7. **Include the attribution block** as the first two lines of the PR body (the thread supplies the exact text), then a short description of what changed and what you did and did not measure.
-8. **If the bot comments about a conflict,** merge `origin/integration` into your branch, resolve, and push. Do not force-push and do not rewrite shared history.
+8. **Merge `origin/integration` into your branch when the bot says `integration` has moved** (its comment says whether the merge is clean). Do it before you push more work, not at the end. Do not force-push and do not rewrite shared history.
 
 ## Adding features without editing shared files
 
@@ -33,9 +33,21 @@ If two PRs both add modules and a registry `index.js` conflicts, the bot resolve
 
 Layers stay separate: the sim never touches the DOM or Three.js, the UI sends commands (`sim.dispatch({ type, ... })`), and render reads sim state. New saved fields come from a system's `state()` and `sanitize()`; a change to existing saved fields needs a migration in `src/sim/save.js` and a `SAVE_VERSION` bump.
 
+## Bases and merges
+
+- **Who merges what.** The bot merges finished PRs into `integration`. nate merges `integration` into `main`, with a merge commit (not a squash), so the two do not drift apart. Nobody else merges into `main`.
+- **Base.** `main` and `integration` both work as a PR base. The bot reads the PR's live base every run, so changing the base starts a new run. Use `main` unless you have a reason not to.
+- **Draft to ready.** Converting a draft to ready, changing its base, or pushing a commit each start a run. A re-run uses the live PR, not the commit it started with, and a run for an older commit stays quiet because the newer run reports.
+- **Status.** One comment, edited in place, says `skipped` (with the reason), `merged`, `already`, `conflict`, or `testfail`. A new comment appears only when a PR first needs attention, so a quiet PR stays quiet.
+- **When `integration` moves**, the bot edits one comment on each open PR that is behind. It says whether bringing `integration` in is clean today. Merge it in when it is clean, and resolve it early when it is not.
+- **Rebasing.** Do not rebase a branch once its PR is open. Merge `origin/integration` in instead, so the history everyone else has stays valid.
+- **Flaky tests block everyone.** If a test fails once and passes on a rerun, fix the test before you push again. Do not skip or delete a test to get green. Keep tests free of the real clock and of random numbers without a seed.
+
 ## Shared files: keep them stable
 
 Avoid edits to `index.html`, `css/ui.css`, `src/main.js`, `src/sim/sim.js`, `src/sim/save.js`, `src/render/scene.js` and `src/ui/ui.js` unless the change cannot live in a system or module. When it cannot, keep the edit small and mention it in the PR. Put new CSS in your own file under `css/` and link it from `index.html` with one line. Do not reformat or reorder code you are not changing.
+
+`index.html`, `docs/*.md`, `CONTRIBUTING.md` and `tests/*.test.js` use `merge=union` (see `.gitattributes`): when two threads add lines in the same place, git keeps both instead of stopping. Check the result: `npm test` includes a test that fails on leftover conflict markers and on a stylesheet link to a missing file. A test file that appends a new `test(...)` block next to someone else's is fine; do not reorder or rewrite existing tests.
 
 ## Budgets and project rules
 
