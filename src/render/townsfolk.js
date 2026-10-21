@@ -18,6 +18,7 @@ const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
 
 export function buildTownsfolk(parent, grid, camera) {
   const rng = makeRng(131);
+  let crowd = 1; // graphics setting: scales the target (MAX is the hard cap)
   const body = allocInstanceColors(new THREE.InstancedMesh(new THREE.CylinderGeometry(0.17, 0.2, 0.6, 6), toon(0xffffff), MAX));
   const head = new THREE.InstancedMesh(new THREE.SphereGeometry(0.15, 6, 5), toon(SKIN), MAX);
   for (const m of [body, head]) { m.frustumCulled = false; m.castShadow = true; m.count = 0; }
@@ -74,7 +75,7 @@ export function buildTownsfolk(parent, grid, camera) {
         roads = next;
         roadTiles = Object.keys(next).map(Number);
       }
-      const want = Math.min(TARGET, Math.round(roadTiles.length * PER_ROAD_TILE));
+      const want = Math.min(TARGET * crowd, Math.round(roadTiles.length * PER_ROAD_TILE));
       while (people.length < want) people.push({ alive: false, gx: 0, gz: 0, dir: 0, side: 1, u: 0, mode: 'walk', t: 0, hidden: false });
       if (people.length > want) people.length = want;
       people.forEach((p, i) => {
@@ -115,5 +116,6 @@ export function buildTownsfolk(parent, grid, camera) {
       body.instanceMatrix.needsUpdate = head.instanceMatrix.needsUpdate = true;
     },
     count: () => people.filter((p) => p.alive).length,
+    setCrowd(c) { crowd = c; },
   };
 }

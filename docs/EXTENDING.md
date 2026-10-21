@@ -27,6 +27,7 @@ A system is a plain object. Every field except `id` is optional:
 
 - `frame(f)`: every frame, `f = { dt, t, simDt, state, tool }` (`simDt` is wall dt scaled by game speed, 0 when paused)
 - `setNight(on)`: when the day/night blend crosses halfway
+- `quality(rs)`: when a graphics setting changes (Settings > Graphics). `rs` is `renderSettings()` from `src/core/quality.js`: `{ shadows, shadowSize, pixelRatio, effects, crowd, edges }`, with `effects` 0 to 1 and `crowd` a multiplier. Scale your own counts or bursts from these; never reach into the sim.
 
 Render systems read sim state and never write it. Keep draw calls low: instance or merge geometry.
 

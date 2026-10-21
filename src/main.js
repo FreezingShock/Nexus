@@ -3,6 +3,7 @@ import { getLayout } from './world/layout.js';
 import { createSim } from './sim/sim.js';
 import { loadGame, writeSave, clearSave, exportText, importText, restoreBackup, backupInfo } from './sim/save.js';
 import { createScene } from './render/scene.js';
+import { createQualityStore, detectEnv } from './core/quality.js';
 import { createUi } from './ui/ui.js';
 import { $, fmtAgo } from './ui/format.js';
 
@@ -31,6 +32,12 @@ try {
   throw err;
 }
 
+// ---- graphics settings ----
+// Kept under their own key, so Start over leaves them alone. Presets and single options apply live through scene.setQuality.
+const browserStorage = (() => { try { return localStorage; } catch { return null; } })();
+const quality = createQualityStore({ storage: browserStorage, env: detectEnv(), onChange: (q) => scene.setQuality(q) });
+scene.setQuality(quality.get());
+
 // ---- save / export / import ----
 // saveBlocked is set right before a reload that must not be overwritten by the in-memory town (import, restore, start over).
 let saveBlocked = false, lastSaved = null, saveFailing = false;
@@ -41,6 +48,7 @@ const save = () => {
   if (!saveFailing) { saveFailing = true; ui.toast('Autosave could not write to this browser. Export a copy from Settings.'); }
 };
 const actions = {
+  quality,
   exportSave() {
     const blob = new Blob([exportText(sim.prepareSave(), Date.now())], { type: 'application/json' });
     const a = document.createElement('a');

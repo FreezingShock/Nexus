@@ -64,7 +64,7 @@ function buildModel(parent, spec, cap, cabinColour) {
   parent.add(bodies, cabins, lines);
 
   return {
-    bodies, cabins, lineGeo, lp, tmpl, verts, n: 0,
+    bodies, cabins, lines, lineGeo, lp, tmpl, verts, n: 0,
     bodyOff: new THREE.Matrix4().makeTranslation(0, g.bodyY, 0),
     cabinOff: new THREE.Matrix4().makeTranslation(g.cabinX, g.cabinY, 0),
   };
@@ -75,6 +75,7 @@ export function buildCars(parent, grid, camera) {
   const fleet = new Fleet(7);
   const models = MODELS.map((s) => buildModel(parent, s, CAR_MAX, CABIN));
   const bus = buildModel(parent, BUS_MODEL, BUS_MAX, CABIN);
+  let crowd = 1; // graphics setting: scales the car target (CAR_MAX is the hard cap)
   const all = [...models, bus];
   const m = new THREE.Matrix4(), local = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
   const pos = new THREE.Vector3(), sc = new THREE.Vector3(), v = new THREE.Vector3(), col = new THREE.Color();
@@ -169,12 +170,17 @@ export function buildCars(parent, grid, camera) {
       if (tr && roads) {
         fleet.step(dt, {
           roads, net: tr.net, fields: tr.fields, anchors: tr.anchors, total: tr.total, version: grid.loadRev, tours,
-          carWant: Math.min(CAR_TARGET, Math.round(tr.vehicles * CARS_PER_FLOW)), busWant: Math.min(BUS_MAX, tours.length),
+          carWant: Math.min(CAR_TARGET * crowd, Math.round(tr.vehicles * CARS_PER_FLOW)), busWant: Math.min(BUS_MAX, tours.length),
         });
       }
       draw(view);
     },
     count: () => fleet.carCount() + fleet.busCount(),
+    // Graphics settings: how many cars, and whether the ink edges are drawn. Nothing here touches the fleet's logic.
+    setQuality(rs) {
+      crowd = rs.crowd;
+      for (const m of all) m.lines.visible = rs.edges;
+    },
     carCount: () => fleet.carCount(),
     busCount: () => fleet.busCount(),
   };

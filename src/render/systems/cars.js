@@ -11,6 +11,8 @@ export default {
       frame: (f) => { cars.update(f.simDt, f.state.roads); folk.update(f.simDt, f.state.roads); },
       count: cars.count,
       folk: folk.count,
+      // Graphics settings: crowd size and vehicle ink edges.
+      quality: (rs) => { cars.setQuality(rs); folk.setCrowd(rs.crowd); },
     };
   },
 };

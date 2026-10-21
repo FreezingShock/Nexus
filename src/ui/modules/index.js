@@ -5,6 +5,7 @@ import bulldozeSweep from './bulldoze-sweep.js';
 import cameraModes from './camera-modes.js';
 import commute from './commute.js';
 import districts from './districts.js';
+import frameStats from './frame-stats.js';
 import notes from './notes.js';
 import onboarding from './onboarding.js';
 import placement from './placement.js';
@@ -20,6 +21,7 @@ export const uiModules = [
   cameraModes,
   commute,
   districts,
+  frameStats,
   notes,
   onboarding,
   placement,
