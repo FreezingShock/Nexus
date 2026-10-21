@@ -4,7 +4,7 @@ import { wrap, unwrap, sanitize, readSave, writeSave, SAVE_VERSION } from '../sr
 import { freshState } from '../src/sim/state.js';
 
 test('round trip through the envelope', () => {
-  const s = freshState(); s.coins = 99.5; s.levels.b3 = 4; s.removed.push('b1'); s.ringRoad = true;
+  const s = freshState(); s.coins = 99.5; s.levels.b3 = 4; s.removed.push('b1');
   const r = unwrap(JSON.stringify(wrap(s, 1234)));
   assert.equal(r.ok, true);
   assert.equal(r.savedAt, 1234);

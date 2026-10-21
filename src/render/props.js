@@ -1,4 +1,4 @@
-// Static props: block pads, park paths and ponds, bridge, trees, pines, lamps, turbines, the ring-road ghost.
+// Static props: block pads, park paths and ponds, bridge, trees, pines, turbines. (Lamps now come from the road system.)
 import * as THREE from '../../vendor/three/three.module.min.js';
 import { heightAt } from '../world/terrain.js';
 import { TREE_COLORS, PINE_COLORS } from '../world/palettes.js';
@@ -73,40 +73,4 @@ export function buildTrees(parent, layout) {
   });
   cone.castShadow = true;
   parent.add(can, hull, trunk, cone, cone2);
-}
-
-export function buildLamps(parent, layout) {
-  const n = layout.lamps.length;
-  const pole = instanced(new THREE.CylinderGeometry(0.05, 0.07, 2.2, 5), toon(INK), n);
-  const head = instanced(new THREE.SphereGeometry(0.2, 6, 5), toon(0xEBD9A0), n);
-  const m = new THREE.Matrix4();
-  layout.lamps.forEach(([x, z], i) => {
-    m.makeTranslation(x, 1.15, z); pole.setMatrixAt(i, m);
-    m.makeTranslation(x, 2.3, z); head.setMatrixAt(i, m);
-  });
-  parent.add(pole, head);
-}
-
-// The ring-road preview: a pulsing blue ghost with two pins, which turns into asphalt once built.
-export function buildGhost(parent) {
-  const group = new THREE.Group(), mat = new THREE.MeshBasicMaterial({ color: 0x8FB8D6, transparent: true, opacity: 0.75 });
-  const road = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.18, 48), mat);
-  road.position.set(-33, 0.16, 0);
-  group.add(road);
-  const pins = new THREE.Group();
-  for (const s of [-1, 1]) {
-    const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 2.4, 14), new THREE.MeshBasicMaterial({ color: s < 0 ? 0xFAF3E4 : 0xB8472E }));
-    pin.position.set(-33, 1.3, s * 24); pins.add(pin);
-  }
-  group.add(pins);
-  group.visible = false;
-  parent.add(group);
-  return {
-    group,
-    update(t, active, built) {
-      group.visible = active || built;
-      pins.visible = !built;
-      if (built) { mat.color.set(0x8E8576); mat.opacity = 1; } else { mat.color.set(0x8FB8D6); mat.opacity = 0.55 + 0.25 * Math.sin(t * 3); }
-    },
-  };
 }
