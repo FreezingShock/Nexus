@@ -1,4 +1,4 @@
-// Roads on the shared tile grid: the pencil stroke, bulldozing, undo and the Parts unlocks.
+// Roads on the shared tile grid: routed drawing (see src/world/roadnet.js), bulldozing, undo and the Parts unlocks.
 // Saved: state.roads (see src/world/roadnet.js) and state.roadUnlocks. The grid's `road` layer is rebuilt from them.
 import { ROAD_TYPES } from '../catalog.js';
 import { GRID_N, tileIndex } from '../../world/grid.js';
@@ -36,15 +36,15 @@ export default {
   },
   init(ctx) { ctx.sim.roadUndo = []; syncGrid(ctx); },
   commands: {
-    // path: ordered, 4-connected [gx, gz] tiles drawn with the pencil. One-way roads follow the drawing direction.
+    // path: ordered, 4-connected [gx, gz] tiles of one route (pivots joined by L legs). One-way roads follow the drawing direction.
     drawRoad(ctx, { roadType, path }) {
       const { state, grid, layout, emit, note, charge, sim } = ctx;
       const t = typeOf(roadType);
       if (!t || (t.unlockParts && !state.roadUnlocks.includes(t.id))) return;
       if (!Array.isArray(path) || !path.length || path.length > MAX_STROKE || !path.every(isTile)) return;
       for (let k = 1; k < path.length; k++) if (Math.abs(path[k][0] - path[k - 1][0]) + Math.abs(path[k][1] - path[k - 1][1]) !== 1) return;
-      const plan = planStroke({ path, type: t.id, roads: state.roads, canRoad: (gx, gz) => !roadBlock(grid, layout, state, gx, gz), costOf });
-      if (plan.blocked.length) { emit({ type: 'toast', text: BLOCK_TEXT[roadBlock(grid, layout, state, plan.blocked[0][0], plan.blocked[0][1])] }); return; }
+      const plan = planStroke({ path, type: t.id, roads: state.roads, blockedBy: (gx, gz) => roadBlock(grid, layout, state, gx, gz), costOf });
+      if (plan.problems.length) { emit({ type: 'toast', text: BLOCK_TEXT[plan.problems[0].reason] }); return; }
       if (!plan.tiles.length) return;
       if (!charge(plan.cost)) return;
       const next = { ...state.roads }, prev = [], cleared = [];
