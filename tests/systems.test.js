@@ -26,3 +26,20 @@ test('every registered system has a unique id, and sim command names do not coll
   const names = systems.flatMap((d) => Object.keys(d.commands || {}));
   assert.equal(new Set(names).size, names.length);
 });
+
+test('registry index files match their folders (run `npm run registry` if this fails)', async () => {
+  const { generate } = await import('../scripts/gen-registry.mjs');
+  const { readFileSync } = await import('node:fs');
+  const root = new URL('..', import.meta.url).pathname;
+  for (const { path, content } of generate(root)) {
+    const cur = readFileSync(root + path, 'utf8');
+    assert.ok(!/^(<<<<<<<|=======|>>>>>>>)/m.test(cur), path + ' contains conflict markers');
+    assert.equal(cur, content, path + ' is out of date: run npm run registry');
+  }
+});
+
+test('registry order: `order` first, then registration order', () => {
+  const r = createRegistry('t');
+  r.add({ id: 'b' }); r.add({ id: 'a', order: -1 }); r.add({ id: 'c' });
+  assert.deepEqual(r.list().map((d) => d.id), ['a', 'b', 'c']);
+});

@@ -9,9 +9,10 @@ export function createRegistry(kind) {
       items.push(def);
       return def;
     },
-    list: () => items.slice(),
+    // Sorted by optional numeric `order` (default 0); ties keep registration order, which is file-name order.
+    list: () => items.map((d, i) => [d, i]).sort((a, b) => (a[0].order ?? 0) - (b[0].order ?? 0) || a[1] - b[1]).map((x) => x[0]),
     // Calls `hook` on every definition that has it, in registration order.
-    run(hook, ...args) { for (const d of items) if (typeof d[hook] === 'function') d[hook](...args); },
+    run(hook, ...args) { for (const d of this.list()) if (typeof d[hook] === 'function') d[hook](...args); },
   };
 }
 
