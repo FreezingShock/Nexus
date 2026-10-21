@@ -13,7 +13,7 @@ function note(log, night) {
   if (last) {
     const n = last.n.toLowerCase();
     if (last.k === 'up') m = 'Dear mayor, your ' + n + ' has been shining since the upgrade, and the neighbours keep stopping to look at it.';
-    else if (last.k === 'road') m = 'Dear mayor, the new ring road is open and the first cars have already found it. Traffic has never felt so calm.';
+    else if (last.k === 'road') m = 'Dear mayor, the new road is open and the first cars have already found it. Traffic has never felt so calm.';
     else if (last.k === 'doze') m = 'Dear mayor, the lot where the ' + n + ' stood is quiet now, and wildflowers are starting to come up.';
   }
   return night ? m + ' The lamps look lovely tonight.' : m;

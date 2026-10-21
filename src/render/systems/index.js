@@ -2,11 +2,15 @@
 // To add a feature, create a file in this folder with a default export, then run `npm run registry`.
 // Hook shapes are documented in docs/EXTENDING.md. Modules run in order of their optional `order` number, then file name.
 import cars from './cars.js';
+import gridOverlay from './grid-overlay.js';
 import placementGhost from './placement-ghost.js';
+import roads from './roads.js';
 import turbines from './turbines.js';
 
 export const renderSystems = [
   cars,
+  gridOverlay,
   placementGhost,
+  roads,
   turbines,
 ];

@@ -3,8 +3,7 @@ import * as THREE from '../../vendor/three/three.module.min.js';
 import { createCamera } from './camera.js';
 import { createLighting } from './night.js';
 import { buildTerrain, buildFarms } from './terrain.js';
-import { buildRoads } from './roads.js';
-import { buildStatic, buildTrees, buildLamps, buildGhost } from './props.js';
+import { buildStatic, buildTrees } from './props.js';
 import { registryOf } from '../core/registry.js';
 import { renderSystems } from './systems/index.js';
 import { createTown } from './town.js';
@@ -26,16 +25,13 @@ export function createScene({ stage, layout, onPick }) {
 
   buildTerrain(world);
   buildFarms(world, layout.farms);
-  const roads = buildRoads(world, layout);
   buildStatic(world, layout);
   buildTrees(world, layout);
-  buildLamps(world, layout);
-  const ghost = buildGhost(world);
   const town = createTown(world, layout);
   const sysDefs = registryOf('render systems', renderSystems).list();
   const mods = sysDefs.map((d) => d.create({ THREE, world, layout, camera, scene }) || {});
   const byId = new Map(sysDefs.map((d, i) => [d.id, mods[i]]));
-  let dusk = null, nightOn = false, traffic = false, drag = null;
+  let dusk = null, nightOn = false, drag = null;
 
   function resize() {
     const w = stage.clientWidth || innerWidth, h = stage.clientHeight || innerHeight;
@@ -75,9 +71,6 @@ export function createScene({ stage, layout, onPick }) {
       camera.step(dt, drag && drag.moved > 5);
       const f = { dt, t, simDt, state: s, tool };
       for (const m of mods) if (m.frame) m.frame(f);
-      const want = tool === 'traffic';
-      if (want !== traffic) { traffic = want; roads.setTraffic(want); }
-      ghost.update(t, tool === 'roads', s.ringRoad);
       const blend = lighting.update(dt, s.night);
       const on = blend > 0.5;
       if (on !== nightOn) { nightOn = on; town.setNight(on); for (const m of mods) if (m.setNight) m.setNight(on); }
@@ -111,7 +104,7 @@ export function createScene({ stage, layout, onPick }) {
       const v = camera.view, half = v.half / v.zoom * 0.6;
       const c = camera.cam.clone();
       c.left = -half * 4 / 3; c.right = half * 4 / 3; c.top = half; c.bottom = -half; c.zoom = 1; c.updateProjectionMatrix();
-      town.hideSelection(true); ghost.group.visible = false;
+      town.hideSelection(true);
       const prev = renderer.getRenderTarget();
       renderer.setRenderTarget(snapTarget); renderer.render(scene, c);
       const buf = new Uint8Array(SNAP_W * SNAP_H * 4);

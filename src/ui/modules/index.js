@@ -2,7 +2,9 @@
 // To add a feature, create a file in this folder with a default export, then run `npm run registry`.
 // Hook shapes are documented in docs/EXTENDING.md. Modules run in order of their optional `order` number, then file name.
 import placement from './placement.js';
+import roadTool from './road-tool.js';
 
 export const uiModules = [
   placement,
+  roadTool,
 ];
