@@ -4,6 +4,7 @@
 import cars from './cars.js';
 import gridOverlay from './grid-overlay.js';
 import lots from './lots.js';
+import placementGhost from './placement-ghost.js';
 import roads from './roads.js';
 import tileview from './tileview.js';
 import turbines from './turbines.js';
@@ -12,6 +13,7 @@ export const renderSystems = [
   cars,
   gridOverlay,
   lots,
+  placementGhost,
   roads,
   tileview,
   turbines,

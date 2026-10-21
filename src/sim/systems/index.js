@@ -3,6 +3,7 @@
 // Hook shapes are documented in docs/EXTENDING.md. Modules run in order of their optional `order` number, then file name.
 import core from './core.js';
 import offlinePostcard from './offline-postcard.js';
+import placement from './placement.js';
 import roads from './roads.js';
 import upgrades from './upgrades.js';
 import zoning from './zoning.js';
@@ -10,6 +11,7 @@ import zoning from './zoning.js';
 export const systems = [
   core,
   offlinePostcard,
+  placement,
   roads,
   upgrades,
   zoning,
