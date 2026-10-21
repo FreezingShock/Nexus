@@ -12,3 +12,6 @@ import tileview from './tileview.js';
 import lots from './lots.js';
 
 export const renderSystems = [cars, turbines, tileview, lots];
+import placementGhost from './placement-ghost.js';
+
+export const renderSystems = [cars, turbines, placementGhost];

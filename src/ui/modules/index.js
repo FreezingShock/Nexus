@@ -12,3 +12,6 @@
 import zoning from './zoning.js';
 
 export const uiModules = [zoning];
+import placement from './placement.js';
+
+export const uiModules = [placement];
