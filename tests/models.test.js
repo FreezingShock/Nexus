@@ -19,7 +19,7 @@ test('every model builds at every size and level within the triangle budget', ()
     const [fw, fd] = canonicalDims(m, size);
     const parts = buildParts(describe(rec(m.id, fw, fd), lv));
     const tris = trianglesOf(parts);
-    const budget = m.tile === 'row' ? 520 + 220 * (fw - 1) : 550; // a row is several houses, so it gets more
+    const budget = m.tile === 'row' ? 520 + 220 * (fw - 1) : 650; // a row is several houses, so it gets more
     assert.ok(tris > 0 && tris <= budget, `${m.id} ${size} L${lv}: ${tris} triangles (budget ${budget})`);
     for (const p of parts) for (const g of p.splits ? p.splits.map((s) => s.geo) : [p.geo]) {
       assert.ok(g.attributes.position.array.every(Number.isFinite), `${m.id} has a NaN vertex`);

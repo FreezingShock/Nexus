@@ -25,4 +25,4 @@ Placed buildings write their tiles into the grid's `lot` layer with numbers from
 
 ## Budgets
 
-Plain parts share one vertex-colored material (one draw call). Textured walls add one material per palette and window style used. Triangle caps are enforced in `tests/models.test.js` (550 per building, rows get more per extra unit).
+Plain parts share one vertex-colored material (one draw call). Textured walls add one material per palette and window style used. Triangle caps are enforced in `tests/models.test.js` (650 per building, rows get more per extra unit).
