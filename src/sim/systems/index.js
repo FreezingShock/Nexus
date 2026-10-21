@@ -5,10 +5,11 @@
 //   id                  unique string
 //   state()             returns default fields to add to a fresh state, e.g. { districts: [] }
 //   sanitize(raw, fresh) returns the fields to keep from an untrusted saved state (clamp and validate)
+//   init(ctx)           once, when the sim is created: build derived data (such as grid layers) from state
 //   commands            { commandName(ctx, cmd) }  handlers for sim.dispatch({ type: 'commandName', ... })
 //   rate(ctx)           extra coins per second, added to the building income
 //   tick(ctx)           runs once per 1 Hz tick, after income is added
-// ctx = { sim, state, layout, emit, note, refresh, charge(cost), syncDisplay() }.
+// ctx = { sim, state, layout, grid, emit, note, refresh, charge(cost), syncDisplay() }.
 // Systems never touch the DOM or Three.js.
 import core from './core.js';
 import upgrades from './upgrades.js';
