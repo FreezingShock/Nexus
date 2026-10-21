@@ -14,9 +14,8 @@ export default {
     const tag = document.createElement('div');
     tag.className = 'ztag card'; tag.hidden = true;
     $('app').appendChild(tag);
-    const demandEl = document.createElement('section');
-    demandEl.id = 'demandw'; demandEl.className = 'card demandw'; demandEl.setAttribute('aria-label', 'Zone demand');
-    $('app').appendChild(demandEl);
+    // The demand widget sits in the top row of the HUD (index.html); this module fills its rows.
+    const demandEl = document.getElementById('demandrows');
     paintDemand();
 
     let active = false, brush = 1, drag = null, hoverTile = null, last = null, flashed = false, acc = 0;
@@ -146,12 +145,15 @@ export default {
       },
     };
 
-    // The always-visible demand widget: three rows, one per zone with demand, in the zone colours.
+    // The demand widget: one slim bar per zone with demand, in the zone colours. R, C and I, with the full name on hover.
     function paintDemand() {
+      if (!demandEl) return;
       const d = sim.zoning.demand();
-      const rows = [1, 2, 3].map((z) => `<div class="drow2" title="${ZONE_DEFS[z].name} demand"><b>${ZONE_DEFS[z].name}</b>` +
-        `<i class="dbar"><u style="width:${Math.round(d[z] * 100)}%;background:${ZONE_DEFS[z].paint}"></u></i><em>${Math.round(d[z] * 100)}%</em></div>`).join('');
-      demandEl.innerHTML = `<h3>Demand</h3>${rows}`;
+      demandEl.innerHTML = [1, 2, 3].map((z) => {
+        const pct = Math.round(d[z] * 100);
+        return `<div class="drow2" title="${ZONE_DEFS[z].name} demand: ${pct}%"><span class="dk" style="color:${ZONE_DEFS[z].paint}">${ZONE_DEFS[z].name[0]}</span>` +
+          `<i class="dbar"><u style="width:${pct}%;background:${ZONE_DEFS[z].paint}"></u></i><em>${pct}%</em></div>`;
+      }).join('');
     }
   },
 };
