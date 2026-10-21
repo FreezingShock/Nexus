@@ -7,6 +7,15 @@ import {
 } from '../zones.js';
 
 const AREA = GRID_N * GRID_N;
+// Undo for zone paint and erase: old zones go back on their tiles, lots the erase took come back,
+// and paint's coins are refunded.
+function revertZones(ctx, prev, refund = 0, lots = []) {
+  const { grid, state, refresh, sim, syncDisplay } = ctx;
+  for (const [i, z] of prev) grid.zone[i] = z;
+  for (const l of lots) { if (!state.lots.some(([j]) => j === l[0])) state.lots.push(l); grid.lot[l[0]] = l[0] + 1; }
+  if (refund) { state.coins += refund; syncDisplay(); }
+  state.zones = encodeZones(grid.zone); state.zoneRev++; sim.zoning.painted = countPaint(grid); refresh();
+}
 const tileArg = (t) => Array.isArray(t) && t.length === 2 && Number.isInteger(t[0]) && Number.isInteger(t[1]) && inBounds(t[0], t[1]);
 
 export default {
@@ -71,13 +80,16 @@ export default {
       if (afford < 1) { emit({ type: 'toast', text: 'Not enough coins for a ' + def.name.toLowerCase() + ' tile (' + def.cost + ')' }); return; }
       if (!charge(afford * def.cost)) return;
       let noRoad = 0;
+      const prev = [];
       for (let k = 0; k < afford; k++) {
         const i = todo[k];
+        prev.push([i, grid.zone[i]]);
         grid.zone[i] = zone;
         const [gx, gz] = tileOf(i);
         if (!grid.roadWithin(gx, gz, ROAD_REACH)) noRoad++;
       }
       state.zones = encodeZones(grid.zone); state.zoneRev++; ctx.sim.zoning.painted = countPaint(grid); refresh(); note('zone', def.name);
+      ctx.sim.pushUndo({ revert: (c) => revertZones(c, prev, afford * def.cost) });
       let text = 'Painted ' + afford + ' ' + def.name.toLowerCase() + ' tile' + (afford > 1 ? 's' : '') + ' · ' + afford * def.cost + ' coins';
       if (afford < todo.length) text += ' · coins ran out';
       else if (noRoad) text += ' · ' + noRoad + ' need a road nearby';
@@ -89,16 +101,18 @@ export default {
       const { grid, state, emit, refresh } = ctx;
       if (!tileArg(a) || !tileArg(b)) return;
       let tiles = 0, homes = 0;
-      const dead = new Set();
+      const dead = new Set(), prev = [], lost = [];
       for (const [gx, gz] of rectTiles(a, b)) {
         const i = tileIndex(gx, gz);
         if (!grid.zone[i]) continue;
         tiles++;
-        if (grid.lot[i] === i + 1) { homes++; dead.add(i); grid.lot[i] = 0; } // a grown lot; placed buildings (>= PLACED_LOT_MIN) stay
+        prev.push([i, grid.zone[i]]);
+        if (grid.lot[i] === i + 1) { homes++; dead.add(i); grid.lot[i] = 0; const l = state.lots.find(([j]) => j === i); if (l) lost.push(l.slice()); } // a grown lot; placed buildings (>= PLACED_LOT_MIN) stay
         grid.zone[i] = 0;
       }
       if (!tiles) return;
       if (dead.size) state.lots = state.lots.filter(([i]) => !dead.has(i));
+      ctx.sim.pushUndo({ revert: (c) => revertZones(c, prev, 0, lost) });
       state.zones = encodeZones(grid.zone); state.zoneRev++; ctx.sim.zoning.painted = countPaint(grid); refresh();
       emit({ type: 'zoneCleared', n: tiles, text: 'Cleared ' + tiles + ' tile' + (tiles > 1 ? 's' : '') + (homes ? ' and ' + homes + ' building' + (homes > 1 ? 's' : '') : '') });
     },

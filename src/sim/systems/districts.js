@@ -10,6 +10,12 @@ const tileArg = (t) => Array.isArray(t) && t.length === 2 && Number.isInteger(t[
 const clampInt = (v, lo, hi, d) => (Number.isInteger(v) ? Math.min(hi, Math.max(lo, v)) : d);
 const isObj = (x) => !!x && typeof x === 'object' && !Array.isArray(x);
 
+// Undo for district paint and erase: the old slot goes back on each tile. Free, so no coins move.
+function revertDistricts({ grid, state }, prev) {
+  for (const [i, slot] of prev) grid.district[i] = slot;
+  state.dmap = encodeDistricts(grid.district); state.drev++;
+}
+
 export default {
   id: 'districts',
   state: () => ({ districts: [], dmap: '0'.repeat(AREA), dseed: 1, drev: 0 }),
@@ -70,13 +76,15 @@ export default {
       const { state, grid, emit } = ctx;
       if (!isSlot(slot) || !tileArg(a) || !tileArg(b) || !state.districts.some((d) => d.slot === slot)) return;
       let changed = 0, water = 0;
+      const prev = [];
       for (const [gx, gz] of rectTiles(a, b)) {
         const i = tileIndex(gx, gz);
         if (grid.base[i] === BASE.WATER) { water++; continue; }
-        if (grid.district[i] !== slot) { grid.district[i] = slot; changed++; }
+        if (grid.district[i] !== slot) { prev.push([i, grid.district[i]]); grid.district[i] = slot; changed++; }
       }
       if (!changed) { if (water) emit({ type: 'toast', text: 'Rivers and ponds keep their own names' }); return; }
       state.dmap = encodeDistricts(grid.district); state.drev++;
+      ctx.sim.pushUndo({ revert: (c) => revertDistricts(c, prev) });
     },
 
     // Clear the district on every tile of the rectangle. Free.
@@ -84,12 +92,14 @@ export default {
       const { state, grid } = ctx;
       if (!tileArg(a) || !tileArg(b)) return;
       let changed = 0;
+      const prev = [];
       for (const [gx, gz] of rectTiles(a, b)) {
         const i = tileIndex(gx, gz);
-        if (grid.district[i]) { grid.district[i] = 0; changed++; }
+        if (grid.district[i]) { prev.push([i, grid.district[i]]); grid.district[i] = 0; changed++; }
       }
       if (!changed) return;
       state.dmap = encodeDistricts(grid.district); state.drev++;
+      ctx.sim.pushUndo({ revert: (c) => revertDistricts(c, prev) });
     },
 
     // A typed name is cleaned; an empty one gets a generated name instead.

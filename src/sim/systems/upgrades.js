@@ -1,4 +1,4 @@
-// Upgrading and bulldozing existing buildings.
+// Upgrading existing buildings. Bulldozing lives in the placement system, next to undo.
 import { MAX_LEVEL, levelOf, upgradeCost } from '../economy.js';
 
 export default {
@@ -13,11 +13,6 @@ export default {
       state.levels[id] = lv + 1;
       refresh(); note('up', b.name);
       emit({ type: 'upgraded', id, text: b.name + ' upgraded to level ' + (lv + 1) });
-    },
-    bulldoze({ sim, state, emit, note, refresh }, { id }) {
-      if (!sim.alive(id)) return;
-      state.removed.push(id); refresh(); note('doze', sim.building(id).name);
-      emit({ type: 'bulldozed', id, text: sim.building(id).name + ' removed' });
     },
   },
 };
