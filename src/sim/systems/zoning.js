@@ -46,6 +46,12 @@ export default {
 
   rate: ({ grid, state }) => lotIncome(state.lots, (i) => grid.zone[i]),
 
+  // A road drawn over paint clears the grid but not the saved layer. Rebuild the saved zones and lots before saving.
+  beforeSave(ctx) {
+    reconcile(ctx);
+    ctx.state.zones = encodeZones(ctx.grid.zone);
+  },
+
   commands: {
     // Paint the rectangle between tiles a and b. Costs per painted tile; stops when coins run out.
     paintZone(ctx, { zone, a, b }) {

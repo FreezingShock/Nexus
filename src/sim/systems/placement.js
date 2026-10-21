@@ -2,7 +2,7 @@
 // A placed building is a small record in state.placed; its look, floors and income come from the model and its id,
 // so the save stays tiny and a reload rebuilds exactly the same houses.
 // Placed ids look like "b1001" so the generic level and removed fields of the save accept them.
-import { areaCost, describe } from '../../world/models.js';
+import { areaCost, describe, seedOf } from '../../world/models.js';
 import { LOT_BASE, MAX_PLACED, checkLot, lotTiles, planPlacement, problemText } from '../../world/placement.js';
 import { income, levelOf } from '../economy.js';
 import { tileIndex, GRID_N } from '../../world/grid.js';
@@ -38,7 +38,7 @@ export default {
       const tiles = lotTiles(plan.gx, plan.gz, plan.fw, plan.fd);
       if (tiles.some(([x, z]) => x < 0 || z < 0 || x >= GRID_N || z >= GRID_N || used.has(z * GRID_N + x))) continue;
       tiles.forEach(([x, z]) => used.add(z * GRID_N + x));
-      out.push({ id: r.id, model: r.model, gx: plan.gx, gz: plan.gz, fw: plan.fw, fd: plan.fd, rot: plan.rot, pal: plan.pal });
+      out.push({ id: r.id, model: r.model, gx: plan.gx, gz: plan.gz, fw: plan.fw, fd: plan.fd, rot: plan.rot, pal: plan.pal, seed: Number.isInteger(r.seed) ? r.seed >>> 0 : seedOf(r.id) });
       next = Math.max(next, Number(m[1]) + 1);
     }
     const n = Number.isInteger(raw.nextPlaced) ? raw.nextPlaced : FIRST;
@@ -67,7 +67,7 @@ export default {
       if (!lot.ok) return emit({ type: 'toast', text: problemText(lot.problem) });
       if (!charge(areaCost(plan.def, plan.fw, plan.fd))) return;
       const id = 'b' + state.nextPlaced++;
-      state.placed.push({ id, model: plan.def.id, gx: plan.gx, gz: plan.gz, fw: plan.fw, fd: plan.fd, rot: plan.rot, pal: plan.pal });
+      state.placed.push({ id, model: plan.def.id, gx: plan.gx, gz: plan.gz, fw: plan.fw, fd: plan.fd, rot: plan.rot, pal: plan.pal, seed: seedOf(id) });
       sync(ctx); refresh(); note('place', plan.def.name);
       emit({ type: 'placed', id, text: plan.def.name + (lot.road ? ' is open' : ' placed. A road nearby will bring visitors') });
     },

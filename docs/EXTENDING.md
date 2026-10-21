@@ -12,6 +12,8 @@ A system is a plain object. Every field except `id` is optional:
 - `commands`: `{ commandName(ctx, cmd) }`, called by `sim.dispatch({ type: 'commandName', ... })`
 - `rate(ctx)`: extra coins per second, added to the building income
 - `tick(ctx)`: runs once per 1 Hz tick, after income is added
+- `beforeSave(ctx)`: runs before every save and export, to rebuild saved fields derived from the grid (see docs/SAVE.md)
+- `sanitize(raw, fresh)` keeps only your saved keys, validated. Saving and loading are described in docs/SAVE.md
 
 `ctx = { sim, state, layout, emit, note, refresh, charge(cost), syncDisplay() }`. Systems never touch the DOM or Three.js. Other hooks used by existing systems (`init`, `offline`) are described in docs/GRID.md once that lands.
 
