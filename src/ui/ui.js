@@ -6,8 +6,7 @@ import { createPostcard } from './postcard.js';
 import { registryOf } from '../core/registry.js';
 import { uiModules } from './modules/index.js';
 
-// S is taken by WASD (camera), so Services sits on C.
-const TOOL_KEYS = { r: 'roads', z: 'zones', b: 'build', c: 'services', p: 'parks', t: 'traffic', x: 'bulldoze' };
+const TOOL_KEYS = { r: 'roads', z: 'zones', b: 'build', s: 'services', p: 'parks', t: 'traffic', x: 'bulldoze' };
 
 export function createUi({ sim, scene, actions }) {
   const send = (cmd) => sim.dispatch(cmd);
@@ -54,7 +53,8 @@ export function createUi({ sim, scene, actions }) {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (mods.some((m) => m.onKey && m.onKey(e))) return;
     const k = e.key.toLowerCase();
-    if (TOOL_KEYS[k]) setTool(tool === TOOL_KEYS[k] ? null : TOOL_KEYS[k]);
+    if (k === 'q') scene.rotate(-1); else if (k === 'e') scene.rotate(1);
+    else if (TOOL_KEYS[k]) setTool(tool === TOOL_KEYS[k] ? null : TOOL_KEYS[k]);
     else if (e.key === 'Escape') { if (panels.settingsOpen()) panels.hideSettings(); else if (tool) setTool(null); else select(null); }
   });
 

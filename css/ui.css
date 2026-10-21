@@ -160,7 +160,7 @@ button:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .fallback{background:var(--haze)}
 
-/* Floating cards never overlap. The header sets --hud-bottom; the left column (Goals, then Happiness) stacks,
+/* Floating cards never overlap. The header sets --hud-bottom. The left column (Goals, then Happiness) stacks,
    and the right card and the flyout keep to their own sides of the screen. */
 :root{--side:340px}
 @media (max-width:1180px){:root{--side:300px}}
@@ -168,8 +168,3 @@ button:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
 .leftcol{position:absolute;top:calc(var(--hud-bottom,108px) + 12px);left:max(16px,env(safe-area-inset-left,0px));bottom:150px;width:var(--side);display:flex;flex-direction:column;gap:12px;min-height:0;pointer-events:none}
 .leftcol>*{flex:0 0 auto;pointer-events:auto}
 .leftcol>#goals{flex:0 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain}
-/* camera settings */
-.camset{display:flex;flex-direction:column;gap:8px}
-.camset>b{font-weight:800}
-.seg{display:flex;gap:8px;flex-wrap:wrap}
-#settings .seg .tog{flex:1 1 0;min-width:0;padding:0 10px}

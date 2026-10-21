@@ -58,7 +58,6 @@ const actions = {
     else { saveBlocked = false; ui.toast('Could not restore the backup'); }
   },
   backup: () => backupInfo(),
-  camera: scene.camera,
   status: () => (saveFailing ? 'Autosave is having trouble in this browser. Export a copy to keep your town.'
     : lastSaved ? 'Saved ' + fmtAgo(lastSaved) + '. Autosaves every 45 seconds.' : 'Autosaves every 45 seconds.'),
 };

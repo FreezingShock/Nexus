@@ -41,20 +41,19 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
   }
   new ResizeObserver(resize).observe(stage);
 
-  // pointer: drag to pan (free fly: look around), right-drag turns in overview, click to pick,
-  // right-click to cancel, wheel to zoom (free fly: move forward and back). The browser menu is blocked in ui.js.
+  // pointer: drag to pan, click to pick, wheel to zoom
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
   canvas.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, moved: 0, button: e.button }; canvas.setPointerCapture(e.pointerId); });
   canvas.addEventListener('pointermove', (e) => {
     if (!drag) return;
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
     drag.x = e.clientX; drag.y = e.clientY; drag.moved += Math.abs(dx) + Math.abs(dy);
-    if (drag.moved > 5) { canvas.classList.add('drag'); camera.drag(dx, dy, canvas.clientHeight, drag.button); }
+    if (drag.moved > 5) { canvas.classList.add('drag'); camera.pan(dx, dy, canvas.clientHeight); }
   });
   canvas.addEventListener('pointerup', (e) => {
     const was = drag; drag = null; canvas.classList.remove('drag');
     if (!was || was.moved > 5) return;
-    if (was.button === 2) { onCancel(); return; }
+    if (was.button === 2) { onCancel(); return; } // right-click with no drag: cancel the tool or close a card
     if (was.button !== 0) return;
     const r = canvas.getBoundingClientRect();
     ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
@@ -62,7 +61,7 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
     onPick(town.pick(ray));
   });
   canvas.addEventListener('pointercancel', () => { drag = null; canvas.classList.remove('drag'); });
-  canvas.addEventListener('wheel', (e) => { e.preventDefault(); camera.wheel(e.deltaY); }, { passive: false });
+  canvas.addEventListener('wheel', (e) => { e.preventDefault(); camera.zoomBy(e.deltaY < 0 ? 1.12 : 0.89); }, { passive: false });
 
   resize(); camera.place();
 
@@ -93,11 +92,12 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
       const o = ray.ray.origin, d = ray.ray.direction;
       if (Math.abs(d.y) < 1e-6) return null;
       const k = -o.y / d.y;
-      if (k < 0) return null; // the ray points away from the ground, as it can in free fly
+      if (k < 0) return null; // the ray points away from the ground
       return { x: o.x + d.x * k, z: o.z + d.z * k };
     },
     select: (id) => town.select(id),
     pop: (id) => town.pop(id),
+    rotate: (d) => camera.rotate(d),
     focus: (x, z) => camera.focus(x, z),
     snap: (night) => lighting.snap(night),
 
@@ -106,9 +106,7 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
       if (!snapTarget) snapTarget = new THREE.WebGLRenderTarget(SNAP_W, SNAP_H);
       const v = camera.view, half = v.half / v.zoom * 0.6;
       const c = camera.cam.clone();
-      c.left = -half * 4 / 3; c.right = half * 4 / 3; c.top = half; c.bottom = -half; c.zoom = 1;
-      if (c.isPerspectiveCamera) c.aspect = SNAP_W / SNAP_H; // free fly: the postcard keeps its 4:3 frame
-      c.updateProjectionMatrix();
+      c.left = -half * 4 / 3; c.right = half * 4 / 3; c.top = half; c.bottom = -half; c.zoom = 1; c.updateProjectionMatrix();
       town.hideSelection(true);
       const prev = renderer.getRenderTarget();
       renderer.setRenderTarget(snapTarget); renderer.render(scene, c);
