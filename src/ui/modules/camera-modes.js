@@ -3,6 +3,7 @@
 const FLY_HINT = 'Free fly: WASD to move, drag or arrows to look, Q and E for height, F to return.';
 
 export default {
+  id: 'camera-modes',
   create({ scene, toast }) {
     const camera = scene.camera;
     return {
