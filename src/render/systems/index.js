@@ -3,6 +3,7 @@
 // Hook shapes are documented in docs/EXTENDING.md. Modules run in order of their optional `order` number, then file name.
 import cars from './cars.js';
 import gridOverlay from './grid-overlay.js';
+import happyFx from './happy-fx.js';
 import lots from './lots.js';
 import placementGhost from './placement-ghost.js';
 import roads from './roads.js';
@@ -13,6 +14,7 @@ import turbines from './turbines.js';
 export const renderSystems = [
   cars,
   gridOverlay,
+  happyFx,
   lots,
   placementGhost,
   roads,

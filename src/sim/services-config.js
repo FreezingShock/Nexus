@@ -23,9 +23,33 @@ export const LANDMARKS = {
   church:          { radius: 5, strength: 0.4, coins: 0.6 },
 };
 
+// Shops lift the homes around them. Placed shops use SHOPS; a grown Commercial tile uses SHOP_LOT (scaled a little by its level).
+export const SHOPS = {
+  'shop-row':      { radius: 3, strength: 0.3 },
+  cafe:            { radius: 3, strength: 0.4 },
+  market:          { radius: 4, strength: 0.45 },
+};
+export const SHOP_LOT = { radius: 2, strength: 0.25 };
+
+// Industry eases happiness down around it, a little and never below MOOD.floor. Placed industry uses INDUSTRY;
+// a grown Industrial tile uses INDUSTRY_LOT. Offices are workplaces, not industry, so they do not appear here.
+export const INDUSTRY = {
+  workshop:        { radius: 3, strength: 0.4 },
+  warehouse:       { radius: 4, strength: 0.4 },
+};
+export const INDUSTRY_LOT = { radius: 3, strength: 0.25 };
+
+// A grown lot's strength grows a little with its level: level 1 is 0.8 of the base, level 5 is 1.2.
+export const LOT_LEVEL_SCALE = (level) => 0.7 + 0.1 * level;
+
 export const MOOD = {
   base: 0.25,        // happiness of a tile with no coverage, so an empty corner is calm rather than sad
   saturation: 1,     // raw coverage at which the bonus is half of the rest; higher means slower to reach high values
+  industryMax: 0.15, // most happiness that industry can take away from a tile, reached only with heavy industry nearby
+  industrySaturation: 1, // industry at which half of industryMax applies; the drag saturates like coverage does
+  floor: 0.1,        // no tile drops below this, however much industry is near: gentle, never punishing
+  gainMin: 0.02,     // a home must gain at least this much from a new building for a heart to rise over it
+  gainCap: 40,       // at most this many homes get a heart from one placement, so a big build stays readable
   perTile: 0.04,     // coins per second per built tile at full happiness
   growthSwing: 0.8,  // zoning growth speed: 1 at the average happiness of 0.5, up to 1.4 or down to 0.6
   growthMin: 0.6,
