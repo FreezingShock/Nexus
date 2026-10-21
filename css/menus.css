@@ -1,0 +1,46 @@
+/* Build menus: one card look for Roads, Buildings, Services, Parks, Zones, Districts and Bulldoze.
+   Cream paper plaques with an ink border and a hard offset shadow; terracotta marks the choice; sage marks what a
+   building does. Picture on top, name, one line, effect, then cost or unlock and any key badge. */
+.fly{max-height:min(46vh,440px);overflow-y:auto;overscroll-behavior:contain}
+.grid.menu-grid{grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:12px}
+
+.mcard{position:relative;display:flex;flex-direction:column;gap:8px;padding:8px 8px 10px;min-height:0;text-align:left;border-radius:16px 18px 14px 17px;background:var(--paper);border:2.5px solid var(--ink);box-shadow:0 3px 0 var(--ink);transition:transform .08s,box-shadow .08s}
+.mcard:hover{transform:translateY(-2px)}
+.mcard:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.mcard:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
+.mcard[aria-pressed="true"]{background:#F9DFC9;border-color:var(--action);box-shadow:0 3px 0 var(--action)}
+.mcard.locked{background:#EEE5D4;border-style:dashed;box-shadow:none;color:var(--ink-soft)}
+.mcard.locked:hover{transform:none}
+.mcard.tip{cursor:default}
+.mcard.tip:hover{transform:none}
+
+.mcard .pic{display:grid;place-items:center;height:96px;border-radius:12px;border:2.5px solid var(--ink);background:linear-gradient(180deg,#DCE8EC 0%,#EFE6D2 68%,#D9D0AE 68%,#C9BE98 100%);overflow:hidden}
+.mcard .pic img,.mcard .pic svg{display:block;width:100%;height:100%;object-fit:contain}
+.mcard .pic-ph{display:block;width:100%;height:100%;border-radius:8px;border:2px dashed rgba(43,38,32,.25)}
+.mcard.locked .pic{filter:grayscale(.7);opacity:.75}
+.road-fly .mcard .pic{height:62px}
+.zfly .mcard .pic{height:70px}
+.zfly .mcard .pic svg{height:100%}
+
+.mcard .txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.mcard .txt b{font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:17px;line-height:1.15}
+.mcard .txt small{font-size:13px;line-height:1.25;color:var(--ink-soft);font-weight:600}
+.mcard .txt small.fx{color:var(--sage-d);font-weight:700}
+
+.mcard .foot{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:auto;min-height:24px}
+.mcard .cost{font-size:14px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.mcard.short .cost{color:var(--action)}
+.mcard .unlock{font-size:13px;font-weight:800;color:var(--action)}
+
+.mkey{display:inline-grid;place-items:center;min-width:24px;height:22px;padding:0 6px;border-radius:7px;border:2px solid var(--ink);background:var(--paper-2);box-shadow:0 2px 0 var(--ink);font:800 12px/1 var(--body);color:var(--ink);margin-left:auto}
+
+/* legend chips (Traffic) and a plain tool button that shows the selected state */
+.lchip{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 8px;border-radius:12px;border:2px solid var(--ink);background:var(--paper);font-size:14px;font-weight:800;box-shadow:0 2px 0 var(--ink)}
+.lchip i{display:block;width:22px;height:14px;border-radius:5px;border:2px solid var(--ink)}
+.btn[aria-pressed="true"]{background:#F9DFC9;box-shadow:0 4px 0 var(--action);border-color:var(--action)}
+
+/* Bulldoze: the wrecking ball beside four tip cards */
+.bd-head{display:flex;align-items:center;gap:12px;margin:0 0 12px}
+.bd-head svg{flex:0 0 auto;width:54px;height:54px}
+.bd-head p{margin:0;font-size:14px;font-weight:600;color:var(--ink-soft)}
+.mcard.tip .foot{justify-content:flex-start}
