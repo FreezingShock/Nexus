@@ -153,15 +153,16 @@ export function createTown(root, layout, hooks = {}) {
       popping.group.scale.set(sx, sy, sx);
       if (selected === popping.id) placeSel(entries.get(selected).b, sx, sy, sx);
     },
-    // Nearest alive building under the ray, or null.
-    pick(raycaster) {
+    // Nearest alive building under the ray as { id, d }, or null. d is the distance, so trees can be compared with it.
+    probe(raycaster) {
       const list = [];
       for (const e of entries.values()) if (!removed.has(e.b.id)) list.push(e.proxy);
       const hit = raycaster.intersectObjects(list, false)[0];
       if (!hit) return null;
-      for (const e of entries.values()) if (e.proxy === hit.object) return e.b.id;
+      for (const e of entries.values()) if (e.proxy === hit.object) return { id: e.b.id, d: hit.distance };
       return null;
     },
+    pick(raycaster) { const h = this.probe(raycaster); return h ? h.id : null; },
     hideSelection(v) { selGroup.visible = !v; },
   };
 }

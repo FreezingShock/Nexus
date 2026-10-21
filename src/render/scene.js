@@ -3,7 +3,7 @@ import * as THREE from '../../vendor/three/three.module.min.js';
 import { createCamera } from './camera.js';
 import { createLighting } from './night.js';
 import { buildTerrain, buildFarms } from './terrain.js';
-import { buildStatic, buildTrees } from './props.js';
+import { buildStatic } from './props.js';
 import { ensureInstanceColors } from './geom.js';
 import { registryOf } from '../core/registry.js';
 import { renderSystems } from './systems/index.js';
@@ -28,7 +28,6 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
   buildTerrain(world);
   buildFarms(world, layout.farms);
   buildStatic(world, layout);
-  buildTrees(world, layout);
   // Dust puffs come from the puffs system, which is created below: look it up when a building pops, not here.
   const town = createTown(world, layout, { burst: (x, z, r, n) => byId.get('puffs')?.burst(x, z, r, n) });
   const sysDefs = registryOf('render systems', renderSystems).list();
@@ -62,7 +61,9 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
     const r = canvas.getBoundingClientRect();
     ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(ndc, camera.cam);
-    onPick(town.pick(ray));
+    // The nearest of a tree or a building wins. A tree comes back as { tree: id }; a building as its id.
+    const b = town.probe(ray), t = byId.get('trees')?.pick(ray) ?? null;
+    onPick(t && (!b || t.d < b.d) ? { tree: t.id } : b ? b.id : null);
   });
   canvas.addEventListener('pointercancel', () => { drag = null; canvas.classList.remove('drag'); });
   canvas.addEventListener('wheel', (e) => { e.preventDefault(); camera.wheel(e.deltaY); }, { passive: false });

@@ -8,6 +8,7 @@ import { areaCost, describe, seedOf } from '../../world/models.js';
 import { LOT_BASE, MAX_PLACED, MAX_ROW, checkLot, lotTiles, planPlacement, problemText } from '../../world/placement.js';
 import { buildCost, income, levelOf } from '../economy.js';
 import { tileIndex, GRID_N } from '../../world/grid.js';
+import { footprintIndexes, putTrees, takeOnTiles } from '../../world/trees.js';
 
 const ID = /^b(\d+)$/;
 const FIRST = 1000;
@@ -93,7 +94,9 @@ export default {
       if (!charge(cost)) return;
       const id = 'b' + state.nextPlaced++;
       state.placed.push({ id, model: plan.def.id, gx: plan.gx, gz: plan.gz, fw: plan.fw, fd: plan.fd, rot: plan.rot, pal: plan.pal, seed: seedOf(id) });
-      sim.pushUndo({ kind: 'place', ids: [id], paid: cost });
+      const tk = takeOnTiles(state.trees, footprintIndexes(plan.gx, plan.gz, plan.fw, plan.fd));
+      if (tk.taken.length) state.trees = tk.kept;
+      sim.pushUndo({ kind: 'place', ids: [id], paid: cost, trees: tk.taken });
       sync(ctx); refresh(); note('place', plan.def.name);
       emit({ type: 'placed', id, text: plan.def.name + (lot.road ? ' is open' : ' placed. A road nearby will bring visitors') });
     },
@@ -103,7 +106,7 @@ export default {
     placeMany(ctx, cmd) {
       const { state, grid, emit, note, refresh, sim, syncDisplay } = ctx;
       const items = Array.isArray(cmd.items) ? cmd.items.slice(0, MAX_ROW) : [];
-      const ids = [];
+      const ids = [], trees = [];
       let paid = 0, skipped = 0, short = false, full = false, def = null;
       for (const it of items) {
         const plan = planPlacement(it);
@@ -115,6 +118,8 @@ export default {
         const id = 'b' + state.nextPlaced++;
         state.coins -= cost; paid += cost;
         state.placed.push({ id, model: plan.def.id, gx: plan.gx, gz: plan.gz, fw: plan.fw, fd: plan.fd, rot: plan.rot, pal: plan.pal, seed: seedOf(id) });
+        const tk = takeOnTiles(state.trees, footprintIndexes(plan.gx, plan.gz, plan.fw, plan.fd));
+        if (tk.taken.length) { state.trees = tk.kept; trees.push(...tk.taken); }
         ids.push(id); def = def || plan.def;
         sync(ctx); // the next lot in the row sees this one as built
       }
@@ -125,7 +130,7 @@ export default {
         return;
       }
       syncDisplay();
-      sim.pushUndo({ kind: 'place', ids, paid });
+      sim.pushUndo({ kind: 'place', ids, paid, trees });
       refresh(); note('place', def.name);
       const what = ids.length === 1 ? def.name + ' placed' : ids.length + ' ' + def.name.toLowerCase() + 's placed';
       const extra = [skipped && skipped + (skipped === 1 ? ' spot was' : ' spots were') + ' blocked', short && 'out of coins', full && 'the town is full'].filter(Boolean);
@@ -175,6 +180,7 @@ function undoPlacement(ctx, entries) {
       const gone = new Set(e.ids);
       state.placed = state.placed.filter((r) => !gone.has(r.id));
       state.coins += e.paid;
+      state.trees = putTrees(state.trees, e.trees || []);
     } else if (e.kind === 'doze') {
       state.removed = state.removed.filter((id) => id !== e.id);
       if (e.rec) {

@@ -9,6 +9,7 @@ import progression from './progression.js';
 import roads from './roads.js';
 import services from './services.js';
 import traffic from './traffic.js';
+import trees from './trees.js';
 import upgrades from './upgrades.js';
 import zoning from './zoning.js';
 
@@ -21,6 +22,7 @@ export const systems = [
   roads,
   services,
   traffic,
+  trees,
   upgrades,
   zoning,
 ];
