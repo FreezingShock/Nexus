@@ -1,0 +1,2 @@
+/* placement flyout: category tabs sit above the model cards */
+.ptabs{display:flex;gap:8px;margin:0 0 12px;flex-wrap:wrap}
