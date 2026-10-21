@@ -5,9 +5,11 @@ import { createPanels } from './panels.js';
 import { createPostcard } from './postcard.js';
 import { registryOf } from '../core/registry.js';
 import { uiModules } from './modules/index.js';
+import { TOOL_KEYS } from './shortcuts.js';
+import { isNoteEvent } from './notes.js';
 
 // S is taken by the camera (WASD), so Services moves to C. Camera keys live in src/render/camera.js and modules/camera-modes.js.
-const TOOL_KEYS = { r: 'roads', z: 'zones', b: 'build', c: 'services', p: 'parks', t: 'traffic', x: 'bulldoze', n: 'districts' };
+// TOOL_KEYS lives in shortcuts.js so the shortcut sheet lists the same keys.
 
 export function createUi({ sim, scene, actions }) {
   const send = (cmd) => sim.dispatch(cmd);
@@ -72,7 +74,7 @@ export function createUi({ sim, scene, actions }) {
 
   // sim events -> feedback
   sim.subscribe((e) => {
-    if (e.text) hud.toast(e.text);
+    if (e.text && !isNoteEvent(e)) hud.toast(e.text); // milestones and rewards get a postcard note instead
     for (const m of mods) if (m.onEvent) m.onEvent(e);
     if (e.type === 'upgraded') { scene.pop(e.id); if (panels.ui.selected === e.id) panels.showInspect(e.id); }
     else if (e.type === 'bulldozed') { if (panels.ui.selected === e.id) select(null); }

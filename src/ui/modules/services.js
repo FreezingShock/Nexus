@@ -1,15 +1,18 @@
-// Services, parks and landmarks on the map. While the Buildings, Services or Parks tool is open, the tiles that each
-// kind reaches get a soft tint; the lot under the cursor gets a stronger one. Each model in the flyout gets a tooltip,
-// and a small paper card shows average happiness. Reads the sim and the flyout; sends nothing, changes no state.
+// Services, parks, landmarks, shops and industry on the map. While the Buildings, Services or Parks tool is open, the tiles
+// that each kind reaches get a soft tint, and the tiles industry eases get a faint warm haze; the lot under the cursor gets
+// a stronger preview. When a service, park or shop is placed, its ripple spreads and little hearts rise from the homes it
+// lifted (skipped when the system asks for reduced motion). Each model in the flyout gets a tooltip, and a small paper card
+// shows average happiness. Reads the sim and the flyout; sends nothing, changes no state.
 import { canonicalDims, footprintsOf, modelById } from '../../world/models.js';
 import { worldToTile } from '../../world/grid.js';
 import { describeModel, reachOf, sourceOf } from '../../sim/services.js';
 import { $ } from '../format.js';
 
-// Which kind of coverage each tool shows. Buildings shows landmarks; Services and Parks show their own kind.
-const KIND_OF_TOOL = { build: 'landmark', services: 'service', parks: 'park' };
+// Which kinds of coverage each tool shows. Buildings shows shops and landmarks; Services and Parks show their own kind.
+const KINDS_OF_TOOL = { build: ['shop', 'landmark'], services: ['service'], parks: ['park'] };
 const MIN_WEIGHT = 0.02;
 const signed = (v) => (v < 0 ? '−' : '+') + Math.abs(v).toFixed(1) + '/s';
+const calmer = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 export default {
   id: 'services',
@@ -17,24 +20,32 @@ export default {
     const fly = document.getElementById('fly');
     const stage = scene.canvas.parentElement;
     const overlay = () => scene.sys('services-overlay');
-    let kind = null, coverKey = '', cover = [], hover = null;
+    let kinds = null, coverKey = '', cover = [], haze = [], hover = null;
 
-    // ---- coverage of every building of the tool's kind ----
+    // ---- coverage of every building of the tool's kinds, and the industrial haze ----
     function refreshCover() {
-      if (!kind) { cover = []; coverKey = ''; overlay().clear(); return; }
-      const src = sim.services.sources().filter((s) => s.kind === kind);
-      const key = src.map((s) => s.id).join(',');
+      if (!kinds) { cover = []; haze = []; coverKey = ''; overlay().clear(); return; }
+      const all = sim.services.sourcesAll();
+      const src = all.filter((s) => kinds.includes(s.kind));
+      const industry = all.filter((s) => s.kind === 'industry');
+      const key = src.map((s) => s.id).join(',') + '|' + industry.map((s) => s.id).join(',');
       if (key !== coverKey) {
         coverKey = key;
-        const seen = new Set();
-        cover = [];
-        for (const s of src) for (const [x, z, w] of reachOf(s)) {
-          if (w < MIN_WEIGHT) continue;
-          const k = z * 64 + x;
-          if (!seen.has(k)) { seen.add(k); cover.push([x, z]); }
-        }
+        cover = tilesOf(src);
+        haze = tilesOf(industry);
       }
       redraw();
+    }
+
+    // The distinct tiles that a list of sources reaches, above the faint threshold.
+    function tilesOf(list) {
+      const seen = new Set(), out = [];
+      for (const s of list) for (const [x, z, w] of reachOf(s)) {
+        if (w < MIN_WEIGHT) continue;
+        const k = z * 64 + x;
+        if (!seen.has(k)) { seen.add(k); out.push([x, z]); }
+      }
+      return out;
     }
 
     // ---- the lot under the cursor: a preview of what the flyout's model would reach ----
@@ -49,18 +60,21 @@ export default {
     }
 
     function redraw() {
-      if (!kind) return;
-      const focus = [];
+      if (!kinds) return;
+      const focus = [], focusHaze = [];
       if (hover) {
         const p = previewLot(hover[0], hover[1]);
-        if (p && p.kind === kind) for (const [x, z, w] of reachOf(p)) if (w >= MIN_WEIGHT) focus.push([x, z]);
+        if (p) {
+          const into = p.kind === 'industry' ? focusHaze : kinds.includes(p.kind) ? focus : null;
+          if (into) for (const [x, z, w] of reachOf(p)) if (w >= MIN_WEIGHT) into.push([x, z]);
+        }
       }
-      if (!cover.length && !focus.length) { overlay().clear(); return; }
-      overlay().show({ cover, focus });
+      if (!cover.length && !haze.length && !focus.length && !focusHaze.length) { overlay().clear(); return; }
+      overlay().show({ cover, focus, haze: haze.concat(focusHaze) });
     }
 
     function onMove(e) {
-      if (!kind) return;
+      if (!kinds) return;
       const p = scene.ground(e.clientX, e.clientY);
       const next = p ? worldToTile(p.x, p.z) : null;
       if (next && hover && next[0] === hover[0] && next[1] === hover[1]) return;
@@ -69,6 +83,15 @@ export default {
     }
     stage.addEventListener('pointermove', onMove);
     stage.addEventListener('pointerleave', () => { hover = null; redraw(); });
+
+    // ---- the celebration when something lifts its neighbours ----
+    // A ripple from the new building's centre, and a heart over each home it made happier. Sent by sim.services.gainsFor.
+    function celebrate(fx) {
+      const s = fx.source;
+      overlay().ripple(s.gx + (s.fw - 1) / 2, s.gz + (s.fd - 1) / 2, s.radius + 1);
+      const fxSys = scene.sys('happy-fx');
+      if (fxSys) fxSys.burst(fx.gains);
+    }
 
     // ---- tooltips on the flyout's model buttons ----
     new MutationObserver(() => {
@@ -86,16 +109,19 @@ export default {
       const s = sim.services.summary(), p = Math.round(s.average * 100);
       pct.textContent = s.built ? p + '%' : '—';
       bar.style.width = s.built ? Math.max(4, p) + '%' : '0%';
-      if (!s.services && !s.parks && !s.landmarks) note.textContent = 'A clinic or a park lifts the streets around it.';
-      else note.textContent = s.services + ' services · ' + s.parks + ' parks · ' + s.landmarks + ' landmarks. Net ' +
-        signed(s.moodCoins + s.landmarkCoins - s.upkeep) + ' from happy streets, landmarks and upkeep';
+      if (!s.services && !s.parks && !s.landmarks && !s.shops && !s.industry) {
+        note.textContent = 'A clinic or a park lifts the streets around it. Shops lift the homes nearby; industry eases them a little.';
+      } else {
+        note.textContent = s.services + ' services · ' + s.parks + ' parks · ' + s.landmarks + ' landmarks · ' + s.shops + ' shops · ' +
+          s.industry + ' industry. Net ' + signed(s.moodCoins + s.landmarkCoins - s.upkeep) + ' from happy streets, landmarks and upkeep';
+      }
     }
     syncCard();
     let acc = 0;
 
     return {
       onTool(t) {
-        kind = KIND_OF_TOOL[t] || null;
+        kinds = KINDS_OF_TOOL[t] || null;
         hover = null; coverKey = '';
         refreshCover();
       },
@@ -107,6 +133,10 @@ export default {
       },
       onEvent(e) {
         if (e.type === 'changed' || e.type === 'placed' || e.type === 'bulldozed') refreshCover();
+        if (e.type === 'placed' && !calmer()) {
+          const fx = sim.services.gainsFor(e.id);
+          if (fx) celebrate(fx);
+        }
       },
     };
   },

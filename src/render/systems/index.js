@@ -4,6 +4,7 @@
 import cars from './cars.js';
 import districts from './districts.js';
 import gridOverlay from './grid-overlay.js';
+import happyFx from './happy-fx.js';
 import lots from './lots.js';
 import placementGhost from './placement-ghost.js';
 import puffs from './puffs.js';
@@ -16,6 +17,7 @@ export const renderSystems = [
   cars,
   districts,
   gridOverlay,
+  happyFx,
   lots,
   placementGhost,
   puffs,
