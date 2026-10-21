@@ -8,6 +8,7 @@
 //   init(ctx)           once, when the sim is created: build derived data (such as grid layers) from state
 //   commands            { commandName(ctx, cmd) }  handlers for sim.dispatch({ type: 'commandName', ... })
 //   rate(ctx)           extra coins per second, added to the building income
+//   offline(ctx, s)     closed-form catch-up for s effective seconds away (no tick loops)
 //   tick(ctx)           runs once per 1 Hz tick, after income is added
 // ctx = { sim, state, layout, grid, emit, note, refresh, charge(cost), syncDisplay() }.
 // Systems never touch the DOM or Three.js.
@@ -15,5 +16,6 @@ import core from './core.js';
 import upgrades from './upgrades.js';
 import roads from './roads.js';
 import offlinePostcard from './offline-postcard.js';
+import zoning from './zoning.js';
 
-export const systems = [core, upgrades, roads, offlinePostcard];
+export const systems = [core, upgrades, roads, offlinePostcard, zoning];
