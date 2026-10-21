@@ -3,7 +3,7 @@
 import { GRID_N, BASE, inBounds, rectTiles, tileIndex, tileOf } from '../../world/grid.js';
 import {
   ZONE_DEFS, ZONE_COUNT, MAX_LOT_LEVEL, ROAD_REACH, PLACED_LOT_MIN, encodeZones, decodeZones, validZonesString,
-  nextRand, lotStats, demandOf, lotIncome,
+  nextRand, lotStats, demandOf, lotIncome, lotParts,
 } from '../zones.js';
 
 const AREA = GRID_N * GRID_N;
@@ -45,6 +45,7 @@ export default {
   },
 
   rate: ({ grid, state }) => lotIncome(state.lots, (i) => grid.zone[i]),
+  partsRate: ({ grid, state }) => lotParts(state.lots, (i) => grid.zone[i]),
 
   commands: {
     // Paint the rectangle between tiles a and b. Costs per painted tile; stops when coins run out.

@@ -4,7 +4,7 @@
 // Placed ids look like "b1001" so the generic level and removed fields of the save accept them.
 import { areaCost, describe } from '../../world/models.js';
 import { LOT_BASE, MAX_PLACED, checkLot, lotTiles, planPlacement, problemText } from '../../world/placement.js';
-import { income, levelOf } from '../economy.js';
+import { buildCost, income, levelOf } from '../economy.js';
 import { tileIndex, GRID_N } from '../../world/grid.js';
 
 const ID = /^b(\d+)$/;
@@ -47,7 +47,13 @@ export default {
 
   // Teach the sim about placed buildings: the inspect card, upgrade and bulldoze commands look them up by id.
   init(ctx) {
-    const { sim, state } = ctx, base = { building: sim.building, alive: sim.alive };
+    const { sim, state } = ctx;
+    // Runs again after a Renewal: wrap only once, and start the bulldoze memory fresh.
+    if (sim.placementHooked) { sim.goneRecords = new Map(); sync(ctx); return; }
+    sim.placementHooked = true;
+    const base = { building: sim.building, alive: sim.alive };
+    // Each placed building costs more than the last: base x growth^placed (see balance.js).
+    sim.placeCost = (def, fw, fd) => buildCost(areaCost(def, fw, fd), state.placed.length);
     const rec = (id) => state.placed.find((r) => r.id === id) || (sim.goneRecords && sim.goneRecords.get(id));
     const cache = new Map();
     const desc = (r) => { let d = cache.get(r.id); if (!d) { d = describe(r, 1); cache.set(r.id, d); } return d; };
@@ -65,7 +71,7 @@ export default {
       if (state.placed.length >= MAX_PLACED) return emit({ type: 'toast', text: 'The town has all the buildings it can hold for now' });
       const lot = checkLot(grid, plan.gx, plan.gz, plan.fw, plan.fd);
       if (!lot.ok) return emit({ type: 'toast', text: problemText(lot.problem) });
-      if (!charge(areaCost(plan.def, plan.fw, plan.fd))) return;
+      if (!charge(buildCost(areaCost(plan.def, plan.fw, plan.fd), state.placed.length))) return;
       const id = 'b' + state.nextPlaced++;
       state.placed.push({ id, model: plan.def.id, gx: plan.gx, gz: plan.gz, fw: plan.fw, fd: plan.fd, rot: plan.rot, pal: plan.pal });
       sync(ctx); refresh(); note('place', plan.def.name);
