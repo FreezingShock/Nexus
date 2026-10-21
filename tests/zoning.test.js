@@ -6,7 +6,7 @@ import { wrap, unwrap } from '../src/sim/save.js';
 import { tileIndex } from '../src/world/grid.js';
 import { demandOf, lotStats, encodeZones, decodeZones } from '../src/sim/zones.js';
 
-const mk = () => { const state = freshState(); state.coins = 10000; return createSim({ state }); };
+const mk = (opts = {}) => { const state = freshState(); state.coins = 10000; return createSim({ state, ...opts }); };
 // open tiles east of the town's main street, near the street that reaches x = 42
 const A = [43, 33], B = [46, 34];
 
@@ -70,9 +70,11 @@ test('growth is deterministic from the saved seed', () => {
 });
 
 test('offline catch-up grows in one pass', () => {
-  const sim = mk();
+  // fixed clock: the catch-up must not depend on how long the test run takes
+  const NOW = 1_800_000_000_000;
+  const sim = mk({ now: () => NOW });
   sim.dispatch({ type: 'paintZone', zone: 1, a: A, b: B });
-  sim.catchUp(Date.now() - 3600 * 1000);
+  sim.catchUp(NOW - 3600 * 1000);
   assert.equal(sim.state.lots.length, 8);
 });
 
