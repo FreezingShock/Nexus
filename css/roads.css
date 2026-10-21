@@ -1,0 +1,22 @@
+/* Road tool: the pencil cursor and the cost label that follows it */
+#stage canvas.pencil{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M4 28l2-7L22 5l5 5L11 26z' fill='%23E6BC62' stroke='%232B2620' stroke-width='2' stroke-linejoin='round'/%3E%3Cpath d='M4 28l2-7 5 5z' fill='%23FBF6EA' stroke='%232B2620' stroke-width='2' stroke-linejoin='round'/%3E%3Cpath d='M19 8l5 5' stroke='%232B2620' stroke-width='2'/%3E%3C/svg%3E") 4 28,crosshair}
+#roadlabel{position:fixed;left:0;top:0;z-index:20;display:flex;align-items:center;gap:8px;padding:6px 14px 6px 8px;border:2.5px solid var(--ink);border-radius:999px;background:var(--paper);box-shadow:0 3px 0 var(--ink),0 10px 18px rgba(43,38,32,.2);font-weight:800;font-size:15px;white-space:nowrap;pointer-events:none;font-variant-numeric:tabular-nums}
+#roadlabel b{font-size:16px}
+#roadlabel small{font-size:13px;color:var(--ink-soft);font-weight:700}
+#roadlabel em{font-style:normal;font-size:13px;color:var(--ink-soft);font-weight:700}
+#roadlabel .need{color:var(--action)}
+#roadlabel.bad{background:#F6D9CF;padding-left:14px}
+#roadlabel.poor b{color:var(--action)}
+#roadlabel .coin{width:22px;height:22px;border-radius:50%;border:2.5px solid var(--ink);background:radial-gradient(circle at 50% 50%,var(--paper) 0 28%,var(--mustard) 30%);flex:0 0 auto}
+#roadlabel[hidden]{display:none}
+body.no-select,body.no-select *{-webkit-user-select:none;user-select:none}
+.road-foot{flex-wrap:nowrap;align-items:center}
+.road-foot .sub{font-size:13px;line-height:1.25;max-width:520px}
+.road-foot .btn{height:44px;padding:0 16px}
+.road-fly{padding:12px 16px 14px}
+.road-fly .head{flex-wrap:nowrap;align-items:center;gap:10px;margin-bottom:10px}
+.road-fly .head span{flex:1;font-size:13px;line-height:1.25}
+.road-fly .head .btn{height:40px;padding:0 14px;font-size:15px;flex:0 0 auto}
+.road-fly .opt{padding:8px 10px;gap:3px;min-height:0}
+.road-fly .opt svg{height:24px}
+.road-fly .opt small:nth-of-type(1){display:none}

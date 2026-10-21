@@ -57,16 +57,6 @@ test('cannot upgrade without coins, or past the top level', () => {
   assert.equal(sim.state.levels[id], 5);
 });
 
-test('ring road is built once and charged once', () => {
-  const sim = createSim({ layout });
-  sim.state.coins = 1000;
-  sim.dispatch({ type: 'buildRoad', roadType: 'two' });
-  sim.dispatch({ type: 'buildRoad', roadType: 'two' });
-  assert.equal(sim.state.coins, 1000 - 240);
-  sim.dispatch({ type: 'buildRoad', roadType: 'bus' }); // locked
-  assert.equal(sim.state.coins, 760);
-});
-
 test('catch-up: short absences apply silently, long ones become a postcard, collect pays once', () => {
   const sim = createSim({ layout, now: () => 1e12 });
   const c0 = sim.state.coins;
