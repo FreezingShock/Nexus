@@ -9,6 +9,7 @@ import { registryOf } from '../core/registry.js';
 import { renderSystems } from './systems/index.js';
 import { createTown } from './town.js';
 import { createDusk } from './dusk.js';
+import { renderSettings } from '../core/quality.js';
 
 const SNAP_W = 480, SNAP_H = 360;
 
@@ -111,6 +112,17 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
     rotate: (d) => camera.rotate(d),
     focus: (x, z) => camera.focus(x, z),
     snap: (night) => lighting.snap(night),
+
+    // Graphics settings (core/quality.js), applied live. Shadows, the pixel-ratio cap and the sun's map size are set
+    // here; each render system with a quality(rs) hook gets the mapped values too.
+    setQuality(q) {
+      const rs = renderSettings(q);
+      renderer.shadowMap.enabled = rs.shadows;
+      lighting.shadows(rs.shadows, rs.shadowSize);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, rs.pixelRatio));
+      resize();
+      for (const m of mods) if (m.quality) m.quality(rs);
+    },
 
     // Renders the town to a 4:3 target and copies it into `dest` (the postcard photo).
     snapshot(dest) {

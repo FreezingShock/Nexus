@@ -111,6 +111,7 @@ export function stepPool(pool, dt) {
 export default {
   id: 'happy-fx',
   create({ world }) {
+    let effects = 1;         // graphics setting: 0 off, 0.5 light, 1 full (see core/quality.js)
     const pool = makePool();
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(pool.pos, 3));
@@ -130,12 +131,13 @@ export default {
 
     return {
       burst(gains) {
-        const homes = gains.slice(0, MAX_HOMES);
+        if (!effects) return;
+        const homes = gains.slice(0, Math.max(1, Math.round(MAX_HOMES * effects)));
         homes.forEach(([gx, gz], k) => {
           const x = (gx - GRID_HALF) * TILE, z = (gz - GRID_HALF) * TILE;
           const y = heightAt(x, z) + 4.5;
           pending.push({ t: k * STAGGER_S, x, y, z, kind: 0 });
-          if (Math.random() < SPARKLE_CHANCE) pending.push({ t: k * STAGGER_S + 0.15, x, y: y + 0.6, z, kind: 1 });
+          if (Math.random() < SPARKLE_CHANCE * effects) pending.push({ t: k * STAGGER_S + 0.15, x, y: y + 0.6, z, kind: 1 });
         });
         points.visible = true;
       },
@@ -156,6 +158,7 @@ export default {
         geo.attributes.aKind.needsUpdate = true;
         points.visible = alive > 0 || pending.length > 0;
       },
+      quality(rs) { effects = rs.effects; },
     };
   },
 };

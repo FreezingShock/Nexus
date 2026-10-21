@@ -25,5 +25,13 @@ export function createLighting(scene) {
       return t;
     },
     snap(night) { t = night ? 1 : 0; this.update(0, night); },
+    // Graphics settings: the sun's shadow on or off, and its map size. A new size drops the old map; three.js makes one.
+    shadows(on, size) {
+      sun.castShadow = !!on;
+      if (sun.shadow.mapSize.x !== size) {
+        sun.shadow.mapSize.set(size, size);
+        if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
+      }
+    },
   };
 }

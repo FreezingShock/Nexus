@@ -13,6 +13,7 @@ const COLORS = ['#F3E9D2', '#E9D6B2', '#FBF6EA', '#E4D2AE'];
 export default {
   id: 'puffs',
   create({ world }) {
+    let effects = 1; // graphics setting: 0 off, 0.5 light, 1 full (see core/quality.js)
     const mesh = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.5, 0), toonUncached(0xffffff), MAX);
     mesh.frustumCulled = false; mesh.visible = false; mesh.count = MAX;
     mesh.castShadow = mesh.receiveShadow = false;
@@ -27,7 +28,9 @@ export default {
     let active = 0;
 
     return {
-      burst(x, z, radius = 3, count = 12) {
+      burst(x, z, radius = 3, count0 = 12) {
+        if (!effects) return;
+        const count = Math.max(1, Math.round(count0 * effects));
         let k = 0;
         for (let i = 0; i < MAX && k < count; i++) {
           if (age[i] < LIFE) continue;
@@ -69,6 +72,7 @@ export default {
         active = live;
         if (!live) mesh.visible = false;
       },
+      quality(rs) { effects = rs.effects; },
     };
   },
 };
