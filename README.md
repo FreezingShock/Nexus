@@ -37,11 +37,11 @@ vendor/                 three.module.min.js (MIT), Fraunces and Capriola woff2 (
 src/world/              pure data: seeded rng, terrain height, town layout
 src/core/               tiny registry used by the three extension points below
 src/sim/                1 Hz sim, economy, closed-form offline, versioned saves
-src/sim/systems/        one file per sim feature (commands, state, rate, tick), listed in index.js
+src/sim/systems/        one file per sim feature (commands, state, rate, tick), generated list in index.js (npm run registry)
 src/render/             Three.js scene (merged geometry, instanced props)
-src/render/systems/     one file per visual feature, listed in index.js
+src/render/systems/     one file per visual feature, generated list in index.js (npm run registry)
 src/ui/                 DOM: HUD, panels, postcard
-src/ui/modules/         one file per panel or widget, listed in index.js
+src/ui/modules/         one file per panel or widget, generated list in index.js (npm run registry)
 src/main.js             wiring and the frame loop
 tests/                  npm test (node --test, no dependencies)
 docs/PORT-PLAN.md       port plan and milestones
