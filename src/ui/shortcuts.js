@@ -1,7 +1,7 @@
 // Keyboard bindings shown on the shortcut sheet. Tool keys are the real bindings (ui.js reads TOOL_KEYS).
 // Other rows name the file that handles the key, and tests/polish.test.js checks that the key is still there,
 // so the sheet cannot drift from the game.
-export const TOOL_KEYS = { r: 'roads', z: 'zones', b: 'build', c: 'services', p: 'parks', t: 'traffic', x: 'bulldoze', n: 'districts' };
+export const TOOL_KEYS = { r: 'roads', z: 'zones', b: 'build', c: 'services', p: 'parks', t: 'traffic', x: 'bulldoze', n: 'districts', y: 'decor' };
 
 export const TOOL_INFO = {
   roads: ['Roads', 'draw streets and lanes'],
@@ -12,6 +12,7 @@ export const TOOL_INFO = {
   traffic: ['Traffic', 'see how full each road is'],
   bulldoze: ['Bulldoze', 'click a building to clear it'],
   districts: ['Districts', 'name a neighbourhood and paint it'],
+  decor: ['Decor', 'benches, lamps, fountains and flowers'],
 };
 
 const toolRows = Object.entries(TOOL_KEYS).map(([k, tool]) => ({
