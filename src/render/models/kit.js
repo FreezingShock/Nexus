@@ -84,7 +84,7 @@ export function createKit(d) {
   const bayXs = [];   // x of each oriel, so trim can leave its column alone
   // Where the town can show life, in the building's own frame (see render/life). Recorded as the builder places things,
   // so a chimney, door or awning that moves in a builder moves its smoke, its visitors and its flutter with it.
-  const sites = { bodies: [], chimneys: [], doors: [], awnings: [], stacks: [] };
+  const sites = { bodies: [], chimneys: [], doors: [], awnings: [], stacks: [], fronts: [], tables: [] };
   const k = {
     d, P, w: d.w, dep: d.d, floors: d.floors, h, level: d.level, t: d.t, parts, bx, bz, sites,
     top: PLINTH + h,           // y of the wall top
@@ -122,10 +122,11 @@ export function createKit(d) {
 
     // ---- openings and street level ----
     door(x = k.doorX, z = d.d / 2, color = P.accent, w = 0.75, hh = 1.05) { k.box(w, hh, 0.14, x, PLINTH, z + 0.05, color); sites.doors.push([x, z + 0.12]); return x; },
-    awning(x, z, w, color, y = PLINTH + 1.45) { k.box(w, 0.1, 0.8, x, y, z + 0.4, color, { rx: 0.28 }); sites.awnings.push({ x, y: y - 0.2, z: z + 0.78, w, color }); },
+    awning(x, z, w, color, y = PLINTH + 1.45) { k.box(w, 0.1, 0.8, x, y, z + 0.4, color, { rx: 0.28 }); sites.awnings.push({ x, y: y - 0.15, z: z + 0.78, w, color }); },
     // a shopfront band: big glass under an awning on the ground floor
     shopfront(w, z, color, x = 0) {
       k.box(w - 0.5, 0.85, 0.1, x, PLINTH + 0.1, z + 0.04, C.glass, { edge: false });
+      sites.fronts.push({ x, y: PLINTH + 0.52, z: z + 0.1, w: w - 0.6, h: 0.7 });
       k.awning(x, z, w - 0.3, color, PLINTH + 1.05);
     },
 

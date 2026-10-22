@@ -14,7 +14,9 @@ import { catOut, dusk, hearthRate, homeOccupied, kindOf, lightShare, outingKind,
 import { personGeometry, catGeometry, clothGeometry } from '../src/render/life/figures.js';
 import windows, { MAX_WINDOWS } from '../src/render/systems/life-windows.js';
 import smoke from '../src/render/systems/life-smoke.js';
-import homes from '../src/render/systems/life-homes.js';
+import lifeTown from '../src/render/systems/life-town.js';
+import { doorRoute, seatRoute } from '../src/render/life/routes.js';
+import { flowKind, visitRate, stackRate, vanInterval, cafeRate } from '../src/render/life/rules.js';
 
 const rec = (model, extra = {}) => ({ id: 'b1', model, gx: 10, gz: 10, fw: 1, fd: 1, rot: 0, seed: 12345, ...extra });
 
@@ -198,19 +200,39 @@ test('smoke rises from the starter town in winter, and Graphics Off draws none',
   assert.ok(seenVisible, 'puffs appear on a winter evening');
 });
 
-test('home life builds its pools and runs a day without error', () => {
+test('routes: a leaving resident starts at the door and ends along the front; arriving is the reverse', () => {
+  const b = { x: 10, z: 5, rot: 0, half: 1.3, front: 1.3 }, rnd = () => 0.7;
+  const leave = doorRoute(b, [0, 1.4], 'leave', rnd), arrive = doorRoute(b, [0, 1.4], 'arrive', rnd), step = doorRoute(b, [0, 1.4], 'step', rnd);
+  assert.equal(leave.pts[0].door, true); assert.equal(leave.pts[2].door, false);
+  assert.equal(arrive.pts[0].door, false); assert.equal(arrive.pts[2].door, true);
+  assert.ok(step.stand > 3 && step.pts[0].door && step.pts[2].door);
+  assert.ok(leave.pts[1].z > 5 + 1.3, 'the stoop is in front of the wall');
+  const seat = seatRoute(b, [0.5, 2], rnd);
+  assert.ok(seat.stand >= 14 && !seat.pts[1].door);
+});
+
+test('visits: shops open by day, offices fill in the morning, workers change shift, vans keep working hours', () => {
+  assert.equal(visitRate('shop', 3), 0); assert.ok(visitRate('shop', 17) > 0);
+  assert.ok(visitRate('office', 8) > visitRate('office', 10));
+  assert.ok(visitRate('work', 14) > visitRate('work', 10));
+  assert.equal(flowKind('office', 0.5, 8), 'arrive'); assert.equal(flowKind('office', 0.5, 17), 'leave');
+  assert.ok(stackRate(12) > stackRate(3) * 4);
+  assert.equal(vanInterval(3, 0.5), Infinity); assert.ok(vanInterval(12, 1) < vanInterval(12, 0));
+  assert.equal(cafeRate(3), 0); assert.ok(cafeRate(12) > 0);
+});
+
+test('town life builds its pools and runs a day (homes, shops, workplaces) without error', () => {
   const sim = createSim({ state: freshState(), layout: getLayout() });
   const { world, town } = townFor(sim);
-  const sys = homes.create({ THREE, world, layout: sim.layout, grid: sim.grid, camera, scene: world, town, sys: () => null });
+  const sys = lifeTown.create({ THREE, world, layout: sim.layout, grid: sim.grid, camera, scene: world, town, sys: () => null });
   sys.quality({ effects: 1, crowd: 1 });
   let people = 0;
   for (let hour = 6; hour < 22; hour += 0.05) {
     sim.state.hour = hour; sim.state.season = 'summer'; sim.state.weatherKind = 'clear';
     for (let i = 0; i < 4; i++) sys.frame(frameOf(sim, { t: hour * 100 + i }));
-    const folk = world.children.filter((o) => o.isInstancedMesh)[0];
-    people = Math.max(people, folk.count);
+    for (const o of world.children) if (o.isInstancedMesh && o.count > people && o.geometry.attributes.aTint && o.count <= 128) people = Math.max(people, o.count);
   }
-  assert.ok(people > 0, 'someone stepped out during the day');
-  const counts = world.children.filter((o) => o.isInstancedMesh).map((o) => o.count);
-  assert.ok(counts.every((c) => c >= 0));
+  assert.ok(people > 0, 'someone was out during the day');
+  sys.quality({ effects: 0, crowd: 1 });
+  sys.frame(frameOf(sim));
 });

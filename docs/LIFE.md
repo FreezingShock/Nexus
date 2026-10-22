@@ -20,9 +20,18 @@ Cottages and terraces now have their chimney from level 1 (a hearth); other home
 
 Graphics "Dust, hearts and town life": Off shows no smoke, residents, washing or cats (the lit windows stay, they are the night look); Light has smoke and half the residents; Full everything.
 
+## Shops, offices and workplaces
+
+`life-town.js` owns the shared pools (people, hanging cloth, other tinted meshes) and one director per kind of place in `src/render/life/directors/`: `homes.js`, `commercial.js`, `industry.js`. Routes for the little walks are pure (`life/routes.js`).
+
+- **Shops and cafes:** awning valances flutter (hanging cloth in the awning's colour), a blade sign swings, customers go in and out of the door in shop hours, cafe-goers sit at the terrace tables for a while. Shop fronts glow through shop hours (window system).
+- **Offices:** workers arrive in the morning, go out at lunch, leave in the evening.
+- **Workshops and warehouses:** stacks smoke steadily through the working day (darker, bigger puffs), shift workers in yellow coats at the door, a forklift with a crate shuttles along the yard, a delivery van pulls up at the kerb, waits, and drives off.
+- Scale: visits scale with population fill and the Crowd setting. Light has half the people and no forklifts, vans, cats or washing.
+
 ## Draw calls
 
-`life-windows` 1, `life-smoke` 1, `life-homes` 3 (people, washing, cats). Windows and smoke are hidden while nothing is lit or rising. Not measured on a phone.
+`life-windows` 1, `life-smoke` 1, `life-town` 6 (people, hanging cloth, cats, blade signs, forklifts, vans). Windows and smoke are hidden while nothing is lit or rising. Not measured on a phone.
 
 ## Adding more life
 

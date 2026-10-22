@@ -61,6 +61,19 @@ export default {
         const ki = kindIndex(k), seed = e.b.seed | 0, shift = householdShift(seed);
         const sb = Math.max(0, Math.min(SHIFT_BUCKETS - 1, Math.floor(((shift + 1) / 2.5) * SHIFT_BUCKETS)));
         let w = 0;
+        // shop fronts: one big pane of glass each, lit through the shop's hours
+        for (const fr of sites.fronts) {
+          if (count >= MAX_WINDOWS) break;
+          p.set(fr.x, fr.y, fr.z); q.identity(); s.set(fr.w, fr.h, 1);
+          inst.multiplyMatrices(e.world, local.compose(p, q, s));
+          mesh.setMatrixAt(count, inst);
+          mesh.setColorAt(count, c.setHex(0xFFD98A));
+          kind[count] = ki; hseed[count] = seed; bucket[count] = sb;
+          roll[count] = 0.4 * unit(seed, 3000 + w); thr[count] = 0.25 + 0.3 * unit(seed, 3100 + w);
+          jit[count] = 0; pace[count] = EASE * (0.5 + 2 * unit(seed, 3200 + w));
+          lit.array[count] = 0;
+          count++; w++;
+        }
         for (const body of sites.bodies) {
           forEachWindow(body, (x, y, z, yaw, ww, hh) => {
             if (count >= MAX_WINDOWS) return;

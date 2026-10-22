@@ -71,7 +71,7 @@ export function hearthRate(season, hour) {
 // ---- residents at the door ----
 // How often (events per second per lived-in home) someone steps out, leaves or comes home.
 const OUTINGS = [[0, 0], [5.5, 0], [6.5, 0.6], [9, 0.5], [11, 0.25], [15, 0.25], [16.5, 0.6], [19, 0.45], [21, 0.15], [23, 0], [24, 0]];
-export const outingRate = (hour) => curve(OUTINGS, hour) / 60;
+export const outingRate = (hour) => curve(OUTINGS, hour) / 30;
 // What the next outing is, from a roll 0..1 and the hour: leaving mornings, coming home evenings, stepping out between.
 export function outingKind(roll, hour) {
   const h = ((hour % 24) + 24) % 24, morning = h < 11, evening = h >= 16;
@@ -96,3 +96,28 @@ export function catOut(seed, hour, night, weatherKind, season) {
   const nap = unit(seed, 97), from = 8 + 3 * nap, to = 16 + 4 * nap; // out between late morning and late afternoon
   return hour >= from && hour < to;
 }
+
+// ---- visitors, workers, smoke stacks and deliveries ----
+// Events per second at a building of this kind (before population and crowd scaling): shoppers, commuters, shift workers.
+const VISITS = {
+  shop: [[0, 0], [7.5, 0], [8.5, 0.5], [12, 0.85], [13.5, 0.6], [17, 0.95], [20, 0.6], [21.5, 0], [24, 0]],
+  office: [[0, 0], [7, 0], [8, 0.9], [9.5, 0.3], [11.5, 0.2], [12, 0.8], [13.5, 0.2], [16.5, 0.3], [17.5, 0.9], [19, 0.2], [20, 0], [24, 0]],
+  work: [[0, 0], [5, 0], [5.5, 0.8], [7, 0.3], [13.5, 0.2], [14, 0.8], [15.5, 0.2], [20.5, 0.2], [21, 0.7], [22.5, 0], [24, 0]],
+};
+export const visitRate = (kind, hour) => (VISITS[kind] ? curve(VISITS[kind], hour) : 0) / 12;
+// Is this visit someone arriving (else leaving)? Shops see both; workplaces fill in the morning and empty out in the afternoon.
+export function flowKind(kind, roll, hour) {
+  const h = ((hour % 24) + 24) % 24;
+  const arrive = kind === 'shop' ? 0.5 : h < 11 ? 0.85 : h < 15 ? 0.5 : 0.12;
+  return roll < arrive ? 'arrive' : 'leave';
+}
+// Smoke from workshop stacks: steady through the working day, banked overnight. Puffs per second per stack.
+const STACKS = [[0, 0.1], [5, 0.1], [6, 0.8], [21.5, 0.8], [22.5, 0.1], [24, 0.1]];
+export const stackRate = (hour) => 0.9 * curve(STACKS, hour);
+// A forklift works the yard through the working day.
+export const forkliftWorking = (hour) => hour >= 6 && hour < 21.5;
+// Seconds between delivery vans at a workplace in the working day (Infinity at other hours), shorter in a fuller town.
+export const vanInterval = (hour, fill) => (hour >= 7 && hour < 19 ? 80 / (0.4 + Math.max(0, Math.min(1, fill))) : Infinity);
+// Customers at a cafe: busy at breakfast, lunch and mid-afternoon. Sitting-down arrivals per second.
+const CAFE = [[0, 0], [7.5, 0], [8.5, 0.6], [10, 0.35], [12, 0.9], [14, 0.4], [15.5, 0.7], [18, 0.4], [20.5, 0.15], [21.5, 0], [24, 0]];
+export const cafeRate = (hour) => curve(CAFE, hour) / 14;
