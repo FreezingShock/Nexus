@@ -54,7 +54,7 @@ export function createTown(root, hooks = {}) {
   const selGroup = new THREE.Group(); root.add(selGroup);
   const entries = new Map();
   let built = [], removed = new Set(), night = false, popping = null, selected = null;
-  let placedSig = '', wantPop = new Set();
+  let placedSig = '', wantPop = new Set(), wantSettle = new Set();
 
   // desc -> entry. `base` is the level the building starts at before any upgrade.
   function addEntry(desc, base) {
@@ -156,6 +156,7 @@ export function createTown(root, hooks = {}) {
         dirty = true;
       }
       let popId = null;
+      for (const id of wantSettle) if (entries.has(id)) { wantSettle.delete(id); if (!removed.has(id)) popId = id; } // a freshly placed building settles with the upgrade squash
       for (const e of entries.values()) {
         const lv = (s.levels && s.levels[e.b.id]) ?? e.base;
         if (lv === e.level) continue;
@@ -168,6 +169,8 @@ export function createTown(root, hooks = {}) {
     setNight(on) { if (on === night) return; night = on; applyNight(); },
     select: setHull,
     pop(id) { wantPop.add(id); setTimeout(() => wantPop.delete(id), 1500); },
+    // Asks for the squash on a building that may not be drawn yet (a placement event arrives before the next frame's setState).
+    settle(id) { wantSettle.add(id); setTimeout(() => wantSettle.delete(id), 1500); },
     update(dt) {
       if (!popping) return;
       popping.t += dt;

@@ -65,6 +65,7 @@ export function cueFor(e) {
     case 'placed': return 'place';
     case 'bulldozed': return 'bulldoze';
     case 'upgraded': return 'upgrade';
+    case 'painted': return 'sparkle';
     case 'roadsChanged':
       if (e.kind === 'draw') return 'road';
       if (e.kind === 'undo') return 'undo';

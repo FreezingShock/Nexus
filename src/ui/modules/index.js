@@ -6,6 +6,7 @@ import cameraModes from './camera-modes.js';
 import commute from './commute.js';
 import decor from './decor.js';
 import districts from './districts.js';
+import feedback from './feedback.js';
 import frameStats from './frame-stats.js';
 import happiness from './happiness.js';
 import menu from './menu.js';
@@ -28,6 +29,7 @@ export const uiModules = [
   commute,
   decor,
   districts,
+  feedback,
   frameStats,
   happiness,
   menu,
