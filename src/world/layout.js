@@ -3,8 +3,8 @@
 // is not built by the player: farmland, wind turbines, and the trees and pines around the village.
 import { makeRng } from './rng.js';
 import { heightAt, riverX, farmMask } from './terrain.js';
-import { FARM_COLORS, TREE_COLORS } from './palettes.js';
-import { worldToTile, inBounds, tileIndex } from './grid.js';
+import { CROPS, TREE_COLORS } from './palettes.js';
+import { GRID_HALF, TILE, worldToTile, inBounds, tileIndex } from './grid.js';
 import { starterReserved } from './starter.js';
 
 export const SEED = 11;
@@ -19,11 +19,12 @@ function generate() {
   const rng = makeRng(SEED);
   const out = { farms: [], turbines: [], trees: [], pines: [] };
 
-  // farmland, west of the village
-  for (let i = 0; i < 3; i++) for (let j = 0; j < 5; j++) {
+  // farmland, west of the village: a patchwork of fields, each with a crop and a hedge on every side (see render/terrain.js).
+  // The rows sit inside the flat strip the farm mask makes (|z| under 26), so every field is level ground.
+  for (let i = 0; i < 6; i++) for (let j = 0; j < 4; j++) {
     const w = 6.4 + rng() * 1.2, d = 9 + rng() * 1.5;
-    const col = Math.floor(rng() * FARM_COLORS.length);
-    out.farms.push({ x: -40 - i * 8, z: -26 + j * 12, w, d, col, turned: rng() < 0.5 });
+    const crop = Math.floor(rng() * CROPS.length);
+    out.farms.push({ x: -40 - i * 8, z: -18 + j * 12, w, d, crop, turned: rng() < 0.5 });
   }
   out.turbines.push({ x: 40, z: -4, speed: 0.9 }, { x: -30, z: -40, speed: 0.7 });
 
@@ -48,10 +49,12 @@ function generate() {
     if (Math.abs(x - riverX(z)) < 9 || farmMask(x, z) > 0.05) continue;
     treesRaw.push([x, z]);
   }
+  // Pines stand outside the grid, where the land ends: a forest round the valley, so the grid is open for building.
   const pinesRaw = [];
-  for (let i = 0; i < 220; i++) {
-    const x = (rng() - 0.5) * 320, z = (rng() - 0.5) * 320, d = Math.max(Math.abs(x), Math.abs(z));
-    if (d < 42 || Math.abs(x - riverX(z)) < 8 || farmMask(x, z) > 0.02 || heightAt(x, z) < 0.4) continue;
+  const edge = GRID_HALF * TILE + 4;
+  for (let i = 0; i < 300; i++) {
+    const x = (rng() - 0.5) * 360, z = (rng() - 0.5) * 360, d = Math.max(Math.abs(x), Math.abs(z));
+    if (d < edge || Math.abs(x - riverX(z)) < 8 || farmMask(x, z) > 0.02 || heightAt(x, z) < 0.4) continue;
     pinesRaw.push([x, z, 1 + rng() * 0.9]);
   }
 

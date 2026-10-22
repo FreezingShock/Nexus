@@ -14,7 +14,7 @@ A district is a named neighbourhood painted on the grid. It has a name, a flag a
 
 - Rules and naming: `src/world/districts.js` (pure, tested in `tests/districts.test.js`).
 - Commands and saved state: `src/sim/systems/districts.js`. Commands: `newDistrict`, `paintDistrict`, `eraseDistrict`, `renameDistrict`, `shuffleDistrictName`, `deleteDistrict`.
-- Map drawing: `src/render/systems/districts.js`. One wash plane (a 64 x 64 data texture, like the services overlay), a border where two districts meet, and three instanced meshes for the flags. The flags sway slowly.
+- Map drawing: `src/render/systems/districts.js`. One wash plane (a data texture the size of the grid, like the services overlay), a border where two districts meet, and three instanced meshes for the flags. The flags sway slowly.
 - Labels and the tool: `src/ui/modules/districts.js` (DOM labels placed from the render system's projection, the flyout, and drag painting). Key `N`.
 
 ## Draw calls

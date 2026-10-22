@@ -4,7 +4,7 @@
 // lifted (skipped when the system asks for reduced motion). Each model in the flyout gets a tooltip, and a small paper card
 // shows average happiness. Reads the sim and the flyout; sends nothing, changes no state.
 import { canonicalDims, footprintsOf, modelById } from '../../world/models.js';
-import { worldToTile } from '../../world/grid.js';
+import { GRID_N, worldToTile } from '../../world/grid.js';
 import { describeModel, reachOf, sourceOf } from '../../sim/services.js';
 
 // Which kinds of coverage each tool shows. Buildings shows shops and landmarks; Services and Parks show their own kind.
@@ -41,7 +41,7 @@ export default {
       const seen = new Set(), out = [];
       for (const s of list) for (const [x, z, w] of reachOf(s)) {
         if (w < MIN_WEIGHT) continue;
-        const k = z * 64 + x;
+        const k = z * GRID_N + x;
         if (!seen.has(k)) { seen.add(k); out.push([x, z]); }
       }
       return out;

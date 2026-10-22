@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { createSim } from '../src/sim/sim.js';
 import { freshState } from '../src/sim/state.js';
 import { getLayout } from '../src/world/layout.js';
-import { GRID_N } from '../src/world/grid.js';
+import { GRID_N, GRID_HALF } from '../src/world/grid.js';
 import { checkLot } from '../src/world/placement.js';
 import { ADVICE } from '../src/sim/services-config.js';
 import { adviceFrom, areaPhrase, levelOf } from '../src/sim/happiness-advice.js';
@@ -25,9 +25,9 @@ test('levels are cozy words, and an empty town says nothing is built yet', () =>
 
 test('area phrases read like a sentence: sides of town, or the middle', () => {
   assert.equal(areaPhrase(5, 5), 'the north-west side');
-  assert.equal(areaPhrase(60, 32), 'the east side');
-  assert.equal(areaPhrase(32, 60), 'the south side');
-  assert.equal(areaPhrase(32, 32), 'the middle of town');
+  assert.equal(areaPhrase(GRID_HALF + 28, GRID_HALF), 'the east side');
+  assert.equal(areaPhrase(GRID_HALF, GRID_HALF + 28), 'the south side');
+  assert.equal(areaPhrase(GRID_HALF, GRID_HALF), 'the middle of town');
 });
 
 test('four bare homes in the west get tips for a clinic, a green and a shop, and a count of the bare homes', () => {

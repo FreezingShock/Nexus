@@ -4,7 +4,7 @@ import { GRID_N, GRID_HALF } from '../world/grid.js';
 import { ADVICE } from './services-config.js';
 
 const AREA = GRID_N * GRID_N;
-const SPACE = GRID_HALF - 10; // a tile this far from the middle counts as one side of town
+const SPACE = 22; // a tile this far from the middle counts as one side of town (the village scale, not the grid size)
 
 // Which of the town's sides a tile is on, in words that fit a sentence: "the north-east side", "the middle of town".
 export function areaPhrase(gx, gz) {

@@ -4,8 +4,8 @@ Roads and zones are two systems on one grid. `src/world/grid.js` is the only def
 
 ## Coordinates
 
-- 64 x 64 tiles, `TILE = 3` world units. Tile `(gx, gz)` has its center at `((gx - 32) * 3, (gz - 32) * 3)`, so the starter streets and the scenery's coordinates all pass through tile centers.
-- `tileCenter(gx, gz)`, `worldToTile(x, z)`, `snapToTile(x, z)`, `inBounds(gx, gz)`, `tileIndex(gx, gz)` (= `gz * 64 + gx`), `rectTiles(a, b)` (inclusive rectangle, clipped).
+- 96 x 96 tiles, `TILE = 3` world units (the grid was 64 x 64 until save version 5). Tile `(gx, gz)` has its center at `((gx - 48) * 3, (gz - 48) * 3)`, so the middle of the map is still the origin and the starter streets and the scenery's coordinates all pass through tile centers. The grid reaches 144 units from the origin on each side. The old 64-tile ground sits in its middle, 16 tiles in from every edge, and is unchanged.
+- `tileCenter(gx, gz)`, `worldToTile(x, z)`, `snapToTile(x, z)`, `inBounds(gx, gz)`, `tileIndex(gx, gz)` (= `gz * 96 + gx`, use `GRID_N`, never a literal), `rectTiles(a, b)` (inclusive rectangle, clipped).
 - `scene.ground(clientX, clientY)` returns the world point `{ x, z }` under the cursor. Feed it to `worldToTile`.
 
 ## Layers (typed arrays on `sim.grid`, also `ctx.grid` in a sim system)
@@ -35,4 +35,4 @@ Drawing tools attach capture-phase pointer listeners to the stage element (`scen
 
 - Sim: `src/sim/systems/zoning.js` (commands `paintZone {zone, a, b}` and `clearZone {a, b}`, tiles are `[gx, gz]`), pure rules in `src/sim/zones.js`. Zone paint is saved as a 4096-character string, grown buildings as `[tile, level, seed]`. `sim.zoning` exposes `demand()`, `stats()`, `costOf()`.
 - Buildings grow only on painted tiles with a road within 2 tiles (`grid.road` non-zero, any value). Demand never drops below 0.15, so growth only slows.
-- Render: `scene.sys('tileview')` draws the dashed grid on open ground (`showGrid(true)`; roads can reuse it), zone paint and the drag preview from one 64x64 data texture. `src/render/systems/lots.js` draws grown buildings.
+- Render: `scene.sys('tileview')` draws the dashed grid on open ground (`showGrid(true)`; roads can reuse it), zone paint and the drag preview from one data texture the size of the grid. `src/render/systems/lots.js` draws grown buildings.

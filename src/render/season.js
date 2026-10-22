@@ -3,7 +3,7 @@
 //   leaf      leaf surfaces (land, broadleaf canopies, conifers): take the season's foliage colour. Autumn splits some
 //             leaves to red by a per-colour hash, so a town is not one orange. `foliage` scales the strength (conifers 0).
 //   blossom   broadleaf canopies also take the spring blossom colour.
-//   field     farmland: takes the season's crop colour.
+//   field     farmland: the crop's own colour, shifted by the season's crop colour (the sky's field tint over its summer value).
 //   still     water: takes the river colour, and keeps its colour (no snow, no wet darkening).
 // Every material also takes snow on its top-facing surfaces (roofs, lawns, roads) and darkens a little when wet.
 // The uniforms are shared objects, so applySeason() reaches every material. Variants differ only in constants baked
@@ -20,12 +20,13 @@ export const SEASON = {
   blossom: { value: 0 },
   blossomCol: { value: new THREE.Color(0xF4B9CB) },
   fieldCol: { value: new THREE.Color(0x9FC563) },
+  fieldRef: { value: new THREE.Color(0x9FC563) }, // the summer field tint: a crop texture shows as painted at this value
   waterCol: { value: new THREE.Color(0x6FA9B8) },
   snowCol: { value: new THREE.Color(0xF3F6FA) },
 };
 
 const DECL = `uniform float uSnow, uWet, uFoliage, uAutumn, uBlossom;
-uniform vec3 uFoliageCol, uFoliageAlt, uBlossomCol, uFieldCol, uWaterCol, uSnowCol;`;
+uniform vec3 uFoliageCol, uFoliageAlt, uBlossomCol, uFieldCol, uFieldRef, uWaterCol, uSnowCol;`;
 
 function body({ leaf = false, foliage = 1, blossom = false, field = false, still = false }) {
   let s = `
@@ -40,7 +41,7 @@ function body({ leaf = false, foliage = 1, blossom = false, field = false, still
   if (blossom) s += `
   diffuseColor.rgb = mix(diffuseColor.rgb, uBlossomCol, uBlossom * (0.4 + 0.6 * abs(seasonN.y)));`;
   if (field) s += `
-  diffuseColor.rgb = clamp(uFieldCol * (0.85 + 0.3 * lum), 0.0, 1.0);`;
+  diffuseColor.rgb = clamp(diffuseColor.rgb * uFieldCol / uFieldRef, 0.0, 1.0);`;
   if (still) s += `
   diffuseColor.rgb = mix(diffuseColor.rgb, uWaterCol, 0.9);`;
   s += `
@@ -63,6 +64,7 @@ export function patchSeason(mat, opts = {}) {
     shader.uniforms.uBlossom = SEASON.blossom;
     shader.uniforms.uBlossomCol = SEASON.blossomCol;
     shader.uniforms.uFieldCol = SEASON.fieldCol;
+    shader.uniforms.uFieldRef = SEASON.fieldRef;
     shader.uniforms.uWaterCol = SEASON.waterCol;
     shader.uniforms.uSnowCol = SEASON.snowCol;
     shader.fragmentShader = shader.fragmentShader
