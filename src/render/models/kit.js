@@ -81,6 +81,7 @@ const dome = (r) => new THREE.SphereGeometry(r, 10, 5, 0, Math.PI * 2, 0, Math.P
 export function createKit(d) {
   const P = PAL[d.pal], h = d.floors * FH, parts = [];
   const bx = Math.max(1, Math.round(d.w / BAY)), bz = Math.max(1, Math.round(d.d / BAY));
+  const bayXs = [];   // x of each oriel, so trim can leave its column alone
   const k = {
     d, P, w: d.w, dep: d.d, floors: d.floors, h, level: d.level, t: d.t, parts, bx, bz,
     top: PLINTH + h,           // y of the wall top
@@ -163,9 +164,35 @@ export function createKit(d) {
     bay(floor, x, w = 1.0, color = C.cream) {
       // box() centres on x and z and puts y at the bottom. The body sinks 0.03 into the wall so it never shows a gap.
       const depth = 0.35, y = k.floorY(floor) + 0.15, hh = 0.7, zc = d.d / 2 + depth / 2 - 0.03, front = zc + depth / 2;
+      bayXs.push(x);
       k.box(w, hh, depth, x, y, zc, color);
       k.box(w * 0.68, hh * 0.62, 0.04, x, y + hh * 0.19, front, C.glass, { edge: false });
       k.box(w + 0.12, 0.1, depth + 0.1, x, y + hh, zc, P.roof, { edge: false });
+    },
+    // ---- trim: one of three details per building, picked by its traits (t[9]), so neighbours never match ----
+    //   0 corbels: small brackets under the eave, one per bay (none in an oriel's column)
+    //   1 string courses: two or three thin bands across the front wall
+    //   2 roof dressing: a ridge cap on pitched roofs, a coping on flat ones
+    // The band colour comes from t[10]; t[11] adds a third course. Each style stays under about 90 triangles.
+    trim(units) {
+      const style = Math.floor(d.t[9] * 3), accent = [C.stone, C.cream, P.accent][Math.floor(d.t[10] * 3)], z = d.d / 2, r = k.roof;
+      if (style === 0) {
+        for (let i = 0; i < bx; i++) {
+          const x = k.bayX(i);
+          if (bayXs.some((ox) => Math.abs(ox - x) < 0.9)) continue;
+          k.box(0.16, 0.24, 0.22, x, k.top - 0.46, z + 0.11, accent);
+        }
+      } else if (style === 1) {
+        const n = d.t[11] < 0.5 ? 2 : 3, lines = new Set();
+        for (let i = 1; i <= n; i++) lines.add(Math.max(1, Math.round((i * k.floors) / (n + 1))));
+        for (const f of lines) k.box(d.w + 0.06, 0.07, 0.06, 0, k.floorY(f), z + 0.03, accent);
+      } else if (r.kind === 'flat') {
+        k.box(d.w + 0.16, 0.1, d.d + 0.16, 0, r.y, 0, accent);
+      } else if ((r.kind === 'gable' || r.kind === 'hip') && !units) {
+        const len = r.kind === 'hip' ? Math.max(0.3, r.len - r.span) : r.len + 0.2, y = r.y + r.rise - 0.02;
+        if (r.along === 'z') k.box(0.14, 0.1, len, 0, y, 0, C.slate);
+        else k.box(len, 0.1, 0.14, 0, y, 0, C.slate);
+      }
     },
     balcony(floor, x, w = 1.1) {
       k.box(w, 0.08, 0.5, x, k.floorY(floor), d.d / 2 + 0.25, C.stone, { edge: false });
@@ -240,6 +267,7 @@ export function createKit(d) {
 export function decorate(k, o = {}) {
   const L = k.level, r = k.roof, t = k.t, skip = o.skip || [], pitched = r.kind === 'gable' || r.kind === 'hip' || r.kind === 'mansard';
   const units = o.units || [{ x: 0, rise: r.rise }], on = (n) => !skip.includes(n);
+  if (on('trim')) k.trim(o.units);
   if (L >= 2 && on('boxes')) { k.windowBoxes(Math.min(1, k.floors - 1)); if (on('pots')) k.pots(); }
   if (L >= 3) {
     if (on('chimney')) {
