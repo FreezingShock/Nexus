@@ -55,7 +55,7 @@ function legacyHeight(x, z) {
 // edges, rolling hills, valleys and the odd lake, and at the map edge a wall of mountains that nothing can be built on.
 // The river and the tunnel mountain beyond it are the same on every seed; everything on the village side of the river
 // is rolled from the seed. Buildable ground is decided by slope (grid.js), never by height.
-const RIM_START = 110, RIM_FULL = 142;          // distance (warped) where the edge mountains begin and reach full height
+const RIM_START = 114, RIM_FULL = 144;          // distance (warped) where the edge mountains begin and reach full height
 const EAST_SEED = 4242;                         // the bank beyond the river is always this land
 
 // A fixed value in globalThis.NEXUS_TERRAIN_SEED wins; only the tests set it (tests/support/pin-land.js).
@@ -76,11 +76,11 @@ function paramsFor(seed) {
   }
   return {
     o, lakes,
-    flat: 40 + r() * 8,            // radius of the level centre
-    warp: 8 + r() * 10,            // how lopsided the rings are
-    hillAmp: 4 + r() * 5,
-    levels: 2 + Math.floor(r() * 3), step: 1.8 + r() * 1.4,
-    plateau: 0.42 + r() * 0.2,     // share of the land that is terraced rather than rolling
+    flat: 44 + r() * 8,            // radius of the level centre
+    warp: 4 + r() * 6,            // how lopsided the rings are
+    hillAmp: 4 + r() * 4,
+    levels: 3 + Math.floor(r() * 3), step: 1.8 + r() * 1.6,
+    plateau: 0.5 + r() * 0.25,     // share of the land that is terraced rather than rolling
     ridge: 10 + r() * 12,
   };
 }
@@ -108,23 +108,30 @@ function ground(x, z, q) {
   const rise = smooth(q.flat, q.flat + 30, dw);
   let h = 0;
   if (rise > 0) {
-    const n1 = fbm(x * 0.015 + o[2], z * 0.015 + o[3]);
-    const hills = Math.pow(Math.max(0, n1 - 0.42) / 0.36, 1.3) * q.hillAmp;
+    const n1 = fbm(x * 0.012 + o[2], z * 0.012 + o[3]);
+    const hills = smooth(0.3, 0.72, n1) * q.hillAmp;
     const n2 = fbm(x * 0.0075 + o[4], z * 0.0075 + o[5]);
     const ramp = 0.15 + 0.4 * fbm(x * 0.02 + o[6], z * 0.02 + o[7]);
-    const plat = terrace(Math.min(q.levels, Math.max(0, (n2 - 0.38) / 0.26 * q.levels)), ramp) * q.step;
+    const plat = terrace(Math.min(q.levels, Math.max(0, (n2 - 0.26) / 0.36 * q.levels)), ramp) * q.step;
     const w = smooth(0.5 - 0.06, 0.5 + 0.06, fbm(x * 0.008 + o[8], z * 0.008 + o[9]) + q.plateau - 0.5);
-    h = rise * (w * plat + (1 - w) * (hills + (fbm(x * 0.09, z * 0.09) - 0.5) * 0.5 * Math.min(1, hills * 0.5)));
+    // Rolling swell over the terraces too, so a plateau top is never dead flat.
+    const swell = (fbm(x * 0.03 + o[6], z * 0.03 + o[7]) - 0.5) * 1.1;
+    h = rise * (w * (plat + q.step * 0.7 + swell * 0.7) + (1 - w) * (hills + q.hillAmp * 0.2 + swell));
     // Inner mountain ridges, in a few places only.
     h += smooth(0.62, 0.76, fbm(x * 0.014 + o[10], z * 0.014 + o[11])) * smooth(60, 100, dw) * q.ridge;
     h = Math.max(0, h);
   }
   // The edge of the map always climbs into mountains.
-  const rim = smooth(RIM_START, RIM_FULL, dw);
-  if (rim > 0) h += rim * (34 + 12 * fbm(x * 0.03 + 9.1, z * 0.03 + 2.7)) + Math.max(0, dw - RIM_FULL) * 0.25;
-  // Calm meadows by the river, and the straight valley the road runs along to the tunnel.
-  h *= smooth(3, 14, Math.abs(x - riverX(z)));
-  if (x > 24) h *= smooth(4, 18, Math.abs(z));
+  const dr = e * 0.4 + c * 0.6, rim = smooth(RIM_START, RIM_FULL, dr + (fbm(x * 0.03 + 1.7, z * 0.03 + 5.9) - 0.5) * 8); // not lopsided: the edge is always walled
+  if (rim > 0) h += rim * (34 + 12 * fbm(x * 0.03 + 9.1, z * 0.03 + 2.7));
+  // Past the edge the mountains go on: higher, with peaks and passes, as far as anyone can look.
+  const far = smooth(RIM_FULL, RIM_FULL + 90, dr);
+  if (far > 0) h += far * (10 + 50 * fbm(x * 0.018 + 4.4, z * 0.018 + 8.8)) + Math.max(0, dr - RIM_FULL) * 0.12;
+  // Calm meadows by the river, and the straight valley the road runs along to the tunnel. Both fade out where the
+  // mountains begin, so neither cuts a notch through the wall at the edge of the map.
+  const keep = 1 - smooth(100, 125, Math.max(Math.abs(x), Math.abs(z)));
+  h *= 1 - keep * (1 - smooth(3, 14, Math.abs(x - riverX(z))));
+  if (x > 24) h *= 1 - keep * (1 - smooth(4, 18, Math.abs(z)));
   return h;
 }
 
@@ -143,6 +150,6 @@ export function heightAt(x, z) {
   }
   // The mountain beyond the river, with the tunnel in its west face. The ground stays flat up to x = 71.
   if (x > 71) h += 30 * smooth(71, 80, x) * (1 - smooth(18, 34, Math.abs(z))) * (0.7 + 0.6 * fbm(x * 0.04, z * 0.04));
-  const k = 1 - smooth(2.6, 6.5, Math.abs(dx));
+  const k = (1 - smooth(2.6, 6.5, Math.abs(dx))) * (1 - smooth(112, 130, Math.abs(z))); // the river runs out in the foothills
   return h * (1 - k) + (-1.3) * k;
 }
