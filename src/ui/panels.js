@@ -89,6 +89,7 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
     <div class="pad"><div id="atmos"></div><div id="gfx"></div>
     <div id="snd"></div>
     <p class="sub">${actions.status()}</p>
+    <p class="sub">${sim.state.terrainSeed ? 'Land seed ' + sim.state.terrainSeed + '. Start over or Renewal rolls a new valley.' : 'This town keeps its original land. Start over or Renewal rolls a new valley.'}</p>
     <p class="sub">Export a copy to keep it safe or move it to another device.</p>
     <button class="btn" id="exp">Export save</button><button class="btn" id="imp">Import save</button>
     ${back ? `<button class="btn" id="rest">Restore the town from ${fmtAgo(back.savedAt)}</button>` : ''}
