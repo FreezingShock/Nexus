@@ -112,7 +112,7 @@ const LOOK = {
 export const SEASON_LOOK = {
   spring: { foliage: 0.55, foliageCol: 0xC6E27A, blossom: 0.7, field: 0x9FC563, water: 0x6FA9B8, haze: 0xF1E6C8, sun: 0xFFEBC0, strength: 0.95, low: 1, petals: 0.4 },
   summer: { foliage: 0.35, foliageCol: 0x5E9E3A, field: 0xD8B05A, water: 0x4F9DBE, haze: 0xD7E8EE, sun: 0xFFF0CC, strength: 1.1, low: 1 },
-  autumn: { foliage: 0.95, foliageCol: 0xD9A23A, foliageAlt: 0xB8532E, autumn: 1, field: 0x8E6B47, water: 0x6F8A8C, haze: 0xE8C9A0, sun: 0xFFC47A, strength: 0.8, low: 0.88, ambientLeaves: 0.3 },
+  autumn: { foliage: 0.8, foliageCol: 0xC9A24E, foliageAlt: 0xA5532F, autumn: 1, field: 0x8E6B47, water: 0x6F8A8C, haze: 0xE8C9A0, sun: 0xFFC47A, strength: 0.8, low: 0.88, ambientLeaves: 0.3 },
   winter: { foliage: 0.55, foliageCol: 0x8A7A55, field: 0x7A6F62, water: 0xA9C2CB, haze: 0xC9D5DD, sun: 0xD9E6FF, strength: 0.65, low: 0.72 },
 };
 
