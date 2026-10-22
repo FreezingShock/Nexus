@@ -9,7 +9,12 @@ const LOOK_AHEAD = 0.35;   // seconds of music scheduled ahead of the clock
 const CHORD_S = 6.5;       // one chord every this many seconds
 const REVERB_S = 2.4;      // length of the generated room
 const PAD_LEVEL = 0.12;    // total loudness of a chord before the mood's padLevel
-const TRIM = { murmur: 0.5, traffic: 0.55, water: 0.7, wind: 0.8, rain: 0.45, hush: 0.5, rustle: 0.25, birds: 1, owls: 1, crickets: 1, cicadas: 1 };
+// Cozy and low: each layer's trim sits well under 1, so the bed of sound stays under the music and the clicks.
+const TRIM = { murmur: 0.35, traffic: 0.3, water: 0.3, wind: 0.45, rain: 0.35, hush: 0.4, rustle: 0.2, birds: 0.7, owls: 0.8, crickets: 0.7, cicadas: 0.6 };
+const WATER_CAP = 0.3;     // the river is never loud; distance decides how close it comes (attenuation.js)
+const MIN_GAP = { hover: 0.11, tick: 0.05, 'road-grow': 0.055, click: 0.04, select: 0.04, note: 2 }; // seconds between repeats
+const DRIFT_S = [6, 14];   // each layer wanders between these gaps, so the bed never settles into a loop
+const BIRD_PATTERNS = [[0, 0.09], [0, 0.09, 0.2], [0, 0.07, 0.14, 0.26], [0, 0.12]];
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const pick = (xs) => xs[Math.floor(Math.random() * xs.length)];
@@ -24,7 +29,8 @@ export function createEngine({ win = globalThis } = {}) {
 
   let ctx = null, buses = null, reverb = null, noiseBuf = null, timer = null;
   let settings = null, night = false, levels = {}, sources = { town: 1, river: 1 };
-  const layerInput = {}, layerOut = {}, layerPlace = {};
+  const layerInput = {}, layerOut = {}, layerPlace = {}, drift = {};
+  let nextDrift = 0;
   let nextChord = 0, nextNote = 0, nextBird = 0, nextOwl = 0, nextLeaf = 0, chordIndex = 0;
   const lastCue = {};
 
@@ -108,12 +114,15 @@ export function createEngine({ win = globalThis } = {}) {
     for (const name of LAYER_NAMES) {
       const place = layerPlace[name];
       const spatial = place === 'sky' ? 1 : (sources[place] ?? 1);
-      layerOut[name].gain.setTargetAtTime((levels[name] || 0) * spatial, t, 0.8);
+      const cap = name === 'water' ? WATER_CAP : 1;
+      const wander = drift[name] ?? 1;
+      layerOut[name].gain.setTargetAtTime(Math.min(cap, (levels[name] || 0) * spatial * wander), t, 0.8);
     }
   }
 
   // ---- one-shots ----
   const dest = (name) => (name ? layerInput[name] : buses.effects);
+  // Two blips a fraction apart: the common shape of a short sung note.
   const env = (g, t, peak, attack, dur) => {
     g.gain.setValueAtTime(0.0001, t);
     g.gain.exponentialRampToValueAtTime(Math.max(peak, 0.0002), t + attack);
@@ -173,16 +182,34 @@ export function createEngine({ win = globalThis } = {}) {
     o.start(t); o.stop(t + 1.1);
   }
 
+  // Every cue takes (t, opts). opts.n is a count where it makes sense (tiles in a road or zone).
   const CUES = {
-    hover: (t) => blip(t, 1400, 0.02, 0.018),
-    select: (t) => blip(t, 620, 0.04, 0.05, 'triangle', 820),
-    open: (t) => blip(t, 440, 0.12, 0.045, 'triangle', 660),
-    close: (t) => blip(t, 660, 0.1, 0.04, 'triangle', 440),
-    tool: (t) => blip(t, 740, 0.05, 0.05, 'sine', 980),
-    place: (t) => { blip(t, 190, 0.12, 0.16, 'sine', 120); noiseBurst(t, 'lowpass', 900, 0.06, 0.15); },
-    road: (t) => { sweep(t, 'bandpass', 300, 1200, 0.28, 0.12); blip(t + 0.26, 900, 0.04, 0.05); },
+    // Soft and short: a glance sound, never a chatter.
+    hover: (t) => { blip(t, 1750, 0.016, 0.012, 'sine', 1900); blip(t, 3500, 0.01, 0.003, 'sine'); },
+    tick: (t) => blip(t, 1000, 0.02, 0.02, 'sine'),
+    note: (t) => blip(t, 880, 0.12, 0.03, 'sine', 990),
+    select: (t) => blip(t, 620, 0.04, 0.045, 'triangle', 820),
+    open: (t) => blip(t, 440, 0.12, 0.04, 'triangle', 660),
+    close: (t) => blip(t, 660, 0.1, 0.035, 'triangle', 440),
+    tool: (t) => blip(t, 740, 0.05, 0.045, 'sine', 980),
+    // Tactile: a crisp click, with a soft thock under it for buildings.
+    click: (t) => { blip(t, 1900, 0.02, 0.05, 'sine', 1300); noiseBurst(t, 'highpass', 3200, 0.012, 0.03); },
+    place: (t) => { CUES.click(t); blip(t + 0.005, 150, 0.14, 0.1, 'sine', 110); },
+    // One tick per tile as a road grows in the preview, climbing a little as the route gets longer.
+    'road-grow': (t, o) => { const f = 520 * Math.pow(2, (Math.min(o.n || 1, 30) / 30) * 0.9); blip(t, f, 0.035, 0.025, 'triangle', f * 1.015); },
+    // A road built: one rising tick per tile, staggered, then a click to finish. Capped so long roads stay short.
+    road: (t, o) => {
+      const n = Math.max(1, Math.min(o.n || 1, 14)), gap = Math.max(0.03, 0.4 / n);
+      for (let i = 0; i < n; i++) blip(t + i * gap, 440 * Math.pow(2, i * 0.1), 0.05, 0.03, 'triangle');
+      CUES.click(t + n * gap);
+    },
     undo: (t) => sweep(t, 'bandpass', 1500, 400, 0.22, 0.1),
-    zone: (t) => sweep(t, 'bandpass', 1800, 2400, 0.35, 0.08),
+    // Zones: a soft brush swish with a click per painted tile, capped.
+    zone: (t, o) => {
+      sweep(t, 'bandpass', 1800, 2400, 0.35, 0.05);
+      const n = Math.max(1, Math.min(o.n || 1, 10));
+      for (let i = 0; i < n; i++) CUES.click(t + i * 0.05);
+    },
     erase: (t) => sweep(t, 'lowpass', 900, 200, 0.2, 0.1),
     bulldoze: (t) => { blip(t, 110, 0.3, 0.2, 'sine', 50); noiseBurst(t, 'lowpass', 400, 0.25, 0.2); },
     upgrade: (t) => [523.25, 659.25, 783.99].forEach((f, i) => blip(t + i * 0.09, f, 0.32, 0.09, 'triangle')),
@@ -196,14 +223,20 @@ export function createEngine({ win = globalThis } = {}) {
   };
 
   // ---- ambient events ----
+  // A call is one of several patterns at a random pitch; now and then a second bird answers from a little away.
   function chirp(t) {
-    const d = dest('birds'), base = rand(2200, 3600), n = 2 + Math.floor(Math.random() * 3);
-    for (let i = 0; i < n; i++) blip(t + i * 0.09, base * rand(0.95, 1.1), 0.07, 0.035, 'sine', base * rand(1.2, 1.6), d);
+    const d = dest('birds'), pattern = pick(BIRD_PATTERNS);
+    const base = rand(2400, 3600);
+    pattern.forEach((off) => blip(t + off, base * rand(0.95, 1.08), 0.07, 0.025, 'sine', base * rand(1.15, 1.5), d));
+    if (Math.random() < 0.3) {
+      const b2 = base * rand(1.2, 1.4), t2 = t + rand(0.5, 1.2);
+      pattern.slice(0, 2).forEach((off) => blip(t2 + off, b2, 0.06, 0.02, 'sine', b2 * 1.25, d));
+    }
   }
   function hoot(t) {
     const d = dest('owls');
-    blip(t, 420, 0.7, 0.06, 'sine', 400, d);
-    blip(t + 0.9, 360, 1.0, 0.05, 'sine', 340, d);
+    blip(t, 420, 0.7, 0.05, 'sine', 400, d);
+    blip(t + 0.9, 360, 1.0, 0.04, 'sine', 340, d);
   }
   function leaf(t) { noiseBurst(t, 'bandpass', rand(3500, 5000), 0.03, 0.05, dest('rustle')); }
 
@@ -244,8 +277,13 @@ export function createEngine({ win = globalThis } = {}) {
   function tick() {
     if (!ctx || ctx.state !== 'running') return;
     const t = ctx.currentTime;
-    if (levels.birds > 0.05 && t >= nextBird) { chirp(t); nextBird = t + rand(1.2, 4.0) / Math.max(0.35, levels.birds); }
-    if (levels.owls > 0.05 && t >= nextOwl) { hoot(t); nextOwl = t + rand(22, 40); }
+    if (t >= nextDrift) {
+      for (const name of LAYER_NAMES) drift[name] = rand(0.7, 1);
+      nextDrift = t + rand(DRIFT_S[0], DRIFT_S[1]);
+      refreshLayers();
+    }
+    if (levels.birds > 0.05 && t >= nextBird) { chirp(t); nextBird = t + rand(4, 9) / Math.max(0.35, levels.birds); }
+    if (levels.owls > 0.05 && t >= nextOwl) { hoot(t); nextOwl = t + rand(30, 60); }
     if (levels.rustle > 0.05 && t >= nextLeaf) { leaf(t); nextLeaf = t + rand(0.4, 1.6); }
     while (t + LOOK_AHEAD >= nextChord) { scheduleChord(nextChord); nextChord += CHORD_S; }
     while (t + LOOK_AHEAD >= nextNote) {
@@ -259,7 +297,7 @@ export function createEngine({ win = globalThis } = {}) {
   function start() {
     if (timer) return;
     const t = ctx.currentTime;
-    nextChord = t + 0.2; nextNote = t + 1.5; nextBird = t + 0.4; nextOwl = t + 6; nextLeaf = t + 0.5;
+    nextChord = t + 0.2; nextNote = t + 1.5; nextBird = t + 0.4; nextOwl = t + 8; nextLeaf = t + 0.5; nextDrift = t;
     timer = setInterval(tick, TICK_MS);
   }
 
@@ -288,13 +326,14 @@ export function createEngine({ win = globalThis } = {}) {
     setLevels(l) { levels = { ...l }; refreshLayers(); },
     setSources(g) { sources = { ...sources, ...g }; refreshLayers(); },
     setNight(on) { night = !!on; },
-    // Plays a named cue once. Repeats of the same cue within 50 ms are dropped, so fast hover or drag stays clean.
-    cue(name) {
+    // Plays a named cue. Repeats come no faster than MIN_GAP allows, so fast hover, drag or a long road stays clean.
+    cue(name, opts = {}) {
       if (!ctx || ctx.state !== 'running' || !CUES[name]) return;
       const t = ctx.currentTime;
-      if (lastCue[name] !== undefined && t - lastCue[name] < 0.05) return;
+      const gap = MIN_GAP[name] ?? 0.05;
+      if (lastCue[name] !== undefined && t - lastCue[name] < gap) return;
       lastCue[name] = t;
-      CUES[name](t);
+      CUES[name](t, opts || {});
     },
     // Pauses the whole engine while the tab is hidden, and resumes it when it is shown again.
     setActive(on) {

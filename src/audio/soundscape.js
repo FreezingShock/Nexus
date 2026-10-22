@@ -79,6 +79,14 @@ export function cueFor(e) {
   }
 }
 
+// How many things an event covers (tiles in a road or a zone), so a cue can play one tick per tile. 1 when there is no count.
+export function countOf(e) {
+  if (!e) return 1;
+  if (e.type === 'roadsChanged' && Array.isArray(e.tiles)) return Math.max(1, e.tiles.length);
+  if (e.type === 'zonePainted' && Number.isFinite(e.n)) return Math.max(1, e.n);
+  return 1;
+}
+
 // Music moods. Frequencies are in Hz. Day is a bright, open pentatonic; night is lower, sparser and minor.
 export const MOODS = {
   day: {
