@@ -158,6 +158,15 @@ export function createKit(d) {
       k.box(0.4, topY - y, 0.4, x, y, z, color);
       k.box(0.52, 0.08, 0.52, x, topY, z, C.stone, { edge: false });
     },
+    // an oriel bay: a window box that juts out of the front wall, with glass on its face and a small cap.
+    // Plain parts only (no texture), so it costs no extra material.
+    bay(floor, x, w = 1.0, color = C.cream) {
+      // box() centres on x and z and puts y at the bottom. The body sinks 0.03 into the wall so it never shows a gap.
+      const depth = 0.35, y = k.floorY(floor) + 0.15, hh = 0.7, zc = d.d / 2 + depth / 2 - 0.03, front = zc + depth / 2;
+      k.box(w, hh, depth, x, y, zc, color);
+      k.box(w * 0.68, hh * 0.62, 0.04, x, y + hh * 0.19, front, C.glass, { edge: false });
+      k.box(w + 0.12, 0.1, depth + 0.1, x, y + hh, zc, P.roof, { edge: false });
+    },
     balcony(floor, x, w = 1.1) {
       k.box(w, 0.08, 0.5, x, k.floorY(floor), d.d / 2 + 0.25, C.stone, { edge: false });
       k.box(w, 0.28, 0.05, x, k.floorY(floor) + 0.08, d.d / 2 + 0.48, C.cream, { edge: false });

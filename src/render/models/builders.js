@@ -50,6 +50,7 @@ const B = {
     if (k.t[5] > 0.35) k.awning(k.doorX, k.dep / 2, Math.min(k.w - 0.6, 2.2), awn(k));
     k.mansardRoof(1.5, 0.55);
     k.dormers(k.w > 4.5 ? 3 : 2);
+    k.bay(3, k.bayX(Math.floor((k.bx - 1) / 2)));   // one oriel above the balconies, so it never clashes with them
     if (k.level >= 4) for (let i = 0; i < Math.min(2, k.bx); i++) k.balcony(2, k.bayX(i === 0 ? 0 : k.bx - 1));
     decorate(k, { skip: ['dormers'] });
   },
@@ -121,6 +122,7 @@ const B = {
     k.body(); k.door(k.doorX, k.dep / 2, C.glass, 0.95, 1.05);
     k.awning(k.doorX, k.dep / 2, 1.5, C.cream);
     k.flatRoof(0.3, C.stone);
+    k.bay(2, k.bayX(Math.floor((k.bx - 1) / 2)), 1.1);   // a glass oriel on the middle bay
     // stepped crown: one smaller storey on top
     const cw = k.w * 0.58, cd = k.dep * 0.58;
     k.body(cw, cd, 1, 0, -k.dep * 0.08, k.top + 0.3, C.charcoal);
