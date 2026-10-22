@@ -8,6 +8,9 @@ piece of production). A farm has no fixed size: you drag out any rectangle, like
 - Pick Farms, then press on the map and drag. The preview is the real farm, redrawn as the rectangle changes, with a
   tint on every tile (rose where something is in the way or the ground is not flat). The label shows the size, the price
   and what it will earn. A plain click places the smallest farm (2 x 3).
+- The tile you press on is always a corner of the farm (`freeRect`), so the edge you began on stays put and the farm grows away
+  from it in the drag direction. With no direction yet (a click, or a drag along one axis) it grows away from a road beside
+  the start tile, so a farm begun against a street never slides a tile off it.
 - Sizes: at least 2 x 3 tiles (a side of 2 and a side of 3), at most 24 a side (`free` on the model, `fitFootprint`).
 - The front is fixed and faces the nearest road: of the turns that leave the house enough depth, the one whose front edge
   has a road closest straight out wins (`frontRoadDistance`, within 12 tiles). V turns it by hand and keeps your turn

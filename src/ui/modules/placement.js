@@ -6,7 +6,7 @@
 // This module only reads the sim and sends { type: 'place' } or { type: 'placeMany' }; the rules live in src/world/placement.js and the sim system.
 import { CATEGORIES, areaCost, canonicalDims, floorsFor, footprintsOf, modelById, modelsIn } from '../../world/models.js';
 import { worldToTile } from '../../world/grid.js';
-import { checkLot, frontRoadCount, frontRoadDistance, planPlacement, problemText, rowOrigins } from '../../world/placement.js';
+import { checkLot, freeRect, frontRoadCount, frontRoadDistance, planPlacement, problemText, rowOrigins } from '../../world/placement.js';
 import { buildCost, income } from '../../sim/economy.js';
 import { $, fmt } from '../format.js';
 import { thumbFor } from '../../render/thumbs.js';
@@ -95,21 +95,12 @@ export default {
     // ---- what a click or a drag would place ----
     // The lots from tile `start` to tile `end` at turn `rot`, each planned and checked the way the sim will do it.
     // A free-size model is one rectangle from `start` to `end`, grown to its smallest size and held to its largest.
-    // A click or hover (no drag) gives the smallest farm, laid out the way the turn wants it, so all four turns show.
+    // The start tile is a corner of the lot (see freeRect), so the edge you began on stays put. A click gives the smallest farm, laid out the way the turn wants it, so all four turns show.
     // The front faces the nearest road (until V is pressed): the turn whose front edge has a road closest straight out.
     // Turns that would leave the house too shallow are skipped; with no road in reach the player's own turn stands.
     function freeLot(start, end) {
-      const f = def().free, lo = f.min[0], hi = f.min[1], click = start[0] === end[0] && start[1] === end[1];
-      const dx = Math.max(-(f.max - 1), Math.min(f.max - 1, end[0] - start[0])), dz = Math.max(-(f.max - 1), Math.min(f.max - 1, end[1] - start[1]));
-      // the lot for a turn: a click is lo wide and hi deep in the farm's own frame, so a quarter turn swaps the sides
-      const lotFor = (r) => {
-        let w = Math.abs(dx) + 1, d = Math.abs(dz) + 1;
-        if (click) { w = r % 2 ? hi : lo; d = r % 2 ? lo : hi; }
-        else { w = Math.max(w, lo); d = Math.max(d, lo); if (Math.max(w, d) < hi) { if (w >= d) w = hi; else d = hi; } }
-        const gx = click ? start[0] - Math.floor((w - 1) / 2) : dx < 0 ? start[0] - w + 1 : start[0];
-        const gz = click ? start[1] - Math.floor((d - 1) / 2) : dz < 0 ? start[1] - d + 1 : start[1];
-        return { gx, gz, fw: w, fd: d, rot: r };
-      };
+      const hi = def().free.min[1];
+      const lotFor = (r) => ({ ...freeRect(sim.grid, def(), start, end, r), rot: r });
       let best = lotFor(ui.rot);
       if (ui.auto) {
         let near = Infinity;

@@ -7,7 +7,7 @@ import { getLayout } from '../src/world/layout.js';
 import { CROPS } from '../src/world/palettes.js';
 import { GRID_N, BASE, tileIndex } from '../src/world/grid.js';
 import { CATEGORIES, MODELS, describe, modelById, fitFootprint } from '../src/world/models.js';
-import { checkLot, frontRoadDistance, lotTiles, planPlacement, problemText } from '../src/world/placement.js';
+import { checkLot, freeRect, frontRoadDistance, lotTiles, planPlacement, problemText } from '../src/world/placement.js';
 import { wrap, unwrap } from '../src/sim/save.js';
 import { buildParts, trianglesOf } from '../src/render/models/builders.js';
 
@@ -139,4 +139,38 @@ test('the nearest road in front of a lot is found by how far it is, and a road b
   assert.equal(frontRoadDistance(grid, 40, 40, 2, 3, 3), Infinity);
   clear(41, 43);                                         // touching the +z front
   assert.equal(frontRoadDistance(grid, 40, 40, 2, 3, 0), 0);
+});
+
+test('a dragged farm keeps the edge you began on: it never slides a tile off the road beside the start tile', () => {
+  const grid = createSim({ state: freshState(), layout }).grid;
+  const roads = (tiles) => { for (let i = 0; i < GRID_N * GRID_N; i++) grid.road[i] = 0; for (const [x, z] of tiles) grid.road[tileIndex(x, z)] = 1; };
+  const S = [40, 40];
+  // a road runs along x = 39 (west of the start tile): the west edge of every farm begun at S stays at x = 40
+  roads(Array.from({ length: 20 }, (_, k) => [39, 30 + k]));
+  for (const [end, rot] of [[[40, 40], 0], [[40, 40], 1], [[40, 40], 3], [[41, 40], 0], [[40, 41], 1], [[41, 41], 0], [[44, 40], 0], [[40, 46], 0], [[47, 49], 0], [[43, 38], 0], [[48, 33], 0]]) {
+    const r = freeRect(grid, def, S, end, rot);
+    assert.equal(r.gx, 40, `west edge for a drag to ${end} at turn ${rot}`);
+    assert.ok(r.gx <= S[0] && S[0] < r.gx + r.fw && r.gz <= S[1] && S[1] < r.gz + r.fd, `the start tile is inside for ${end}`);
+  }
+  // a road along x = 41 (east of the start tile): the east edge stays at x = 40, the farm grows west
+  roads(Array.from({ length: 20 }, (_, k) => [41, 30 + k]));
+  for (const end of [[40, 40], [40, 43], [39, 40], [39, 44]]) {
+    const r = freeRect(grid, def, S, end, 0);
+    assert.equal(r.gx + r.fw - 1, 40, `east edge for a drag to ${end}`);
+  }
+  // a road along z = 39 (north) and z = 41 (south)
+  roads(Array.from({ length: 20 }, (_, k) => [30 + k, 39]));
+  for (const end of [[40, 40], [43, 40], [44, 40]]) assert.equal(freeRect(grid, def, S, end, 0).gz, 40, `north edge for ${end}`);
+  roads(Array.from({ length: 20 }, (_, k) => [30 + k, 41]));
+  for (const end of [[40, 40], [43, 40], [44, 40]]) { const r = freeRect(grid, def, S, end, 0); assert.equal(r.gz + r.fd - 1, 40, `south edge for ${end}`); }
+});
+
+test('the preview before the drag and the first drag step are the same lot, so nothing jumps when you start dragging', () => {
+  const grid = createSim({ state: freshState(), layout }).grid;
+  for (let i = 0; i < GRID_N * GRID_N; i++) grid.road[i] = 0;
+  const S = [40, 40];
+  for (let rot = 0; rot < 4; rot++) {
+    const click = freeRect(grid, def, S, S, rot), step = freeRect(grid, def, S, [S[0] + (rot % 2 ? 2 : 1), S[1] + (rot % 2 ? 1 : 2)], rot);
+    assert.equal(click.gx, step.gx); assert.equal(click.gz, step.gz);
+  }
 });
