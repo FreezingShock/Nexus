@@ -9,8 +9,10 @@ piece of production). A farm has no fixed size: you drag out any rectangle, like
   tint on every tile (rose where something is in the way or the ground is not flat). The label shows the size, the price
   and what it will earn. A plain click places the smallest farm (2 x 3).
 - Sizes: at least 2 x 3 tiles (a side of 2 and a side of 3), at most 24 a side (`free` on the model, `fitFootprint`).
-- The front is fixed and faces the street: the rectangle is turned so its front faces the side with the most road
-  (V turns it by hand). If the lot would be too shallow for the house, `planPlacement` turns it so the long side runs deep.
+- The front is fixed and faces the nearest road: of the turns that leave the house enough depth, the one whose front edge
+  has a road closest straight out wins (`frontRoadDistance`, within 12 tiles). V turns it by hand and keeps your turn
+  until you pick another model. A click shows the smallest farm laid out for each turn (2 wide and 3 deep, swapping sides
+  on a quarter turn), so all four turns are available; a dragged rectangle with a side of 2 can only face along its long side.
 - Code: `freeLot` in `src/ui/modules/placement.js` (one rectangle, grown to the minimum and clamped to the maximum), the
   preview in `src/render/systems/placement-ghost.js` (tile tints are two instanced meshes, so any size is two draw calls).
 

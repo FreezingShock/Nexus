@@ -7,7 +7,7 @@ import { getLayout } from '../src/world/layout.js';
 import { CROPS } from '../src/world/palettes.js';
 import { GRID_N, BASE, tileIndex } from '../src/world/grid.js';
 import { CATEGORIES, MODELS, describe, modelById, fitFootprint } from '../src/world/models.js';
-import { checkLot, lotTiles, planPlacement, problemText } from '../src/world/placement.js';
+import { checkLot, frontRoadDistance, lotTiles, planPlacement, problemText } from '../src/world/placement.js';
 import { wrap, unwrap } from '../src/sim/save.js';
 import { buildParts, trianglesOf } from '../src/render/models/builders.js';
 
@@ -114,4 +114,29 @@ test('a big farm saves and reloads whole, pays by area, and undo takes it back',
   sim.dispatch({ type: 'undo' });
   assert.equal(sim.placedRecords().filter((r) => r.model === 'farm').length, 0);
   assert.equal(sim.state.coins, c0, 'undo refunds it');
+});
+
+test('all four turns of a small farm are real: the lot swaps its sides so none is bent back', () => {
+  const seen = new Set();
+  for (let rot = 0; rot < 4; rot++) {
+    const [fw, fd] = rot % 2 ? [3, 2] : [2, 3];
+    const plan = planPlacement({ model: 'farm', gx: 10, gz: 10, fw, fd, rot });
+    assert.equal(plan.rot, rot, `turn ${rot} is kept`);
+    seen.add(plan.rot);
+  }
+  assert.equal(seen.size, 4);
+});
+
+test('the nearest road in front of a lot is found by how far it is, and a road behind does not count', () => {
+  const grid = createSim({ state: freshState(), layout }).grid;
+  const clear = (x, z) => { for (let i = 0; i < GRID_N * GRID_N; i++) grid.road[i] = 0; grid.road[tileIndex(x, z)] = 1; };
+  // lot at (40, 40), 2 wide and 3 deep: rot 0 faces +z, rot 2 faces -z, rot 1 faces +x, rot 3 faces -x
+  clear(41, 46);                                         // 3 tiles beyond the +z edge (z 40..42), so distance 3
+  assert.equal(frontRoadDistance(grid, 40, 40, 2, 3, 0), 3);
+  assert.equal(frontRoadDistance(grid, 40, 40, 2, 3, 2), Infinity, 'it is behind the -z front');
+  clear(44, 41);                                         // 2 tiles beyond the +x edge (x 40..41)
+  assert.equal(frontRoadDistance(grid, 40, 40, 2, 3, 1), 2);
+  assert.equal(frontRoadDistance(grid, 40, 40, 2, 3, 3), Infinity);
+  clear(41, 43);                                         // touching the +z front
+  assert.equal(frontRoadDistance(grid, 40, 40, 2, 3, 0), 0);
 });
