@@ -97,6 +97,20 @@ export function createHud({ sim, send, onSettings, calendar }) {
     if (e.key === 'Escape' && pickOpen) { togglePicker(false); badge.focus(); }
   });
 
+  // Keep each hover card inside the window: shift it sideways when it would run off either edge.
+  function clampCard(plaque) {
+    const pop = plaque.querySelector(':scope > .pop');
+    if (!pop) return;
+    pop.style.marginLeft = '';
+    const r = pop.getBoundingClientRect(), m = 8;
+    const shift = r.left < m ? m - r.left : r.right > innerWidth - m ? innerWidth - m - r.right : 0;
+    if (shift) pop.style.marginLeft = shift + 'px';
+  }
+  for (const p of document.querySelectorAll('.plaque')) {
+    p.addEventListener('pointerenter', () => clampCard(p));
+    p.addEventListener('focusin', () => clampCard(p));
+  }
+
   // ---- hover cards: the text is only rewritten when it changes, so a card can be read while the numbers move
   function paintPop(key, html) {
     if (lastPop[key] === html) return;

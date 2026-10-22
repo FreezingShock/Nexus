@@ -17,6 +17,9 @@ export default {
     $('app').appendChild(tag);
     // The demand widget sits in the top row of the HUD (index.html); this module fills its rows.
     const demandEl = document.getElementById('demandrows');
+    // Declared before the first paint: paintDemand runs during create, so a later const would be in its dead zone.
+    const demandPop = document.getElementById('demandpop');
+    let lastCard = '';
     paintDemand();
 
     let active = false, brush = 1, drag = null, hoverTile = null, last = null, flashed = false, acc = 0;
@@ -148,8 +151,6 @@ export default {
 
     // The demand widget: one slim bar per zone with demand, in the zone colours. R, C and I, and a hover card with the
     // full names, the percentage and what drives each bar. The card text lives in hud-detail.js.
-    const demandPop = document.getElementById('demandpop');
-    let lastCard = '';
     function paintDemand() {
       if (!demandEl) return;
       const d = sim.zoning.demand();
