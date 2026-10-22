@@ -9,11 +9,10 @@ export function soundMarkup(s) {
   const rows = VOLUMES.map((k) => {
     const pct = Math.round(s[k] * 100);
     return `<label class="snd-row"><span class="snd-label">${LABEL[k]}</span>
-      <input type="range" min="0" max="100" step="5" value="${pct}" data-vol="${k}" aria-valuetext="${pct}%"${s.muted ? ' disabled' : ''}>
+      <input type="range" min="0" max="100" step="5" value="${pct}" data-vol="${k}" style="--fill:${pct}%" aria-valuetext="${pct}%"${s.muted ? ' disabled' : ''}>
       <output data-out="${k}">${pct}%</output></label>`;
   }).join('');
   return `<section class="snd" aria-label="Sound">
-    <h3 class="h-disp">Sound</h3>
     <button class="gfx-sw" role="switch" data-mute aria-checked="${String(!!s.muted)}"><span>Mute all sound</span><i aria-hidden="true"></i></button>
     <div class="snd-rows">${rows}</div>
     <p class="sub snd-note">Sound starts after your first click or key press, as browsers ask. Your settings are kept in this browser.</p>
@@ -32,6 +31,7 @@ export function mountSound(el, store) {
       if (!input) continue;
       const pct = Math.round(s[k] * 100);
       if (document.activeElement !== input) input.value = String(pct);
+      input.style.setProperty('--fill', pct + '%');
       input.disabled = !!s.muted;
       input.setAttribute('aria-valuetext', pct + '%');
       const out = el.querySelector(`[data-out="${k}"]`);

@@ -51,7 +51,7 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
   new ResizeObserver(resize).observe(stage);
 
   // pointer: drag to pan, click to pick, wheel to zoom
-  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), proj = new THREE.Vector3();
   canvas.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, moved: 0, button: e.button }; canvas.setPointerCapture(e.pointerId); });
   canvas.addEventListener('pointermove', (e) => {
     if (!drag) return;
@@ -130,6 +130,15 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
     // Placed and grown buildings answer to the same selection and pop calls; each ignores ids it does not own.
     select: (id) => { town.select(id); byId.get('lots')?.select(id); },
     pop: (id) => { town.pop(id); byId.get('lots')?.pop(id); },
+    settle: (id) => town.settle(id),
+    // Client pixel of a world point, or null when it is behind the camera. For HTML that floats over the town.
+    project(x, y, z) {
+      const r = canvas.getBoundingClientRect();
+      if (!r.width || !r.height) return null;
+      proj.set(x, y, z).project(camera.cam);
+      if (proj.z > 1) return null;
+      return { x: r.left + (proj.x * 0.5 + 0.5) * r.width, y: r.top + (-proj.y * 0.5 + 0.5) * r.height };
+    },
     rotate: (d) => camera.rotate(d),
     focus: (x, z) => camera.focus(x, z),
 

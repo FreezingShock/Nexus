@@ -4,6 +4,7 @@
 //
 // API for UI modules (scene.sys('happy-fx')):
 //   burst(gains)   gains is a list of [gx, gz, gain] (grid tiles). Each home rises a heart, and some a sparkle too.
+//   bloom(x, z, hearts, sparkles)   a few of each rising from one world point (a new family, a freshly placed building)
 //   clear()        drops everything at once
 import * as THREE from '../../../vendor/three/three.module.min.js';
 import { TILE, GRID_HALF } from '../../world/grid.js';
@@ -140,6 +141,14 @@ export default {
           if (Math.random() < SPARKLE_CHANCE * effects) pending.push({ t: k * STAGGER_S + 0.15, x, y: y + 0.6, z, kind: 1 });
         });
         points.visible = true;
+      },
+      bloom(x, z, hearts = 1, sparkles = 0) {
+        if (!effects) return;
+        const y = heightAt(x, z) + 4.5;
+        const h = Math.round(hearts * effects), sp = Math.round(sparkles * effects);
+        for (let k = 0; k < h; k++) pending.push({ t: k * 0.11, x, y, z, kind: 0 });
+        for (let k = 0; k < sp; k++) pending.push({ t: 0.05 + k * 0.09, x, y: y + 0.4, z, kind: 1 });
+        if (h || sp) points.visible = true;
       },
       clear() { pending = []; alive = 0; points.visible = false; },
       frame(f) {

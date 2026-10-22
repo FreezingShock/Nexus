@@ -28,7 +28,6 @@ export function graphicsMarkup(q) {
     `<button class="gfx-sw" role="switch" data-switch="${s.key}" aria-checked="${String(!!q[s.key])}"><span>${s.label}</span><i aria-hidden="true"></i></button>`).join('');
   const note = q.preset === 'custom' ? 'Custom: you changed an option, so no preset is selected.' : 'Preset: ' + PRESET_LABEL[q.preset] + '.';
   return `<section class="gfx" aria-label="Graphics">
-    <h3 class="h-disp">Graphics</h3>
     <div class="gfx-presets" role="group" aria-label="Graphics preset">${presets}</div>
     <p class="sub gfx-note">${note}</p>
     ${rows}
