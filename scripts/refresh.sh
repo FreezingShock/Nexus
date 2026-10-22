@@ -27,5 +27,5 @@ fi
 
 PY="$(command -v python3 || command -v python || true)"
 [ -z "$PY" ] && { echo "Python 3 was not found. Serve this folder with any static server." >&2; exit 1; }
-nohup "$PY" -m http.server "$PORT" --bind 127.0.0.1 >/dev/null 2>&1 &
+nohup "$PY" scripts/serve.py "$PORT" >/dev/null 2>&1 &
 echo "Serving $BRANCH at http://localhost:$PORT/ (hard refresh if the page looks old)"
