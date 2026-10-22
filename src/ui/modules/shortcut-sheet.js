@@ -23,6 +23,7 @@ export default {
     const card = document.createElement('aside');
     card.id = 'shortcuts';
     card.className = 'card shortcuts';
+    card.dataset.mo = 'pop';
     card.hidden = true;
     card.setAttribute('aria-label', 'Keyboard shortcuts');
     card.innerHTML = `<button class="x" id="kx" aria-label="Close">${CLOSE_SVG}</button>

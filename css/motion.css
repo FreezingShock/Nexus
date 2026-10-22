@@ -1,0 +1,24 @@
+/* One open and close motion for every floating surface. An element opts in with data-mo; JS keeps toggling `hidden`
+   as before, and this sheet keeps the element laid out so the change can tween both ways: it settles in with a small
+   tilt and drop (the Milestones card's arrival), and on close it fades and sinks back before visibility switches off.
+   translate, rotate and scale are separate properties, so they never fight a transform a module sets for positioning.
+   Variants: (none) drops in from above, "up" rises from below, "pop" grows from the centre, "tag" and "fade" only
+   fade. prefers-reduced-motion drops the transitions in ui.css, so everything simply appears and disappears. */
+[data-mo]{--mo-y:-14px;--mo-r:-3deg;--mo-s:1;--mo-in:.3s;--mo-out:.2s;
+  transition:opacity var(--mo-in) ease,translate var(--mo-in) cubic-bezier(.2,.8,.3,1),rotate var(--mo-in) cubic-bezier(.2,.8,.3,1),scale var(--mo-in) cubic-bezier(.2,.8,.3,1),visibility 0s}
+[data-mo="up"]{--mo-y:14px;--mo-r:-2deg}
+[data-mo="pop"]{--mo-y:10px;--mo-r:-2deg;--mo-s:.94}
+[data-mo="tag"]{--mo-y:0px;--mo-r:0deg;--mo-in:.14s;--mo-out:.12s}
+[data-mo="fade"]{--mo-y:0px;--mo-r:0deg;--mo-in:.25s;--mo-out:.2s}
+:where([data-mo][hidden]){display:block}
+[data-mo][hidden]{opacity:0;visibility:hidden;pointer-events:none;translate:0 var(--mo-y);rotate:var(--mo-r);scale:var(--mo-s);
+  transition-duration:var(--mo-out),var(--mo-out),var(--mo-out),var(--mo-out),0s;
+  transition-delay:0s,0s,0s,0s,var(--mo-out)}
+
+/* Goals sits in a flex column: closing also lets the room it held close up. */
+#goals[data-mo]{max-height:100vh;transition-property:opacity,translate,rotate,scale,visibility,max-height,margin-top}
+#goals[data-mo][hidden]{max-height:0;margin-top:-12px;overflow:hidden;border-width:0;transition-delay:0s,0s,0s,0s,var(--mo-out),0s,0s}
+
+/* Milestones: a goal's stage list unfolds instead of snapping open. */
+.ag-more{animation:mo-unfold .24s cubic-bezier(.2,.8,.3,1) both}
+@keyframes mo-unfold{from{opacity:0;translate:0 -6px}}

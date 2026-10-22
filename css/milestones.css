@@ -3,7 +3,7 @@
 .achvib{position:relative}
 .achvib .dot{position:absolute;top:5px;right:5px;width:12px;height:12px;border-radius:50%;background:var(--action);border:2px solid var(--ink)}
 
-#achv{position:absolute;top:calc(var(--hud-bottom,108px) + 12px);right:max(16px,env(safe-area-inset-right,0px));bottom:150px;width:var(--achv-w);max-width:calc(100% - 32px);display:flex;flex-direction:column;padding:0;z-index:7;animation:pc-in .3s cubic-bezier(.2,.8,.3,1) both}
+#achv{position:absolute;top:calc(var(--hud-bottom,108px) + 12px);right:max(16px,env(safe-area-inset-right,0px));bottom:150px;width:var(--achv-w);max-width:calc(100% - 32px);display:flex;flex-direction:column;padding:0;z-index:7}
 #achv .band{flex:0 0 auto;padding:16px 62px 14px 18px;background:var(--paper-3);background-image:var(--grain);border-bottom:2.5px solid var(--ink);border-radius:17px 21px 0 0}
 #achv .band h2{font-size:25px}
 #achv .band .sub{margin:2px 0 8px;font-size:13.5px}

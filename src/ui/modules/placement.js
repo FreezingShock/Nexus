@@ -21,7 +21,7 @@ export default {
     const fly = document.getElementById('fly'), toolbar = document.getElementById('tools');
     const stage = scene.canvas.parentElement;
     const tag = document.createElement('div');
-    tag.id = 'placelabel'; tag.hidden = true; tag.setAttribute('aria-hidden', 'true');
+    tag.id = 'placelabel'; tag.dataset.mo = 'tag'; tag.hidden = true; tag.setAttribute('aria-hidden', 'true');
     $('app').appendChild(tag);
     // auto: the turn follows the street (until V is pressed); rot: the player's own turn, used when no street is near
     const ui = { tool: null, cat: 'home', model: 'cottage', size: 0, rot: 0, auto: true };

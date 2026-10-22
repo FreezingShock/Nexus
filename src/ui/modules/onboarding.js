@@ -23,13 +23,13 @@ export default {
     let cur = null, praise = '', praiseUntil = 0, acc = CHECK_S;
 
     const box = el('aside', 'tipnote card');
-    box.hidden = true;
+    box.dataset.mo = 'up'; box.hidden = true;
     box.setAttribute('aria-live', 'polite');
     $('app').appendChild(box);
 
     function render(step) {
+      if (!step) { box.hidden = true; return; } // the old text stays while the note fades out
       box.replaceChildren();
-      if (!step) { box.hidden = true; return; }
       const n = TIP_STEPS.indexOf(step) + 1;
       box.append(el('p', 'tn-kick', 'Tip ' + n + ' of ' + TIP_STEPS.length));
       if (praise) box.append(el('p', 'tn-text tn-praise', praise));

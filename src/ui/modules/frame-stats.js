@@ -17,7 +17,7 @@ export default {
         }
         if (!box) {
           box = document.createElement('div');
-          box.className = 'gfx-stats';
+          box.className = 'gfx-stats'; box.dataset.mo = 'fade';
           box.setAttribute('aria-hidden', 'true');
           document.body.appendChild(box);
         }
