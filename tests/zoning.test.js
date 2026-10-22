@@ -30,9 +30,9 @@ test('paint only takes open ground and stops when coins run out', () => {
   assert.equal(sim.grid.zoneAt(GRID_HALF - 1, GRID_HALF - 2), 0);
   const painted = () => sim.state.zones.split('').filter((c) => c === '2').length;
   const before = painted();
-  sim.state.coins = 12;
-  sim.dispatch({ type: 'paintZone', zone: 2, a: A, b: B }); // 8 coins each: one tile
-  assert.equal(sim.state.coins, 4);
+  sim.state.coins = 36;
+  sim.dispatch({ type: 'paintZone', zone: 2, a: A, b: B }); // 24 coins each: one tile
+  assert.equal(sim.state.coins, 12);
   assert.equal(painted(), before + 1);
 });
 

@@ -12,14 +12,14 @@ Every number lives in [src/sim/balance.js](../src/sim/balance.js). Change it the
 ## Costs
 
 - Placed buildings: `base x 1.15^placed` (`buildCost` in `src/sim/economy.js`). `bulkCost` gives the closed-form total for buying k in a row; it never loops.
-- Upgrades keep their own curve, `40 x 1.55^level x floors / 2`, in the same config.
+- Upgrades keep their own curve, `120 x 1.55^level x floors / 2`, in the same config.
 - Zone paint and road tiles cost a fixed amount per tile.
 
 Open question from the design notes: 1.1 versus 1.15 for buildings. **Chosen: 1.15.** Change `growth` in balance.js to try 1.1.
 
 ## Parts tiers
 
-Road types gate on Parts once, in `BALANCE.tiers`: tier 2 (`bike`, `one`) at 150, `bus` at 600, `free` at 1,500. Roads already on the map stay open after a tier is added. Services are display-only until their own system lands, so they are not gated yet.
+Road types gate on Parts once, in `BALANCE.tiers`: tier 2 (`bike`, `one`) at 450, `bus` at 1,800, `free` at 4,500. Roads already on the map stay open after a tier is added. Services are display-only until their own system lands, so they are not gated yet.
 
 ## Charge
 
@@ -68,3 +68,7 @@ See [EXTENDING.md](EXTENDING.md): `rate`, `partsRate`, `mult`, `tick(ctx, gain)`
 ## Tests
 
 `tests/economy.test.js` covers costs, tiers, Parts from zones, Charge and boost, goals and the daily bonus with its streak, points, Renewal, offline gains, sanitize and day keys. Balance is tested by rules, not by fixed numbers, so a tuning change does not break the suite.
+
+## Price multiplier (2026-10-22)
+
+`BALANCE.priceMult` (3) scales building, road and zone prices, upgrades and the Parts gates; income, Charge and Renewal are unchanged. Start purse is 3,600 coins and 100 Parts. Milestone rewards and goal rewards were raised to match, so the same play still feels generous. New sinks (decorations, looks, events) are priced against this.
