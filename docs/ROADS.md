@@ -23,7 +23,6 @@ Every problem has a reason key in `BLOCK_TEXT`, shown on the reason chip and as 
 - `revisit`: the route crosses itself.
 - `loop`: a route tile touches the route anywhere but its neighbors, or completes a 2 by 2 block of road.
 - `hug`: a new tile touches a street it does not join. Only the route's ends may touch the network, and a tile may touch the road it links to (a T or a crossing).
-- `gap`: a straight run sits two tiles from a parallel road, leaving a one-tile sliver. Blocks of three tiles stay lots.
 - `zigzag`: two turns with a single tile between them.
 - `long`: more than `MAX_STROKE` tiles.
 - Ground reasons from `roadBlock` (water, steep, farm, lot, park, building, bounds) are the same codes.
