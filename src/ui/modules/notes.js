@@ -5,7 +5,7 @@ import { NOTE_ICONS, noteFor } from '../notes.js';
 
 const LIFE_MS = 6500, MAX = 3, TILTS = [-1.2, 0.8, -0.5];
 
-function icon(name) {
+function icon(name, tint) {
   const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   s.setAttribute('viewBox', '0 0 24 24');
   s.setAttribute('aria-hidden', 'true');
@@ -13,7 +13,7 @@ function icon(name) {
   s.setAttribute('height', '26');
   const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
   p.setAttribute('d', NOTE_ICONS[name]);
-  p.setAttribute('fill', '#E6BC62');
+  p.setAttribute('fill', tint || '#E6BC62');
   p.setAttribute('stroke', '#2B2620');
   p.setAttribute('stroke-width', '1.8');
   p.setAttribute('stroke-linejoin', 'round');
@@ -42,7 +42,7 @@ export default {
       c.style.setProperty('--tilt', TILTS[n++ % TILTS.length] + 'deg');
       const stamp = document.createElement('span');
       stamp.className = 'note-stamp';
-      stamp.append(icon(note.icon));
+      stamp.append(icon(note.icon, note.tint));
       const h = document.createElement('h3');
       h.className = 'note-title';
       h.textContent = note.title;

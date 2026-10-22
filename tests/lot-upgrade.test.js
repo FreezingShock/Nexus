@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createSim } from '../src/sim/sim.js';
+import { quietSim as createSim } from './support/quiet.js';
 import { freshState } from '../src/sim/state.js';
 import { wrap, unwrap } from '../src/sim/save.js';
 import { upgradeCost } from '../src/sim/economy.js';

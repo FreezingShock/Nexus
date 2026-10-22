@@ -1,4 +1,4 @@
-// The one file to tune the economy. Costs, rates, unlock tiers, charge, Renewal, goals and milestones all read from here.
+// The one file to tune the economy. Costs, rates, unlock tiers, charge, Renewal and goals read from here; milestones have their own file (achievements.js).
 // Change a number here and the sim, the HUD text and the tests follow. Keep values round; the tests check the rules, not the numbers.
 export const BALANCE = {
   start: { coins: 1240, parts: 38 },
@@ -45,18 +45,5 @@ export const BALANCE = {
     ],
   },
 
-  // Milestones pay once each. `stat` names a counter in state.stats, or 'earned' (coins this town has ever earned).
-  milestones: [
-    { id: 'coins-1k', text: 'Earn 1,000 coins', stat: 'earned', n: 1e3, reward: { parts: 15 } },
-    { id: 'coins-100k', text: 'Earn 100,000 coins', stat: 'earned', n: 1e5, reward: { parts: 60 } },
-    { id: 'coins-10m', text: 'Earn 10 million coins', stat: 'earned', n: 1e7, reward: { parts: 200 } },
-    { id: 'place-1', text: 'Place your first building', stat: 'placed', n: 1, reward: { parts: 20 } },
-    { id: 'place-10', text: 'Place 10 buildings', stat: 'placed', n: 10, reward: { parts: 50 } },
-    { id: 'place-40', text: 'Place 40 buildings', stat: 'placed', n: 40, reward: { parts: 150 } },
-    { id: 'paint-50', text: 'Paint 50 zone tiles', stat: 'painted', n: 50, reward: { parts: 40 } },
-    { id: 'road-60', text: 'Draw 60 road tiles', stat: 'roadTiles', n: 60, reward: { coins: 800 } },
-    { id: 'upgrade-10', text: 'Upgrade 10 buildings', stat: 'upgrades', n: 10, reward: { parts: 60 } },
-    { id: 'boost-3', text: 'Use Charge boosts 3 times', stat: 'boosts', n: 3, reward: { parts: 50 } },
-    { id: 'renew-1', text: 'Renew your town once', stat: 'renewals', n: 1, reward: { parts: 300 } },
-  ],
+  // Milestones and achievements (stages, targets and rewards) live in src/sim/achievements.js.
 };

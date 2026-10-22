@@ -33,14 +33,14 @@ Charge is an active-play meter, 0 to 100. Building, painting and upgrading add 1
 
 ## Milestones
 
-Each milestone pays once. Stats come from `state.stats`, or from `earned` and `renewals`.
+Milestones are now stages of tiered goals: see [MILESTONES.md](MILESTONES.md). They pay coins and Parts (and sometimes open a road type) the first time each stage is reached, and Renewal keeps every stage. The simple milestone list that used to live in `balance.js` is gone; the v6 save migration turned the old paid ids into the matching stages so nothing pays twice.
 
 ## Renewal
 
 Renewal is a fresh start. Points = `floor(cbrt(runEarned / divisor))`. Each kept point is +2% income. Renewal needs at least one point ready.
 
 - Resets: coins, Parts, buildings (levels and removals), zones, roads, the run's coins, Parts placed.
-- Keeps: points, renewals, lifetime coins, unlocked road tiers, milestones, goals, Charge, night and speed.
+- Keeps: points, renewals, lifetime coins, unlocked road tiers, milestone stages (`state.ach`), goals, Charge, night and speed.
 
 **Divisor is 1e7 (10 million coins this run per point), decided by nate.** That gives the first point in about 5 active hours, matching the design notes. At 1e9 the first point took about 278 hours at 1,000 coins/s.
 
@@ -56,7 +56,6 @@ renewals      int
 charge        number   0..100
 boostS        number   always 0 on load
 stats         { placed, painted, roadTiles, upgrades, boosts }   ints
-milestones    [id]     paid milestones
 goals         { slots: [{k, p}] x3, seq, day, doneToday, bonusDay, streak }
 ```
 
@@ -68,4 +67,4 @@ See [EXTENDING.md](EXTENDING.md): `rate`, `partsRate`, `mult`, `tick(ctx, gain)`
 
 ## Tests
 
-`tests/economy.test.js` covers costs, tiers, Parts from zones, Charge and boost, goals and the daily bonus with its streak, milestones, points, Renewal, offline gains, sanitize and day keys. Balance is tested by rules, not by fixed numbers, so a tuning change does not break the suite.
+`tests/economy.test.js` covers costs, tiers, Parts from zones, Charge and boost, goals and the daily bonus with its streak, points, Renewal, offline gains, sanitize and day keys. Balance is tested by rules, not by fixed numbers, so a tuning change does not break the suite.
