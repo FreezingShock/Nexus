@@ -121,3 +121,15 @@ export const vanInterval = (hour, fill) => (hour >= 7 && hour < 19 ? 80 / (0.4 +
 // Customers at a cafe: busy at breakfast, lunch and mid-afternoon. Sitting-down arrivals per second.
 const CAFE = [[0, 0], [7.5, 0], [8.5, 0.6], [10, 0.35], [12, 0.9], [14, 0.4], [15.5, 0.7], [18, 0.4], [20.5, 0.15], [21.5, 0], [24, 0]];
 export const cafeRate = (hour) => curve(CAFE, hour) / 14;
+
+// ---- farms ----
+// How grown the crops are in a season (0 bare soil, 1 ripe). Eased on screen, so a change of season is a visible growing.
+const GROWTH = { spring: 0.4, summer: 1, autumn: 0.9, winter: 0 };
+export const growthTarget = (season) => GROWTH[season] ?? 0.5;
+// Crop colours by season: fresh, deep, golden.
+export const CROP_TINT = { spring: 0xA9D36F, summer: 0x7FB04F, autumn: 0xE0B14E, winter: 0xBFB48F };
+// A tractor works the fields on dry days from spring to autumn.
+export const tractorWorking = (season, hour, weatherKind) => season !== 'winter' && hour >= 7 && hour < 18 && weatherKind !== 'rain' && weatherKind !== 'snow';
+// Farm hands going out to a field or coming in again: events per second per farm.
+const HANDS = [[0, 0], [5.5, 0], [6.5, 0.6], [11, 0.4], [14, 0.4], [18, 0.5], [19.5, 0], [24, 0]];
+export const farmHandRate = (hour) => curve(HANDS, hour) / 25;

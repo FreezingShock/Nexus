@@ -117,3 +117,36 @@ export function bladeGeometry() {
     { geo: box(0.035, 0.14, 0.14, 0, -0.17, 0.24), color: 0xFAF3E4, tint: false },
   ]);
 }
+
+// A tractor about 0.95 long, facing +x. The body takes the instance colour.
+export function tractorGeometry() {
+  return mergeParts([
+    { geo: box(0.5, 0.26, 0.32, 0.12, 0.3, 0), color: 0xffffff, tint: true },
+    { geo: box(0.3, 0.3, 0.3, -0.22, 0.45, 0), color: 0xffffff, tint: true },
+    { geo: box(0.34, 0.03, 0.34, -0.22, 0.78, 0), color: 0x4D3B2B, tint: false },
+    { geo: box(0.03, 0.2, 0.03, 0.3, 0.55, 0.08), color: 0x6B6B5A, tint: false },
+    { geo: cylZ(0.2, 0.1, -0.22, 0.2, 0.22), color: 0x2B2620, tint: false },
+    { geo: cylZ(0.2, 0.1, -0.22, 0.2, -0.22), color: 0x2B2620, tint: false },
+    { geo: cylZ(0.1, 0.08, 0.34, 0.1, 0.2), color: 0x2B2620, tint: false },
+    { geo: cylZ(0.1, 0.08, 0.34, 0.1, -0.2), color: 0x2B2620, tint: false },
+  ]);
+}
+
+// A sheep about 0.4 long, facing +x. The wool takes the instance colour.
+export function sheepGeometry() {
+  return mergeParts([
+    { geo: new THREE.SphereGeometry(0.17, 7, 5).scale(1.25, 0.9, 0.85).translate(0, 0.24, 0), color: 0xffffff, tint: true },
+    { geo: box(0.12, 0.12, 0.1, 0.24, 0.27, 0), color: 0x4D3B2B, tint: false },
+    { geo: box(0.04, 0.12, 0.04, 0.1, 0.06, 0.07), color: 0x4D3B2B, tint: false },
+    { geo: box(0.04, 0.12, 0.04, 0.1, 0.06, -0.07), color: 0x4D3B2B, tint: false },
+    { geo: box(0.04, 0.12, 0.04, -0.1, 0.06, 0.07), color: 0x4D3B2B, tint: false },
+    { geo: box(0.04, 0.12, 0.04, -0.1, 0.06, -0.07), color: 0x4D3B2B, tint: false },
+  ]);
+}
+
+// One crop plant: a small tuft of leaves. Takes the instance colour; origin at the soil.
+export function tuftGeometry() {
+  return mergeParts([
+    { geo: new THREE.ConeGeometry(0.1, 0.26, 5).translate(0, 0.13, 0), color: 0xffffff, tint: true },
+  ]);
+}
