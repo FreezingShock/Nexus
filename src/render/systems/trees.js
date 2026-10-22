@@ -26,10 +26,10 @@ export default {
     const e = new THREE.Euler(), c = new THREE.Color();
     const canopyGeo = new THREE.IcosahedronGeometry(1, 0), trunkGeo = new THREE.CylinderGeometry(0.14, 0.2, 1, 5);
     const coneGeo = new THREE.ConeGeometry(1.35, 4.4, 6, 1);
-    // Broadleaf canopies take the spring blossom; conifers keep most of their green all year (foliage 0.3).
-    const can = instanced(canopyGeo, patchSeason(toonUncached(0xffffff), { blossom: true })), canHull = instanced(canopyGeo, hullInk);
+    // Broadleaf canopies turn with the season and blossom in spring. Conifers keep their green all year (foliage 0).
+    const can = instanced(canopyGeo, patchSeason(toonUncached(0xffffff), { leaf: true, blossom: true })), canHull = instanced(canopyGeo, hullInk);
     const trunk = instanced(trunkGeo, toon(0x5B4636));
-    const cone = instanced(coneGeo, patchSeason(toonUncached(0xffffff), { foliage: 0.3 })), coneHull = instanced(coneGeo, hullInk);
+    const cone = instanced(coneGeo, patchSeason(toonUncached(0xffffff), { leaf: true, foliage: 0 })), coneHull = instanced(coneGeo, hullInk);
     can.castShadow = trunk.castShadow = cone.castShadow = true;
     world.add(can, canHull, trunk, cone, coneHull);
 

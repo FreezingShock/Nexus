@@ -5,7 +5,7 @@ import { patchSeason, applySeason, SEASON } from '../src/render/season.js';
 import { createSky } from '../src/render/sky.js';
 import { createLighting } from '../src/render/night.js';
 import weatherSystem from '../src/render/systems/weather.js';
-import { atmosphereTargets } from '../src/core/calendar.js';
+import { DAY_LENGTHS, DEFAULTS, atmosphereTargets, seasonLengthS } from '../src/core/calendar.js';
 
 // The patch is written against three's toon shader. If three renames these chunks, the season would silently stop.
 test('the toon shader still has the chunks the season patch anchors on', () => {
@@ -14,16 +14,28 @@ test('the toon shader still has the chunks the season patch anchors on', () => {
   assert.ok(frag.includes('#include <normal_fragment_maps>'));
 });
 
-test('a patched toon material gets the season uniforms and its own foliage strength', () => {
-  const mat = patchSeason(new THREE.MeshToonMaterial({ color: 0xffffff }), { foliage: 0.3, blossom: true });
-  const shader = { uniforms: {}, fragmentShader: THREE.ShaderLib.toon.fragmentShader };
-  mat.onBeforeCompile(shader);
-  assert.equal(shader.uniforms.uSnow, SEASON.snow, 'the uniforms are shared, so one update reaches every material');
-  assert.equal(shader.uniforms.uBlossom, SEASON.blossom);
-  assert.ok(shader.fragmentShader.includes('uniform float uSnow'));
-  assert.ok(shader.fragmentShader.includes('* 0.300'), 'the conifer strength is baked in');
-  assert.ok(shader.fragmentShader.includes('* 1.0)'), 'blossom is on for this variant');
-  assert.notEqual(mat.customProgramCacheKey(), patchSeason(new THREE.MeshToonMaterial(), {}).customProgramCacheKey(), 'variants compile apart');
+test('a patched toon material gets the season uniforms and only the switches it asked for', () => {
+  const run = (opts) => {
+    const mat = patchSeason(new THREE.MeshToonMaterial({ color: 0xffffff }), opts);
+    const shader = { uniforms: {}, fragmentShader: THREE.ShaderLib.toon.fragmentShader };
+    mat.onBeforeCompile(shader);
+    return { mat, shader, frag: shader.fragmentShader };
+  };
+  const canopy = run({ leaf: true, blossom: true });
+  assert.equal(canopy.shader.uniforms.uSnow, SEASON.snow, 'the uniforms are shared, so one update reaches every material');
+  assert.equal(canopy.shader.uniforms.uBlossom, SEASON.blossom);
+  assert.ok(canopy.frag.includes('uniform float uSnow'));
+  assert.ok(canopy.frag.includes('leafCol'), 'leaf surfaces take the foliage colour');
+  assert.ok(canopy.frag.includes('uBlossom * (0.4'), 'and blossom on top');
+  const pine = run({ leaf: true, foliage: 0 });
+  assert.ok(pine.frag.includes('* 0.000'), 'conifers take no foliage colour');
+  assert.ok(!pine.frag.includes('uBlossom * (0.4'), 'conifers do not blossom');
+  const building = run({});
+  assert.ok(!building.frag.includes('leafCol'), 'buildings and roads take no foliage colour');
+  assert.ok(building.frag.includes('uSnowCol'), 'but they still take snow on top');
+  const water = run({ still: true });
+  assert.ok(water.frag.includes('uWaterCol'));
+  assert.notEqual(canopy.mat.customProgramCacheKey(), building.mat.customProgramCacheKey(), 'variants compile apart');
 });
 
 test('applySeason copies the eased sky into the shared uniforms', () => {
@@ -82,4 +94,60 @@ test('weather particles follow the eased weather and the Graphics effects settin
   sys.quality({ effects: 0.5 });
   sys.frame({ dt: 0.1, t: 1.2, sky: sky({ snow: 1 }) });
   assert.ok(added[1].count > 0 && added[1].count <= 520 / 2 + 1, 'light effects show about half the snow');
+});
+
+// The per-season look, checked on the numbers the shader and the lights get. The shader maths is mirrored here on
+// representative colours; the mirror is only as good as the GLSL it copies, so the GLSL anchors are tested above.
+const SEASON_NAMES = ['spring', 'summer', 'autumn', 'winter'];
+const hex = (h) => new THREE.Color(h);
+const dist = (a, b) => Math.hypot(a.r - b.r, a.g - b.g, a.b - b.b);
+// Mirror of the leaf branch: base mixed towards the season's foliage colour by its amount.
+function leafLook(baseHex, t, hsh = 0.2) {
+  const base = hex(baseHex);
+  const lum = base.r * 0.3 + base.g * 0.59 + base.b * 0.11;
+  const col = hex(t.foliageCol).lerp(hex(t.foliageAlt), t.autumn * (hsh > 0.55 ? 1 : 0));
+  const tgt = new THREE.Color(Math.min(1, col.r * (0.8 + 0.4 * lum)), Math.min(1, col.g * (0.8 + 0.4 * lum)), Math.min(1, col.b * (0.8 + 0.4 * lum)));
+  return base.clone().lerp(tgt, t.foliage);
+}
+const targetsFor = (season) => atmosphereTargets({ hour: 12, weather: 'clear', season });
+
+test('each season changes the grass clearly from the others', () => {
+  const base = 0x9DB874; // the sage of the land palette
+  const looks = SEASON_NAMES.map((n) => leafLook(base, targetsFor(n), 0.2));
+  for (let i = 0; i < looks.length; i++) for (let j = i + 1; j < looks.length; j++) {
+    assert.ok(dist(looks[i], looks[j]) > 0.08, SEASON_NAMES[i] + ' and ' + SEASON_NAMES[j] + ' look too alike on grass');
+  }
+  const summer = leafLook(base, targetsFor('summer'));
+  assert.ok(dist(summer, hex(base)) > 0.02, 'summer is not just the plain sage: it is the warm, saturated green');
+});
+
+test('autumn splits the leaves between gold and red, and winter goes dormant', () => {
+  const gold = leafLook(0x9DB874, targetsFor('autumn'), 0.2), red = leafLook(0x9DB874, targetsFor('autumn'), 0.7);
+  assert.ok(dist(gold, red) > 0.05, 'some leaves are red, the rest gold');
+  assert.ok(targetsFor('autumn').foliage > 0.9, 'autumn is the strongest foliage change');
+  const winter = targetsFor('winter');
+  assert.ok(winter.foliageCol !== targetsFor('summer').foliageCol && winter.cover >= 0.9, 'winter is dormant brown under snow');
+});
+
+test('fields, water, haze and sun all change with the season', () => {
+  const T = SEASON_NAMES.map(targetsFor);
+  for (const key of ['field', 'water', 'haze', 'sun']) {
+    const vals = T.map((t) => t[key]);
+    assert.equal(new Set(vals).size, 4, key + ' has four different colours');
+  }
+  const strengths = T.map((t) => t.strength);
+  assert.ok(Math.max(...strengths) > Math.min(...strengths) + 0.3, 'the sun is stronger in summer than winter');
+  assert.ok(T[3].dir[1] < T[1].dir[1], 'the winter sun sits lower, so shadows are longer');
+});
+
+test('spring has petals, autumn has a few leaves on the wind, summer and winter have neither', () => {
+  assert.ok(targetsFor('spring').petals > 0);
+  assert.equal(targetsFor('summer').petals, 0);
+  assert.ok(targetsFor('autumn').leaves > 0 && targetsFor('autumn').leaves < 1, 'autumn leaves drift without a leaves roll');
+  assert.equal(targetsFor('summer').leaves, 0);
+  assert.equal(targetsFor('winter').petals, 0);
+});
+
+test('a season is two in-game days by default, so the changes come within the first session', () => {
+  assert.equal(seasonLengthS(DEFAULTS), DAY_LENGTHS.normal * 2);
 });

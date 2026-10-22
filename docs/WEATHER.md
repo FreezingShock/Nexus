@@ -28,6 +28,27 @@ sim and render in `src/core/calendar.js`. Nothing here touches the DOM or Three.
   here; nothing in the economy depends on the weather.
 - Time passed away is closed form (`offline` hook): the clock moves by the effective away seconds, and one roll is made.
 
+## What each season changes
+
+Targets live in `SEASON_LOOK` in `core/calendar.js`; render eases every value over a few seconds.
+
+| | spring | summer | autumn | winter |
+|---|---|---|---|---|
+| Grass and land | fresh yellow-green | warm, saturated green | gold, with some red | dormant brown under snow |
+| Broadleaf trees | blossom on the canopies | full green | gold and red by tree | khaki-brown, snow-dusted tops |
+| Conifers | green | green | green | green, snow-dusted |
+| Fields | fresh green | wheat gold | ploughed brown | frosted brown |
+| River | blue-green | clear blue | grey-green | pale, icy |
+| Sky haze | cream | pale blue | warm | cold blue-grey |
+| Sun | soft, full strength | bright, full strength | warm, lower | cool, low (longer shadows) |
+| Particles | falling petals | none | a few leaves drift | snow (in snow weather) |
+
+Snow lies on roofs, lawns and roads in winter, and falls with the snow weather in any season. Trees do not change shape,
+so bare winter trees are the dusted brown canopies, not leafless branches. Fog and rain still change the light on top
+of the season.
+
+Default: a season is two in-game days (24 minutes at the default day length), so a session shows the change.
+
 ## Render
 
 - `src/render/sky.js` eases the targets from `atmosphereTargets()` (hour, weather, season) so changes fade in.

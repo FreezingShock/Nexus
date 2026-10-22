@@ -3,10 +3,10 @@
 // town module and the road lamps when the night blend crosses halfway (scene.js).
 import * as THREE from '../../vendor/three/three.module.min.js';
 
-const DAY_BG = new THREE.Color(0xD7E2E4), DAWN_BG = new THREE.Color(0xF0C6A6), NIGHT_BG = new THREE.Color(0x3A4468);
+const DAWN_BG = new THREE.Color(0xF0C6A6), NIGHT_BG = new THREE.Color(0x3A4468);
 const CLOUD_BG = new THREE.Color(0xB7C0C5), FOG_BG = new THREE.Color(0xC9D2D2);
 const DAY_HEMI = new THREE.Color(0xFFF3DC), NIGHT_HEMI = new THREE.Color(0x9AA8D8);
-const DAY_SUN = new THREE.Color(0xFFE3B8), DAWN_SUN = new THREE.Color(0xFFB273), NIGHT_SUN = new THREE.Color(0xB8C8FF);
+const DAWN_SUN = new THREE.Color(0xFFB273), NIGHT_SUN = new THREE.Color(0xB8C8FF);
 const bg = new THREE.Color(), tone = new THREE.Color();
 
 export function createLighting(scene) {
@@ -22,7 +22,8 @@ export function createLighting(scene) {
     // s is the eased sky. Returns the night blend (0 day, 1 night) so the caller can swap windows at the midpoint.
     update(dt, s) {
       const day = 1 - s.night;
-      bg.copy(DAY_BG).lerp(DAWN_BG, s.warm * day * 0.85).lerp(CLOUD_BG, s.cloud * 0.6 * day)
+      // The day colour is the season's haze (spring cream, summer pale blue, autumn warm, winter cold).
+      bg.copy(s.hazeCol).lerp(DAWN_BG, s.warm * day * 0.85).lerp(CLOUD_BG, s.cloud * 0.6 * day)
         .lerp(FOG_BG, s.fog * 0.8 * day).lerp(NIGHT_BG, s.night);
       scene.background.copy(bg); scene.fog.color.copy(bg);
       scene.fog.near = 175 - 120 * s.fog - 40 * s.cloud;
@@ -31,8 +32,8 @@ export function createLighting(scene) {
       tone.copy(DAY_HEMI).lerp(NIGHT_HEMI, s.night); hemi.color.copy(tone);
       hemi.intensity = 0.6 + 0.2 * s.night - 0.1 * s.cloud * day;
 
-      tone.copy(DAY_SUN).lerp(DAWN_SUN, s.warm * day).lerp(NIGHT_SUN, s.night); sun.color.copy(tone);
-      sun.intensity = 0.7 * s.daylight * (1 - 0.55 * s.cloud) + 0.35 * s.night;
+      tone.copy(s.sunCol).lerp(DAWN_SUN, s.warm * day * 0.6).lerp(NIGHT_SUN, s.night); sun.color.copy(tone);
+      sun.intensity = 0.7 * s.strength * s.daylight * (1 - 0.55 * s.cloud) + 0.35 * s.night;
       sun.position.copy(s.dir).multiplyScalar(80);
       return s.night;
     },

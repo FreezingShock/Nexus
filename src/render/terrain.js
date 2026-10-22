@@ -36,7 +36,7 @@ export function buildTerrain(parent) {
     for (let k = 0; k < 3; k++) { col[(i + k) * 3] = c.r; col[(i + k) * 3 + 1] = c.g; col[(i + k) * 3 + 2] = c.b; }
   }
   g2.setAttribute('color', new THREE.BufferAttribute(col, 3));
-  const land = new THREE.Mesh(g2, toonUncached(0xffffff, { vertexColors: true }));
+  const land = new THREE.Mesh(g2, patchSeason(toonUncached(0xffffff, { vertexColors: true }), { leaf: true }));
   land.receiveShadow = true;
   parent.add(land);
   const water = new THREE.Mesh(new THREE.PlaneGeometry(S, S), patchSeason(toonUncached(0x7FA3B8), { still: true }));
@@ -55,7 +55,7 @@ function stripeCanvas(color) {
 // Farm plots: one merged mesh per crop color (3 draw calls for 15 plots).
 export function buildFarms(parent, farms) {
   const batch = new Batch();
-  const mats = FARM_COLORS.map((c) => toonUncached(0xffffff, { map: canvasTexture(stripeCanvas(c)) }));
+  const mats = FARM_COLORS.map((c) => patchSeason(toonUncached(0xffffff, { map: canvasTexture(stripeCanvas(c)) }), { field: true }));
   for (const f of farms) {
     const plane = new THREE.PlaneGeometry(f.w, f.d);
     const uv = plane.attributes.uv;

@@ -13,7 +13,7 @@ import { offlineWindow } from '../src/sim/offline.js';
 
 const layout = getLayout();
 const normal = { ...DEFAULTS };          // a 12-minute day, 4-day seasons
-const DAY = DAY_LENGTHS.normal, SEASON = DAY * 4;
+const DAY = DAY_LENGTHS.normal, SEASON = seasonLengthS(DEFAULTS); // the default season, whatever it is
 
 test('the clock starts at eight in the morning and wraps every in-game day', () => {
   assert.equal(hourOf(0, DAY), 8);
@@ -85,8 +85,9 @@ test('atmosphere targets: winter lies white, spring blossoms, summer is the plai
   assert.ok(winter.cover >= 0.9, 'snow lies in winter');
   assert.equal(atmosphereTargets({ hour: 12, weather: 'clear', season: 'spring' }).blossom > 0, true);
   const summer = atmosphereTargets({ hour: 12, weather: 'clear', season: 'summer' });
-  assert.equal(summer.foliage, 0);
   assert.equal(summer.cover, 0);
+  assert.equal(summer.blossom, 0);
+  assert.equal(summer.petals, 0);
   assert.equal(atmosphereTargets({ hour: 12, weather: 'snow', season: 'autumn' }).cover, 1, 'snowfall covers the town in any season');
   const rain = atmosphereTargets({ hour: 12, weather: 'rain', season: 'autumn' });
   assert.ok(rain.rain === 1 && rain.wet === 1 && rain.cloud > 0.5);
