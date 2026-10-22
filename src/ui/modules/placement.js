@@ -1,12 +1,13 @@
 // Placing buildings: the Buildings, Services and Parks tools. Pick a model and a size. Click the map to place one lot,
 // or press and drag along a street to lay a row of them edge to edge. A small label follows the cursor with the price,
 // or the reason a spot is refused, and a see-through preview shows every lot. V turns the building.
+// A model with `free` sizes (the farm) is dragged as one rectangle of any size: the front stays put and the fields grow.
 // Esc or right-click cancels a drag and keeps the tool; Esc with no drag leaves the tool, as before.
 // This module only reads the sim and sends { type: 'place' } or { type: 'placeMany' }; the rules live in src/world/placement.js and the sim system.
-import { CATEGORIES, areaCost, canonicalDims, footprintsOf, modelById, modelsIn } from '../../world/models.js';
+import { CATEGORIES, areaCost, canonicalDims, floorsFor, footprintsOf, modelById, modelsIn } from '../../world/models.js';
 import { worldToTile } from '../../world/grid.js';
 import { checkLot, frontRoadCount, planPlacement, problemText, rowOrigins } from '../../world/placement.js';
-import { buildCost } from '../../sim/economy.js';
+import { buildCost, income } from '../../sim/economy.js';
 import { $, fmt } from '../format.js';
 import { thumbFor } from '../../render/thumbs.js';
 import { categoryIcon, coins, detailText, effectOf, esc, tileCard } from '../cards.js';
@@ -56,7 +57,7 @@ export default {
       })).join('');
       fly.innerHTML = `<div class="pbar">${tabs}<div class="strip">${tiles}</div></div>` +
         `<div class="pfoot"><b class="ptitle">${TOOLS[ui.tool]}</b>` +
-        `<span class="psize" role="group" aria-label="Size">${sizes.map((s, i) => `<button type="button" class="tog" data-psize="${i}" aria-pressed="${i === ui.size}">${s[0]} × ${s[1]}</button>`).join('')}</span>` +
+        (d.free ? `<span class="psize hint">Drag to size</span>` : `<span class="psize" role="group" aria-label="Size">${sizes.map((s, i) => `<button type="button" class="tog" data-psize="${i}" aria-pressed="${i === ui.size}">${s[0]} × ${s[1]}</button>`).join('')}</span>`) +
         `<button type="button" class="tog" id="pturn" title="Turn the building (V)">Turn · V</button>` +
         `<span class="pdetail" title="${esc(detailText(d))}">${esc(detailText(d))}</span>` +
         `<b class="pprice">${coins(sim.placeCost(d, a, b))}</b></div>`;
@@ -93,7 +94,35 @@ export default {
 
     // ---- what a click or a drag would place ----
     // The lots from tile `start` to tile `end` at turn `rot`, each planned and checked the way the sim will do it.
+    // A free-size model is one rectangle from `start` to `end`, grown to its smallest size and held to its largest.
+    // The front goes to the side with the most road when it can (until V is pressed), and planPlacement turns it if it would be too shallow.
+    function freeLot(start, end) {
+      const f = def().free, lo = f.min[0], hi = f.min[1];
+      const dx = Math.max(-(f.max - 1), Math.min(f.max - 1, end[0] - start[0])), dz = Math.max(-(f.max - 1), Math.min(f.max - 1, end[1] - start[1]));
+      let w = Math.abs(dx) + 1, d = Math.abs(dz) + 1;
+      w = Math.max(w, lo); d = Math.max(d, lo);
+      if (Math.max(w, d) < hi) { if (w >= d) w = hi; else d = hi; }
+      const gx = dx < 0 ? start[0] - w + 1 : start[0], gz = dz < 0 ? start[1] - d + 1 : start[1];
+      let rot = ui.rot;
+      if (ui.auto) {
+        let score = 0;
+        for (let k = 0; k < 4; k++) {
+          const r = (ui.rot + k) % 4;
+          if ((r % 2 ? w : d) < hi) continue;
+          const sc = frontRoadCount(sim.grid, gx, gz, w, d, r);
+          if (sc > score) { score = sc; rot = r; }
+        }
+      }
+      return { gx, gz, fw: w, fd: d, rot };
+    }
     function lotsFor(start, end, rot) {
+      if (def().free) {
+        const { rot: r, ...lot } = freeLot(start, end);
+        const plan = planPlacement({ model: ui.model, ...lot, rot: r });
+        if (plan.error) return [];
+        const check = checkLot(sim.grid, plan.gx, plan.gz, plan.fw, plan.fd, plan.def);
+        return [{ lot, plan, rot: plan.rot, ok: check.ok, blocked: check.blocked, problem: check.problem }];
+      }
       const [fw, fd] = lotDims(rot);
       const out = [];
       for (const [gx, gz] of rowOrigins(start, end, fw, fd)) {
@@ -128,6 +157,10 @@ export default {
       if (lots.length === 1) {
         const l = lots[0];
         if (!l.ok) return say(problemText(l.problem) || 'Nothing can go here', 'bad');
+        if (d.free) {
+          const area = l.plan.fw * l.plan.fd, earn = income(floorsFor(d, area), 1);
+          return say(`${COIN}<b>−₵ ${fmt(total)}</b><small>${d.name} · ${l.plan.fw} × ${l.plan.fd} tiles · earns ${earn}/s${dragging ? '' : ' · drag to size'}</small>` + need, poor ? 'poor' : '');
+        }
         return say(`${COIN}<b>${dragging ? '−' : ''}₵ ${fmt(total)}</b><small>${d.name}</small>` + need, poor ? 'poor' : '');
       }
       if (!count) return say(problemText(lots[0].problem) || 'Nothing fits along that line', 'bad');
