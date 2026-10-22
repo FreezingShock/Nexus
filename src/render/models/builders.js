@@ -211,6 +211,7 @@ const B = {
     for (let i = 0; i < n; i++) {
       const x = -k.w / 2 + (i + 0.5) * (k.w / n) + (n === 1 ? k.w * 0.18 : 0);
       k.box(1.1, 1.3, 0.14, x, PLINTH, k.dep / 2 + 0.05, C.fire);
+      k.sites.doors.push([x, k.dep / 2 + 0.12]);
       k.box(1.25, 0.12, 0.2, x, PLINTH + 1.3, k.dep / 2 + 0.06, C.cream, { edge: false });
     }
     // hose tower at the corner
@@ -286,7 +287,7 @@ const B = {
     const bz = -0.4 * k.dep / 2;                                                                  // swing set toward the back
     for (const sx of [-1, 1]) k.cyl(0.05, 0.05, 1.2, 5, sx * 0.55, PLINTH, bz, C.slate, { edge: false });
     k.box(1.2, 0.08, 0.1, 0, PLINTH + 1.2, bz, C.slate, { edge: false });
-    for (const sx of [-0.2, 0.2]) k.box(0.28, 0.05, 0.18, sx, PLINTH + 0.6, bz, C.wood, { edge: false });
+    for (const sx of [-0.2, 0.2]) { k.box(0.28, 0.05, 0.18, sx, PLINTH + 0.6, bz, C.wood, { edge: false }); k.sites.swings.push({ x: sx, z: bz, top: PLINTH + 1.2 }); }
     k.box(0.4, 0.06, 1.0, 0.45, PLINTH + 0.45, 0.5 * k.dep / 2, C.gold, { rx: -0.45 });            // a little slide
     tree(k, ...at(k, -0.7, 0.7), 0.7);
   },

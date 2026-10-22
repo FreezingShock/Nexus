@@ -11,8 +11,9 @@ import { clothGeometry, personGeometry, tintToon } from './figures.js';
 const m4 = new THREE.Matrix4(), qa = new THREE.Quaternion(), p3 = new THREE.Vector3(), s3 = new THREE.Vector3(), eul = new THREE.Euler(), col = new THREE.Color();
 export const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
 
-export function makeTinted(world, geo, max, { cast = true } = {}) {
+export function makeTinted(world, geo, max, { cast = true, name = '' } = {}) {
   const m = new THREE.InstancedMesh(geo, tintToon(), max);
+  m.name = name;
   m.frustumCulled = false; m.castShadow = cast; m.receiveShadow = false;
   allocInstanceColors(m);
   for (let i = 0; i < max; i++) m.setMatrixAt(i, ZERO);
@@ -25,7 +26,7 @@ export function makeTinted(world, geo, max, { cast = true } = {}) {
 // `sit` lowers them a little while they stand (a chair). Fading in and out is a scale ramp over `fadeIn`/`fadeOut` units
 // of the first and last leg (0.25 is a doorway, 0.7 is walking in from the side).
 export function createActors(world, max = 128) {
-  const mesh = makeTinted(world, personGeometry(), max);
+  const mesh = makeTinted(world, personGeometry(), max, { name: 'folk' });
   const A = {
     on: new Uint8Array(max), wx: new Float32Array(max * 3), wz: new Float32Array(max * 3), wy: new Float32Array(max * 3),
     leg: new Uint8Array(max), t: new Float32Array(max), len: new Float32Array(max), speed: new Float32Array(max),
@@ -106,7 +107,7 @@ export function createActors(world, max = 128) {
 
 export function createPools(world, { folkMax = 128, clothMax = 800 } = {}) {
   const folk = createActors(world, folkMax);
-  const clothMesh = makeTinted(world, clothGeometry(), clothMax, { cast: false });
+  const clothMesh = makeTinted(world, clothGeometry(), clothMax, { cast: false, name: 'cloth' });
   const cloth = {
     mesh: clothMesh, max: clothMax, count: 0,
     reset() { cloth.count = 0; for (let i = 0; i < clothMax; i++) clothMesh.setMatrixAt(i, ZERO); clothMesh.count = 0; },
@@ -118,6 +119,6 @@ export function createPools(world, { folkMax = 128, clothMax = 800 } = {}) {
   };
   const made = new Map();
   // Another tinted pool, built once per name.
-  const make = (name, geo, max, o) => { if (!made.has(name)) made.set(name, makeTinted(world, geo, max, o)); return made.get(name); };
+  const make = (name, geo, max, o) => { if (!made.has(name)) made.set(name, makeTinted(world, geo, max, { ...o, name })); return made.get(name); };
   return { folk, cloth, make };
 }

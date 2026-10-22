@@ -133,3 +133,20 @@ export const tractorWorking = (season, hour, weatherKind) => season !== 'winter'
 // Farm hands going out to a field or coming in again: events per second per farm.
 const HANDS = [[0, 0], [5.5, 0], [6.5, 0.6], [11, 0.4], [14, 0.4], [18, 0.5], [19.5, 0], [24, 0]];
 export const farmHandRate = (hour) => curve(HANDS, hour) / 25;
+
+// ---- civic life: school, clinic and police visitors, parks, swings, engines ----
+const SCHOOL = [[0, 0], [7.3, 0], [7.8, 1], [8.4, 0.1], [10.4, 0.1], [10.8, 0.6], [11.4, 0.1], [14.9, 0], [15.3, 1], [16, 0.1], [16.5, 0], [24, 0]];
+export const schoolRate = (hour) => curve(SCHOOL, hour) / 4; // arrivals and leavings are bursts; the director spawns several at once
+export function schoolKind(hour) { return hour < 9 ? 'arrive' : hour < 12 ? 'step' : 'leave'; }
+const SERVICE = [[0, 0], [8, 0], [8.5, 0.5], [12, 0.3], [17, 0.4], [18, 0], [24, 0]];
+export const serviceRate = (hour) => curve(SERVICE, hour) / 15;
+const PARKS = [[0, 0], [7, 0], [8, 0.4], [12, 0.6], [17, 0.8], [20, 0.3], [21, 0], [24, 0]];
+export const parkRate = (hour) => curve(PARKS, hour) / 20;
+// Children on the swings: after school and at weekends' ease, in dry weather, a few at a time.
+export function swingBusy(seed, i, hour, t, weatherKind, fill) {
+  if (hour < 8 || hour >= 19 || weatherKind === 'rain' || weatherKind === 'snow') return false;
+  const slot = Math.floor(t / 20); // a kid stays about 20 s, then someone else may come
+  return unit(seed + i * 17, 500 + (slot % 1009)) < 0.2 + 0.5 * Math.max(0, Math.min(1, fill)) * (hour >= 15 ? 1 : 0.5);
+}
+// Seconds between fire engine call-outs, by the hour (rare at night), longer in a quiet town.
+export const engineInterval = (hour) => (hour >= 7 && hour < 22 ? 150 : 400);

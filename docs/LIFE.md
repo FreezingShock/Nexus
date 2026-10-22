@@ -33,9 +33,13 @@ Graphics "Dust, hearts and town life": Off shows no smoke, residents, washing or
 
 `directors/farms.js`. Crop tufts stand in every bed and grow or ripen with the season (spring fresh and small, summer full, autumn gold, winter bare); the growth eases over several seconds, so a change of season is visible. A tractor works the lane behind the yard on dry days from spring to autumn, one to three sheep wander the gap between the house and the barn, and farm hands walk out to a field, stand a while and come back. The farmhouse chimney smokes like a home's. The farm builder records `sites.farm` (beds, lane, yard, house, barn). Three more meshes: crop tufts, tractors, sheep.
 
+## Services and parks
+
+`directors/civic.js`. Schools: children arrive in a burst at the morning bell, spill out at break, and leave in a burst mid-afternoon (smaller, faster walkers in bright coats). Clinics and police stations see a few visitors by day. Playgrounds: children get on the swings in dry daylight (more after school and in a fuller town); the swing and the child move together. Greens, plazas, ponds and playgrounds see strollers who cross, pause and walk on. Fire stations send an engine out of the bay, along the street and off, and back again some time later (rarer at night). The fire-station builder records its bay doors and the playground its swings.
+
 ## Draw calls
 
-`life-windows` 1, `life-smoke` 1, `life-town` 6 (people, hanging cloth, cats, blade signs, forklifts, vans). Windows and smoke are hidden while nothing is lit or rising. Not measured on a phone.
+`life-windows` 1, `life-smoke` 1, `life-town` 14 (people, hanging cloth, cats, blade signs, forklifts, vans, crop tufts, tractors, sheep, swings, swing children, engines). Windows and smoke are hidden while nothing is lit or rising. Not measured on a phone.
 
 ## Adding more life
 
