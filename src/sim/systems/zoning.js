@@ -1,9 +1,9 @@
-// Zoning: paint zones on grid tiles, buildings grow into painted tiles that have a road nearby.
+// Zoning: paint zones on grid tiles, buildings grow into painted tiles that sit directly beside a road.
 // Owns grid.zone and grid.lot. Reads grid.road (the road system owns it). See docs/GRID.md.
 import { GRID_N, BASE, inBounds, rectTiles, tileIndex, tileOf } from '../../world/grid.js';
 import { putTrees, takeOnTiles } from '../../world/trees.js';
 import {
-  ZONE_DEFS, ZONE_COUNT, MAX_LOT_LEVEL, ROAD_REACH, PLACED_LOT_MIN, encodeZones, decodeZones, validZonesString,
+  ZONE_DEFS, ZONE_COUNT, MAX_LOT_LEVEL, PLACED_LOT_MIN, encodeZones, decodeZones, validZonesString,
   nextRand, lotStats, demandOf, lotIncome, lotParts,
 } from '../zones.js';
 import { lotDescription, lotTileOf } from '../../world/lots.js';
@@ -108,7 +108,7 @@ export default {
         grid.zone[i] = zone;
         painted.add(i);
         const [gx, gz] = tileOf(i);
-        if (!grid.roadWithin(gx, gz, ROAD_REACH)) noRoad++;
+        if (!grid.roadBeside(gx, gz)) noRoad++;
       }
       // Trees on painted ground give way; undo puts them back.
       const tk = takeOnTiles(state.trees, painted);
@@ -117,7 +117,7 @@ export default {
       ctx.sim.pushUndo({ revert: (c) => revertZones(c, prev, afford * def.cost, [], tk.taken) });
       let text = 'Painted ' + afford + ' ' + def.name.toLowerCase() + ' tile' + (afford > 1 ? 's' : '') + ' · ' + afford * def.cost + ' coins';
       if (afford < todo.length) text += ' · coins ran out';
-      else if (noRoad) text += ' · ' + noRoad + ' need a road nearby';
+      else if (noRoad) text += ' · ' + noRoad + (noRoad > 1 ? ' tiles stay' : ' tile stays') + ' empty until a road runs beside ' + (noRoad > 1 ? 'them' : 'it');
       if (tk.taken.length) text += ' · ' + tk.taken.length + ' tree' + (tk.taken.length > 1 ? 's' : '') + ' cleared';
       emit({ type: 'zonePainted', zone, n: afford, cost: afford * def.cost, noRoad, text });
     },
@@ -205,15 +205,14 @@ function reconcile({ sim, grid, state }) {
 const growthMul = ({ sim }) => (sim.services ? sim.services.growth() : 1);
 function countPaint(grid) { let n = 0; for (let i = 0; i < AREA; i++) if (grid.zone[i]) n++; return n; }
 
-// Painted, empty tiles with a road in reach, per zone. Tiles right next to a road come first.
+// Painted, empty tiles with a road directly beside them, per zone. Paint away from a street stays painted and empty;
+// lots that already grew keep standing if their street later goes (nothing here demolishes them).
 function candidates(grid) {
   const out = [[], [], [], [], []];
   for (let i = 0; i < AREA; i++) {
     const z = grid.zone[i];
     if (!z || grid.lot[i]) continue;
-    const gx = i % GRID_N, gz = (i / GRID_N) | 0;
-    if (grid.roadNeighbors(gx, gz)) out[z].unshift(i);
-    else if (grid.roadWithin(gx, gz, ROAD_REACH)) out[z].push(i);
+    if (grid.roadBeside(i % GRID_N, (i / GRID_N) | 0)) out[z].unshift(i);
   }
   return out;
 }
