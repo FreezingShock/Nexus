@@ -24,21 +24,21 @@ test('build cost grows by r for every building already placed, and the bulk form
   assert.equal(bulkCost(100, 0, 3, 1), 300);
 });
 
-test('tiers: tier 2 at 150 Parts, bus at 600, freeway at 1,500, read from one config', () => {
+test('tiers: tier 2 at 450 Parts, bus at 1,800, freeway at 4,500, read from one config', () => {
   const gate = Object.fromEntries(ROAD_TYPES.filter((r) => r.unlockParts).map((r) => [r.id, r.unlockParts]));
   assert.deepEqual(gate, BALANCE.tiers);
-  assert.equal(BALANCE.tiers.bike, 150);
-  assert.equal(BALANCE.tiers.bus, 600);
-  assert.equal(BALANCE.tiers.free, 1500);
+  assert.equal(BALANCE.tiers.bike, 450);
+  assert.equal(BALANCE.tiers.bus, 1800);
+  assert.equal(BALANCE.tiers.free, 4500);
 });
 
 test('a locked road tier cannot be drawn, and unlocking spends its Parts once', () => {
   const sim = mk();
-  sim.state.parts = 100; sim.state.coins = 1e6;
+  sim.state.parts = 300; sim.state.coins = 1e6;
   sim.dispatch({ type: 'unlockRoad', roadType: 'bike' });
   assert.ok(!sim.state.roadUnlocks.includes('bike'));
-  assert.equal(sim.state.parts, 100);
-  sim.state.parts = 150;
+  assert.equal(sim.state.parts, 300);
+  sim.state.parts = 450;
   sim.dispatch({ type: 'unlockRoad', roadType: 'bike' });
   assert.ok(sim.state.roadUnlocks.includes('bike'));
   assert.equal(sim.state.parts, 0);

@@ -21,10 +21,10 @@ test('one tick adds the rate; game speed means more ticks, not bigger steps', ()
   const c0 = sim.state.coins, rate = sim.rate();
   const run = (seconds) => { for (let i = 0; i < seconds * 4; i++) sim.advance(0.25); }; // frames are capped at 0.25 s
   run(0.75); assert.equal(sim.state.coins, c0);
-  run(0.25); assert.equal(sim.state.coins, c0 + rate);
+  run(0.25); assert.ok(Math.abs(sim.state.coins - (c0 + rate)) < 1e-6);
   sim.dispatch({ type: 'cycleSpeed' });
   const c1 = sim.state.coins;
-  run(1); assert.equal(sim.state.coins, c1 + 2 * rate);
+  run(1); assert.ok(Math.abs(sim.state.coins - (c1 + 2 * rate)) < 1e-6);
 });
 
 test('paused sim does not advance', () => {

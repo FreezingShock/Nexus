@@ -9,4 +9,4 @@ export const ROAD_TYPES = [
   { id: 'free', short: 'Freeway', name: 'Freeway',               sub: 'Fast and wide', cost: 90, unlockParts: T.free },
 ];
 
-
+for (const r of ROAD_TYPES) r.cost = Math.round(r.cost * BALANCE.priceMult);

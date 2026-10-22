@@ -14,8 +14,8 @@ export const STAGES = [
 
 // Reward for stage 1..5 of a goal of weight 1. A goal's `w` scales both, so a hard goal can pay more than an easy one.
 // Generous on purpose: stage 1 is a pleasant bonus at the start and stage 5 a real prize late on.
-export const REWARD_COINS = [500, 3000, 20000, 150000, 1000000];
-export const REWARD_PARTS = [20, 60, 150, 400, 1000];
+export const REWARD_COINS = [1500, 9000, 60000, 450000, 3000000];
+export const REWARD_PARTS = [40, 120, 300, 800, 2000];
 
 export const GROUPS = [
   { id: 'town', name: 'Town', blurb: 'Homes, people and the buildings that fill the streets.' },

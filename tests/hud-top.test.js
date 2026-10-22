@@ -131,7 +131,7 @@ test('the sim reports the income split by system, for the hover cards', () => {
 // ---- hover-card text ----
 
 test('the hover cards show exact numbers, the next unlock and the Renewal progress', () => {
-  const s = { ...freshState(), coins: 8059, parts: 302, runEarned: 0, points: 0, renewals: 0, earned: 9000 };
+  const s = { ...freshState(), coins: 8059, parts: 502, runEarned: 0, points: 0, renewals: 0, earned: 9000 };
   const bd = { coins: { base: 12, placement: 8.2, services: -0.4 }, parts: { base: 0.4 }, mult: {} };
   const coins = coinsCard(s, 20.2, bd);
   assert.match(coins, /<b>8,059<\/b> in hand/);
@@ -140,8 +140,8 @@ test('the hover cards show exact numbers, the next unlock and the Renewal progre
   assert.match(coins, /−/, 'upkeep reads as a minus');
   const parts = partsCard(s, 0.4, bd);
   assert.match(parts, /Bike street/, 'the cheapest locked road is the next unlock');
-  assert.match(parts, /Ready: 150 Parts to open it/, 'with enough Parts, the card says so');
-  assert.match(partsCard({ ...s, parts: 40 }, 0.4, bd), /40 of 150 Parts/, 'short of the cost, it shows the progress');
+  assert.match(parts, /Ready: 450 Parts to open it/, 'with enough Parts, the card says so');
+  assert.match(partsCard({ ...s, parts: 40 }, 0.4, bd), /40 of 450 Parts/, 'short of the cost, it shows the progress');
   const ren = renewalCard(s);
   assert.match(ren, /Opens at 10,000,000 coins/);
   assert.match(ren, /0%/);

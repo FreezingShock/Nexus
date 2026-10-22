@@ -4,6 +4,7 @@
 import { makeRng } from './rng.js';
 import { TILE, GRID_HALF } from './grid.js';
 import { heightAt } from './terrain.js';
+import { BALANCE } from '../sim/balance.js';
 
 export const LANG = {
   FLOOR_H: 1.1,     // one storey, world units
@@ -56,6 +57,9 @@ export const MODELS = [
   { id: 'playground',   name: 'Playground',     cat: 'park',     sub: 'Swings and a little slide',        foot: [[1, 1], [1, 2]],         floors: [0, 0], grow: 0,    cost: 140,  style: 'sash' },
   { id: 'pond',         name: 'Pond',           cat: 'park',     sub: 'Water, reeds and a bench',         foot: [[2, 2]],                 floors: [0, 0], grow: 0,    cost: 180,  style: 'sash' },
 ];
+
+// Prices are scaled once here, from BALANCE.priceMult (see balance.js).
+for (const m of MODELS) m.cost = Math.round(m.cost * BALANCE.priceMult);
 
 const byId = new Map(MODELS.map((m) => [m.id, m]));
 export const modelById = (id) => byId.get(id) || null;
