@@ -6,7 +6,8 @@ import { buildParts, builderIds, trianglesOf } from '../src/render/models/builde
 import { getLayout } from '../src/world/layout.js';
 import { createSim } from '../src/sim/sim.js';
 import { sanitize } from '../src/sim/save.js';
-import { tileIndex } from '../src/world/grid.js';
+import { tileIndex, TILE } from '../src/world/grid.js';
+import * as THREE from '../vendor/three/three.module.min.js';
 
 const layout = getLayout();
 // The buildings the player placed (the starter village is in state.placed too).
@@ -15,6 +16,26 @@ const rec = (model, fw, fd, extra = {}) => ({ id: 'b1000', model, gx: 10, gz: 10
 
 test('every model has a builder, and every builder has a model', () => {
   assert.deepEqual(builderIds().sort(), MODELS.map((m) => m.id).sort());
+});
+
+// A part that strays far from its lot (a bad argument shifting a box into the wrong slot) stretches the merged mesh
+// across the whole map and hides the town, so every vertex must stay near the building's own footprint.
+test('every model stays within its footprint at every size and level', () => {
+  const v = new THREE.Vector3();
+  for (const m of MODELS) for (const size of footprintsOf(m)) for (let lv = 1; lv <= 5; lv++) {
+    const [fw, fd] = canonicalDims(m, size);
+    const hx = fw * TILE / 2 + 1, hz = fd * TILE / 2 + 1;
+    for (const p of buildParts(describe(rec(m.id, fw, fd), lv))) {
+      for (const g of p.splits ? p.splits.map((s) => s.geo) : [p.geo]) {
+        const pos = g.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+          v.fromBufferAttribute(pos, i).applyMatrix4(p.local);
+          assert.ok(Math.abs(v.x) <= hx && Math.abs(v.z) <= hz && v.y > -3 && v.y < 40,
+            `${m.id} ${size} L${lv}: vertex (${v.x.toFixed(2)}, ${v.y.toFixed(2)}, ${v.z.toFixed(2)}) is outside the footprint`);
+        }
+      }
+    }
+  }
 });
 
 test('every model builds at every size and level within the triangle budget', () => {

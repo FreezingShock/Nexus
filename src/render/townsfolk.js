@@ -8,10 +8,13 @@ import { GRID_N, tileIndex } from '../world/grid.js';
 import { DIRS, connMask, dirsOfMask, opposite } from '../world/roadnet.js';
 import { makeRng } from '../world/rng.js';
 import { groundY, tileWorld } from './road-mesh.js';
+import { TUNNEL_GATE } from '../world/starter.js';
 
 const MAX = 500, TARGET = 300, PER_ROAD_TILE = 0.5;
 const SPEED = 1.6, TILE = 3, PAVEMENT = 1.35; // units per second, tile size, offset from the road centre
 const ENTER_S = 0.35, IDLE_CHANCE = 0.12, ENTER_CHANCE = 0.05;
+// The tunnel gate (a dead end at the foot of the mountain): some walkers come out of it, and a walker heading into it goes in.
+const GATE = tileIndex(TUNNEL_GATE.gx, TUNNEL_GATE.gz), TUNNEL_IN = 0.1;
 const CLOTHES = [0xD98C7A, 0xBFD8C4, 0x8DBEDD, 0xEBD9A0, 0x9DB37C, 0xFAF3E4, 0xCBC3DC];
 const SKIN = 0xE8C7A0;
 const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
@@ -36,12 +39,13 @@ export function buildTownsfolk(parent, grid, camera) {
   // A random road tile to stand on, and a heading that leaves it.
   function place(p) {
     for (let tries = 0; tries < 20 && roadTiles.length; tries++) {
-      const t = roadTiles[Math.floor(rng() * roadTiles.length)];
+      const fromTunnel = !!roads[GATE] && rng() < TUNNEL_IN;
+      const t = fromTunnel ? GATE : roadTiles[Math.floor(rng() * roadTiles.length)];
       const gx = t % GRID_N, gz = Math.floor(t / GRID_N);
       const dirs = dirsOfMask(connMask(roads, gx, gz));
       if (!dirs.length) continue;
       p.gx = gx; p.gz = gz; p.dir = dirs[Math.floor(rng() * dirs.length)];
-      p.side = rng() < 0.5 ? -1 : 1; p.u = rng(); p.mode = 'walk'; p.t = 0; p.alive = true;
+      p.side = rng() < 0.5 ? -1 : 1; p.u = fromTunnel ? 0 : rng(); p.mode = 'walk'; p.t = 0; p.alive = true; p.tunnel = false;
       return true;
     }
     p.alive = false;
@@ -51,6 +55,8 @@ export function buildTownsfolk(parent, grid, camera) {
   // Reached the middle of the next tile: pick the way on. Usually onwards, not back the way they came.
   function junction(p) {
     p.gx += dirVec(p.dir)[0]; p.gz += dirVec(p.dir)[1]; p.u -= 1;
+    // the gate is a dead end: a walker heading into it goes into the tunnel and is gone
+    if (p.gx === TUNNEL_GATE.gx && p.gz === TUNNEL_GATE.gz && p.dir === 0) { p.mode = 'enter'; p.t = ENTER_S; p.tunnel = true; return; }
     let dirs = dirsOfMask(connMask(roads, p.gx, p.gz)).filter((d) => d !== opposite(p.dir));
     if (!dirs.length) dirs = dirsOfMask(connMask(roads, p.gx, p.gz));
     if (!dirs.length) { p.alive = false; return; }
@@ -90,6 +96,7 @@ export function buildTownsfolk(parent, grid, camera) {
           p.t -= dt; if (p.t <= 0) p.mode = 'walk';
         } else if (p.mode === 'enter') {
           p.t -= dt; scale = Math.max(0, p.t / ENTER_S);
+          if (p.t <= 0 && p.tunnel) { p.alive = false; body.setMatrixAt(i, ZERO); head.setMatrixAt(i, ZERO); return; }
           if (p.t <= 0) { p.mode = 'inside'; p.t = 3 + rng() * 3; scale = 0; }
         } else if (p.mode === 'inside') {
           p.t -= dt; scale = 0;

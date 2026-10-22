@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { createSim } from '../src/sim/sim.js';
 import { freshState } from '../src/sim/state.js';
 import { getLayout } from '../src/world/layout.js';
-import { starterPlaced, starterStreetTiles, starterReserved, STARTER_COUNT } from '../src/world/starter.js';
+import { starterPlaced, starterStreetTiles, starterReserved, starterProtected, STARTER_COUNT } from '../src/world/starter.js';
 import { BASE, GRID_HALF, tileIndex } from '../src/world/grid.js';
 import { LOT_BASE, frontRoadCount, lotTiles } from '../src/world/placement.js';
 import { areaCost, modelById } from '../src/world/models.js';
@@ -76,11 +76,15 @@ test('every starter building can be bulldozed and its ground built on again', ()
   }
 });
 
-test('every starter street tile can be bulldozed, and the road can be drawn back', () => {
+test('every starter street tile can be bulldozed, except the bridge and the road into the tunnel, and the road can be drawn back', () => {
   const sim = mk();
   const tiles = starterStreetTiles();
+  const kept = starterProtected();
   sim.dispatch({ type: 'bulldozeRoad', tiles });
-  for (const [gx, gz] of tiles) assert.equal(sim.grid.roadAt(gx, gz), 0, 'gone');
+  for (const [gx, gz] of tiles) {
+    if (kept.has(tileIndex(gx, gz))) assert.notEqual(sim.grid.roadAt(gx, gz), 0, 'bridge or tunnel road stays');
+    else assert.equal(sim.grid.roadAt(gx, gz), 0, 'gone');
+  }
   sim.dispatch({ type: 'undo' });
   for (const [gx, gz] of tiles) assert.notEqual(sim.grid.roadAt(gx, gz), 0, 'back');
 });

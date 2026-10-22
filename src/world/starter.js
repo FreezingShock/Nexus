@@ -11,26 +11,43 @@ import { seedOf } from './models.js';
 // The first starter record is b1000. Player placements count on from after the last one.
 export const STARTER_FIRST = 1000;
 
-// Straight streets as inclusive tile rectangles [gx0, gz0, gx1, gz1]: a main street and a cross street, meeting at the
-// village square. Tile (32, 32) is the middle of the map, so the village sits on the origin.
+// Straight streets as inclusive tile rectangles [gx0, gz0, gx1, gz1]. A T: a bar north to south through the middle of
+// the village, and a stem east from its middle. The stem crosses the river on the bridge and ends at the tunnel gate.
+// Tile (32, 32) is the middle of the map, so the village sits on the origin.
 export const STARTER_STREETS = [
-  [26, 32, 38, 32],
   [32, 26, 32, 38],
+  [33, 32, 55, 32],
 ];
 
+// The tunnel gate: the stem's last tile. It is a dead end at the foot of the mountain. Cars and townsfolk come out of
+// the tunnel here and drive or walk into it (see render/vehicle-agents.js and render/townsfolk.js).
+export const TUNNEL_GATE = { gx: 55, gz: 32 };
+
+// The bridge and the road into the tunnel: the stem from just before the river to the gate. Bulldozing is refused here,
+// so the village always keeps its way out. The rest of the village stays editable.
+export const PROTECTED_STRIP = { gz: 32, gx0: 47, gx1: 55 };
+export const starterProtected = () => {
+  const set = new Set();
+  for (let gx = PROTECTED_STRIP.gx0; gx <= PROTECTED_STRIP.gx1; gx++) set.add(tileIndex(gx, PROTECTED_STRIP.gz));
+  return set;
+};
+
 // Buildings: model, lowest tile, footprint on the grid after turning (fw x fd), and the quarter turn that faces the
-// front towards a street. Every building touches a street through its front, so it can be reached and it earns.
+// front towards a street. Every building touches a street through its front, so it can be reached and it earns. They sit
+// along the bar and the stem, a tile off the kerb here and there, so the village reads as scattered rather than a grid.
 export const STARTER_LOTS = [
-  { model: 'terrace',  gx: 26, gz: 31, fw: 2, fd: 1, rot: 0 },
-  { model: 'cottage',  gx: 28, gz: 31, fw: 1, fd: 1, rot: 0 },
-  { model: 'mansard',  gx: 30, gz: 28, fw: 2, fd: 1, rot: 1 },
-  { model: 'shop-row', gx: 34, gz: 31, fw: 2, fd: 1, rot: 0 },
-  { model: 'cafe',     gx: 37, gz: 31, fw: 1, fd: 1, rot: 0 },
-  { model: 'cottage',  gx: 33, gz: 27, fw: 1, fd: 1, rot: 3 },
-  { model: 'cottage',  gx: 27, gz: 33, fw: 1, fd: 1, rot: 2 },
-  { model: 'terrace',  gx: 34, gz: 33, fw: 2, fd: 1, rot: 2 },
-  { model: 'cottage',  gx: 37, gz: 33, fw: 1, fd: 1, rot: 2 },
-  { model: 'green',    gx: 30, gz: 34, fw: 2, fd: 2, rot: 0 },
+  { model: 'cottage',  gx: 31, gz: 27, fw: 1, fd: 1, rot: 1 },
+  { model: 'terrace',  gx: 31, gz: 29, fw: 1, fd: 2, rot: 1 },
+  { model: 'green',    gx: 30, gz: 34, fw: 2, fd: 2, rot: 1 },
+  { model: 'cottage',  gx: 31, gz: 37, fw: 1, fd: 1, rot: 1 },
+  { model: 'shop-row', gx: 33, gz: 27, fw: 1, fd: 2, rot: 3 },
+  { model: 'cafe',     gx: 33, gz: 35, fw: 1, fd: 1, rot: 3 },
+  { model: 'terrace',  gx: 33, gz: 37, fw: 1, fd: 2, rot: 3 },
+  { model: 'cottage',  gx: 36, gz: 31, fw: 1, fd: 1, rot: 0 },
+  { model: 'terrace',  gx: 38, gz: 31, fw: 2, fd: 1, rot: 0 },
+  { model: 'cottage',  gx: 42, gz: 31, fw: 1, fd: 1, rot: 0 },
+  { model: 'cottage',  gx: 36, gz: 33, fw: 1, fd: 1, rot: 2 },
+  { model: 'mansard',  gx: 41, gz: 33, fw: 2, fd: 1, rot: 2 },
 ];
 export const STARTER_COUNT = STARTER_LOTS.length;
 

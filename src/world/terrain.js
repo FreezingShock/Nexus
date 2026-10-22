@@ -33,6 +33,9 @@ export function heightAt(x, z) {
   h = Math.max(0, h - 0.8);
   h *= 1 - 0.99 * farmMask(x, z);
   if (x > 24) h *= smooth(3, 10, Math.abs(z));
+  // The mountain east of the river. The valley road runs straight into its west face, where the tunnel is. The ground
+  // there stays flat up to x = 71, so the gate tile and the road before it are level.
+  if (x > 71) h += 30 * smooth(71, 80, x) * (1 - smooth(18, 34, Math.abs(z))) * (0.7 + 0.6 * fbm(x * 0.04, z * 0.04));
   const k = 1 - smooth(2.6, 6.5, Math.abs(x - riverX(z)));
   return h * (1 - k) + (-1.3) * k;
 }

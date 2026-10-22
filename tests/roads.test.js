@@ -18,11 +18,13 @@ const free = [C - 6, C - 14];
 
 test('starter streets are editable tiles: a main street and a cross street meeting at the square', () => {
   const r = starterRoads();
-  assert.equal(Object.keys(r).length, 25); // 13 + 13 tiles, the crossing counted once
-  assert.equal(shapeOf(connMask(r, C, C)).kind, 'cross');
-  assert.equal(shapeOf(connMask(r, C - 4, C)).kind, 'straight');
-  assert.equal(shapeOf(connMask(r, C + 6, C)).kind, 'end');
+  assert.equal(Object.keys(r).length, 36); // a bar of 13 tiles and a stem of 23, the crossing counted once
+  assert.equal(shapeOf(connMask(r, C, C)).kind, 'tee', 'the bar meets the stem');
+  assert.equal(shapeOf(connMask(r, C, C - 4)).kind, 'straight');
+  assert.equal(shapeOf(connMask(r, C + 6, C)).kind, 'straight', 'the stem runs east');
+  assert.equal(shapeOf(connMask(r, C + 23, C)).kind, 'end', 'the stem ends at the tunnel gate');
   assert.equal(shapeOf(connMask(r, C, C - 6)).kind, 'end');
+  assert.equal(shapeOf(connMask(r, C - 4, C)).kind, 'iso', 'there is no west arm');
   assert.equal(shapeOf(connMask(r, C + 3, C + 3)).kind, 'iso', 'the open land beside the streets is not a road');
 });
 
