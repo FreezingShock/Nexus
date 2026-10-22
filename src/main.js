@@ -70,6 +70,7 @@ const actions = {
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   },
   importPick() { $('importfile').click(); },
+  previewPostcard() { ui.previewPostcard(); },
   // Start over moves the town into the backup slot first, so Settings can restore it.
   reset() { saveBlocked = true; clearSave(); location.reload(); },
   restore() {

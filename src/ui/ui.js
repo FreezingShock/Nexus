@@ -102,6 +102,7 @@ export function createUi({ sim, scene, actions }) {
     onPick, onCancel,
     hud, postcard, toast: hud.toast,
     showPostcard: () => postcard.show(),
+    previewPostcard: () => { if (panels.settingsOpen()) panels.hideSettings(); postcard.preview(); },
     // Opens Settings if needed and asks a question inside it (import uses this).
     askConfirm: (opts) => { if (!panels.settingsOpen()) toggleSettings(); panels.askConfirm(opts); },
     frame(dt, t, alpha) {

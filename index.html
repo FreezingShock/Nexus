@@ -10,6 +10,7 @@
 <link rel="preload" href="vendor/fonts/capriola-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/ui.css">
+<link rel="stylesheet" href="css/postcard.css">
 <link rel="stylesheet" href="css/zoning.css">
 <link rel="stylesheet" href="css/placement.css">
 <link rel="stylesheet" href="css/roads.css">
@@ -91,17 +92,18 @@
 
   <div id="offline" class="modal" data-mo="fade" hidden>
     <div class="mail" id="mail" data-state="closed">
-      <div class="envelope" id="envelope">
+      <div class="envelope" id="envelope" role="button" tabindex="0" aria-label="Open the envelope">
         <div class="env-body"></div>
-        <svg class="env-lines" viewBox="0 0 560 360" preserveAspectRatio="none" aria-hidden="true"><path d="M2 358L240 190M558 358L320 190" fill="none" stroke="#2B2620" stroke-width="3" stroke-linecap="round"/></svg>
         <svg class="env-flap" viewBox="0 0 560 194" preserveAspectRatio="none" aria-hidden="true"><path d="M2 12Q2 2 12 2H548Q558 2 558 12L284 190Q280 192 276 190Z" fill="#D7B77E" stroke="#2B2620" stroke-width="3" stroke-linejoin="round"/></svg>
         <div class="seal"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path d="M3 15L15 4L27 15" fill="#FBF6EA" stroke="#2B2620" stroke-width="2.2" stroke-linejoin="round"/><rect x="6" y="15" width="18" height="12" fill="#FBF6EA" stroke="#2B2620" stroke-width="2.2"/></svg></div>
+        <span class="tape env-tape" aria-hidden="true"></span>
         <div class="env-addr"><b>For the mayor</b><i></i><i></i><span>From your town, with love</span></div>
         <div class="stampw"><div class="stamp"><canvas id="stamp1" width="140" height="160"></canvas><span>NEXUS</span></div><span class="pm-host"></span></div>
-        <button class="btn primary openbtn" id="openmail" style="height:56px;font-size:18px">Open the postcard</button>
+        <button class="btn primary openbtn" id="openmail" style="height:56px;font-size:18px" tabindex="-1">Open the postcard</button>
       </div>
       <article class="postcard" id="postcard" aria-labelledby="pctitle">
-        <div class="pc-photo"><figure class="photo"><canvas id="snap" width="480" height="360" role="img" aria-label="Snapshot of your town"></canvas><figcaption id="photocap">Our town this evening</figcaption></figure></div>
+        <span class="tape sage pc-tape" aria-hidden="true"></span>
+        <div class="pc-photo"><figure class="photo"><span class="tape t1" aria-hidden="true"></span><span class="tape rose t2" aria-hidden="true"></span><canvas id="snap" width="480" height="360" role="img" aria-label="Snapshot of your town"></canvas><figcaption id="photocap">Our town this evening</figcaption></figure></div>
         <div class="pc-text">
           <div class="pc-head"><h2 class="h-disp" id="pctitle">Welcome<br>back</h2><div class="stampw"><div class="stamp"><canvas id="stamp2" width="140" height="160"></canvas><span>NEXUS</span></div><span class="pm-host"></span></div></div>
           <p class="pc-msg" id="pcmsg"></p>
@@ -113,7 +115,7 @@
             <div><span class="badge" style="background:#E3A08E"><svg width="24" height="24" viewBox="0 0 26 26" aria-hidden="true"><rect x="3" y="7" width="20" height="13" rx="2" fill="#C98A6E" stroke="#2B2620" stroke-width="2"/><path d="M3 13.5H23M11 7V13.5M17 13.5V20" stroke="#2B2620" stroke-width="1.6" fill="none"/></svg></span><span><b id="gain-parts">+0</b><small>Parts</small></span></div>
           </div>
           <p class="ps">P.S. Nothing broke and nothing was lost. Income eases off after 4 hours away, up to 24 hours.</p>
-          <button class="btn primary" id="collect" style="height:54px;font-size:18px">Collect and continue</button>
+          <button class="btn primary collect" id="collect"><span>Collect and continue</span><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11H17M12 5.5L17.5 11L12 16.5"/></svg></button>
         </div>
       </article>
     </div>
