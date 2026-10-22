@@ -30,7 +30,7 @@ export function createHud({ sim, send, onSettings, calendar }) {
   $('settingsbtn').onclick = onSettings;
 
   // ---- town plaque: rename inline, pick a badge
-  const nameBtn = $('townname'), nameIn = $('townedit'), badge = $('townbadge'), pick = $('townpick');
+  const plaque = $('townplaque'), nameBtn = $('townname'), nameIn = $('townedit'), badge = $('townbadge'), pick = $('townpick');
   const pops = { town: $('townpop'), coins: $('coinspop'), parts: $('partspop'), renewal: $('renpop') };
   const lastPop = {};
   let editing = false, pickOpen = false, lastTown = '';
@@ -46,6 +46,10 @@ export function createHud({ sim, send, onSettings, calendar }) {
     if (key === lastTown) return;
     lastTown = key;
     nameBtn.textContent = t.name;
+    // The plaque grows to fit the name; a longer one steps the type down so it still shows in full.
+    const len = [...t.name].length;
+    plaque.dataset.len = len > 18 ? 'long' : len > 12 ? 'mid' : 'short';
+    nameBtn.title = t.name;
     badge.innerHTML = townIconSvg(t.icon, 28);
     badge.style.background = townColor(t.color);
     badge.setAttribute('aria-label', `Town badge: ${ICON_LABEL[t.icon]}, ${COLOR_LABEL[t.color]}. Change it`);
@@ -56,6 +60,7 @@ export function createHud({ sim, send, onSettings, calendar }) {
   function startRename() {
     if (editing) return;
     editing = true;
+    plaque.style.width = plaque.offsetWidth + 'px'; // the plaque holds its width while the field is open
     nameIn.value = s.town.name;
     nameBtn.hidden = true; nameIn.hidden = false;
     nameIn.focus(); nameIn.select();
@@ -64,6 +69,7 @@ export function createHud({ sim, send, onSettings, calendar }) {
   function endRename(keep) {
     if (!editing) return;
     editing = false;
+    plaque.style.width = '';
     const name = keep ? cleanName(nameIn.value) : null;
     nameIn.hidden = true; nameBtn.hidden = false;
     if (name && name !== s.town.name) send({ type: 'renameTown', name });

@@ -160,7 +160,7 @@ button:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .fallback{background:var(--haze)}
 
-/* Floating cards never overlap. The header sets --hud-bottom. The left column (Goals, then Happiness) stacks,
+/* Floating cards never overlap. The header sets --hud-bottom. The left column (Goals) stacks,
    and the right card and the flyout keep to their own sides of the screen. */
 :root{--side:340px}
 @media (max-width:1180px){:root{--side:300px}}

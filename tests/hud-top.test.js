@@ -181,15 +181,34 @@ test('the town card never includes the town name, so saved text stays out of the
 test('the top row has every plaque, its hover card and the badge picker, and the stylesheet is linked', () => {
   const html = read('index.html');
   for (const id of ['townplaque', 'townname', 'townedit', 'townbadge', 'townpop', 'townpick', 'coinschip', 'coinspop',
-    'partschip', 'partspop', 'renchip', 'renpop', 'demandw', 'demandrows', 'demandpop', 'coins', 'parts', 'rate', 'prate', 'renewal', 'renewalbar']) {
+    'partschip', 'partspop', 'renchip', 'renpop', 'hpchip', 'hppop', 'hp-panel', 'hppct', 'hpbar', 'demandw', 'demandrows', 'demandpop', 'coins', 'parts', 'rate', 'prate', 'renewal', 'renewalbar']) {
     assert.match(html, new RegExp('id="' + id + '"'), id);
   }
   assert.match(html, /<link rel="stylesheet" href="css\/hud\.css">/);
   assert.match(read('css/hud.css'), /\.pop\{/);
-  assert.match(read('css/hud.css'), /\.chip\.res\{width:184px\}/, 'fixed plaque widths keep the row still');
+  assert.match(read('css/hud.css'), /\.chip\.res\{width:176px\}/, 'fixed plaque widths keep the row still');
 });
 
 test('the old plaque tips are gone from the tooltip list, so there is one card per plaque', () => {
   const hovers = read('src/ui/hovers.js');
   assert.doesNotMatch(hovers, /'#coins'|'#parts'|'#renewal'/);
+});
+
+test('the town plaque grows to fit its name and steps the type down for a long one', () => {
+  const css = read('css/hud.css');
+  assert.match(css, /\.brand\{width:fit-content;min-width:232px;max-width:\d+px/);
+  assert.match(css, /\.brand\[data-len="long"\] \.townnamebtn\{font-size:\d+px\}/);
+  assert.match(read('src/ui/hud.js'), /plaque\.dataset\.len/);
+});
+
+test('Happiness is a plaque in the top bar with its panel under it, not a card in the left column', () => {
+  const html = read('index.html');
+  const chips = html.slice(html.indexOf('<div class="chips">'), html.indexOf('<div class="ctrl card">'));
+  assert.match(chips, /id="hpchip"/);
+  assert.match(chips, /id="hp-panel"/);
+  assert.ok(chips.indexOf('id="hpchip"') < chips.indexOf('id="demandw"'), 'Happiness sits before Demand');
+  const mod = read('src/ui/modules/happiness.js');
+  assert.doesNotMatch(mod, /leftcol/);
+  assert.match(mod, /\$\('hpchip'\)/);
+  assert.doesNotMatch(read('css/happiness.css'), /#happiness-card/);
 });
