@@ -2,18 +2,22 @@
    Every plaque has one height and a fixed width, so a number that grows never moves its neighbours. Loaded last. */
 :root{--plaque-h:74px}
 
-/* plaques: same height, a lift on hover, a press on click */
+/* The header is its own stacking layer, so its hover cards sit above the left column and the other cards. */
+.top{z-index:40}
+
+/* plaques: same height, a lift on hover, a press on click. Keyboard focus (not a click) lifts one too. */
 .plaque{transition:transform .12s ease,box-shadow .12s ease}
-.plaque:hover,.plaque:focus-within{transform:translateY(-2px);box-shadow:0 7px 0 var(--ink),0 18px 30px rgba(43,38,32,.24)}
+.plaque:hover,.plaque:focus-visible{transform:translateY(-2px);box-shadow:0 7px 0 var(--ink),0 18px 30px rgba(43,38,32,.24)}
 .plaque:active{transform:translateY(2px);box-shadow:0 2px 0 var(--ink),0 6px 12px rgba(43,38,32,.2)}
 .plaque:focus-visible{outline:3px solid var(--sky);outline-offset:4px}
 .brand,.chip{height:var(--plaque-h);box-sizing:border-box}
 .brand{width:232px;padding:8px 16px 8px 10px;gap:10px;font-size:28px;flex:0 0 auto;transform:rotate(-1.4deg)}
-.brand.plaque:hover,.brand.plaque:focus-within{transform:translateY(-2px) rotate(-1.4deg)}
+.brand.plaque:hover,.brand.plaque:focus-visible{transform:translateY(-2px) rotate(-1.4deg)}
 .brand.plaque:active{transform:translateY(2px) rotate(-1.4deg)}
 .chip{min-width:0;flex:0 0 auto;padding:9px 16px 9px 10px}
 .chip.res{width:184px}
 .chip.ren{width:220px}
+.chip.ren b{font-size:19px}
 .chip.demand{width:240px;height:var(--plaque-h)}
 .chip .cval{min-width:0;flex:1 1 auto;display:block}
 .chip .cval b{white-space:nowrap;overflow:hidden}
@@ -28,14 +32,16 @@
 .townbadge svg{display:block}
 .townname{min-width:0;flex:1 1 auto}
 .townnamebtn{display:block;width:100%;margin:0;padding:2px 6px;border:0;border-radius:10px;background:none;font-family:var(--display);font-weight:800;font-size:28px;font-variation-settings:"SOFT" 100,"WONK" 1;line-height:1.15;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
-.townnamebtn:hover{background:rgba(43,38,32,.07)}
+.townnamebtn,.townnamebtn:hover,.townnamebtn:focus{background:transparent}
+.townnamebtn:hover{text-decoration:underline dotted 2px rgba(43,38,32,.4);text-underline-offset:5px}
 .townedit{display:block;width:100%;box-sizing:border-box;margin:0;padding:2px 8px;border:2px solid var(--ink);border-radius:10px;background:var(--paper);font-family:var(--display);font-weight:800;font-size:24px;font-variation-settings:"SOFT" 100,"WONK" 1;color:var(--ink)}
 .townedit:focus{outline:3px solid var(--sky);outline-offset:2px}
 
 /* hover cards: paper cards under each plaque, shown on hover or keyboard focus */
 .pop{position:absolute;top:calc(100% + 14px);left:0;z-index:25;width:296px;max-width:calc(100vw - 32px);padding:14px 16px;box-sizing:border-box;font-size:14px;line-height:1.4;font-weight:600;color:var(--ink);text-align:left;white-space:normal;opacity:0;visibility:hidden;transform:translateY(-6px);transform-origin:top left;transition:opacity .15s ease,transform .15s ease,visibility 0s linear .15s;pointer-events:none;cursor:default}
 .pop.end{left:auto;right:0;transform-origin:top right}
-.plaque:hover>.pop,.plaque:focus-within>.pop,.plaque:focus-visible>.pop{opacity:1;visibility:visible;transform:none;transition-delay:.25s,.25s,0s}
+.plaque:hover>.pop,.plaque:focus-visible>.pop{opacity:1;visibility:visible;transform:none;transition-delay:.25s,.25s,0s}
+.pop:empty{display:none}
 .pop h3{margin:0 0 4px;font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:21px;line-height:1.1}
 .pc-lead{margin:0 0 10px;font-size:13.5px;color:var(--ink-soft);font-weight:600}
 .pc-lead b{color:var(--ink);font-variant-numeric:tabular-nums}
@@ -56,6 +62,7 @@
 .dr em{font-style:normal;font-variant-numeric:tabular-nums}
 .dr small{display:block;margin-top:2px;font-size:12.5px;color:var(--ink-soft);font-weight:600}
 
+/* the town name shows no box until it is hovered or focused */
 /* the badge picker: eight icons and six colours under the town plaque */
 .townpick{position:absolute;top:calc(var(--hud-bottom,108px) + 12px);left:var(--gutter);z-index:30;width:276px;max-width:calc(100vw - 32px);padding:14px 14px 16px;box-sizing:border-box}
 .townpick h3{margin:0 0 10px;font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:21px;line-height:1.1}
