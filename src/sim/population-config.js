@@ -12,7 +12,7 @@ export const POP = {
 
 // Daily routines (src/sim/schedule.js). Hours are on the town clock, 0 to 24. Every person gets their own times from a hash of their index.
 export const ROUTINE = {
-  driveShare: 0.5,    // share of residents who drive (nate's pick pending: a third, a half or two thirds)
+  driveShare: 1 / 3,  // share of residents who drive (nate chose a third, 2026-10-22)
   workerShare: 0.7,   // of drivers: out in the morning, home in the evening. The rest run an errand
   amFrom: 6.5, amTo: 9, pmFrom: 16, pmTo: 18.5, // the morning and evening rush, per person within these
   errandFrom: 9.5, errandTo: 15, errand2Share: 0.25,
