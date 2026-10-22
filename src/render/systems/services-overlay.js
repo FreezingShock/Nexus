@@ -35,7 +35,7 @@ vec4 over(vec4 base, vec4 s){
   return vec4(c, a);
 }
 void main(){
-  vec2 t = (vW.xz + 97.5) / 3.0;
+  vec2 t = (vW.xz + ${(GRID_HALF * TILE + TILE / 2).toFixed(1)}) / ${TILE.toFixed(1)};
   vec2 id = floor(t), f = fract(t);
   if (id.x < 0.0 || id.y < 0.0 || id.x >= N || id.y >= N) discard;
   vec4 d = texture2D(uTiles, (id + 0.5) / N);

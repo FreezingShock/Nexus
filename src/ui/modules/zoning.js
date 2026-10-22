@@ -1,6 +1,6 @@
 // The Zones tool: pick a zone (or the eraser), drag a rectangle on the grid, release to paint.
 // Reads sim state, sends paintZone / clearZone, and drives the tileview render system for the grid and the preview.
-import { inBounds, worldToTile } from '../../world/grid.js';
+import { GRID_N, inBounds, worldToTile } from '../../world/grid.js';
 import { demandCard } from '../hud-detail.js';
 import { ZONE_DEFS } from '../../sim/zones.js';
 import { $, fmt } from '../format.js';
@@ -25,7 +25,7 @@ export default {
     let active = false, brush = 1, drag = null, hoverTile = null, last = null, flashed = false, acc = 0;
 
     const def = () => ZONE_DEFS[brush];
-    const clampTile = (t) => [Math.max(0, Math.min(63, t[0])), Math.max(0, Math.min(63, t[1]))];
+    const clampTile = (t) => [Math.max(0, Math.min(GRID_N - 1, t[0])), Math.max(0, Math.min(GRID_N - 1, t[1]))];
     function tileAt(e) {
       const p = scene.ground(e.clientX, e.clientY);
       if (!p) return null;

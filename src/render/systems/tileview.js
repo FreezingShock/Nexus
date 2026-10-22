@@ -7,7 +7,7 @@
 //   hover(tile | null, zone)          one-tile brush under the cursor
 //   clearPreview(), flash()           flash() glows the last preview as it commits
 import * as THREE from '../../../vendor/three/three.module.min.js';
-import { GRID_N, rectTiles, tileIndex, inBounds } from '../../world/grid.js';
+import { GRID_N, GRID_HALF, TILE, rectTiles, tileIndex, inBounds } from '../../world/grid.js';
 import { ZONE_DEFS, ROAD_REACH } from '../../sim/zones.js';
 import { groundPlaneGeometry } from '../ground.js';
 
@@ -38,7 +38,7 @@ vec4 over(vec4 base, vec4 s){
   return vec4(c, a);
 }
 void main(){
-  vec2 t = (vW.xz + 97.5) / 3.0;
+  vec2 t = (vW.xz + ${(GRID_HALF * TILE + TILE / 2).toFixed(1)}) / ${TILE.toFixed(1)};
   vec2 id = floor(t), f = fract(t);
   if (id.x < 0.0 || id.y < 0.0 || id.x >= N || id.y >= N) discard;
   vec4 d = tile(id);
