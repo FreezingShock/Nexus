@@ -6,6 +6,9 @@ import { AWNINGS, CROPS } from '../../world/palettes.js';
 import { LANG, modelById } from '../../world/models.js';
 import { createKit, decorate, finishSites, hipGeo, prismGeo, C } from './kit.js';
 
+// Blends two 0xRRGGBB colours: t of the way from a to b.
+const mixHex = (a, b, t) => new THREE.Color(a).lerp(new THREE.Color(b), t).getHex();
+
 const { FLOOR_H: FH, PLINTH } = LANG;
 const awn = (k, i = 0) => AWNINGS[(Math.floor(k.t[5] * AWNINGS.length) + i) % AWNINGS.length];
 const units = (k) => Math.max(1, k.d.cw);
@@ -119,7 +122,7 @@ const B = {
     k.hipRoof(clampRise(Math.min(k.w, k.dep), 1.3, 1.9, 0.38), k.P.roof);
     // lantern roof: the glass box that lets light into the hall
     const lh = k.top + k.roof.rise * 0.75, lw = Math.min(k.w, k.dep) * 0.32;
-    k.box(lw, 0.55, lw, 0, lh, 0, C.cream);
+    k.box(lw, 0.55, lw, 0, lh, 0, k.P.wallHex);
     k.box(lw * 0.8, 0.3, lw + 0.02, 0, lh + 0.12, 0, C.glass, { edge: false });
     k.part(new THREE.ConeGeometry(lw * 0.85, 0.5, 4).rotateY(Math.PI / 4).translate(0, 0.25, 0), k.P.roof, 0, lh + 0.55, 0);
     // stalls along the front, each under its own striped awning
@@ -189,7 +192,7 @@ const B = {
     k.gableRoof(clampRise(k.dep, 1.0, 1.5, 0.4), 'x');
     // bell tower on the ridge
     const tx = k.w * 0.12, ty = k.top + k.roof.rise * 0.8;
-    k.box(0.9, 1.1, 0.9, tx, ty, 0, C.cream);
+    k.box(0.9, 1.1, 0.9, tx, ty, 0, k.P.wallHex);
     k.box(0.5, 0.4, 0.06, tx, ty + 0.4, 0.46, C.glass, { edge: false });
     k.spire(0.75, 0.9, tx, ty + 1.1, 0, C.slate);
     // a small yard fence line
@@ -200,7 +203,7 @@ const B = {
 
   'fire-station'(k) {
     k.body();
-    k.hipRoof(clampRise(Math.min(k.w, k.dep), 1.0, 1.4, 0.4), C.terracotta);
+    k.hipRoof(clampRise(Math.min(k.w, k.dep), 1.0, 1.4, 0.4), k.P.roof);
     const n = Math.max(1, Math.round(k.w / 2.2));
     for (let i = 0; i < n; i++) {
       const x = -k.w / 2 + (i + 0.5) * (k.w / n) + (n === 1 ? k.w * 0.18 : 0);
@@ -248,8 +251,8 @@ const B = {
     k.body(); 
     k.gableRoof(clampRise(k.w, 1.4, 1.9, 0.5), 'z');
     // west tower with a spire; it reaches for the sky
-    k.box(tw, th, tw, 0, PLINTH, tz, C.cream);
-    k.spire(tw * 0.8, 3.6, 0, PLINTH + th, tz, C.terracotta);
+    k.box(tw, th, tw, 0, PLINTH, tz, k.P.wallHex);
+    k.spire(tw * 0.8, 3.6, 0, PLINTH + th, tz, k.P.roof);
     k.box(0.06, 0.55, 0.06, 0, PLINTH + th + 3.6, tz, C.gold, { edge: false });
     k.box(0.3, 0.06, 0.06, 0, PLINTH + th + 3.95, tz, C.gold, { edge: false });
     k.disc(0.5, 0, k.top + 1.4, tz + tw / 2 + 0.02, C.glass, { thick: 0.1 });
@@ -322,14 +325,14 @@ const B = {
     if (right > 0.3) k.hedge(right, ex - right / 2, hz);
     // farmhouse
     const hw = Math.min(2.2, w * 0.4), hd = YARD - 0.9, hzc = dep / 2 - 0.5 - hd / 2;
-    k.box(hw, 1.1, hd, hx, base, hzc, C.cream);
+    k.box(hw, 1.1, hd, hx, base, hzc, k.P.wallHex);          // the farmhouse wears the wall paint
     k.part(hipGeo(hw + 0.3, hd + 0.3, 0.8), k.P.roof, hx, base + 1.1, hzc);
     k.box(0.45, 0.7, 0.1, hx, base, hzc + hd / 2 + 0.04, k.P.accent);
     for (const sx of [-1, 1]) k.box(0.4, 0.34, 0.06, hx + sx * (hw * 0.32), base + 0.5, hzc + hd / 2 + 0.03, C.glass, { edge: false });
     k.box(0.32, 0.6, 0.32, hx + hw * 0.28, base + 1.1, hzc - hd * 0.1, C.brick);
     // barn on the other side
     const bwid = Math.min(1.7, w * 0.3);
-    k.box(bwid, 1.2, hd, bx, base, hzc, C.terracotta);
+    k.box(bwid, 1.2, hd, bx, base, hzc, mixHex(k.P.wallHex, C.terracotta, 0.55)); // the barn: the wall colour leaning red
     k.part(prismGeo([[-bwid / 2 - 0.1, 0], [bwid / 2 + 0.1, 0], [0, 0.7]], hd + 0.2), k.P.roof, bx, base + 1.2, hzc);
     k.box(0.8, 0.85, 0.08, bx, base, hzc + hd / 2 + 0.04, C.wood);
     // level details

@@ -31,12 +31,13 @@ export default {
     const m = new THREE.Matrix4();
 
     const roadAt = (gx, gz) => grid.roadAt(gx, gz) !== 0;
-    const keyOf = (l) => l[0] + ':' + l[1] + ':' + l[2] + ':' + grid.zone[l[0]];
+    let paintSig = '', townPaint = null; // the town-wide paint grown lots wear (state.townPaint), part of every lot's cache key
+    const keyOf = (l) => l[0] + ':' + l[1] + ':' + l[2] + ':' + grid.zone[l[0]] + paintSig;
     function entryFor(l) {
       const key = keyOf(l);
       let e = cache.get(key);
       if (!e) {
-        const b = lotDescription(grid.zone[l[0]], l[1], l[2], l[0], roadAt);
+        const b = lotDescription(grid.zone[l[0]], l[1], l[2], l[0], roadAt, townPaint);
         const parts = makeParts(b);
         const edges = parts.map((p) => (p.edge ? new THREE.EdgesGeometry(p.geo, 30).attributes.position.array : null));
         const world = worldMatrix(b);
@@ -122,9 +123,12 @@ export default {
     let liveLots = [];
     function sync(state) {
       const prev = current;
+      // A new town-wide paint changes every key at once: redraw quietly, without a pop on each lot.
+      const sig = state.townPaint ? JSON.stringify(state.townPaint) : '', repainted = sig !== paintSig;
+      paintSig = sig; townPaint = state.townPaint || null;
       current = new Map(state.lots.map((l) => [l[0], keyOf(l)]));
       liveLots = state.lots;
-      if (!first) {
+      if (!first && !repainted) {
         for (const l of state.lots) {
           const was = prev.get(l[0]), key = current.get(l[0]);
           if (was !== key) startPop(l, !was);

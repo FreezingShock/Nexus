@@ -5,7 +5,7 @@ import { makeRng } from './rng.js';
 import { TILE, GRID_HALF } from './grid.js';
 import { heightAt } from './terrain.js';
 import { BALANCE } from '../sim/balance.js';
-import { PAL, ROOFS } from './palettes.js';
+import { PAL, ROOFS, TRIMS } from './palettes.js';
 
 export const LANG = {
   FLOOR_H: 1.1,     // one storey, world units
@@ -165,5 +165,6 @@ export function describe(rec, level = 1) {
     rotY: rot * Math.PI / 2,
     pal: PAL[rec.pal] ? rec.pal : PAL_KEYS[Math.floor(t[1] * 4)],
     roof: ROOFS[rec.roof] ? rec.roof : null,
+    trim: TRIMS[rec.trim] ? rec.trim : null,
   };
 }

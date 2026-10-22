@@ -6,7 +6,7 @@
 import { $ } from '../format.js';
 import { topRight } from '../slot.js';
 
-const LABELS = { night: 'Time of day', achvbtn: 'Milestones', goalsbtn: 'Goals', keysbtn: 'Shortcuts', settingsbtn: 'Settings' };
+const LABELS = { night: 'Time of day', achvbtn: 'Milestones', paintbtn: 'Paint town', goalsbtn: 'Goals', keysbtn: 'Shortcuts', settingsbtn: 'Settings' };
 
 export default {
   id: 'menu',

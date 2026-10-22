@@ -3,7 +3,7 @@
 // Every helper takes a position whose y is the BOTTOM of the part. Colors come from one small palette (C) plus
 // the district palette (k.P), and ride on vertex colors so plain parts share a single material.
 import * as THREE from '../../../vendor/three/three.module.min.js';
-import { PAL, ROOFS, AWNINGS } from '../../world/palettes.js';
+import { PAL, ROOFS, TRIMS, AWNINGS } from '../../world/palettes.js';
 import { LANG } from '../../world/models.js';
 import { toon } from '../materials.js';
 import { scaleUV, splitGroups, xf } from '../geom.js';
@@ -79,7 +79,9 @@ const dome = (r) => new THREE.SphereGeometry(r, 10, 5, 0, Math.PI * 2, 0, Math.P
 
 // Starts a model: description in, helper object out. `k.parts` is what the renderer merges.
 export function createKit(d) {
-  const P = d.roof ? { ...PAL[d.pal], roof: ROOFS[d.roof].hex } : PAL[d.pal], h = d.floors * FH, parts = [];
+  const P = { ...PAL[d.pal], wallHex: parseInt(PAL[d.pal].wall.slice(1), 16) }, h = d.floors * FH, parts = [];
+  if (d.roof) P.roof = ROOFS[d.roof].hex;     // a repaint wins over the scheme's own roof and trim
+  if (d.trim) P.accent = TRIMS[d.trim].hex;
   const bx = Math.max(1, Math.round(d.w / BAY)), bz = Math.max(1, Math.round(d.d / BAY));
   const bayXs = [];   // x of each oriel, so trim can leave its column alone
   // Where the town can show life, in the building's own frame (see render/life). Recorded as the builder places things,
@@ -111,7 +113,7 @@ export function createKit(d) {
       const hh = floors * FH, geo = new THREE.BoxGeometry(w, hh, dd);
       const nx = Math.max(1, Math.round(w / BAY)), nz = Math.max(1, Math.round(dd / BAY));
       scaleUV(geo, 0, 8, nz, floors); scaleUV(geo, 16, 8, nx, floors);
-      parts.push({ geo, splits: splitGroups(geo), mat: toon(roofColor), color: new THREE.Color(roofColor), facadeMat: wallStyle(d.pal, style), local: xf(x, y0 + hh / 2, z), edge: true, body: true });
+      parts.push({ geo, splits: splitGroups(geo), mat: toon(roofColor), color: new THREE.Color(roofColor), facadeMat: wallStyle(d.pal, style, d.trim), local: xf(x, y0 + hh / 2, z), edge: true, body: true });
       sites.bodies.push({ x, z, y0, w, d: dd, floors, style });
       return geo;
     },

@@ -13,6 +13,7 @@ import menu from './menu.js';
 import milestones from './milestones.js';
 import notes from './notes.js';
 import onboarding from './onboarding.js';
+import paintTown from './paint-town.js';
 import placement from './placement.js';
 import population from './population.js';
 import progress from './progress.js';
@@ -36,6 +37,7 @@ export const uiModules = [
   milestones,
   notes,
   onboarding,
+  paintTown,
   placement,
   population,
   progress,
