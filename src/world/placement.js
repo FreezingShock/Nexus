@@ -133,4 +133,22 @@ export function frontRoadDistance(grid, gx, gz, fw, fd, rot, max = 12) {
   return Infinity;
 }
 
+// The lot of a free-size model dragged from tile `start` to tile `end`, for the turn `rot`: { gx, gz, fw, fd }. Pure.
+// The start tile is always a corner of the lot, so the edge you began on stays where you pressed and the lot grows away
+// from it in the drag direction. Where the drag gives no direction (a click, or a drag along one axis only), the lot
+// grows away from a road beside the start tile, so a farm begun against a street never slides a tile off it.
+// A click is the smallest lot, laid out for the turn (its short side across, so a quarter turn swaps the sides); a drag
+// is grown to the smallest size and held to the largest.
+export function freeRect(grid, def, start, end, rot = 0) {
+  const f = def.free, lo = f.min[0], hi = f.min[1], click = start[0] === end[0] && start[1] === end[1];
+  const dx = Math.max(-(f.max - 1), Math.min(f.max - 1, end[0] - start[0])), dz = Math.max(-(f.max - 1), Math.min(f.max - 1, end[1] - start[1]));
+  const roadAt = (x, z) => inBounds(x, z) && grid.road[tileIndex(x, z)] !== 0;
+  const sx = dx !== 0 ? Math.sign(dx) : roadAt(start[0] + 1, start[1]) && !roadAt(start[0] - 1, start[1]) ? -1 : 1;
+  const sz = dz !== 0 ? Math.sign(dz) : roadAt(start[0], start[1] + 1) && !roadAt(start[0], start[1] - 1) ? -1 : 1;
+  let w = Math.abs(dx) + 1, d = Math.abs(dz) + 1;
+  if (click) { w = rot % 2 ? hi : lo; d = rot % 2 ? lo : hi; }
+  else { w = Math.max(w, lo); d = Math.max(d, lo); if (Math.max(w, d) < hi) { if (w >= d) w = hi; else d = hi; } }
+  return { gx: sx > 0 ? start[0] : start[0] - w + 1, gz: sz > 0 ? start[1] : start[1] - d + 1, fw: w, fd: d };
+}
+
 export { GRID_N };
