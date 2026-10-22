@@ -9,6 +9,7 @@ import { DIRS, opposite } from '../world/roadnet.js';
 import { CAR_COLORS } from '../world/palettes.js';
 import { groundY, tileWorld } from './road-mesh.js';
 import { allocInstanceColors } from './geom.js';
+import { carsFor } from '../sim/population.js';
 import { Fleet, BUS, DRIVE, KERB, KERB_TIME, SHRINK_TIME, laneOf, laneOffset } from './vehicle-agents.js';
 
 const CAR_MAX = 500, CAR_TARGET = 300, CARS_PER_FLOW = 0.35; // cars on screen = volume on the network x this
@@ -164,13 +165,13 @@ export function buildCars(parent, grid, camera) {
 
   return {
     // dt is already scaled by game speed; paused passes 0. grid.traffic is read only.
-    update(dt, next, view = camera.view) {
+    update(dt, next, pop, live, view = camera.view) {
       if (next !== roads) { roads = next; tours = busTours(next); }
       const tr = grid.traffic || null;
       if (tr && roads) {
         fleet.step(dt, {
           roads, net: tr.net, fields: tr.fields, anchors: tr.anchors, total: tr.total, version: grid.loadRev, tours,
-          carWant: Math.min(CAR_TARGET * crowd, Math.round(tr.vehicles * CARS_PER_FLOW)), busWant: Math.min(BUS_MAX, tours.length),
+          carWant: Math.min(CAR_TARGET * crowd, Math.round(tr.vehicles * CARS_PER_FLOW), pop >= 0 ? carsFor(pop) : Infinity), arrivals: live ? live.perS : 0, busWant: Math.min(BUS_MAX, tours.length),
         });
       }
       draw(view);

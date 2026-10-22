@@ -12,6 +12,7 @@ import milestones from './milestones.js';
 import notes from './notes.js';
 import onboarding from './onboarding.js';
 import placement from './placement.js';
+import population from './population.js';
 import progress from './progress.js';
 import roadTool from './road-tool.js';
 import services from './services.js';
@@ -32,6 +33,7 @@ export const uiModules = [
   notes,
   onboarding,
   placement,
+  population,
   progress,
   roadTool,
   services,

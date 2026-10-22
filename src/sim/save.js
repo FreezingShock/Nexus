@@ -12,7 +12,7 @@ import { isSeed } from '../world/terrain.js';
 export const SAVE_KEY = 'nexus.save';
 export const BACKUP_KEY = 'nexus.save.backup';
 export const UNREADABLE_PREFIX = 'nexus.save.unreadable.';
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 export const MAX_FILE_CHARS = 5 * 1024 * 1024; // a town is a few hundred kilobytes; anything bigger is not one
 export const BACKUP_EVERY_MS = 10 * 60 * 1000; // the backup slot is refreshed at most this often while playing
 
@@ -59,12 +59,16 @@ const addAchievements = (s) => {
   const { milestones, ...rest } = s;
   return { ...rest, ach: { done: legacyDone(milestones), best: {}, counts: { goalsDone: 0, dailies: 0 } } };
 };
+// v7: population (state.pop). An older town has no head-count yet: -1 lets the population system start it at a share of
+// the capacity of its homes.
+const addPopulation = (s) => ({ ...s, pop: -1, popHist: [] });
 export const migrations = [
   (s) => ({ ...s, trees: seedTrees(getLayout()) }),
   resetToStarter,
   addTownBadge,
   regrid,
   addAchievements,
+  addPopulation,
 ];
 
 export function wrap(state, now) {
