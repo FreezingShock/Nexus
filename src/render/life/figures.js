@@ -150,3 +150,28 @@ export function tuftGeometry() {
     { geo: new THREE.ConeGeometry(0.1, 0.26, 5).translate(0, 0.13, 0), color: 0xffffff, tint: true },
   ]);
 }
+
+// A fire engine about 1.5 long, facing +x: a red body that takes the instance colour, a cab, a ladder on top, wheels.
+export function engineGeometry() {
+  return mergeParts([
+    { geo: box(1.0, 0.5, 0.58, -0.2, 0.38, 0), color: 0xffffff, tint: true },
+    { geo: box(0.42, 0.42, 0.58, 0.5, 0.34, 0), color: 0xffffff, tint: true },
+    { geo: box(0.02, 0.22, 0.48, 0.72, 0.46, 0), color: 0x7F98A6, tint: false },
+    { geo: box(1.0, 0.05, 0.14, -0.2, 0.7, 0.14), color: 0xFAF3E4, tint: false },
+    { geo: box(1.0, 0.05, 0.14, -0.2, 0.7, -0.14), color: 0xFAF3E4, tint: false },
+    { geo: box(0.1, 0.1, 0.1, 0.5, 0.58, 0), color: 0xE6BC62, tint: false },
+    { geo: cylZ(0.13, 0.08, 0.5, 0.13, 0.31), color: 0x2B2620, tint: false },
+    { geo: cylZ(0.13, 0.08, 0.5, 0.13, -0.31), color: 0x2B2620, tint: false },
+    { geo: cylZ(0.13, 0.08, -0.45, 0.13, 0.31), color: 0x2B2620, tint: false },
+    { geo: cylZ(0.13, 0.08, -0.45, 0.13, -0.31), color: 0x2B2620, tint: false },
+  ]);
+}
+
+// A swing hanging from its bar, pivot at the top (y = 0): two ropes and a seat 0.6 below.
+export function swingGeometry() {
+  return mergeParts([
+    { geo: box(0.015, 0.6, 0.015, -0.1, -0.3, 0), color: 0x4D3B2B, tint: false },
+    { geo: box(0.015, 0.6, 0.015, 0.1, -0.3, 0), color: 0x4D3B2B, tint: false },
+    { geo: box(0.28, 0.05, 0.18, 0, -0.62, 0), color: 0x8A6A4F, tint: false },
+  ]);
+}

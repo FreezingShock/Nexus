@@ -16,7 +16,7 @@ import windows, { MAX_WINDOWS } from '../src/render/systems/life-windows.js';
 import smoke from '../src/render/systems/life-smoke.js';
 import lifeTown from '../src/render/systems/life-town.js';
 import { doorRoute, seatRoute } from '../src/render/life/routes.js';
-import { flowKind, visitRate, stackRate, vanInterval, cafeRate } from '../src/render/life/rules.js';
+import { flowKind, visitRate, stackRate, vanInterval, cafeRate, schoolRate, schoolKind, serviceRate, parkRate, swingBusy, engineInterval } from '../src/render/life/rules.js';
 
 const rec = (model, extra = {}) => ({ id: 'b1', model, gx: 10, gz: 10, fw: 1, fd: 1, rot: 0, seed: 12345, ...extra });
 
@@ -258,4 +258,46 @@ test('a farm records its beds, lane and gap, and its crops grow with the seasons
   assert.ok(summer.n > 50 && summer.big > summer.n * 0.5, 'ripe in summer: ' + JSON.stringify(summer));
   const winter = scale('winter', 1500);
   assert.equal(winter.big, 0, 'bare in winter');
+});
+
+test('civic life: school bursts at the bell, clinic visitors, swings and park strollers', () => {
+  assert.ok(schoolRate(7.8) > schoolRate(12) * 5 && schoolRate(15.3) > 0 && schoolRate(3) === 0);
+  assert.equal(schoolKind(8), 'arrive'); assert.equal(schoolKind(10.5), 'step'); assert.equal(schoolKind(15.5), 'leave');
+  assert.equal(serviceRate(3), 0); assert.ok(serviceRate(9) > 0);
+  assert.equal(parkRate(3), 0); assert.ok(parkRate(17) > parkRate(9));
+  assert.equal(swingBusy(1, 0, 3, 100, 'clear', 1), false, 'no swinging at 3 am');
+  assert.equal(swingBusy(1, 0, 16, 100, 'rain', 1), false, 'no swinging in the rain');
+  let busy = 0; for (let t = 0; t < 2000; t += 20) if (swingBusy(5, 0, 16, t, 'clear', 1)) busy++;
+  assert.ok(busy > 10 && busy < 90, 'some of the time: ' + busy + ' of 100');
+  assert.ok(engineInterval(12) < engineInterval(3));
+});
+
+test('playgrounds and fire stations record their sites, and the civic director runs a day', () => {
+  assert.equal(makeParts(describe(rec('playground'), 1)).sites.swings.length, 2);
+  assert.ok(makeParts(describe(rec('fire-station', { fw: 2, fd: 2 }), 1)).sites.doors.length >= 1);
+  const sim = createSim({ state: freshState(), layout: getLayout() });
+  sim.state.placed.push({ id: 'b2101', model: 'playground', gx: 60, gz: 60, fw: 1, fd: 2, rot: 0, seed: 5 });
+  sim.state.placed.push({ id: 'b2102', model: 'fire-station', gx: 64, gz: 60, fw: 2, fd: 2, rot: 0, seed: 6 });
+  sim.state.placed.push({ id: 'b2103', model: 'school', gx: 60, gz: 64, fw: 2, fd: 2, rot: 0, seed: 7 });
+  sim.state.placed.push({ id: 'b2104', model: 'green', gx: 64, gz: 64, fw: 2, fd: 2, rot: 0, seed: 8 });
+  const { world, town } = townFor(sim);
+  const sys = lifeTown.create({ THREE, world, layout: sim.layout, grid: sim.grid, camera: { view: { tx: 40, tz: 40, half: 46, zoom: 1 } }, scene: world, town, sys: () => null });
+  sys.quality({ effects: 1, crowd: 1 });
+  const named = (n) => world.children.find((o) => o.name === n);
+  const live = (mesh) => { const m = new THREE.Matrix4(), v = new THREE.Vector3(); let n = 0; for (let i = 0; i < mesh.count; i++) { mesh.getMatrixAt(i, m); if (v.setFromMatrixScale(m).x > 0.3) n++; } return n; };
+  let engines = 0, kidsOnSwings = 0, people = 0;
+  for (let hour = 7; hour < 20; hour += 0.01) {
+    sim.state.hour = hour; sim.state.season = 'summer'; sim.state.weatherKind = 'clear';
+    sys.frame(frameOf(sim, { t: hour * 400 }));
+    engines = Math.max(engines, live(named('engine')));
+    kidsOnSwings = Math.max(kidsOnSwings, live(named('swingkid')));
+    people = Math.max(people, named('folk').count);
+  }
+  sim.state.hour = 12;
+  for (let i = 0; i < 6000; i++) { sys.frame(frameOf(sim, { t: 5000 + i / 30 })); engines = Math.max(engines, live(named('engine'))); }
+  assert.ok(engines >= 1, 'the fire engine was called out');
+  assert.equal(named('swing').count, 2, 'two swings');
+  assert.ok(kidsOnSwings >= 1, 'a child gets on a swing');
+  assert.ok(people >= 3, 'people were out around the school and park');
+  assert.equal(named('engine').count, 1);
 });
