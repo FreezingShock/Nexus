@@ -14,7 +14,7 @@ function view(state, opts) {
   const season = opts.season === 'auto' ? realSeason : SEASONS.indexOf(opts.season);
   const hour = opts.timeLock === 'day' ? 12 : opts.timeLock === 'night' ? 0 : hourOf(state.clockS, dayS);
   const weather = opts.weather === 'auto' ? state.weatherRoll : opts.weather;
-  return { realSeason, season, hour, weather, year: yearOf(state.clockS, seasonS), seasonS };
+  return { realSeason, season, hour, routineHour: hourOf(state.clockS, dayS), weather, year: yearOf(state.clockS, seasonS), seasonS };
 }
 
 // Recomputes what the player sees, after the choices. Runs after every change to the clock, the weather or the choices.
@@ -23,11 +23,13 @@ function view(state, opts) {
 //   state.weather      'clear' | 'rain' | 'wind' | 'snow' (the sound layer's names; other kinds map to the nearest)
 //   state.weatherKind  the full kind: clear, cloudy, rain, snow, fog or leaves (what the visuals use)
 //   state.night        0 or 1
+//   state.routineHour  0 to 24, the true town clock: a time lock does not stop people keeping their routines
 export function refreshCalendar(ctx) {
   const { state, sim } = ctx;
   const v = view(state, sim.calendarOptions);
   const kind = WEATHER.includes(v.weather) ? v.weather : 'clear';
   state.hour = v.hour;
+  state.routineHour = v.routineHour;
   state.season = SEASONS[v.season];
   state.weatherKind = kind;
   state.weather = SOUND_WEATHER[kind];
@@ -64,7 +66,7 @@ export default {
     weatherSeed: 7,       // the LCG state for weather rolls
     snowYear: -1,         // the year the first-snow event last fired for
     // Derived, recomputed by refreshCalendar and never saved: what the player sees.
-    hour: 8, season: 'spring', weather: 'clear', weatherKind: 'clear', night: 0,
+    hour: 8, routineHour: 8, season: 'spring', weather: 'clear', weatherKind: 'clear', night: 0,
   }),
   sanitize(s, fresh) {
     const num = (x, d, lo = 0) => (Number.isFinite(x) ? Math.max(lo, x) : d);

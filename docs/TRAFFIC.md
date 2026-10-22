@@ -14,7 +14,7 @@ Traffic is derived from the roads and zoning on the shared grid (see GRID.md and
 ## Model
 
 - Traffic zones are 8 x 8 tiles, so the 96 x 96 grid has 144 zones. Each zone's trips start and end at its **anchor**: the road tile nearest the zone centre (or the nearest road in town when the zone has none).
-- Trips come from residents. A resident makes `1.6 / DAY_MIN` trips a game minute. `DAY_MIN = 24`: one town day is 24 game minutes. This is the main tuning knob, and it is a default to confirm with nate.
+- Trips come from the people who live in town (`state.pop`), spread over the zones in proportion to their homes. A resident makes `carTripsPerPerson() / DAY_MIN` car trips a game minute, from their routines (see [POPULATION.md](POPULATION.md#daily-routines)). `DAY_MIN = 24`: one town day is 24 game minutes. This is the main tuning knob.
 - Purposes split the trips: work 0.6 (to jobs), shops 0.25, services 0.1, other homes 0.05.
 - Gravity: a zone's trips to a destination are weighted by `attraction / (travel time + 1)^1.5`, and each origin's trips sum to its total.
 - Trips are one-way. The 1.6 figure counts every one-way trip.
@@ -46,9 +46,9 @@ Cars and buses are agents that drive the sim's routes lane by lane (`src/render/
 - **Slowing.** Cars slow for the congestion on their road (BPR travel time against free flow, the same numbers the commute uses), and for bends on the tile they are on and the next one.
 - **Lanes.** Lane 0 is the right-hand lane on every road type, so a car keeps its side of the road across tile types. Cars keep to the right: lane changes are not modelled yet, and cars never sweep across a road.
 - **Arrival.** A car stops in the middle of its destination tile, stands at the kerb for half a second, then shrinks away over 0.7 s. A bus drives its loop for ever.
-- **Spawning.** Cars spawn in proportion to the network's volume (target 300, cap 500, `0.35 x` the volume). Buses: one per loop, up to 16. A spawn attempt tries a few trips before giving up.
+- **Spawning.** The cars on screen are the residents out driving now (population routines): a car is spawned only for a resident who is out and not already in a car, and keeps that resident's model and colour. Cap 500, scaled by the Graphics crowd setting. Buses: one per loop, up to 16. A spawn attempt tries a few trips before giving up.
 - **Culling.** Vehicles outside a circle around the view centre are not written to the GPU; they still move, so traffic carries on when the camera turns.
-- **Models.** Three car models (hatchback, saloon, van) and one bus. Each is a body and a cabin, instanced, with ink edges in one dynamic line buffer. Colours come from the palette, one per vehicle. Draw calls: 9 for cars, 3 for buses, 2 for townsfolk.
+- **Models.** Six cars (hatchback, saloon, estate, city car, van, pickup) and one bus, built in `src/render/vehicle-models.js` from boxes and cylinders: a painted body (tinted per vehicle), a trim mesh with glass, wheels, lamps and load, and ink edges in one dynamic line buffer. Twelve paints. Draw calls: 21 for vehicles, 4 for townsfolk (coat, legs, head, hair).
 - **Cost.** The agent step is O(vehicles x 4): the tile occupancy list is the spatial hash, so neighbour checks never scan the whole fleet. On the shipped town a frame's car update takes about 0.16 ms in node (not on a phone).
 
 ## Not done yet

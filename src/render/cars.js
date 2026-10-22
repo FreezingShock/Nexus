@@ -1,84 +1,51 @@
 // Cars and buses, drawn. The movement is in vehicle-agents.js (pure logic, tested in node); this file poses each vehicle
-// on its lane and writes it into instanced meshes. Three car models and one bus model, each a body and a cabin
-// InstancedMesh plus one dynamic line buffer for the ink edges. Only vehicles on screen are written, so the GPU work
+// on its lane and writes it into instanced meshes. Six car models and one bus model, each a painted body and a trim mesh (glass, wheels, lamps),
+// both instanced, plus one dynamic line buffer per model for the ink edges. Only vehicles on screen are written, so the GPU work
 // follows what the player can see. Nothing here feeds back into the sim.
 import * as THREE from '../../vendor/three/three.module.min.js';
-import { toon, lineMat } from './materials.js';
+import { toon, toonUncached, lineMat } from './materials.js';
+import { CAR_SPECS, BUS_SPEC, buildVehicle } from './vehicle-models.js';
 import { GRID_N } from '../world/grid.js';
 import { DIRS, opposite } from '../world/roadnet.js';
-import { CAR_COLORS } from '../world/palettes.js';
 import { groundY, tileWorld } from './road-mesh.js';
 import { allocInstanceColors } from './geom.js';
-import { carsFor } from '../sim/population.js';
+import { drivingNow } from '../sim/schedule.js';
 import { Fleet, BUS, DRIVE, KERB, KERB_TIME, SHRINK_TIME, laneOf, laneOffset } from './vehicle-agents.js';
 
-const CAR_MAX = 500, CAR_TARGET = 300, CARS_PER_FLOW = 0.35; // cars on screen = volume on the network x this
+const CAR_MAX = 500; // hard cap on cars; the crowd setting scales how many of the residents out driving are drawn
 const BUS_MAX = 16, BUS_COLOURS = [0xD98C7A, 0xEBD9A0];
-const CABIN = 0xFAF3E4, HALF = 1.5;
-const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
+const HALF = 1.5;
+// Paint: warm pastels from the palette plus a few deeper tones, so a street has some variety without shouting.
+const PAINT = [0xE9C1B8, 0xBFD8C4, 0xEBD9A0, 0xCBC3DC, 0xD98C7A, 0xFAF3E4, 0x9DB37C, 0xC8694F, 0xD9A441, 0x8DBEDD, 0x7C8C9A, 0xA7856A];
+// How often (in town hours) the list of residents out driving is worked out again.
+const RECOUNT_H = 0.02;
 
-// Hatchback, saloon and van. Sizes in world units. The cabin tapers towards the top; the van's is nearly square.
-const MODELS = [
-  { bl: 1.3, bh: 0.42, bw: 0.8, by: 0.36, cl: 0.7, ch: 0.36, cw: 0.7, cx: -0.12, taper: 0.7 },
-  { bl: 1.62, bh: 0.4, bw: 0.82, by: 0.34, cl: 0.8, ch: 0.34, cw: 0.68, cx: -0.2, taper: 0.6 },
-  { bl: 1.5, bh: 0.64, bw: 0.84, by: 0.44, cl: 1.0, ch: 0.3, cw: 0.76, cx: 0.2, taper: 0.92 },
-];
-const BUS_MODEL = { bl: 2.3, bh: 0.85, bw: 1.05, by: 0.55, cl: 2.0, ch: 0.22, cw: 0.92, cx: 0, taper: 1 };
-
-// Shapes a box so its top is narrower by `k` (a windscreen slope), in place.
-function taper(geo, k) {
-  const p = geo.attributes.position;
-  for (let i = 0; i < p.count; i++) if (p.getY(i) > 0) p.setX(i, p.getX(i) * k);
-  p.needsUpdate = true;
-  return geo;
-}
-
-function modelGeometry(s) {
-  const body = new THREE.BoxGeometry(s.bl, s.bh, s.bw);
-  const cabin = taper(new THREE.BoxGeometry(s.cl, s.ch, s.cw), s.taper);
-  const bodyY = s.by, cabinY = s.by + s.bh / 2 + s.ch / 2 - 0.04; // the cabin sits on the body's roof
-  return { body, cabin, bodyY, cabinX: s.cx, cabinY };
-}
-
-// One model: instanced bodies and cabins, the ink edges as one line buffer, and the offsets that place them.
-function buildModel(parent, spec, cap, cabinColour) {
-  const g = modelGeometry(spec);
+// Six car bodies and the bus, from vehicle-models.js. Each model: painted bodies, trim (glass, wheels, lamps) and ink edges.
+function buildModel(parent, spec, cap) {
+  const g = buildVehicle(spec);
   const bodies = allocInstanceColors(new THREE.InstancedMesh(g.body, toon(0xffffff), cap));
-  const cabins = new THREE.InstancedMesh(g.cabin, toon(cabinColour), cap);
-  for (const m of [bodies, cabins]) { m.frustumCulled = false; m.castShadow = true; m.receiveShadow = true; m.count = 0; }
-
-  // Ink edges: template vertices with the part offsets baked in. Each vehicle transforms them on every write.
-  const tmpl = [];
-  const addEdges = (geo, x, y, z) => {
-    const p = new THREE.EdgesGeometry(geo, 30).attributes.position;
-    for (let i = 0; i < p.count; i++) tmpl.push(p.getX(i) + x, p.getY(i) + y, p.getZ(i) + z);
-  };
-  addEdges(g.body, 0, g.bodyY, 0);
-  addEdges(g.cabin, g.cabinX, g.cabinY, 0);
-  const verts = tmpl.length / 3;
+  const trim = new THREE.InstancedMesh(g.trim, toonUncached(0xffffff, { vertexColors: true }), cap);
+  for (const m of [bodies, trim]) { m.frustumCulled = false; m.castShadow = true; m.receiveShadow = true; m.count = 0; }
+  const tmpl = g.edges, verts = tmpl.length / 3;
   const lineGeo = new THREE.BufferGeometry();
   const lp = new Float32Array(tmpl.length * cap);
   lineGeo.setAttribute('position', new THREE.BufferAttribute(lp, 3));
   const lines = new THREE.LineSegments(lineGeo, lineMat);
   lines.frustumCulled = false;
   lineGeo.setDrawRange(0, 0);
-  parent.add(bodies, cabins, lines);
-
-  return {
-    bodies, cabins, lines, lineGeo, lp, tmpl, verts, n: 0,
-    bodyOff: new THREE.Matrix4().makeTranslation(0, g.bodyY, 0),
-    cabinOff: new THREE.Matrix4().makeTranslation(g.cabinX, g.cabinY, 0),
-  };
+  parent.add(bodies, trim, lines);
+  return { bodies, trim, lines, lineGeo, lp, tmpl: new Float32Array(tmpl), verts, n: 0 };
 }
 
 // Shared state every vehicle reads: the roads, the sim's traffic model (read only) and the view box for culling.
 export function buildCars(parent, grid, camera) {
   const fleet = new Fleet(7);
-  const models = MODELS.map((s) => buildModel(parent, s, CAR_MAX, CABIN));
-  const bus = buildModel(parent, BUS_MODEL, BUS_MAX, CABIN);
+  const models = CAR_SPECS.map((s) => buildModel(parent, s, CAR_MAX));
+  const bus = buildModel(parent, BUS_SPEC, BUS_MAX);
+  const persons = new Int32Array(CAR_MAX), seen = { hour: -1, n: -1, count: 0 };
   let crowd = 1; // graphics setting: scales the car target (CAR_MAX is the hard cap)
   const all = [...models, bus];
-  const m = new THREE.Matrix4(), local = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
   const pos = new THREE.Vector3(), sc = new THREE.Vector3(), v = new THREE.Vector3(), col = new THREE.Color();
   const pose = { x: 0, z: 0, heading: 0 };
   let roads = null, tours = [];
@@ -123,8 +90,8 @@ export function buildCars(parent, grid, camera) {
     pos.set(x, 0.1 + groundY(x, z), z);
     sc.set(s, s, s);
     m.compose(pos, q, sc);
-    M.bodies.setMatrixAt(i, local.copy(M.bodyOff).premultiply(m));
-    M.cabins.setMatrixAt(i, local.copy(M.cabinOff).premultiply(m));
+    M.bodies.setMatrixAt(i, m);
+    M.trim.setMatrixAt(i, m);
     M.bodies.setColorAt(i, col.setHex(colourHex));
     const { tmpl, verts, lp } = M;
     for (let k = 0; k < verts; k++) {
@@ -149,15 +116,15 @@ export function buildCars(parent, grid, camera) {
       if (s < 0.02) continue;
       poseOf(a);
       if (!inView(view, pose.x, pose.z)) continue;
-      const M = a.kind === BUS ? bus : models[a.type];
-      const colour = a.kind === BUS ? BUS_COLOURS[a.colour % BUS_COLOURS.length] : CAR_COLORS[a.colour % CAR_COLORS.length];
+      const M = a.kind === BUS ? bus : models[a.type % models.length];
+      const colour = a.kind === BUS ? BUS_COLOURS[a.colour % BUS_COLOURS.length] : PAINT[a.colour % PAINT.length];
       write(M, M.n++, s, colour);
     }
     for (const M of all) {
-      M.bodies.count = M.cabins.count = M.n;
+      M.bodies.count = M.trim.count = M.n;
       M.lineGeo.setDrawRange(0, M.verts * M.n);
       M.bodies.instanceMatrix.needsUpdate = true;
-      M.cabins.instanceMatrix.needsUpdate = true;
+      M.trim.instanceMatrix.needsUpdate = true;
       if (M.bodies.instanceColor) M.bodies.instanceColor.needsUpdate = true;
       M.lineGeo.attributes.position.needsUpdate = true;
     }
@@ -165,13 +132,22 @@ export function buildCars(parent, grid, camera) {
 
   return {
     // dt is already scaled by game speed; paused passes 0. grid.traffic is read only.
-    update(dt, next, pop, live, view = camera.view) {
+    // hour is the town clock (state.routineHour). The cars on screen are the residents whose drive window is open now.
+    update(dt, next, pop, live, hour, view = camera.view) {
       if (next !== roads) { roads = next; tours = busTours(next); }
       const tr = grid.traffic || null;
       if (tr && roads) {
+        // Who is out driving: worked out from the schedule when the clock or the headcount has moved, never saved.
+        const people = pop >= 0 && hour >= 0 ? Math.floor(pop) : -1;
+        if (people >= 0 && (people !== seen.n || Math.abs(hour - seen.hour) > RECOUNT_H || hour < seen.hour)) {
+          seen.n = people; seen.hour = hour; seen.count = drivingNow(people, hour, persons);
+        }
+        const resident = people >= 0;
         fleet.step(dt, {
           roads, net: tr.net, fields: tr.fields, anchors: tr.anchors, total: tr.total, version: grid.loadRev, tours,
-          carWant: Math.min(CAR_TARGET * crowd, Math.round(tr.vehicles * CARS_PER_FLOW), pop >= 0 ? carsFor(pop) : Infinity), arrivals: live ? live.perS : 0, busWant: Math.min(BUS_MAX, tours.length),
+          carWant: resident ? Math.min(Math.round(seen.count * crowd), CAR_MAX) : Math.min(300 * crowd, Math.round(tr.vehicles * 0.35)),
+          persons: resident ? persons : undefined, personN: resident ? seen.count : 0,
+          arrivals: live ? live.perS : 0, busWant: Math.min(BUS_MAX, tours.length),
         });
       }
       draw(view);

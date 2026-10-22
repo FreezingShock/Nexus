@@ -227,16 +227,16 @@ test('visual smoke: cars, buses and townsfolk run on the warmed sim without erro
   const folk = buildTownsfolk(world, sim.grid, camera);
   for (let f = 0; f < 60; f++) {
     sim.tick();
-    cars.update(1 / 30, sim.state.roads);
-    folk.update(1 / 30, sim.state.roads);
+    cars.update(1 / 30, sim.state.roads, sim.state.pop, sim.state.popLive, 17.5);
+    folk.update(1 / 30, sim.state.roads, sim.state.pop, sim.state.popLive, 17.5);
   }
-  assert.ok(cars.carCount() <= 300, 'cars stay within the target');
+  assert.ok(cars.carCount() <= Math.ceil(sim.state.pop * 0.25), 'cars are a small share of the residents');
   assert.ok(cars.busCount() <= 16);
   assert.ok(folk.count() <= 300);
   assert.ok(folk.count() > 0);
-  // draw calls: three car models (bodies, cabins, lines = 9), buses (3), townsfolk (2). Instancing keeps them flat.
+  // draw calls: six car models and a bus (body, trim, lines = 21), townsfolk (coat, legs, head, hair = 4). Instancing keeps them flat.
   const meshes = world.children.length;
-  assert.ok(meshes <= 14, 'a few instanced meshes, not one per vehicle');
+  assert.ok(meshes <= 26, 'a few instanced meshes, not one per vehicle');
 });
 
 test('the commute penalty and efficiency are saved: a reload restores them, and bad saved values are clamped', async () => {

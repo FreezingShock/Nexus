@@ -8,7 +8,7 @@ export default {
     const cars = buildCars(world, grid, camera);
     const folk = buildTownsfolk(world, grid, camera);
     return {
-      frame: (f) => { cars.update(f.simDt, f.state.roads, f.state.pop, f.state.popLive); folk.update(f.simDt, f.state.roads, f.state.pop, f.state.popLive); },
+      frame: (f) => { cars.update(f.simDt, f.state.roads, f.state.pop, f.state.popLive, f.state.routineHour); folk.update(f.simDt, f.state.roads, f.state.pop, f.state.popLive, f.state.routineHour); },
       count: cars.count,
       folk: folk.count,
       // Graphics settings: crowd size and vehicle ink edges.
