@@ -7,6 +7,7 @@ import commute from './commute.js';
 import districts from './districts.js';
 import frameStats from './frame-stats.js';
 import happiness from './happiness.js';
+import menu from './menu.js';
 import milestones from './milestones.js';
 import notes from './notes.js';
 import onboarding from './onboarding.js';
@@ -26,6 +27,7 @@ export const uiModules = [
   districts,
   frameStats,
   happiness,
+  menu,
   milestones,
   notes,
   onboarding,

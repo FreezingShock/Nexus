@@ -20,6 +20,7 @@ export function createHud({ sim, send, onSettings, calendar }) {
   $('speed').onclick = () => send({ type: 'cycleSpeed' });
   // Time of day: the sky follows the clock, and this button locks it to night, then day, then back to the cycle.
   const NEXT_LOCK = { auto: 'night', night: 'day', day: 'auto' }, LOCK_TEXT = { auto: 'Time of day: cycle', night: 'Time of day: night locked', day: 'Time of day: day locked' };
+  const LOCK_SHORT = { auto: 'Sky: cycling', night: 'Sky: night', day: 'Sky: day' };
   $('night').onclick = () => {
     if (!calendar) return;
     const lock = NEXT_LOCK[calendar.get().timeLock] || 'auto';
@@ -137,6 +138,7 @@ export function createHud({ sim, send, onSettings, calendar }) {
     const lock = calendar ? calendar.get().timeLock : 'auto';
     $('night').setAttribute('aria-pressed', String(lock !== 'auto'));
     $('night').setAttribute('aria-label', LOCK_TEXT[lock]);
+    $('night').dataset.label = LOCK_SHORT[lock]; // the menu tile's name
     $('rate').textContent = fmtRateCompact(sim.rate());
     $('prate').textContent = fmtRateCompact(sim.partsRate());
     paintTown();
