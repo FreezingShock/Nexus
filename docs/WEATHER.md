@@ -52,6 +52,14 @@ Default: a season is two in-game days (24 minutes at the default day length), so
 ## Render
 
 - `src/render/sky.js` eases the targets from `atmosphereTargets()` (hour, weather, season) so changes fade in.
+- `src/render/sky-look.js` turns the eased sky into the sky's colours: zenith, horizon (the fog colour from night.js),
+  cloud lit and shaded sides, the ink edge, the sun or moon, and how many stars show. Dawn is peach and lilac, dusk is
+  rose and violet, night is deep blue, overcast and rain grey the top and hide the stars, snow cools it, fog flattens it.
+- `src/render/systems/sky.js` draws the sky as one dome that follows the camera, so it shows past the edge of the land
+  and whenever the free camera looks up. Its shader holds the gradient, the sun or moon with a halo, procedural stars
+  (twinkling), and clouds painted on the dome: fbm noise, cel-shaded away from the sun, with a thin ink edge. The clouds
+  drift slowly and are not geometry. Graphics: Off draws no clouds, Light two octaves, Full four. The dome is one draw
+  call and is drawn after the opaque town, so the depth test skips it where the town is in front.
 - `src/render/night.js` sets the sun arc, dawn and dusk tints, cloud dimming and fog. The moon takes over after dark.
 - `src/render/season.js` patches every toon material: green surfaces take the season's foliage colour, broadleaf
   canopies blossom in spring, top-facing surfaces take snow, and wet ground darkens. The water is `still`.
