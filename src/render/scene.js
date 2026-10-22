@@ -2,7 +2,7 @@
 import * as THREE from '../../vendor/three/three.module.min.js';
 import { createCamera } from './camera.js';
 import { createLighting } from './night.js';
-import { buildTerrain, buildFarms } from './terrain.js';
+import { buildTerrain } from './terrain.js';
 import { buildStatic } from './props.js';
 import { ensureInstanceColors } from './geom.js';
 import { registryOf } from '../core/registry.js';
@@ -31,7 +31,6 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
   const camera = createCamera();
 
   buildTerrain(world);
-  buildFarms(world, layout.farms);
   buildStatic(world, layout);
   // Dust puffs come from the puffs system, which is created below: look it up when a building pops, not here.
   const town = createTown(world, { burst: (x, z, r, n) => byId.get('puffs')?.burst(x, z, r, n) });

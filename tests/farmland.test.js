@@ -1,39 +1,78 @@
-// Farmland: fields with crop rows and hedges, the crop data, and the farm's draw calls. The render side is run in node
-// with a stub canvas, so only the shape of the meshes is checked here; the look is checked on localhost.
+// Farms: a building the player places on flat ground. It claims its whole lot, pays like a workplace and starts nowhere.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createSim } from '../src/sim/sim.js';
+import { freshState } from '../src/sim/state.js';
 import { getLayout } from '../src/world/layout.js';
 import { CROPS } from '../src/world/palettes.js';
-import { BASE, createGrid } from '../src/world/grid.js';
-import { starterReserved } from '../src/world/starter.js';
-import { tileIndex, worldToTile } from '../src/world/grid.js';
+import { GRID_N, BASE, tileIndex } from '../src/world/grid.js';
+import { CATEGORIES, MODELS, describe, modelById, fitFootprint } from '../src/world/models.js';
+import { checkLot, lotTiles, problemText } from '../src/world/placement.js';
+import { buildParts, trianglesOf } from '../src/render/models/builders.js';
 
 const layout = getLayout();
+const mk = () => { const state = freshState(); state.coins = 1e7; return createSim({ state, layout }); };
+const def = modelById('farm');
 
-test('every field has a known crop and sits on farmland', () => {
-  const g = createGrid(layout);
-  assert.equal(layout.farms.length, 24);
-  for (const f of layout.farms) {
-    assert.ok(Number.isInteger(f.crop) && f.crop >= 0 && f.crop < CROPS.length, 'crop of a field');
-    const [gx, gz] = worldToTile(f.x, f.z);
-    assert.equal(g.baseAt(gx, gz), BASE.FARM, `field at ${f.x},${f.z} is farmland`);
-  }
+// The first spot (row by row) where a fw x fd farm passes every rule, or null.
+function findFarm(sim, fw, fd) {
+  for (let gz = 2; gz < GRID_N - 2; gz++) for (let gx = 2; gx < GRID_N - 2; gx++) if (checkLot(sim.grid, gx, gz, fw, fd, def).ok) return [gx, gz];
+  return null;
+}
+
+test('no farmland at spawn: the town starts with no field and no farm', () => {
+  const sim = mk();
+  assert.equal(layout.farms, undefined);
+  assert.equal(sim.placedRecords().filter((r) => r.model === 'farm').length, 0);
+  for (let i = 0; i < GRID_N * GRID_N; i++) assert.notEqual(sim.grid.base[i], BASE.FARM);
 });
 
-test('fields keep clear of the starter village', () => {
-  const reserved = starterReserved();
-  const g = createGrid(layout);
-  for (const f of layout.farms) {
-    const hx = (f.turned ? f.d : f.w) / 2 + 1, hz = (f.turned ? f.w : f.d) / 2 + 1;
-    for (let z = f.z - hz; z <= f.z + hz; z += 3) for (let x = f.x - hx; x <= f.x + hx; x += 3) {
-      const [gx, gz] = worldToTile(x, z);
-      assert.ok(!reserved.has(tileIndex(gx, gz)), 'a field tile is in the village');
-      assert.notEqual(g.baseAt(gx, gz), BASE.WATER, 'a field tile is in the river');
-    }
-  }
+test('Farms is its own build category with one model in three set sizes', () => {
+  assert.ok(CATEGORIES.some((c) => c.id === 'farm' && c.tool === 'build'));
+  assert.equal(def.cat, 'farm');
+  assert.deepEqual(def.foot, [[2, 3], [3, 4], [4, 4]]);
+  assert.ok(MODELS.filter((m) => m.cat === 'farm').length === 1);
+  assert.deepEqual(fitFootprint(def, 3, 4), { fw: 3, fd: 4, exact: true });
 });
 
-test('each crop has two colours, a ground and a row', () => {
+test('a farm claims every tile of its lot and a bigger farm pays more', () => {
+  const sim = mk(), small = findFarm(sim, 2, 3);
+  assert.ok(small, 'there is flat ground for a farm');
+  sim.dispatch({ type: 'place', model: 'farm', gx: small[0], gz: small[1], fw: 2, fd: 3, rot: 0 });
+  const rec = sim.placedRecords().find((r) => r.model === 'farm');
+  assert.ok(rec, 'farm placed');
+  for (const [x, z] of lotTiles(rec.gx, rec.gz, 2, 3)) assert.ok(sim.grid.lot[tileIndex(x, z)] >= 40000, 'tile is claimed');
+  const big = findFarm(sim, 4, 4);
+  assert.ok(big, 'there is flat ground for the biggest farm');
+  sim.dispatch({ type: 'place', model: 'farm', gx: big[0], gz: big[1], fw: 4, fd: 4, rot: 0 });
+  const [a, b] = sim.placedRecords().filter((r) => r.model === 'farm').map((r) => describe(r, 1));
+  assert.ok(a.floors >= 1 && b.floors > a.floors, 'a 4x4 farm has more plots than a 2x3');
+});
+
+test('a farm earns coins like any building', () => {
+  const sim = mk(), at = findFarm(sim, 3, 4), r0 = sim.rate();
+  sim.dispatch({ type: 'place', model: 'farm', gx: at[0], gz: at[1], fw: 3, fd: 4, rot: 0 });
+  assert.ok(sim.rate() > r0, 'income went up: ' + r0 + ' to ' + sim.rate());
+});
+
+test('a farm needs flat ground: slopes are turned away with a reason', () => {
+  const sim = mk();
+  let sloped = null;
+  for (let gz = 2; gz < GRID_N - 2 && !sloped; gz++) for (let gx = 2; gx < GRID_N - 2 && !sloped; gx++) {
+    const plain = checkLot(sim.grid, gx, gz, 2, 3);                       // open for any other building
+    if (plain.ok && !checkLot(sim.grid, gx, gz, 2, 3, def).ok) sloped = [gx, gz];
+  }
+  assert.ok(sloped, 'some open ground is too sloped for a farm');
+  const r = checkLot(sim.grid, sloped[0], sloped[1], 2, 3, def);
+  assert.equal(r.problem, 'slope');
+  assert.ok(problemText('slope').length > 0);
+  const c0 = sim.state.coins;
+  sim.dispatch({ type: 'place', model: 'farm', gx: sloped[0], gz: sloped[1], fw: 2, fd: 3, rot: 0 });
+  assert.equal(sim.placedRecords().filter((x) => x.model === 'farm').length, 0, 'nothing was built');
+  assert.equal(sim.state.coins, c0, 'and nothing was charged');
+});
+
+test('crop colours are valid hex pairs the farm builder can read', () => {
   for (const c of CROPS) {
     assert.match(c.base, /^#[0-9A-F]{6}$/i);
     assert.match(c.row, /^#[0-9A-F]{6}$/i);
@@ -41,21 +80,11 @@ test('each crop has two colours, a ground and a row', () => {
   }
 });
 
-// A stub canvas: enough for the textures the farm builds, so the meshes can be counted.
-function stubDocument() {
-  if (globalThis.document) return;
-  const ctx = { fillRect() {}, fillStyle: '' };
-  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ctx }) };
-}
-
-test('the whole farm is a handful of draw calls: four crops, two hedge meshes and one ink line set', async () => {
-  stubDocument();
-  const THREE = await import('../vendor/three/three.module.min.js');
-  const { buildFarms } = await import('../src/render/terrain.js');
-  const parent = new THREE.Group();
-  buildFarms(parent, layout.farms);
-  assert.ok(parent.children.length <= 7, 'meshes: ' + parent.children.length);
-  let triangles = 0;
-  for (const m of parent.children) if (m.geometry && m.geometry.index) triangles += m.geometry.index.count / 3;
-  assert.ok(triangles < 30000, 'triangles: ' + triangles);
+test('a farm builds at every size and level in a few parts, and the beds cover the field', () => {
+  for (const [fw, fd] of def.foot) for (let level = 1; level <= 5; level++) {
+    const d = describe({ id: 'b1500', model: 'farm', gx: 10, gz: 10, fw, fd }, level);
+    const parts = buildParts(d);
+    assert.ok(trianglesOf(parts) <= 650, `${fw}x${fd} L${level}`);
+    assert.ok(parts.length < 80, `parts at ${fw}x${fd} L${level}: ${parts.length}`);
+  }
 });

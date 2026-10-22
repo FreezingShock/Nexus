@@ -2,9 +2,9 @@
 // it reads the building's fixed traits (k.t), so the same seed always builds the same house.
 // Level details (window boxes, chimneys, dormers, bunting) come from decorate(), except where a model has its own.
 import * as THREE from '../../../vendor/three/three.module.min.js';
-import { AWNINGS } from '../../world/palettes.js';
+import { AWNINGS, CROPS } from '../../world/palettes.js';
 import { LANG, modelById } from '../../world/models.js';
-import { createKit, decorate, prismGeo, C } from './kit.js';
+import { createKit, decorate, hipGeo, prismGeo, C } from './kit.js';
 
 const { FLOOR_H: FH, PLINTH } = LANG;
 const awn = (k, i = 0) => AWNINGS[(Math.floor(k.t[5] * AWNINGS.length) + i) % AWNINGS.length];
@@ -268,6 +268,50 @@ const B = {
     for (const sx of [-0.2, 0.2]) k.box(0.28, 0.05, 0.18, sx, PLINTH + 0.6, bz, C.wood, { edge: false });
     k.box(0.4, 0.06, 1.0, 0.45, PLINTH + 0.45, 0.5 * k.dep / 2, C.gold, { rx: -0.45 });            // a little slide
     tree(k, ...at(k, -0.7, 0.7), 0.7);
+  },
+
+  // A farm fills its whole lot: tilled soil, a hedge round it with a gate, a farmhouse and a barn in the yard at the
+  // front and crop beds side by side behind them, edge to edge. Beds grow with the lot, so it never shows bare ground.
+  farm(k) {
+    const base = PLINTH + 0.06, w = k.w, dep = k.dep, hex = (c) => parseInt(c.slice(1), 16);
+    k.box(w, 0.06, dep, 0, PLINTH, 0, hex(CROPS[3].row), { edge: false });                  // soil under everything
+    // yard at the front, fields behind it
+    const yardD = Math.min(2.6, dep * 0.3), fx = w - 0.9, fz0 = -dep / 2 + 0.45, fz1 = dep / 2 - yardD - 0.1, fd = fz1 - fz0, fzc = (fz0 + fz1) / 2;
+    const n = Math.max(2, Math.min(8, Math.round(fx / 1.3))), bw = fx / n, side = k.t[4] < 0.5 ? -1 : 1, first = Math.floor(k.t[2] * 4);
+    for (let i = 0; i < n; i++) {
+      const c = CROPS[(first + i) % 3], x = -fx / 2 + (i + 0.5) * bw;                       // wheat, barley and greens in turn
+      k.box(bw - 0.05, 0.1, fd, x, base, fzc, hex(c.base));
+      if (bw > 1.0) k.box(0.14, 0.05, fd - 0.2, x, base + 0.1, fzc, hex(c.row), { edge: false });                 // a row down the bed
+    }
+    // hedge round the lot, open at the gate
+    const hx = side * (w / 2 - 0.45 - 1.1), gate = hx, hz = dep / 2 - 0.2, ex = w / 2 - 0.2;
+    k.hedge(w - 0.4, 0, -dep / 2 + 0.2);
+    for (const sx of [-1, 1]) k.box(0.36, 0.42, dep - 0.4, sx * ex, base, 0, C.moss, { edge: false });
+    const left = (gate - 0.6) - (-ex), right = ex - (gate + 0.6);
+    if (left > 0.3) k.hedge(left, -ex + left / 2, hz);
+    if (right > 0.3) k.hedge(right, ex - right / 2, hz);
+    // farmhouse
+    const hw = Math.min(2.2, w * 0.4), hd = yardD - 0.9, hzc = dep / 2 - 0.5 - hd / 2;
+    k.box(hw, 1.1, hd, hx, base, hzc, C.cream);
+    k.part(hipGeo(hw + 0.3, hd + 0.3, 0.8), k.P.roof, hx, base + 1.1, hzc);
+    k.box(0.45, 0.7, 0.1, hx, base, hzc + hd / 2 + 0.04, k.P.accent);
+    for (const sx of [-1, 1]) k.box(0.4, 0.34, 0.06, hx + sx * (hw * 0.32), base + 0.5, hzc + hd / 2 + 0.03, C.glass, { edge: false });
+    k.box(0.32, 0.6, 0.32, hx + hw * 0.28, base + 1.1, hzc - hd * 0.1, C.brick);
+    // barn on the other side
+    const bwid = Math.min(1.7, w * 0.3), bx = -side * (w / 2 - 0.45 - bwid / 2 - 0.1);
+    k.box(bwid, 1.2, hd, bx, base, hzc, C.terracotta);
+    k.part(prismGeo([[-bwid / 2 - 0.1, 0], [bwid / 2 + 0.1, 0], [0, 0.7]], hd + 0.2), k.P.roof, bx, base + 1.2, hzc);
+    k.box(0.8, 0.85, 0.08, bx, base, hzc + hd / 2 + 0.04, C.wood);
+    // level details
+    if (k.level >= 2) for (let i = 0; i < 2; i++) k.box(0.45, 0.38, 0.38, bx + (i ? 0.25 : -0.25), base, hzc + hd / 2 + 0.45, C.gold, { edge: false }); // hay bales
+    if (k.level >= 3) { k.cyl(0.22, 0.22, 0.3, 8, hx - hw / 2 - 0.35, base, hzc + 0.1, C.stone); k.cyl(0.03, 0.03, 0.6, 4, hx - hw / 2 - 0.35, base + 0.3, hzc + 0.1, C.wood, { edge: false }); } // a well
+    if (k.level >= 4) { const sx = bx + side * (bwid / 2 + 0.4), sz = hzc - hd * 0.2; k.cyl(0.36, 0.36, 1.9, 8, sx, base, sz, C.stone); k.cyl(0, 0.42, 0.45, 8, sx, base + 1.9, sz, k.P.roof); } // a silo
+    if (k.level >= 5) {
+      k.weathervane(bx, base + 1.9, hzc);
+      const sx = side < 0 ? 1 : -1;                                                         // a scarecrow in the middle bed
+      k.cyl(0.04, 0.04, 0.95, 3, sx * bw * 0.5, base + 0.1, fzc, C.wood, { edge: false });
+      k.box(0.7, 0.07, 0.07, sx * bw * 0.5, base + 0.75, fzc, C.wood, { edge: false });
+    }
   },
 
   pond(k) {
