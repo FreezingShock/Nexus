@@ -36,9 +36,11 @@ export const MODELS = [
   { id: 'shop-row',     name: 'Shop row',       cat: 'shop',     sub: 'Awnings and planters',             foot: [[1, 1], [1, 2]], tile: 'row', floors: [2, 3], grow: 0.3, cost: 200, style: 'sash' },
   { id: 'cafe',         name: 'Corner cafe',    cat: 'shop',     sub: 'Terrace tables and string lights', foot: [[1, 1]],                 floors: [2, 3], grow: 0,    cost: 260,  style: 'arched' },
   { id: 'market',       name: 'Market hall',    cat: 'shop',     sub: 'Open arches, a lantern roof',      foot: [[2, 2], [1, 2]],         floors: [1, 1], grow: 0,    cost: 520,  style: 'arched' },
-  // A farm is production, not housing: a farmhouse, a barn and fields that fill every tile it claims. `floors` is its
-  // yield here (it is what the income and upgrade curves read), so a bigger farm earns more. `flat` means it needs level ground.
-  { id: 'farm',         name: 'Farm',           cat: 'farm',     sub: 'A farmhouse, a barn and fields of crops', foot: [[2, 3], [3, 4], [4, 4]], floors: [1, 1], grow: 0.5, cost: 45, style: 'sash', flat: true },
+  // A farm is production, not housing: a farmhouse, a barn and fields that fill every tile it claims. It is the one model
+  // with no fixed sizes: `free` lets the player drag any lot from min (across x deep, in the model's own frame, so the
+  // house always has room) up to max tiles a side, and the fields behind the fixed front repeat to fill it.
+  // `perTile` makes its `floors` (the yield the income and upgrade curves read) grow with the area, uncapped. `flat` means level ground.
+  { id: 'farm',         name: 'Farm',           cat: 'farm',     sub: 'A farmhouse, a barn and fields of crops', foot: [[2, 3]], floors: [1, 1], grow: 0, perTile: 0.5, cost: 45, style: 'sash', flat: true, free: { min: [2, 3], max: 24 } },
   { id: 'office',       name: 'Office block',   cat: 'work',     sub: 'Ribbon windows, stepped crown',    foot: [[1, 1], [1, 2], [2, 2]], floors: [4, 6], grow: 1,    cost: 560,  style: 'ribbon' },
   { id: 'workshop',     name: 'Workshop',       cat: 'work',     sub: 'Sawtooth roof and a chimney',      foot: [[1, 2], [2, 2]],         floors: [1, 2], grow: 0.3,  cost: 300,  style: 'sash' },
   { id: 'warehouse',    name: 'Warehouse',      cat: 'work',     sub: 'Big doors, plenty of room',        foot: [[1, 2], [2, 2]],         floors: [1, 2], grow: 0,    cost: 240,  style: 'ribbon' },
@@ -79,6 +81,10 @@ export const canonicalDims = (def, size) => (def.tile === 'row' ? [size[1], size
 //   exact: the lot is a size the model was drawn for (or a row of units)
 //   otherwise: the largest drawn size that fits inside the lot; the caller centers it or leaves the rest open
 export function fitFootprint(def, fw, fd) {
+  if (def.free) { // any lot with a side of at least min[0], the other at least min[1], neither past max
+    const [lo, hi] = [Math.min(fw, fd), Math.max(fw, fd)];
+    return lo >= def.free.min[0] && hi >= def.free.min[1] && hi <= def.free.max ? { fw, fd, exact: true } : null;
+  }
   const want = [fw, fd];
   const sizes = footprintsOf(def);
   const has = (a, b) => sizes.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
@@ -105,7 +111,8 @@ export function pickModelForLot(cat, fw, fd, seed = 0) {
 
 export const areaCost = (def, fw, fd) => Math.round(def.cost * fw * fd);
 // Storeys (a farm's yield) a model reaches at its lowest roll on a lot of `area` tiles. The menus show it as the starting income.
-export const minFloors = (def, area) => def.floors[0] + Math.min(6, Math.floor(def.grow * (area - 1) + 0.0001));
+export const floorsFor = (def, area, roll = 0) => (def.perTile ? Math.max(1, Math.round(area * def.perTile)) : Math.min(12, def.floors[0] + roll + Math.min(6, Math.floor(def.grow * (area - 1) + 0.0001))));
+export const minFloors = (def, area) => floorsFor(def, area);
 
 // ---- seeds and traits ----
 
@@ -140,8 +147,7 @@ export function describe(rec, level = 1) {
   const cw = rot % 2 ? rec.fd : rec.fw, cd = rot % 2 ? rec.fw : rec.fd; // footprint in the model's own frame
   const area = rec.fw * rec.fd;
   const [lo, hi] = def.floors;
-  const extra = Math.min(6, Math.floor(def.grow * (area - 1) + 0.0001));
-  const floors = rec.floors ?? Math.min(12, lo + Math.floor(t[0] * (hi - lo + 1)) + extra);
+  const floors = rec.floors ?? floorsFor(def, area, Math.floor(t[0] * (hi - lo + 1)));
   const x = (rec.gx + (rec.fw - 1) / 2 - GRID_HALF) * TILE, z = (rec.gz + (rec.fd - 1) / 2 - GRID_HALF) * TILE;
   // stand on the highest corner so a building on a gentle slope never sinks; the kit's foundation fills the gap below
   let y = 0.1;

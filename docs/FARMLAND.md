@@ -1,29 +1,42 @@
 # Farms
 
-Farmland is not part of the starting scenery any more. The player builds a **Farm** from the Build menu (the Farms tab,
-the first piece of production), and it claims its whole lot with a farmhouse, a barn and crop beds.
+Farmland is not part of the starting scenery. The player builds a **Farm** from the Build menu (the Farms tab, the first
+piece of production). A farm has no fixed size: you drag out any rectangle, like painting a district, and it fills it.
+
+## Dragging a farm
+
+- Pick Farms, then press on the map and drag. The preview is the real farm, redrawn as the rectangle changes, with a
+  tint on every tile (rose where something is in the way or the ground is not flat). The label shows the size, the price
+  and what it will earn. A plain click places the smallest farm (2 x 3).
+- Sizes: at least 2 x 3 tiles (a side of 2 and a side of 3), at most 24 a side (`free` on the model, `fitFootprint`).
+- The front is fixed and faces the street: the rectangle is turned so its front faces the side with the most road
+  (V turns it by hand). If the lot would be too shallow for the house, `planPlacement` turns it so the long side runs deep.
+- Code: `freeLot` in `src/ui/modules/placement.js` (one rectangle, grown to the minimum and clamped to the maximum), the
+  preview in `src/render/systems/placement-ghost.js` (tile tints are two instanced meshes, so any size is two draw calls).
 
 ## The model
 
-- `farm` in `src/world/models.js`, category `farm` (Build tool). Three set sizes: 2 x 3, 3 x 4 and 4 x 4 tiles.
-- Income is the usual `income(floors, level)`. A farm's `floors` count its plots: `minFloors(def, area)` gives 3 plots at
-  2 x 3, 6 at 3 x 4 and 7 at 4 x 4, so a bigger farm pays more (2.7 to 6.3 coins/s at level 1). Upgrading works like any building.
-- Traffic counts a farm as a workplace (`src/sim/traffic.js`), so workers travel to it.
+- `farm` in `src/world/models.js`, category `farm`. `free: { min: [2, 3], max: 24 }` is the size rule; `perTile: 0.5` makes
+  its yield (`floors`, via `floorsFor`) half the area, uncapped. Income is the usual `income(floors, level)`, so it is
+  about 0.45 coins/s a tile at level 1, and a bigger farm earns in proportion. It costs 45 coins a tile (the exponential
+  build price applies once per building, so one big farm is cheaper than the same area in many buildings).
+- Traffic counts a farm as a workplace, with its crew capped (`src/sim/traffic.js`).
 
 ## Flat ground only
 
-`def.flat` makes `checkLot` (src/world/placement.js) also ask for level ground: each tile may rise at most `FLAT_TILE`
+`def.flat` makes `checkLot` (`src/world/placement.js`) also ask for level ground: each tile may rise at most `FLAT_TILE`
 (0.35) and the whole lot at most `FLAT_SPREAD` (0.6), read from the per-tile heights `grid.tlo` and `grid.thi`. A sloped
-spot is refused with the reason `slope` ("A farm needs flat ground"). The flat plain in the west (`farmMask` in
-terrain.js) is where farms fit best.
+spot is refused with the reason `slope` ("A farm needs flat ground"). The western plain (`farmMask`, terrain.js) is flat.
 
 ## Look
 
-`farm(k)` in `src/render/models/builders.js`: tilled soil under the whole lot, a hedge round it with a gate, a farmhouse
-and a barn in the yard at the front, and crop beds edge to edge behind them (wheat, barley and greens from `CROPS` in
-palettes.js, a row down each bed). Beds are sized to the lot so there is no bare ground. Level details: hay bales (2),
-a well (3), a silo (4), a weathervane and a scarecrow (5). Stays under the 650 triangle cap at every size and level.
+`farm(k)` in `src/render/models/builders.js`. The front never changes: a hedge with a gate, a farmhouse and a barn in a
+yard 2.6 deep. Behind it the fields repeat to fill the lot: beds side by side (about 1.3 wide), grouped in blocks of up to six
+with a dirt path between, and blocks no deeper than about seven, so a bigger lot gets more rows and more blocks. Beds are
+flat quads merged per colour (wheat, barley, greens from `CROPS`), two triangles each, so a 24 x 24 farm is a few thousand
+triangles and about 25 parts. Level details: hay bales (2), a well (3), a silo (4), a weathervane and scarecrows (5).
 
 ## Tests
 
-`tests/farmland.test.js`: nothing at spawn, the category and sizes, claiming tiles, income, the flat rule, builds within budget.
+`tests/farmland.test.js`: nothing at spawn, the category and any-size rule, turning for depth, claimed tiles, income by
+area, the flat rule, a save and reload of a big farm, undo, and the triangle budget at any size.

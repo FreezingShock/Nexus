@@ -1,7 +1,6 @@
 // The look shared by every build menu: compact tiles with a picture, a name, a price chip and a key badge, plus the
 // zone vignettes, road swatches and category icons. Pure string builders: no DOM, no THREE, so the markup and the
 // numbers can be tested in node. Colours and sizes live in css/menus.css.
-import { minFloors } from '../world/models.js';
 import { income } from '../sim/economy.js';
 import { INDUSTRY, LANDMARKS, PARKS, SERVICES, SHOPS } from '../sim/services-config.js';
 import { ZONE_DEFS } from '../sim/zones.js';
@@ -108,10 +107,7 @@ const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 export function buildingEffect(def) {
   const [lo, hi] = def.floors;
   if (!hi) return '';
-  if (def.cat === 'farm') { // fields fill the lot, so earnings follow the size; they need flat ground
-    const a = income(minFloors(def, 6), 1), b = income(minFloors(def, 16), 1);
-    return `Fields fill the lot · flat ground · earns ${a} to ${b} coins/s`;
-  }
+  if (def.free) return `Drag it to any size · flat ground · earns ${+(income(1, 1) * def.perTile).toFixed(2)} coins/s per tile`; // fields repeat to fill the lot
   const floors = lo === hi ? plural(lo, 'floor') : `${lo} to ${hi} floors`;
   const earn = income(lo, 1) === income(hi, 1) ? `${income(lo, 1)}` : `${income(lo, 1)} to ${income(hi, 1)}`;
   return `${floors} · earns ${earn} coins/s`;

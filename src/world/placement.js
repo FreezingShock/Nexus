@@ -72,10 +72,12 @@ export function planPlacement(cmd) {
   const def = modelById(cmd && cmd.model);
   if (!def) return { error: 'unknown model' };
   const ints = [cmd.gx, cmd.gz, cmd.fw, cmd.fd].every(Number.isInteger);
-  if (!ints || cmd.fw < 1 || cmd.fd < 1 || cmd.fw > 6 || cmd.fd > 6) return { error: 'bad lot' };
+  const most = def.free ? def.free.max : 6;
+  if (!ints || cmd.fw < 1 || cmd.fd < 1 || cmd.fw > most || cmd.fd > most) return { error: 'bad lot' };
   const fit = fitFootprint(def, cmd.fw, cmd.fd);
   if (!fit) return { error: 'does not fit' };
   let rot = Number.isInteger(cmd.rot) ? ((cmd.rot % 4) + 4) % 4 : 0;
+  if (def.free && (rot % 2 ? fit.fw : fit.fd) < def.free.min[1]) rot = (rot + 1) % 4; // the house needs depth: turn so the long side runs deep
   if (def.tile === 'row' && fit.fw !== fit.fd) { const want = fit.fw > fit.fd ? 0 : 1; if (rot % 2 !== want) rot = (rot + 1) % 4; }
   const gx = cmd.gx + Math.floor((cmd.fw - fit.fw) / 2), gz = cmd.gz + Math.floor((cmd.fd - fit.fd) / 2);
   const [cx, cz] = tileCenter(gx, gz);
