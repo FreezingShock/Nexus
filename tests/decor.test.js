@@ -115,3 +115,9 @@ test('the render system builds one merged body and outline for every kind, and a
   r.frame({ state: { decor: [] } });
   assert.ok(!body.visible);
 });
+
+test('every kind sits in one menu group, and every group has pieces', async () => {
+  const { DECOR_CATS, decorIn } = await import('../src/world/decor.js');
+  assert.equal(DECOR_CATS.reduce((n, c) => n + decorIn(c.id).length, 0), DECOR.length);
+  for (const c of DECOR_CATS) assert.ok(decorIn(c.id).length > 0, c.id);
+});

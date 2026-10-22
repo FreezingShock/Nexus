@@ -9,19 +9,28 @@ export const REFUND = 0.5;  // share of the base price handed back when a piece 
 
 // cost: coins for the first piece. parts: one-time Parts to unlock the kind (0 is open from the start).
 // The numbers sit next to the 3x economy of BALANCE.priceMult: a bench is a cottage's worth of nothing, a gazebo a real project.
+// Groups in the Decor menu, the way the Buildings menu groups its models.
+export const DECOR_CATS = [
+  { id: 'greenery', name: 'Greenery' },
+  { id: 'street', name: 'Street' },
+  { id: 'plaza', name: 'Plaza' },
+  { id: 'landmark', name: 'Landmark' },
+];
+
 export const DECOR = [
-  { id: 'hedge',     name: 'Hedge',        sub: 'A clipped green wall, lovely in rows', cost: 45,    parts: 0 },
-  { id: 'bench',     name: 'Bench',        sub: 'A place to sit and watch the street', cost: 60,    parts: 0 },
-  { id: 'flowers',   name: 'Flower bed',   sub: 'Tulips, daisies and a little soil',    cost: 90,    parts: 0 },
-  { id: 'lamp',      name: 'Street lamp',  sub: 'A warm lantern on a green post',       cost: 120,   parts: 0 },
-  { id: 'topiary',   name: 'Topiary',      sub: 'A tidy cloud of leaves in a pot',      cost: 240,   parts: 60 },
-  { id: 'stall',     name: 'Market stall', sub: 'A striped awning and a few crates',    cost: 420,   parts: 120 },
-  { id: 'fountain',  name: 'Fountain',     sub: 'Stone basin, tinkling water',          cost: 900,   parts: 240 },
-  { id: 'statue',    name: 'Statue',       sub: 'Somebody important, in bronze green',  cost: 1500,  parts: 450 },
-  { id: 'gazebo',    name: 'Gazebo',       sub: 'Six posts and a terracotta roof',      cost: 3600,  parts: 900 },
+  { id: 'hedge', cat: 'greenery',     name: 'Hedge',        sub: 'A clipped green wall, lovely in rows', cost: 45,    parts: 0 },
+  { id: 'bench', cat: 'street',     name: 'Bench',        sub: 'A place to sit and watch the street', cost: 60,    parts: 0 },
+  { id: 'flowers', cat: 'greenery',   name: 'Flower bed',   sub: 'Tulips, daisies and a little soil',    cost: 90,    parts: 0 },
+  { id: 'lamp', cat: 'street',      name: 'Street lamp',  sub: 'A warm lantern on a green post',       cost: 120,   parts: 0 },
+  { id: 'topiary', cat: 'greenery',   name: 'Topiary',      sub: 'A tidy cloud of leaves in a pot',      cost: 240,   parts: 60 },
+  { id: 'stall', cat: 'plaza',     name: 'Market stall', sub: 'A striped awning and a few crates',    cost: 420,   parts: 120 },
+  { id: 'fountain', cat: 'plaza',  name: 'Fountain',     sub: 'Stone basin, tinkling water',          cost: 900,   parts: 240 },
+  { id: 'statue', cat: 'landmark',    name: 'Statue',       sub: 'Somebody important, in bronze green',  cost: 1500,  parts: 450 },
+  { id: 'gazebo', cat: 'landmark',    name: 'Gazebo',       sub: 'Six posts and a terracotta roof',      cost: 3600,  parts: 900 },
 ].map((d) => Object.freeze(d));
 
 const byId = new Map(DECOR.map((d) => [d.id, d]));
+export const decorIn = (cat) => DECOR.filter((d) => d.cat === cat);
 export const decorById = (id) => byId.get(id) || null;
 
 // Each piece already placed makes the next a little dearer: +1% of the base price per piece, so a big garden is a real sink.
