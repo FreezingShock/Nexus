@@ -8,7 +8,7 @@ Every building is assembled from the same small kit (`src/render/models/kit.js`)
 - **Rhythm.** One window bay per 1.5 units of wall, one row per storey. Windows come from a wall texture (sash, arched, shuttered, ribbon) repeated per bay, never from geometry.
 - **Roofs.** Terracotta or the district roof color. Gable ends face the street on narrow houses; long eaves face it on wide ones. Mansard blocks, hips for cottages and police, flat with a parapet for shops and towers, sawtooth for workshops, spires for civic buildings.
 - **Trim and color.** Plain parts use a short shared palette (`C` in the kit) plus the district palette (warm, pastel, slate, green). New colors are new ideas, so add them rarely. Awnings and doors carry the pastel accents.
-- **Oriels.** Mansard and office blocks carry one glass bay on the front wall (`k.bay`): a plain box that juts out about 0.35, with glass on its face and a small roof cap. Plain parts only, so it adds no material.
+- **Oriels.** Mansard, office and tower blocks carry one glass bay on the front wall (`k.bay`): a plain box that juts out about 0.35, with glass on its face and a small roof cap. Plain parts only, so it adds no material.
 - **Props.** Chimneys, dormers, window boxes, pots, hedges, lamps, bunting, flags. Small and chunky so they read from the default zoom. No lettering anywhere.
 - **Determinism.** A building's look is a pure function of its record (model, tiles, turn, palette) and its id. `traitsOf(seed)` gives twelve fixed rolls; builders read them and never roll their own, so a reload, or a higher level, never re-rolls the house.
 
