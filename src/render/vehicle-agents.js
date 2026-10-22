@@ -387,8 +387,9 @@ export class Fleet {
   // A new car: from the tunnel, from town towards the tunnel, or a trip between two zones.
   spawnCar(env) {
     const r = this.rng();
-    if (r < TUNNEL_IN && this.spawnFromTunnel(env)) return;
-    if (r < TUNNEL_IN + TUNNEL_OUT && this.spawnToTunnel(env)) return;
+    const tin = TUNNEL_IN + Math.min(0.25, (env.arrivals || 0) * 0.3); // newcomers arrive by the tunnel
+    if (r < tin && this.spawnFromTunnel(env)) return;
+    if (r < tin + TUNNEL_OUT && this.spawnToTunnel(env)) return;
     this.spawnTrip(env);
   }
 

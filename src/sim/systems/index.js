@@ -7,6 +7,7 @@ import core from './core.js';
 import districts from './districts.js';
 import offlinePostcard from './offline-postcard.js';
 import placement from './placement.js';
+import population from './population.js';
 import progression from './progression.js';
 import roads from './roads.js';
 import services from './services.js';
@@ -23,6 +24,7 @@ export const systems = [
   districts,
   offlinePostcard,
   placement,
+  population,
   progression,
   roads,
   services,

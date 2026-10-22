@@ -9,6 +9,7 @@ import { DIRS, connMask, dirsOfMask, opposite } from '../world/roadnet.js';
 import { makeRng } from '../world/rng.js';
 import { groundY, tileWorld } from './road-mesh.js';
 import { TUNNEL_GATE } from '../world/starter.js';
+import { walkersFor } from '../sim/population.js';
 
 const MAX = 500, TARGET = 300, PER_ROAD_TILE = 0.5;
 const SPEED = 1.6, TILE = 3, PAVEMENT = 1.35; // units per second, tile size, offset from the road centre
@@ -30,7 +31,7 @@ export function buildTownsfolk(parent, grid, camera) {
   parent.add(body, head);
 
   const people = [];
-  let roads = null, roadTiles = [];
+  let roads = null, roadTiles = [], arrive = 0;
   const mtx = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), pos = new THREE.Vector3(), sc = new THREE.Vector3();
 
   const dirVec = (d) => DIRS[d];
@@ -39,7 +40,7 @@ export function buildTownsfolk(parent, grid, camera) {
   // A random road tile to stand on, and a heading that leaves it.
   function place(p) {
     for (let tries = 0; tries < 20 && roadTiles.length; tries++) {
-      const fromTunnel = !!roads[GATE] && rng() < TUNNEL_IN;
+      const fromTunnel = !!roads[GATE] && rng() < TUNNEL_IN + Math.min(0.25, arrive * 0.3);
       const t = fromTunnel ? GATE : roadTiles[Math.floor(rng() * roadTiles.length)];
       const gx = t % GRID_N, gz = Math.floor(t / GRID_N);
       const dirs = dirsOfMask(connMask(roads, gx, gz));
@@ -76,12 +77,13 @@ export function buildTownsfolk(parent, grid, camera) {
   }
 
   return {
-    update(dt, next) {
+    update(dt, next, pop, live) {
+      arrive = live ? live.perS : 0;
       if (next !== roads) {
         roads = next;
         roadTiles = Object.keys(next).map(Number);
       }
-      const want = Math.min(TARGET * crowd, Math.round(roadTiles.length * PER_ROAD_TILE));
+      const want = Math.min(TARGET * crowd, Math.round(roadTiles.length * PER_ROAD_TILE), pop >= 0 ? walkersFor(pop) : Infinity);
       while (people.length < want) people.push({ alive: false, gx: 0, gz: 0, dir: 0, side: 1, u: 0, mode: 'walk', t: 0, hidden: false });
       if (people.length > want) people.length = want;
       people.forEach((p, i) => {

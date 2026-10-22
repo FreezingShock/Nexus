@@ -126,7 +126,8 @@ export function createHud({ sim, send, onSettings, calendar }) {
   }
   function paintCards() {
     const bd = sim.breakdown ? sim.breakdown() : { coins: {}, parts: {}, mult: {} };
-    paintPop('town', townCard(s));
+    const pp = sim.population;
+    paintPop('town', townCard(s, pp ? { people: pp.people(), capacity: pp.capacity(), perMin: pp.arrivals() * 60 } : null));
     paintPop('coins', coinsCard(s, sim.rate(), bd));
     paintPop('parts', partsCard(s, sim.partsRate(), bd));
     paintPop('renewal', renewalCard(s));

@@ -1,0 +1,15 @@
+/* The Population chip (bottom left, above the hint) and its paper panel. */
+.pop-chip{position:absolute;left:var(--gutter);bottom:74px;z-index:7;display:flex;align-items:center;gap:8px;height:48px;padding:0 16px 0 12px;font-weight:800;font-size:17px;color:var(--ink);font-variant-numeric:tabular-nums}
+.pop-chip.open{box-shadow:0 5px 0 var(--action),0 0 0 3px var(--action)}
+.pop-chip:active{transform:translateY(2px)}
+.pop-panel{position:absolute;left:var(--gutter);bottom:134px;z-index:8;width:320px;max-width:calc(100vw - 32px);padding:0;box-sizing:border-box;overflow:hidden}
+.pop-panel .pp-head{padding:12px 18px 10px;background:var(--paper-3);background-image:var(--grain);border-bottom:2.5px solid var(--ink)}
+.pop-panel .pp-head h2{margin:0;font-size:22px}
+.pop-panel .pp-body{padding:12px 18px 16px}
+.pop-panel .pp-big{margin:0;font-size:15px;color:var(--ink-soft);font-weight:700}
+.pop-panel .pp-big b{font-family:var(--display);font-variation-settings:"SOFT" 100,"WONK" 1;font-size:34px;color:var(--ink);margin-right:2px}
+.pop-panel .pp-graph{margin:8px 0 10px;padding:8px 8px 6px;border:2px solid var(--ink);border-radius:14px;background:var(--paper-2)}
+.pop-panel .pp-graph small{display:block;margin-top:2px;font-size:12px;font-weight:700;color:var(--ink-soft)}
+.pop-panel .pr-list{margin:0}
+.pop-panel .pp-note{margin:10px 0 0;font-size:13.5px;line-height:1.35;font-weight:600;color:var(--ink-soft)}
+@media (max-width:700px){.pop-panel{bottom:134px;width:calc(100vw - 32px)}}

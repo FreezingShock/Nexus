@@ -266,7 +266,7 @@ test('stages survive a save and a reload, and are not paid a second time', () =>
 });
 
 test('the v6 migration turns paid milestone ids into paid stages and drops the old list', () => {
-  assert.equal(SAVE_VERSION, 6);
+  assert.equal(SAVE_VERSION, 7);
   const old = { ...freshState(), milestones: ['coins-1k', 'coins-100k', 'place-1', 'nope'], earned: 2e5 };
   delete old.ach;
   const r = unwrap(JSON.stringify({ v: 5, savedAt: 1, state: old }));

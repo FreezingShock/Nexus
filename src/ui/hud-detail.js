@@ -83,9 +83,17 @@ export function renewalCard(state) {
 }
 
 // The town plaque: how to change it, and the Renewal count.
-export function townCard(state) {
-  return head('Your town', 'Click the name to rename it. Click the badge to pick a new icon and colour.') +
-    list([{ label: 'Renewals', value: String(state.renewals) }, { label: 'Points kept', value: String(state.points) }]);
+// `pop` is { people, capacity, perMin } from sim.population (optional: the card still works without it).
+export function townCard(state, pop) {
+  const rows = [];
+  if (pop) {
+    const full = pop.capacity > 0 ? Math.round((100 * pop.people) / pop.capacity) : 0;
+    rows.push({ label: 'People', value: `${fmtExact(Math.floor(pop.people))} of ${fmtExact(pop.capacity)}` });
+    rows.push({ label: 'Homes lived in', value: `${full}%` });
+    rows.push({ label: 'Moving in', value: pop.perMin >= 0.5 ? `${pop.perMin.toFixed(1)} a minute` : pop.capacity > pop.people ? 'a trickle' : 'homes are full' });
+  }
+  rows.push({ label: 'Renewals', value: String(state.renewals) }, { label: 'Points kept', value: String(state.points) });
+  return head('Your town', pop ? 'People move in through the tunnel, faster when the town is happy. Click the name to rename it.' : 'Click the name to rename it. Click the badge to pick a new icon and colour.') + list(rows);
 }
 
 // Demand: the full zone names, the percentage, and what drives each bar. stats are zoning.stats() (lot counts by zone).

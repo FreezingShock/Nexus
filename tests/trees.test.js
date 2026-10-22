@@ -48,7 +48,7 @@ test('seeding is deterministic, and the v1 save migration seeds the same trees',
   delete old.trees;
   const fromMigration = migrations[0](json(old)).trees;
   assert.deepEqual(fromMigration, seedTrees(layout));
-  assert.equal(SAVE_VERSION, 6);
+  assert.equal(SAVE_VERSION, 7);
 });
 
 test('no tree stands on a road, a zone or a lot once the town is loaded', () => {
