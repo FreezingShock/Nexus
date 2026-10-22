@@ -9,8 +9,8 @@
 #settings .pad{border-top:2.5px solid var(--ink)}
 .spane{display:flex;flex-direction:column;gap:12px;margin:-16px -18px -20px;padding:16px 18px 20px;background:color-mix(in srgb,var(--tc) 38%,var(--paper))}
 .spane[hidden]{display:none}
-#settings .gfx,#settings .snd{border:0;padding:0}
-.sgroup{display:flex;flex-direction:column;gap:6px}
+#settings .gfx,#settings .snd{border:0!important;outline:0;padding:0;margin:0}
+.sgroup{display:flex;flex-direction:column;gap:8px;padding:10px 12px 12px;border-radius:14px;border:2px solid var(--ink);background:var(--paper);box-shadow:0 3px 0 var(--ink)}
 .sky-now{font-style:italic}
 
 /* picture tiles */
@@ -50,7 +50,9 @@
 
 /* segmented buttons and toggles inside settings */
 #settings .gfx-opt{box-shadow:0 2px 0 var(--ink);background:var(--paper)}
-#settings .gfx-opt[aria-pressed="true"]{box-shadow:0 1px 0 var(--ink)}
+/* chosen = the same strong look as a chosen tile: peach fill, terracotta outline and ring, dark text */
+#settings .gfx-opt[aria-pressed="true"]{background:#F9DFC9;color:var(--ink);border-color:var(--action);box-shadow:0 3px 0 var(--action),0 0 0 2px var(--action);transform:none}
+#settings .gfx-opt:disabled{opacity:.45}
 #settings .gfx-presets{grid-template-columns:repeat(4,1fr)}
 #settings .gfx-sw{background:var(--paper);box-shadow:0 2px 0 var(--ink)}
 #settings .gfx-sw[aria-checked="true"] i{background:var(--sage)}
@@ -58,6 +60,9 @@
 .snd-row input[type="range"]::-moz-range-thumb{background:var(--paper)}
 .snd-row input[type="range"]::-webkit-slider-runnable-track{background:linear-gradient(90deg,var(--action) var(--fill,0%),var(--paper) 0)}
 #settings .gfx-switches{gap:8px}
+#settings .gfx-row{gap:8px;padding:10px 12px 12px;border-radius:14px;border:2px solid var(--ink);background:var(--paper);box-shadow:0 3px 0 var(--ink)}
+#settings .gfx-row .gfx-opt:not([aria-pressed="true"]){background:var(--paper-2)}
+#settings .gfx-presets{padding:2px}
 
 /* town and saves */
 .sbox{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:14px;border:2.5px solid var(--ink);background:var(--paper);box-shadow:0 3px 0 var(--ink)}
