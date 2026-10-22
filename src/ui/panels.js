@@ -3,6 +3,7 @@ import { MAX_LEVEL, income, nextLevelGain, trafficOf } from '../sim/economy.js';
 import { PAL } from '../world/palettes.js';
 import { speciesOf } from '../world/trees.js';
 import { $, fmt, fmtAgo } from './format.js';
+import { topRight } from './slot.js';
 import { mountGraphics } from './graphics.js';
 import { mountAtmos } from './atmos.js';
 import { mountSound } from './sound-settings.js';
@@ -19,6 +20,7 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
     if (!b || !sim.alive(id)) { hideInspect(); return; } // a pick with no building behind it closes the card
     ui.selected = id; ui.tree = null;
     const box = $('inspect'), lv = sim.level(id), cost = sim.cost(id);
+    topRight.claim('inspect'); // the menu, Settings or Milestones step aside
     box.hidden = false;
     const dots = [1, 2, 3, 4, 5].map((i) => `<i class="${i <= lv ? 'on' : ''}"></i>`).join('');
     const park = !b.floors; // parks are ground: no storeys, so nothing to upgrade
@@ -38,6 +40,7 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
     if (!t) { hideInspect(); return; }
     ui.selected = null; ui.tree = id;
     const box = $('inspect');
+    topRight.claim('inspect');
     box.hidden = false;
     box.innerHTML = `<button class="x" id="ix" aria-label="Close">${CLOSE_SVG}</button>
     <div class="band"><h2 class="h-disp">${speciesOf(t)}</h2><div class="sub">${t.k === 'p' ? 'Conifer' : 'Broadleaf'} · a town tree</div></div>
@@ -82,6 +85,7 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
   function showSettings(actions) {
     shown = actions;
     const box = $('settings');
+    topRight.claim('settings');
     box.hidden = false;
     const back = actions.backup();
     box.innerHTML = `<button class="x" id="sx" aria-label="Close">${CLOSE_SVG}</button>
@@ -114,6 +118,7 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
   // Replaces the settings body with a question and two choices. Used by import and the destructive steps above.
   function askConfirm({ title, text, ok, onOk, danger = false }) {
     const box = $('settings');
+    topRight.claim('settings');
     box.hidden = false;
     box.innerHTML = `<button class="x" id="sx" aria-label="Close">${CLOSE_SVG}</button>
     <div class="band"><h2 class="h-disp">${title}</h2></div>

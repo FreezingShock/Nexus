@@ -5,6 +5,7 @@
 import { GOALS, GROUPS, STAGES, fmtTarget, nearest, rewardFor, rewardLine, standing, summary, unlockFor } from '../../sim/achievements.js';
 import { ROAD_TYPES } from '../../sim/catalog.js';
 import { $, fmtCompact } from '../format.js';
+import { topRight } from '../slot.js';
 
 const SEEN_KEY = 'nexus.milestones.seen';
 const OPEN_EVENT = 'nexus:milestones';
@@ -142,6 +143,7 @@ export default {
 
     function toggle(force) {
       open = force === undefined ? !open : force;
+      if (open) topRight.claim('milestones'); // one top-right surface at a time
       if (open && !built) build();
       card.hidden = !open;
       $('app').classList.toggle('achv-open', open);
@@ -151,6 +153,7 @@ export default {
       dirty = true;
     }
 
+    topRight.register('milestones', { isOpen: () => open, close: () => toggle(false), el: card });
     btn.onclick = () => toggle();
     $('achx').onclick = () => toggle(false);
     addEventListener(OPEN_EVENT, () => toggle(true));
