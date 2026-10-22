@@ -21,23 +21,29 @@
 <link rel="stylesheet" href="css/polish.css">
 <link rel="stylesheet" href="css/graphics.css">
 <link rel="stylesheet" href="css/sound.css">
+<link rel="stylesheet" href="css/hud.css">
 </head>
 <body>
 <div id="app">
   <div id="stage"></div>
 
   <header class="top">
-    <div class="brand card">
-      <svg width="36" height="36" viewBox="0 0 30 30" aria-hidden="true"><path d="M3 15L15 4L27 15" fill="#97553E" stroke="#2B2620" stroke-width="2" stroke-linejoin="round"/><rect x="6" y="15" width="18" height="12" fill="#EAE1D5" stroke="#2B2620" stroke-width="2"/><rect x="12" y="19" width="6" height="8" fill="#E9C1B8" stroke="#2B2620" stroke-width="1.6"/></svg>
-      Nexus
+    <div class="brand card plaque" id="townplaque">
+      <button class="townbadge" id="townbadge" type="button" aria-expanded="false" aria-controls="townpick" aria-label="Town badge"></button>
+      <div class="townname">
+        <button class="townnamebtn" id="townname" type="button">Nexus</button>
+        <input class="townedit" id="townedit" type="text" autocomplete="off" spellcheck="false" aria-label="Town name" hidden>
+      </div>
+      <div class="pop card" id="townpop" role="tooltip"></div>
     </div>
     <div class="chips">
-      <div class="chip card"><span class="badge" style="background:#E6BC62"><svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="9" fill="#F3D58A" stroke="#2B2620" stroke-width="2"/><circle cx="13" cy="13" r="4.5" fill="none" stroke="#2B2620" stroke-width="1.8"/></svg></span><div><b id="coins">0</b><small>Coins <i id="rate">+0/s</i></small></div></div>
-      <div class="chip card"><span class="badge" style="background:#E3A08E"><svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="3" y="7" width="20" height="13" rx="2" fill="#C98A6E" stroke="#2B2620" stroke-width="2"/><path d="M3 13.5H23M11 7V13.5M17 13.5V20" stroke="#2B2620" stroke-width="1.6" fill="none"/></svg></span><div><b id="parts">0</b><small>Parts <i id="prate">+0/s</i></small></div></div>
-      <div class="chip card"><span class="badge" style="background:#BFD8C4"><svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><path d="M13 3L16 10L23 10.5L17.5 15L19.5 22L13 18L6.5 22L8.5 15L3 10.5L10 10Z" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.8" stroke-linejoin="round"/></svg></span><div><b>Renewal <span id="renewal">0%</span></b><div class="meter" role="img" aria-label="Renewal progress"><i id="renewalbar" style="width:0"></i></div></div></div>
-      <section class="chip card demand" id="demandw" aria-label="Zone demand">
+      <div class="chip card plaque res" id="coinschip" tabindex="0" aria-describedby="coinspop"><span class="badge" style="background:#E6BC62"><svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="9" fill="#F3D58A" stroke="#2B2620" stroke-width="2"/><circle cx="13" cy="13" r="4.5" fill="none" stroke="#2B2620" stroke-width="1.8"/></svg></span><div class="cval"><b id="coins">0</b><small>Coins <i id="rate">+0/s</i></small></div><div class="pop card" id="coinspop" role="tooltip"></div></div>
+      <div class="chip card plaque res" id="partschip" tabindex="0" aria-describedby="partspop"><span class="badge" style="background:#E3A08E"><svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="3" y="7" width="20" height="13" rx="2" fill="#C98A6E" stroke="#2B2620" stroke-width="2"/><path d="M3 13.5H23M11 7V13.5M17 13.5V20" stroke="#2B2620" stroke-width="1.6" fill="none"/></svg></span><div class="cval"><b id="parts">0</b><small>Parts <i id="prate">+0/s</i></small></div><div class="pop card" id="partspop" role="tooltip"></div></div>
+      <div class="chip card plaque ren" id="renchip" tabindex="0" aria-describedby="renpop"><span class="badge" style="background:#BFD8C4"><svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><path d="M13 3L16 10L23 10.5L17.5 15L19.5 22L13 18L6.5 22L8.5 15L3 10.5L10 10Z" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.8" stroke-linejoin="round"/></svg></span><div class="cval"><b>Renewal <span id="renewal">0%</span></b><div class="meter" role="img" aria-label="Renewal progress"><i id="renewalbar" style="width:0"></i></div></div><div class="pop card" id="renpop" role="tooltip"></div></div>
+      <section class="chip card plaque demand" id="demandw" aria-label="Zone demand" tabindex="0" aria-describedby="demandpop">
         <b class="dtitle">Demand</b>
         <div class="drows" id="demandrows"></div>
+        <div class="pop card end" id="demandpop" role="tooltip"></div>
       </section>
     </div>
     <div class="ctrl card">
@@ -47,6 +53,7 @@
       <button class="ib" id="settingsbtn" aria-label="Settings" aria-expanded="false"><svg width="20" height="20" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 5H16M2 9H16M2 13H16" stroke="#2B2620" stroke-width="2.2" stroke-linecap="round"/></svg></button>
     </div>
   </header>
+  <aside id="townpick" class="card townpick" hidden></aside>
   <div id="leftcol" class="leftcol"></div>
 
   <aside id="inspect" class="card" hidden aria-live="polite"></aside>
