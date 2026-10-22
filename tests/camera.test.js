@@ -168,3 +168,26 @@ test('Q and E turn the orbit view, E to the right, and keep turning while held',
   assert.ok(orbitSpin(intentOf(keys('q')), 0.5).dAz < 0);
   close(orbitSpin(intentOf(keys('e')), 1).dAz, orbitSpin(intentOf(keys('arrowright')), 1).dAz);
 });
+
+// The far ground ends 480 units from the middle (render/terrain.js OUT_HALF) and the fog hides it from about 340 units
+// of depth, so the orbit view must never show ground past that: at the lowest tilt, furthest zoom-out, widest window and
+// furthest pan, the four corner rays of the view must land on ground within reach.
+test('the orbit view never shows the end of the land', () => {
+  const REACH = 480 - 20, H = 46 / 0.55; // visible half-height at the furthest zoom-out
+  for (const aspect of [1.78, 2.4, 3.6]) for (const az of [0, 0.8, ISO.az, 2.4, 4]) for (const elev of [ISO.elevMin, 0.6, ISO.elevMax]) {
+    for (const [tx, tz] of [[0, 0], [TOWN_LIMIT, TOWN_LIMIT], [-TOWN_LIMIT, TOWN_LIMIT], [TOWN_LIMIT, -TOWN_LIMIT]]) {
+      const p = orbitPose(tx, tz, az, elev, 150);
+      const d = { x: tx - p.x, y: -p.y, z: tz - p.z }, dl = Math.hypot(d.x, d.y, d.z);
+      d.x /= dl; d.y /= dl; d.z /= dl;
+      const right = { x: -d.z, y: 0, z: d.x }, rl = Math.hypot(right.x, right.z); right.x /= rl; right.z /= rl;
+      const up = { x: right.y * d.z - right.z * d.y, y: right.z * d.x - right.x * d.z, z: right.x * d.y - right.y * d.x };
+      for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+        const o = { x: p.x + (sx * H * aspect) * right.x + sy * H * up.x, y: p.y + sy * H * up.y, z: p.z + (sx * H * aspect) * right.z + sy * H * up.z };
+        const t = -o.y / d.y;
+        assert.ok(t > -400 && t < 900, `the ground meets the corner ray inside the depth range (${t | 0})`);
+        const gx = o.x + d.x * t, gz = o.z + d.z * t;
+        assert.ok(Math.max(Math.abs(gx), Math.abs(gz)) < REACH, `aspect ${aspect} az ${az} elev ${elev}: the view reaches ${gx | 0},${gz | 0}`);
+      }
+    }
+  }
+});
