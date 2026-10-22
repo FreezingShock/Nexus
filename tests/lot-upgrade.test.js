@@ -11,7 +11,9 @@ import { lotId, lotTileOf } from '../src/world/lots.js';
 // same curve and raises its level, the render is told, the save keeps the level, and bulldoze takes it away (undoable).
 
 const mk = () => { const state = freshState(); state.coins = 1e9; return createSim({ state }); };
-const A = [37, 33], B = [40, 38]; // open tiles next to the road, as in zoning.test.js
+import { GRID_HALF } from '../src/world/grid.js';
+
+const A = [GRID_HALF + 5, GRID_HALF + 1], B = [GRID_HALF + 8, GRID_HALF + 6]; // open tiles next to the road, as in zoning.test.js
 
 // A sim with one grown lot at level 1 and its id.
 function withLot() {
