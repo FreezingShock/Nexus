@@ -1,0 +1,69 @@
+/* Settings card: coloured tabs (same tints as the menu tiles), picture tiles for season and weather, cream toggles.
+   Loaded after graphics.css and sound.css so it restyles their sections inside #settings. */
+#settings .stabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:12px 14px 0;background:var(--paper)}
+.stab{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px 6px;border-radius:12px 12px 0 0;border:2.5px solid var(--ink);border-bottom:0;background:var(--tc);font-weight:800;font-size:12.5px;line-height:1.1;opacity:.72;transform:translateY(3px);transition:opacity .12s,transform .12s}
+.stab svg{width:22px;height:22px}
+.stab:hover{opacity:1}
+.stab[aria-selected="true"]{opacity:1;transform:none;padding-bottom:9px}
+.stab:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+#settings .pad{border-top:2.5px solid var(--ink)}
+.spane{display:flex;flex-direction:column;gap:12px;margin:-16px -18px -20px;padding:16px 18px 20px;background:color-mix(in srgb,var(--tc) 38%,var(--paper))}
+.spane[hidden]{display:none}
+#settings .gfx,#settings .snd{border:0;padding:0}
+.sgroup{display:flex;flex-direction:column;gap:6px}
+.sky-now{font-style:italic}
+
+/* picture tiles */
+.stiles{display:grid;gap:8px}
+.stiles-season{grid-template-columns:repeat(4,1fr)}
+.stiles-season .stile:first-child{grid-column:1/-1;aspect-ratio:auto;flex-direction:row;min-height:44px;padding:6px 10px;justify-content:center}
+.stiles-season .stile:first-child .art{width:30px;height:30px;aspect-ratio:auto;flex:none}
+.stiles-weather,.stiles-time{grid-template-columns:repeat(4,1fr)}
+.stiles-time{grid-template-columns:repeat(3,1fr)}
+.stile{display:flex;flex-direction:column;align-items:stretch;gap:4px;padding:5px;aspect-ratio:1;border-radius:14px;border:2.5px solid var(--ink);background:var(--paper);box-shadow:0 3px 0 var(--ink);font-weight:800;font-size:12px;text-align:center;transition:transform .08s,box-shadow .08s}
+.stiles-weather .stile,.stiles-time .stile{aspect-ratio:auto;min-height:62px}
+.stile:hover{transform:translateY(-2px)}
+.stile:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.stile:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
+.stile[aria-pressed="true"]{border-color:var(--action);background:#F9DFC9;box-shadow:0 3px 0 var(--action),0 0 0 2px var(--action)}
+.stile .art{flex:1;min-height:0;display:grid;place-items:center;border-radius:9px;border:2px solid var(--ink);overflow:hidden;background:var(--paper-2)}
+.stile .ico svg{width:26px;height:26px;display:block}
+.stile .pat{width:100%;height:100%;display:block}
+.stile .nm{line-height:1.1;padding-bottom:1px}
+/* the first season tile: four seasons as quarters, with a clock on top */
+.stile[data-key="season"][data-value="auto"] .art{background:conic-gradient(#F4C6D4 0 25%,#F2D36B 0 50%,#E0894A 0 75%,#DCE8F2 0)}
+.stile[data-key="season"][data-value="auto"] .ico{background:var(--paper);border:2px solid var(--ink);border-radius:50%;width:22px;height:22px;display:grid;place-items:center}
+.stile[data-key="season"][data-value="auto"] .ico svg{width:15px;height:15px}
+/* a colour and a pattern per season */
+.stile[data-value="spring"] .pat{background:radial-gradient(circle at 30% 30%,#fff 0 3px,transparent 3.5px),radial-gradient(circle at 70% 60%,#F4C6D4 0 4px,transparent 4.5px),radial-gradient(circle at 35% 78%,#fff 0 2.5px,transparent 3px),#B9D98A}
+.stile[data-value="summer"] .pat{background:radial-gradient(circle at 50% 50%,#FFF3B0 0 22%,#F2B83C 23% 34%,transparent 35%),repeating-conic-gradient(from 0deg at 50% 50%,#F6D872 0 12deg,#F9E7A0 12deg 30deg)}
+.stile[data-value="autumn"] .pat{background:repeating-linear-gradient(135deg,#D9722F 0 7px,#E9A24A 7px 14px,#A9482A 14px 18px,#E9A24A 18px 25px)}
+.stile[data-value="winter"] .pat{background:radial-gradient(circle at 25% 25%,#fff 0 2.5px,transparent 3px),radial-gradient(circle at 70% 40%,#fff 0 3px,transparent 3.5px),radial-gradient(circle at 40% 75%,#fff 0 2.5px,transparent 3px),radial-gradient(circle at 82% 82%,#fff 0 2px,transparent 2.5px),#BFD6E6}
+/* soft colour behind weather and time icons */
+.stile[data-value="clear"] .art,.stile[data-value="day"] .art{background:#F8E2A6}
+.stile[data-value="cloudy"] .art,.stile[data-value="fog"] .art{background:#E3E6E2}
+.stile[data-value="rain"] .art{background:#CFE0EC}
+.stile[data-value="snow"] .art{background:#E6EFF5}
+.stile[data-value="leaves"] .art{background:#EBC98F}
+.stile[data-value="night"] .art{background:#C9D3E8}
+.stile[data-key="weather"][data-value="auto"] .art,.stile[data-key="timeLock"][data-value="auto"] .art{background:var(--paper-3)}
+
+/* segmented buttons and toggles inside settings */
+#settings .gfx-opt{box-shadow:0 2px 0 var(--ink);background:var(--paper)}
+#settings .gfx-opt[aria-pressed="true"]{box-shadow:0 1px 0 var(--ink)}
+#settings .gfx-presets{grid-template-columns:repeat(4,1fr)}
+#settings .gfx-sw{background:var(--paper);box-shadow:0 2px 0 var(--ink)}
+#settings .gfx-sw[aria-checked="true"] i{background:var(--sage)}
+.snd-row input[type="range"]::-webkit-slider-thumb{background:var(--paper)}
+.snd-row input[type="range"]::-moz-range-thumb{background:var(--paper)}
+.snd-row input[type="range"]::-webkit-slider-runnable-track{background:linear-gradient(90deg,var(--action) var(--fill,0%),var(--paper) 0)}
+#settings .gfx-switches{gap:8px}
+
+/* town and saves */
+.sbox{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:14px;border:2.5px solid var(--ink);background:var(--paper);box-shadow:0 3px 0 var(--ink)}
+.sbox>.h-disp{font-size:18px}
+.sbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sbox .btn{margin:0;width:100%}
+.sdanger{border-style:dashed;box-shadow:none;background:color-mix(in srgb,var(--coral) 22%,var(--paper))}
+@media (prefers-reduced-motion:reduce){.stab,.stile{transition:none}}
+.snd-row input[type="range"]::-moz-range-progress{height:6px;border-radius:6px;background:var(--action)}
