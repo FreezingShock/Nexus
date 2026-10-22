@@ -4,6 +4,7 @@
 import bulldozeSweep from './bulldoze-sweep.js';
 import cameraModes from './camera-modes.js';
 import commute from './commute.js';
+import decor from './decor.js';
 import districts from './districts.js';
 import frameStats from './frame-stats.js';
 import happiness from './happiness.js';
@@ -25,6 +26,7 @@ export const uiModules = [
   bulldozeSweep,
   cameraModes,
   commute,
+  decor,
   districts,
   frameStats,
   happiness,

@@ -4,6 +4,7 @@
 import achievements from './achievements.js';
 import calendar from './calendar.js';
 import core from './core.js';
+import decor from './decor.js';
 import districts from './districts.js';
 import offlinePostcard from './offline-postcard.js';
 import placement from './placement.js';
@@ -21,6 +22,7 @@ export const systems = [
   achievements,
   calendar,
   core,
+  decor,
   districts,
   offlinePostcard,
   placement,

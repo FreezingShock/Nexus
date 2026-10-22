@@ -85,3 +85,5 @@ The closed form is tested against a numeric integral of the rate curve (`tests/o
 ## Tests
 
 `tests/save.test.js`, `tests/persist.test.js` (slots, corrupt data, migrations, import, restore, whole-town round trip), `tests/offline.test.js` and `tests/catchup.test.js` (the closed form and clock changes).
+
+Decorations add `decor`, `nextDecor` and `decorUnlocks`. All three default to empty when missing, so older saves need no migration and no version bump.
