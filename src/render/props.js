@@ -1,19 +1,31 @@
-// Static props: the bridge and the turbine masts. Trees are objects (render/systems/trees.js). Lamps come from the road system.
+// Static props: the bridge, the tunnel portal and the turbine masts. Trees are objects (render/systems/trees.js). Lamps come from the road system.
 // Parks and plazas are buildings now (starter town and placed), so they are drawn with the town.
 import * as THREE from '../../vendor/three/three.module.min.js';
 import { toon } from './materials.js';
 import { Batch, xf } from './geom.js';
 
+// The bridge spans the river on the starter stem, and its deck runs over the water tiles of the grid. The portal stands
+// where the tunnel gate is (world/starter.js), at the foot of the mountain.
+export const BRIDGE_X = 57, PORTAL_X = 70.6;
+
 export function buildStatic(parent, layout) {
   const b = new Batch();
   // bridge over the river
-  const deck = (g, m, x, y, z) => b.add(g, toon(m), xf(52 + x, y, z), { edge: true });
-  deck(new THREE.BoxGeometry(18, 0.35, 4.2), 0xB9AD97, 0, -0.15, 0);
-  for (const s of [-1, 1]) deck(new THREE.BoxGeometry(18, 0.55, 0.25), 0xEAE1D5, 0, 0.3, s * 2);
+  const deck = (g, m, x, y, z) => b.add(g, toon(m), xf(BRIDGE_X + x, y, z), { edge: true });
+  deck(new THREE.BoxGeometry(22, 0.35, 4.2), 0xB9AD97, 0, -0.15, 0);
+  for (const s of [-1, 1]) deck(new THREE.BoxGeometry(22, 0.55, 0.25), 0xEAE1D5, 0, 0.3, s * 2);
   for (let i = -1; i <= 1; i += 2) for (const s of [-1, 1]) deck(new THREE.CylinderGeometry(0.4, 0.5, 1.6, 8), 0xB9AD97, i * 6, -1.2, s * 1.4);
+  // tunnel portal: a stone arch with a dark mouth, facing the road
+  const stone = toon(0xD9CFBE);
+  b.add(new THREE.BoxGeometry(0.8, 2.3, 0.7), stone, xf(PORTAL_X, 1.15, -2.3), { edge: true });
+  b.add(new THREE.BoxGeometry(0.8, 2.3, 0.7), stone, xf(PORTAL_X, 1.15, 2.3), { edge: true });
+  b.add(new THREE.TorusGeometry(2.3, 0.4, 6, 16, Math.PI), stone, xf(PORTAL_X, 0, 0, 0, -Math.PI / 2, 0), { edge: true });
   // wind turbine masts
   for (const t of layout.turbines) b.add(new THREE.CylinderGeometry(0.18, 0.3, 9, 8), toon(0xFAF3E4), xf(t.x, 4.5, t.z), { edge: true });
   b.build(parent);
+  const mouth = new THREE.Mesh(new THREE.CircleGeometry(1.9, 20, 0, Math.PI), new THREE.MeshBasicMaterial({ color: 0x221E1A, side: THREE.DoubleSide }));
+  mouth.position.set(PORTAL_X - 0.05, 0.02, 0); mouth.rotation.y = -Math.PI / 2;
+  parent.add(mouth);
 }
 
 export function buildTurbines(parent, layout) {

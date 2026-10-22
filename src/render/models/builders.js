@@ -246,7 +246,8 @@ const B = {
   green(k) {
     lawn(k);
     tree(k, ...at(k, -0.45, -0.4), 1.0); tree(k, ...at(k, 0.5, 0.25), 0.8); tree(k, ...at(k, -0.1, 0.6), 0.6);
-    k.box(0.9, 0.06, 0.28, ...at(k, 0.35, -0.7), C.wood, { edge: false });                        // a bench on the path
+    const [bx, bz] = at(k, 0.35, -0.7);
+    k.box(0.9, 0.06, 0.28, bx, PLINTH + 0.06, bz, C.wood, { edge: false });                       // a bench on the path
   },
 
   plaza(k) {

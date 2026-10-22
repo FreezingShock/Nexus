@@ -2,10 +2,12 @@
 // Saved: state.roads (see src/world/roadnet.js) and state.roadUnlocks. The grid's `road` layer is rebuilt from them.
 import { ROAD_TYPES } from '../catalog.js';
 import { GRID_N, tileIndex } from '../../world/grid.js';
+import { starterProtected } from '../../world/starter.js';
 import { putTrees, takeOnTiles } from '../../world/trees.js';
 import { MAX_STROKE, ROAD_IDS, ROAD_KIND, BLOCK_TEXT, planStroke, roadBlock, starterRoads } from '../../world/roadnet.js';
 
 const UNDO_DEPTH = 24;
+const PROTECTED = starterProtected();   // the bridge and the road into the tunnel: bulldozing refuses them
 const typeOf = (id) => ROAD_TYPES.find((r) => r.id === id);
 const costOf = (id) => (typeOf(id) ? typeOf(id).cost : 0);
 const isTile = (t) => Array.isArray(t) && Number.isInteger(t[0]) && Number.isInteger(t[1]);
@@ -66,7 +68,8 @@ export default {
       if (cleared.length) sim.dispatch({ type: 'clearZoneTiles', tiles: cleared });
     },
 
-    // tiles: [gx, gz] list. Half of what each tile cost comes back; the starter streets refund nothing.
+    // tiles: [gx, gz] list. Half of what each tile cost comes back; the starter streets refund nothing. The bridge and the
+    // tunnel road are skipped (PROTECTED), so a sweep across them removes only the rest.
     bulldozeRoad(ctx, { tiles }) {
       const { state, grid, emit, sim, syncDisplay } = ctx;
       if (!Array.isArray(tiles) || tiles.length > MAX_STROKE * 2 || !tiles.every(isTile)) return;
@@ -74,7 +77,7 @@ export default {
       let refund = 0;
       for (const [gx, gz] of tiles) {
         const idx = tileIndex(gx, gz), old = next[idx];
-        if (gx < 0 || gz < 0 || gx >= GRID_N || gz >= GRID_N || !old) continue;
+        if (gx < 0 || gz < 0 || gx >= GRID_N || gz >= GRID_N || !old || PROTECTED.has(idx)) continue;
         prev.push({ idx, old }); gone.push([gx, gz]);
         refund += Math.floor(old.p / 2);
         delete next[idx]; grid.road[idx] = 0;

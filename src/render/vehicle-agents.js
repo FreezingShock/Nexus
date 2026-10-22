@@ -12,6 +12,7 @@
 import { GRID_N, inBounds, tileIndex } from '../world/grid.js';
 import { DIRS, opposite } from '../world/roadnet.js';
 import { ROAD_FLOW, TILES, ZONES, ZONE_SIDE, ZONE_N, stepBetween } from '../sim/traffic.js';
+import { TUNNEL_GATE } from '../world/starter.js';
 import { makeRng } from '../world/rng.js';
 
 export const CAR = 0, BUS = 1;
@@ -27,6 +28,11 @@ const STOP_END = 0.5;                // a route that ends stops its car in the m
 const STOP_LINE = 0.98;              // a car waits here while the next tile cannot take it
 const GIVE_UP = 15;                  // seconds a car may wait at a line before it leaves (gridlock breaker)
 const SPAWN_GAP = 0.25;              // seconds between spawn attempts
+// The tunnel: the gate tile is a dead end at the foot of the mountain. A share of new cars comes out of it, and a share
+// of new cars leaves town for it. An exiting car drives east along the stem and goes into the tunnel at the gate.
+const GATE = tileIndex(TUNNEL_GATE.gx, TUNNEL_GATE.gz);
+const TUNNEL_IN = 0.12, TUNNEL_OUT = 0.12;
+const EXIT_FROM = TUNNEL_GATE.gx - 19; // exiting cars join the stem from here, east of the village
 const SPAWN_TRIES = 4;               // trips tried per attempt
 const SUB_DT = 1 / 30;               // largest integration step
 const MAX_DT = 0.25;                 // longer frames (a hidden tab) are cut to this
@@ -144,14 +150,19 @@ export class Fleet {
     }
   }
 
+  // The tile after t on this vehicle's route, or -1. An exiting car drives straight east, to the gate.
+  nextOf(a, env, t) {
+    if (a.exit) return (t % GRID_N) + 1 < GRID_N && env.roads[t + 1] ? t + 1 : -1;
+    const f = env.fields[a.dest];
+    return f ? f.next[t] : -1;
+  }
+
   // The tile `s` steps ahead of the vehicle along its route, or -1 when the route ends or breaks.
   hop(a, env, s) {
     if (a.kind === BUS) return a.tour[(a.k + s) % a.tour.length];
-    const f = env.fields[a.dest];
-    if (!f) return -1;
     let t = a.tile;
     for (let j = 0; j < s; j++) {
-      const n = f.next[t];
+      const n = this.nextOf(a, env, t);
       if (n < 0 || !env.roads[n] || stepBetween(t, n) < 0) return -1;
       t = n;
     }
@@ -194,7 +205,7 @@ export class Fleet {
     for (let s = 1; s <= LOOK; s++) {
       let nt;
       if (a.kind === BUS) nt = a.tour[(a.k + s) % a.tour.length];
-      else { const f = env.fields[a.dest]; nt = f ? f.next[t] : -1; }
+      else nt = this.nextOf(a, env, t);
       if (nt < 0 || !roads[nt]) break;
       const mvs = stepBetween(t, nt);
       if (mvs < 0) break;
@@ -229,6 +240,7 @@ export class Fleet {
     for (const a of this.agents) {
       if (!a.alive || a.state !== DRIVE) continue;
       if (!roads[a.tile]) { this.stop(a, KERB_TIME); continue; }   // the road under it was removed
+      if (a.exit && a.tile === GATE && a.x >= STOP_END - 0.03) { a.alive = false; a.want = -1; continue; } // into the tunnel
       this.route(a, env);
       const nt = a.nt;
 
@@ -372,8 +384,39 @@ export class Fleet {
     this.cumReady = true;
   }
 
-  // A new car leaves an origin zone for a destination zone, both drawn from the sim's trips. It starts mid-tile.
+  // A new car: from the tunnel, from town towards the tunnel, or a trip between two zones.
   spawnCar(env) {
+    const r = this.rng();
+    if (r < TUNNEL_IN && this.spawnFromTunnel(env)) return;
+    if (r < TUNNEL_IN + TUNNEL_OUT && this.spawnToTunnel(env)) return;
+    this.spawnTrip(env);
+  }
+
+  // A car comes out of the tunnel: it starts on the gate tile facing into town, and takes a route to a random zone.
+  spawnFromTunnel(env) {
+    const { roads, fields } = env;
+    if (!roads[GATE]) return false;
+    const j = Math.floor(this.rng() * ZONES), f = fields[j];
+    if (!f || !(f.next[GATE] >= 0)) return false;
+    const lane = laneOf(roads, GATE, 0);
+    if (!this.clear(GATE, 2, lane, env)) return false;
+    this.launch(GATE, 2, lane, 0, j, env);
+    return true;
+  }
+
+  // A car leaves town for the tunnel: it joins the stem east of the village and drives straight to the gate.
+  spawnToTunnel(env) {
+    const { roads } = env;
+    const u = tileIndex(EXIT_FROM + Math.floor(this.rng() * (TUNNEL_GATE.gx - EXIT_FROM)), TUNNEL_GATE.gz);
+    if (!roads[u]) return false;
+    const lane = laneOf(roads, u, 0);
+    if (!this.clear(u, 0, lane, env)) return false;
+    this.launch(u, 0, lane, 0, -1, env, true);
+    return true;
+  }
+
+  // A new car leaves an origin zone for a destination zone, both drawn from the sim's trips. It starts mid-tile.
+  spawnTrip(env) {
     const { roads, fields, anchors } = env;
     if (!env.total) return;
     this.refreshCum(env);
@@ -397,11 +440,12 @@ export class Fleet {
     }
   }
 
-  launch(u, d, lane, pref, j, env) {
+  launch(u, d, lane, pref, j, env, exit = false) {
     const a = this.slot(CAR);
     a.type = Math.floor(this.rng() * 3);
     a.colour = Math.floor(this.rng() * 6);
     a.dest = j;
+    a.exit = exit;
     a.tour = null;
     a.k = 0;
     a.tile = u;
@@ -434,6 +478,7 @@ export class Fleet {
     a.type = 0;
     a.colour = Math.floor(this.rng() * 2);
     a.dest = -1;
+    a.exit = false;
     a.tour = loop;
     a.k = k;
     a.tile = tile;

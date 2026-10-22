@@ -8,9 +8,9 @@ import { LOT_BASE } from '../src/world/placement.js';
 import { ZONE_DEFS, demandOf, lotStats, encodeZones, decodeZones } from '../src/sim/zones.js';
 
 const mk = (opts = {}) => { const state = freshState(); state.coins = 10000; return createSim({ state, ...opts }); };
-// open tiles on the east verge of the cross street and north of the main street, all within reach of a road
-const A = [33, 28], B = [38, 30];
-const T = [37, 29], P = [36, 28];   // one tile to check by hand, and one to place a building on
+// open tiles south of the stem, east of the cottages, all next to the road
+const A = [37, 33], B = [40, 38];
+const T = [38, 34], P = [37, 34];   // one tile to check by hand, and one to place a building on
 const AREA = (B[0] - A[0] + 1) * (B[1] - A[1] + 1);
 
 test('painting charges per tile, fills the grid and survives a save', () => {
@@ -25,9 +25,9 @@ test('painting charges per tile, fills the grid and survives a save', () => {
 
 test('paint only takes open ground and stops when coins run out', () => {
   const sim = mk();
-  sim.dispatch({ type: 'paintZone', zone: 2, a: [25, 31], b: [29, 33] }); // the main street and the starter houses
-  assert.equal(sim.grid.zoneAt(26, 32), 0);
-  assert.equal(sim.grid.zoneAt(28, 31), 0);
+  sim.dispatch({ type: 'paintZone', zone: 2, a: [30, 30], b: [33, 33] }); // the bar and the starter houses beside it
+  assert.equal(sim.grid.zoneAt(32, 31), 0);
+  assert.equal(sim.grid.zoneAt(31, 30), 0);
   const painted = () => sim.state.zones.split('').filter((c) => c === '2').length;
   const before = painted();
   sim.state.coins = 12;
