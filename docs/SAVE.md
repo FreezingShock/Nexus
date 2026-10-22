@@ -17,7 +17,11 @@ Then run `npm run registry`. Saves carry the new fields with no change to `save.
 
 ## Changing saved fields that already shipped
 
-Add a migration to `migrations` in `src/sim/save.js`, bump `SAVE_VERSION`, and add a test for the old shape. Current version: 5. `migrations[i]` turns a version `i+1` state into a version `i+2` state. They run in order, one per version, and each sees the output of the one before. Never edit a migration that has shipped. A failing migration never throws to the player: the save is refused with a reason, and the backup is still there.
+Add a migration to `migrations` in `src/sim/save.js`, bump `SAVE_VERSION`, and add a test for the old shape. Current version: 6. `migrations[i]` turns a version `i+1` state into a version `i+2` state. They run in order, one per version, and each sees the output of the one before. Never edit a migration that has shipped. A failing migration never throws to the player: the save is refused with a reason, and the backup is still there.
+
+### Milestone stages (version 6)
+
+Version 6 replaces the flat list `state.milestones` (ids of paid milestones) with `state.ach` (`{ done, best, counts }`, rules in [MILESTONES.md](MILESTONES.md)). The step (`addAchievements` in `save.js`) maps each old id to the stage it matches (`LEGACY_MILESTONES` in `src/sim/achievements.js`) and marks that stage paid, so nothing pays twice. `best` starts empty and fills on the first tick; stages the town has already outgrown pay out then, in one bundled postcard. A Renewal keeps `ach`.
 
 ### Bigger grid (version 5)
 

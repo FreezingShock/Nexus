@@ -1,0 +1,64 @@
+/* Milestones and achievements: a paper card on the right with a tab row and a scrolling list of goals. */
+:root{--achv-w:392px}
+.achvib{position:relative}
+.achvib .dot{position:absolute;top:5px;right:5px;width:12px;height:12px;border-radius:50%;background:var(--action);border:2px solid var(--ink)}
+
+#achv{position:absolute;top:calc(var(--hud-bottom,108px) + 12px);right:max(16px,env(safe-area-inset-right,0px));bottom:150px;width:var(--achv-w);max-width:calc(100% - 32px);display:flex;flex-direction:column;padding:0;z-index:7;animation:pc-in .3s cubic-bezier(.2,.8,.3,1) both}
+#achv .band{flex:0 0 auto;padding:16px 62px 14px 18px;background:var(--paper-3);background-image:var(--grain);border-bottom:2.5px solid var(--ink);border-radius:17px 21px 0 0}
+#achv .band h2{font-size:25px}
+#achv .band .sub{margin:2px 0 8px;font-size:13.5px}
+#achv .meter.wide{width:100%;height:12px;margin-top:0}
+#achv .meter.wide i{transition:width .4s}
+.achtabs{flex:0 0 auto;display:flex;flex-wrap:wrap;gap:6px;padding:10px 14px;border-bottom:2px dashed rgba(43,38,32,.25)}
+.achtab{height:30px;padding:0 11px;border:2px solid var(--ink);border-radius:15px;background:var(--paper);font-size:13px;font-weight:800;box-shadow:0 2px 0 var(--ink);transition:transform .08s,box-shadow .08s}
+.achtab:active{transform:translateY(2px);box-shadow:0 0 0 var(--ink)}
+.achtab[aria-selected="true"]{background:var(--action);color:var(--action-ink);text-shadow:0 1px 0 rgba(43,38,32,.35)}
+.achbody{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;padding:6px 14px 16px}
+.agroup{padding-top:10px}
+.agroup h3{margin:0 0 2px;font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:18px}
+.agroup h3 small{font-family:var(--body);font-weight:700;font-size:12.5px;color:var(--ink-soft)}
+.agroup>.sub{margin:0 0 8px;font-size:13px}
+.aglist{list-style:none;margin:0 0 4px;padding:0;display:flex;flex-direction:column;gap:9px}
+
+.ag{padding:8px 11px 10px;border:2px solid var(--ink);border-radius:13px;background:var(--paper-2);display:flex;flex-direction:column;gap:6px}
+.ag.complete{background:#F4E7BD}
+.ag-head{display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:10px;width:100%;padding:0;border:0;background:none;text-align:left;color:inherit}
+.ag-head:focus-visible{outline:3px solid var(--sky);outline-offset:3px;border-radius:8px}
+.ag-medal{width:34px;height:34px}
+.ag-medal .disc{fill:var(--mc,var(--paper))}
+.ag:not(.started) .ag-medal{opacity:.6}
+.ag:not(.started) .ag-medal .disc{stroke-dasharray:3 3}
+.ag:not(.started) .ag-medal .spark{display:none}
+.ag-main{display:flex;flex-direction:column;min-width:0}
+.ag-name{font-size:15px;font-weight:800;line-height:1.2}
+.ag-prog{font-size:12.5px;font-weight:700;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.ag-pips{display:flex;gap:3px}
+.ag-pips i,.ag-stages .pip{display:block;width:11px;height:11px;border-radius:50%;border:2px solid var(--ink);background:var(--paper);box-sizing:border-box}
+.ag-pips i.on,.ag-stages .done .pip{background:var(--pc)}
+.ag-next{margin:0;font-size:13px;font-weight:600;color:var(--ink-soft);line-height:1.3}
+.ag.complete .meter i{background:var(--mustard)}
+.ag-more{padding-top:4px;border-top:1.5px dashed rgba(43,38,32,.25)}
+.ag-more .sub{margin:4px 0 6px;font-size:13px}
+.ag-stages{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+.ag-stages li{display:grid;grid-template-columns:14px auto 1fr;column-gap:8px;align-items:center;font-size:13.5px;font-weight:600}
+.ag-stages .st-name{font-weight:800}
+.ag-stages .st-target{color:var(--ink-soft)}
+.ag-stages .st-reward{grid-column:2 / 4;color:var(--ink-soft);font-size:12.5px}
+.ag-stages .done .st-name::after{content:" ✓";color:var(--sage-d)}
+.ag-stages .done .st-reward::after{content:" · paid"}
+.ag-stages .next .st-name{color:var(--action)}
+
+.near{display:grid;grid-template-columns:1fr 90px;grid-template-rows:auto auto;align-items:center;gap:2px 10px;padding:8px 11px;border:2px solid var(--ink);border-radius:13px;background:var(--paper-2);cursor:pointer}
+.near b{font-size:14.5px}
+.near .meter.wide{grid-row:1 / 3;grid-column:2}
+.near small{color:var(--ink-soft);font-size:12.5px;font-weight:700}
+.near:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
+
+/* the card shares the right edge: Inspect, Settings and the flyout step aside while it is open */
+#app.achv-open #inspect,#app.achv-open #settings{right:calc(max(16px,env(safe-area-inset-right,0px)) + var(--achv-w) + 16px)}
+#app.achv-open .fly{right:calc(var(--gutter) + var(--achv-w) + 16px)}
+@media (max-width:900px){
+  #achv{top:auto;bottom:140px;left:var(--gutter);right:var(--gutter);width:auto;max-width:none;max-height:55%}
+  #app.achv-open #inspect,#app.achv-open #settings{right:var(--gutter)}
+  #app.achv-open .fly{right:var(--gutter)}
+}

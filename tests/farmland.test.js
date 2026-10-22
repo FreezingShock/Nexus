@@ -1,7 +1,7 @@
 // Farms: a building the player places on flat ground. It claims its whole lot, pays like a workplace and starts nowhere.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createSim } from '../src/sim/sim.js';
+import { quietSim as createSim } from './support/quiet.js';
 import { freshState } from '../src/sim/state.js';
 import { getLayout } from '../src/world/layout.js';
 import { CROPS } from '../src/world/palettes.js';

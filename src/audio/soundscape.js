@@ -71,7 +71,7 @@ export function cueFor(e) {
       return 'erase';
     case 'zonePainted': return 'zone';
     case 'zoneCleared': return 'erase';
-    case 'goalDone': return 'goal';
+    case 'goalDone': case 'milestone': return 'goal';
     case 'renewed': return 'renew';
     case 'boosted': return 'charge';
     case 'toast': return typeof e.text === 'string' && /Not enough/.test(e.text) ? 'deny' : null;

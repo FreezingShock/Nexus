@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createSim } from '../src/sim/sim.js';
+import { quietSim as createSim } from './support/quiet.js';
 import { getLayout } from '../src/world/layout.js';
 import { PARTS_RATE } from '../src/sim/economy.js';
 import { CAP_S, offlineWindow } from '../src/sim/offline.js';

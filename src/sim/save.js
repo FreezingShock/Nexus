@@ -6,11 +6,12 @@ import { systems } from './systems/index.js';
 import { getLayout } from '../world/layout.js';
 import { seedTrees } from '../world/trees.js';
 import { DEFAULT_TOWN } from './town.js';
+import { legacyDone } from './achievements.js';
 
 export const SAVE_KEY = 'nexus.save';
 export const BACKUP_KEY = 'nexus.save.backup';
 export const UNREADABLE_PREFIX = 'nexus.save.unreadable.';
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 export const MAX_FILE_CHARS = 5 * 1024 * 1024; // a town is a few hundred kilobytes; anything bigger is not one
 export const BACKUP_EVERY_MS = 10 * 60 * 1000; // the backup slot is refreshed at most this often while playing
 
@@ -51,11 +52,18 @@ const regrid = (s) => {
     placed: Array.isArray(s.placed) ? s.placed.map((r) => (isObj(r) && Number.isInteger(r.gx) && Number.isInteger(r.gz) ? { ...r, gx: r.gx + GROW, gz: r.gz + GROW } : r)) : s.placed,
   };
 };
+// v6: milestones become stages (state.ach). The flat list of paid milestone ids is turned into the matching stages, marked
+// paid so none of them pays twice; stages the town has already outgrown pay out on the first tick after loading.
+const addAchievements = (s) => {
+  const { milestones, ...rest } = s;
+  return { ...rest, ach: { done: legacyDone(milestones), best: {}, counts: { goalsDone: 0, dailies: 0 } } };
+};
 export const migrations = [
   (s) => ({ ...s, trees: seedTrees(getLayout()) }),
   resetToStarter,
   addTownBadge,
   regrid,
+  addAchievements,
 ];
 
 export function wrap(state, now) {

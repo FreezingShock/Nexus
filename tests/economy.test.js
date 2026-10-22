@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createSim } from '../src/sim/sim.js';
+import { quietSim as createSim } from './support/quiet.js';
 import { getLayout } from '../src/world/layout.js';
 import { BALANCE } from '../src/sim/balance.js';
 import { buildCost, bulkCost, START_COINS, START_PARTS } from '../src/sim/economy.js';
@@ -129,20 +129,6 @@ test('finishing all open goals in one day pays the daily bonus; a missed day res
   assert.ok(missed.sim.state.coins > missed.coins - missed.cost, 'coins are never taken away');
 });
 
-test('milestones pay once each', () => {
-  const sim = mk();
-  sim.state.earned = 1500;
-  const parts = sim.state.parts;
-  sim.tick();
-  const m = BALANCE.milestones.find((x) => x.id === 'coins-1k');
-  assert.ok(sim.state.milestones.includes('coins-1k'));
-  assert.ok(sim.state.parts >= parts + m.reward.parts);
-  const after = sim.state.parts;
-  sim.tick();
-  assert.ok(sim.state.parts - after < m.reward.parts, 'the milestone pays only once');
-  assert.equal(sim.state.milestones.filter((id) => id === 'coins-1k').length, 1);
-});
-
 test('points: floor of the cube root of coins this run over the divisor; +2% income each', () => {
   const d = BALANCE.renewal.divisor;
   assert.equal(pendingPoints(0), 0);
@@ -164,11 +150,11 @@ test('Renewal is refused until this run has enough coins, and changes nothing wh
   assert.equal(sim.state.coins, coins);
 });
 
-test('Renewal starts the town over and keeps points, unlocks, milestones, lifetime coins and settings', () => {
+test('Renewal starts the town over and keeps points, unlocks, milestone stages, lifetime coins and settings', () => {
   const sim = mk();
   const s = sim.state;
   s.coins = 5e9; s.parts = 900; s.runEarned = BALANCE.renewal.divisor * 1.2; s.earned = 6e9; s.points = 2;
-  s.roadUnlocks = ['bike']; s.milestones = ['coins-1k']; s.speed = 2; s.stats.placed = 3;
+  s.roadUnlocks = ['bike']; s.ach.done.placed = 2; s.ach.best.earned = 2e3; s.speed = 2; s.stats.placed = 3;
   s.levels['b1000'] = 4; s.removed.push('b1001');
   const roads = s.roads;
   sim.dispatch({ type: 'renew' });
@@ -181,7 +167,8 @@ test('Renewal starts the town over and keeps points, unlocks, milestones, lifeti
   assert.equal(s.runEarned, 0);
   assert.equal(s.earned, 6e9);
   assert.deepEqual(s.roadUnlocks, ['bike']);
-  assert.deepEqual(s.milestones, ['coins-1k']);
+  assert.equal(s.ach.done.placed, 2);
+  assert.ok(s.ach.best.earned >= 2e3);
   assert.ok([0, 1].includes(s.night)); // night is derived from the clock now, not a saved setting
   assert.equal(s.speed, 2);
   assert.equal(s.stats.placed, 3);
@@ -200,14 +187,13 @@ test('offline catch-up adds to lifetime and run coins, using the same closed for
   assert.ok(Math.abs(sim.state.runEarned - o.coins) < 1e-6);
 });
 
-test('save sanitize: garbage in gives safe defaults, boosts never survive a load, milestones are unique', () => {
-  const s = sanitize({ coins: 1, earned: 'x', charge: 999, boostS: 50, stats: null, goals: { slots: 'bad' }, milestones: ['nope', 'coins-1k', 'coins-1k'], points: -4, renewals: 1.5 });
+test('save sanitize: garbage in gives safe defaults, boosts never survive a load', () => {
+  const s = sanitize({ coins: 1, earned: 'x', charge: 999, boostS: 50, stats: null, goals: { slots: 'bad' }, points: -4, renewals: 1.5 });
   assert.equal(s.charge, BALANCE.charge.max);
   assert.equal(s.boostS, 0);
   assert.equal(s.earned, 0);
   assert.equal(s.points, 0);
   assert.equal(s.renewals, 0);
-  assert.deepEqual(s.milestones, ['coins-1k']);
   assert.equal(s.goals.slots.length, BALANCE.goals.open);
   assert.ok(s.goals.slots.every((x) => goalDef(x.k)));
   assert.deepEqual(s.stats, { placed: 0, painted: 0, roadTiles: 0, upgrades: 0, boosts: 0 });

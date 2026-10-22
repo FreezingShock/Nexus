@@ -1,6 +1,7 @@
 // Town goals: the Goals card (Charge boost, daily goals, milestones, Renewal) and the Renewal chip in the header.
 // Reads sim snapshots and sends commands. Static markup is built once so the buttons keep their clicks while numbers update.
 import { BALANCE } from '../../sim/balance.js';
+import { fmtTarget, nearest, summary } from '../../sim/achievements.js';
 import { dayKey, goalDef, pendingPoints, pointsMult, runNeededFor } from '../../sim/progress.js';
 import { $, fmt, fmtDuration } from '../format.js';
 
@@ -34,12 +35,12 @@ export default {
           <p class="sub">Building and painting add Charge. Spend ${CH.boostCost} for double coins for a minute. Nothing needs it; it is a bonus for playing.</p>
         </section>
         <section class="gsec"><h3>Today's goals</h3><ul class="glist" id="glist"></ul><p class="sub" id="gbonus"></p></section>
-        <section class="gsec"><h3>Milestones <small id="gmcount"></small></h3><ul class="glist" id="gmlist"></ul></section>
+        <section class="gsec"><h3>Milestones <small id="gmcount"></small></h3><ul class="glist" id="gmlist"></ul><button class="btn" id="gmall" type="button">All milestones (M)</button></section>
         <section class="gsec">
           <h3>Renewal</h3>
           <p class="sub" id="gren"></p>
           <button class="btn" id="grenew">Renew town</button>
-          <p class="sub">Renewal starts the town over with fresh coins, Parts, roads and buildings. It keeps your points, unlocked roads, milestones and settings. Each point is +2% income, for good.</p>
+          <p class="sub">Renewal starts the town over with fresh coins, Parts, roads and buildings. It keeps your points, unlocked roads, milestone stages and settings. Each point is +2% income, for good.</p>
         </section>
       </div>`;
     $('leftcol').appendChild(card);
@@ -50,6 +51,7 @@ export default {
     btn.onclick = () => toggle();
     $('gx').onclick = () => toggle(false);
     $('gboost').onclick = () => send({ type: 'boost' });
+    $('gmall').onclick = () => dispatchEvent(new Event('nexus:milestones'));
     $('grenew').onclick = () => {
       const gain = pendingPoints(s.runEarned);
       if (gain < 1) return toast('Renewal opens after ' + fmt(BALANCE.renewal.divisor) + ' coins in one run');
@@ -99,13 +101,9 @@ export default {
       set('gbonus', g.bonusDay === t ? 'Daily bonus collected today' + streak
         : done + ' of ' + GOALS.open + ' done today. Finish all ' + GOALS.open + ' for a bonus' + streak);
 
-      const doneIds = new Set(s.milestones);
-      const left = BALANCE.milestones.filter((m) => !doneIds.has(m.id));
-      set('gmcount', doneIds.size + ' of ' + BALANCE.milestones.length);
-      $('gmlist').innerHTML = left.slice(0, 3).map((m) => {
-        const v = m.stat === 'earned' ? s.earned : m.stat === 'renewals' ? s.renewals : (s.stats[m.stat] || 0);
-        return `<li><div class="grow"><b>${m.text}</b><small>${m.reward.parts ? '+' + m.reward.parts + ' Parts' : '+' + fmt(m.reward.coins) + ' coins'}</small></div><div class="meter wide"><i style="width:${pct(v / m.n)}%"></i></div><small class="gp">${fmt(Math.min(v, m.n))} of ${fmt(m.n)}</small></li>`;
-      }).join('') || '<li><b>Every milestone is done. Thank you for the town.</b></li>';
+      const sum = summary(s);
+      set('gmcount', sum.stages + ' of ' + sum.totalStages + ' stages');
+      $('gmlist').innerHTML = nearest(s, 3).map((n) => `<li><div class="grow"><b>${n.goal.name}</b><small>${fmtTarget(n.goal, n.next)}</small></div><div class="meter wide"><i style="width:${pct(n.frac)}%"></i></div><small class="gp">${fmt(Math.min(n.value, n.next))} of ${fmt(n.next)}</small></li>`).join('') || '<li><b>Every milestone is done. Thank you for the town.</b></li>';
 
       const bonus = pointsMult(s.points) - 1;
       set('gren', (pts >= 1

@@ -4,7 +4,7 @@ import { MODELS, describe, fitFootprint, footprintsOf, canonicalDims, pickModelF
 import { starterPlaced } from '../src/world/starter.js';
 import { buildParts, builderIds, trianglesOf } from '../src/render/models/builders.js';
 import { getLayout } from '../src/world/layout.js';
-import { createSim } from '../src/sim/sim.js';
+import { quietSim as createSim } from './support/quiet.js';
 import { sanitize } from '../src/sim/save.js';
 import { tileIndex, TILE } from '../src/world/grid.js';
 import * as THREE from '../vendor/three/three.module.min.js';

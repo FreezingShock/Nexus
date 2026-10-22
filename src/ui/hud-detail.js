@@ -2,6 +2,7 @@
 // Only numbers, fixed words and our own labels are interpolated. Saved text (the town name) never goes in here.
 import { BALANCE } from '../sim/balance.js';
 import { ROAD_TYPES } from '../sim/catalog.js';
+import { fmtTarget, goalById, standing } from '../sim/achievements.js';
 import { pendingPoints, pointsMult, runNeededFor } from '../sim/progress.js';
 import { fmtCompact, fmtExact, fmtRateCompact } from './format.js';
 
@@ -27,16 +28,11 @@ const list = (rows) => (rows.length ? `<dl class="pr-list">${rowsHtml(rows)}</dl
 const head = (title, lead) => `<h3>${title}</h3><p class="pc-lead">${lead}</p>`;
 const next = (label, title, detail) => `<div class="pc-next"><span>${label}</span><b>${title}</b><small>${detail}</small></div>`;
 
-// The first milestone not yet paid, with its progress. Null when all are paid.
+// The next stage of the Coins earned goal, with its progress. Null when every stage is paid.
 export function nextMilestone(state) {
-  const m = BALANCE.milestones.find((x) => !state.milestones.includes(x.id));
-  if (!m) return null;
-  return { text: m.text, have: statValue(state, m.stat), need: m.n };
-}
-function statValue(state, stat) {
-  if (stat === 'earned') return state.earned;
-  if (stat === 'renewals') return state.renewals;
-  return (state.stats && state.stats[stat]) || 0;
+  const s = standing(state, goalById('earned'));
+  if (s.complete) return null;
+  return { text: 'Earn ' + fmtTarget(s.goal, s.next), have: s.value, need: s.next };
 }
 
 // The first road type still locked by Parts, or null when all are open.

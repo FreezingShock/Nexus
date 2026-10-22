@@ -72,10 +72,10 @@ test('the icon set draws an SVG for every icon, and an unknown name draws the ho
   assert.equal(townIconSvg('nope'), townIconSvg('house'));
 });
 
-// ---- save: version 5 and the migration ----
+// ---- save: version 6 and the migration ----
 
-test('the save is version 5, and a version 3 town gets the default name and badge', () => {
-  assert.equal(SAVE_VERSION, 5);
+test('the save is version 6, and a version 3 town gets the default name and badge', () => {
+  assert.equal(SAVE_VERSION, 6);
   const old = { coins: 500, roads: {}, speed: 2, levels: {} };
   const migrated = migrations[2](old);
   assert.deepEqual(migrated.town, DEFAULT_TOWN);
