@@ -1,6 +1,7 @@
 // The Zones tool: pick a zone (or the eraser), drag a rectangle on the grid, release to paint.
 // Reads sim state, sends paintZone / clearZone, and drives the tileview render system for the grid and the preview.
 import { inBounds, worldToTile } from '../../world/grid.js';
+import { demandCard } from '../hud-detail.js';
 import { ZONE_DEFS } from '../../sim/zones.js';
 import { $, fmt } from '../format.js';
 import { zoneCard } from '../cards.js';
@@ -145,15 +146,22 @@ export default {
       },
     };
 
-    // The demand widget: one slim bar per zone with demand, in the zone colours. R, C and I, with the full name on hover.
+    // The demand widget: one slim bar per zone with demand, in the zone colours. R, C and I, and a hover card with the
+    // full names, the percentage and what drives each bar. The card text lives in hud-detail.js.
+    const demandPop = document.getElementById('demandpop');
+    let lastCard = '';
     function paintDemand() {
       if (!demandEl) return;
       const d = sim.zoning.demand();
       demandEl.innerHTML = [1, 2, 3].map((z) => {
         const pct = Math.round(d[z] * 100);
-        return `<div class="drow2" title="${ZONE_DEFS[z].name} demand: ${pct}%"><span class="dk" style="color:${ZONE_DEFS[z].paint}">${ZONE_DEFS[z].name[0]}</span>` +
-          `<i class="dbar"><u style="width:${pct}%;background:${ZONE_DEFS[z].paint}"></u></i><em>${pct}%</em></div>`;
+        return `<div class="drow2"><span class="dk" style="background:${ZONE_DEFS[z].paint}">${ZONE_DEFS[z].name[0]}</span>` +
+          `<i class="dbar" aria-hidden="true"><u style="width:${pct}%;background:${ZONE_DEFS[z].paint}"></u></i><em>${pct}%</em></div>`;
       }).join('');
+      if (demandPop) {
+        const card = demandCard(d, sim.zoning.stats(), [null, ZONE_DEFS[1].paint, ZONE_DEFS[2].paint, ZONE_DEFS[3].paint]);
+        if (card !== lastCard) { lastCard = card; demandPop.innerHTML = card; }
+      }
     }
   },
 };

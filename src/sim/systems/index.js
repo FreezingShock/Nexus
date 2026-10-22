@@ -9,6 +9,7 @@ import placement from './placement.js';
 import progression from './progression.js';
 import roads from './roads.js';
 import services from './services.js';
+import town from './town.js';
 import traffic from './traffic.js';
 import trees from './trees.js';
 import upgrades from './upgrades.js';
@@ -23,6 +24,7 @@ export const systems = [
   progression,
   roads,
   services,
+  town,
   traffic,
   trees,
   upgrades,

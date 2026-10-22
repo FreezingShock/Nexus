@@ -35,15 +35,19 @@ export function createSim({ state = freshState(), layout = getLayout(), now = ()
     return true;
   };
   // Coins: buildings and systems' `rate`, then every system's `mult` (boost, Renewal). Parts: base plus systems' `partsRate`.
+  // The same sums, split by system id, for the HUD's hover cards. Refreshed with the rates, never per frame.
+  let breakdown = { coins: {}, parts: {}, mult: {} };
   const refresh = () => {
     let coins = BASE_RATE, parts = PARTS_RATE, m = 1;
+    const byCoins = { base: BASE_RATE }, byParts = { base: PARTS_RATE }, byMult = {};
     for (const d of registry.list()) {
-      if (d.rate) coins += d.rate(ctx);
-      if (d.partsRate) parts += d.partsRate(ctx);
-      if (d.mult) m *= d.mult(ctx);
+      if (d.rate) { const v = d.rate(ctx); coins += v; byCoins[d.id] = (byCoins[d.id] || 0) + v; }
+      if (d.partsRate) { const v = d.partsRate(ctx); parts += v; byParts[d.id] = (byParts[d.id] || 0) + v; }
+      if (d.mult) { const x = d.mult(ctx); m *= x; byMult[d.id] = x; }
     }
     rate = Math.round(coins * m * 10) / 10;
     partsRate = Math.round(parts * 100) / 100;
+    breakdown = { coins: byCoins, parts: byParts, mult: byMult };
   };
   const grid = createGrid(layout);
   // rebuild: re-runs every system's init after a Renewal wipes the state, so init must be safe to run twice.
@@ -52,6 +56,8 @@ export function createSim({ state = freshState(), layout = getLayout(), now = ()
   sim.subscribe = (fn) => { listeners.add(fn); return () => listeners.delete(fn); };
   sim.rate = () => rate;
   sim.partsRate = () => partsRate;
+  // Per-system parts of the income: { coins, parts, mult } keyed by system id. Read-only: callers must not write to it.
+  sim.breakdown = () => breakdown;
   sim.now = now;
   // Buildings are placed records (the starter town included): the placement system answers for them.
   sim.building = () => null;

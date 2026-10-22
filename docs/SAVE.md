@@ -17,7 +17,11 @@ Then run `npm run registry`. Saves carry the new fields with no change to `save.
 
 ## Changing saved fields that already shipped
 
-Add a migration to `migrations` in `src/sim/save.js`, bump `SAVE_VERSION`, and add a test for the old shape. Current version: 3. `migrations[i]` turns a version `i+1` state into a version `i+2` state. They run in order, one per version, and each sees the output of the one before. Never edit a migration that has shipped. A failing migration never throws to the player: the save is refused with a reason, and the backup is still there.
+Add a migration to `migrations` in `src/sim/save.js`, bump `SAVE_VERSION`, and add a test for the old shape. Current version: 4. `migrations[i]` turns a version `i+1` state into a version `i+2` state. They run in order, one per version, and each sees the output of the one before. Never edit a migration that has shipped. A failing migration never throws to the player: the save is refused with a reason, and the backup is still there.
+
+### Town name and badge (version 4)
+
+Version 4 adds `state.town` (`{ name, icon, color }`, rules in `src/sim/town.js`). A version 3 town gets the default name and badge: the name is `Nexus`, the icon is the house and the colour is mustard. The town system (`src/sim/systems/town.js`) also repairs the fields on every load: a name is trimmed and capped at 24 characters, and an unknown icon or colour falls back to the default. A Renewal keeps the name and badge.
 
 ### Reset steps (version 3)
 
