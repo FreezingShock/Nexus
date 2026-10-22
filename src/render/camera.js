@@ -6,8 +6,13 @@ import {
   flyVelocity, flyMove, lookChange, flyStart, isoTargetFrom, lookDir,
 } from './camera-math.js';
 
+// The orbit camera sits 150 units from its target, and zoomed out or tilted low, ground reaches back behind it. A near plane
+// at +1 cut that ground off in a slanted line, with the sky showing through. Orthographic depth may be negative, so the
+// near plane goes well behind the camera and the land runs on under and behind it.
+const NEAR = -400;
+
 export function createCamera() {
-  const iso = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 900);
+  const iso = new THREE.OrthographicCamera(-1, 1, 1, -1, NEAR, 900);
   const fly = new THREE.PerspectiveCamera(50, 1, 0.25, 900);
   // `view` is the orbit state. Other systems read its tx, tz, half and zoom. In free-fly, tx and tz follow the free camera.
   const view = {

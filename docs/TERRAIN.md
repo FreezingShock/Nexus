@@ -46,3 +46,7 @@ new village (Settings, Start over).
 ## Far ground
 
 `render/terrain.js` builds the fine map (2.5 units a vertex) and a coarse ring round it out to 480 units (10 units a vertex), the same `heightAt`. Both have a wall under their seams so no crack shows sky. About 63k triangles in all; one more draw call.
+
+## Never seeing the edge
+
+The orbit camera's near plane used to sit at +1, 150 units from the target, so zoomed out or tilted low, ground behind the camera was clipped along a slanted line and the water plane and background showed through (a floating slab). The near plane is now -400. The water plane covers the whole far ground. The lowest tilt (`ISO.elevMin`) is 0.38, so the top of the view stays on land, and `tests/camera.test.js` checks that the four corner rays land within 460 units at the widest window, furthest zoom-out and furthest pan. Beyond about 340 units of depth the fog fades the land into haze, so the mountains seem to go on for ever.

@@ -7,7 +7,7 @@ import { patchSeason } from './season.js';
 const S = 380, N = 150;
 const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
-const OUT_HALF = 480, OUT_STEP = S / 2 / 19; // the far ground: coarse, round the fine map, out past where the fog hides it
+export const OUT_HALF = 480, OUT_STEP = S / 2 / 19; // the far ground: coarse, round the fine map, out past where the fog hides it
 const SKIRT = 8;                              // a wall under every seam, so a crack between the fine and coarse ground shows no sky
 
 // Triangles (flat array of x, y, z) as a coloured toon mesh.
@@ -85,7 +85,7 @@ export function buildTerrain(parent) {
   for (const line of pts(S / 2, 38)) skirt(outer, line);
   parent.add(paintedMesh(new Float32Array(outer)));
 
-  const water = new THREE.Mesh(new THREE.PlaneGeometry(S, S), patchSeason(toonUncached(0x7FA3B8), { still: true }));
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(OUT_HALF * 2, OUT_HALF * 2), patchSeason(toonUncached(0x7FA3B8), { still: true }));
   water.rotation.x = -Math.PI / 2; water.position.y = -0.55;
   parent.add(water);
 }
