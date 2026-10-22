@@ -17,28 +17,32 @@
 .brand.plaque:active{transform:translateY(2px) rotate(-1.4deg)}
 .chips{gap:10px;flex-wrap:wrap;min-width:0}
 .chip{min-width:0;flex:0 1 auto;padding:9px 14px 9px 10px;gap:10px}
-.chip.res{width:176px}
-.chip.ren{width:196px}
-.chip.ren b,.chip.hp b{font-size:19px}
-.chip.demand{width:236px;height:var(--plaque-h)}
-.hpwrap{position:relative;flex:0 1 208px;min-width:0}
+.chip .badge{width:40px;height:40px}
+.chip .badge svg{width:24px;height:24px}
+.chip.res{width:184px}
+.chip.ren{width:200px}
+.chip.demand{width:250px;height:var(--plaque-h)}
+.hpwrap{position:relative;flex:0 1 214px;min-width:0}
 .chip.hp{width:100%;cursor:pointer}
 .chip .cval{min-width:0;flex:1 1 auto;display:block}
 .chip .cval b{white-space:nowrap;overflow:hidden}
-#hppct{display:inline-block;min-width:3ch;font-variant-numeric:tabular-nums}
-.chip.hp .meter{margin-top:6px;max-width:none}
+/* Renewal and Happiness: the name on the left, the percentage on the right, one meter under both */
+.chip.ren .cval b,.chip.hp .cval b{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:17px}
+.chip.ren .cval b span,.chip.hp .cval b span{font-size:19px;font-variant-numeric:tabular-nums}
+#hppct{display:inline-block;min-width:3ch;text-align:right}
+#renewal{display:inline-block;min-width:3ch;text-align:right}
+.chip .meter{width:100%;max-width:none}
+.chip.ren .meter,.chip.hp .meter{margin-top:7px;height:15px}
 .chip.hp .meter i{width:0;background:var(--sky);transition:width .6s ease}
 .chip.hp.open>.pop{display:none}
-@media (min-width:1400px){
+/* one line from this width up, the plaques shrinking a little but never below the point where a number would clip */
+@media (min-width:1480px){
   .chips{flex-wrap:nowrap}
-  .chip.res{flex-basis:176px;min-width:150px}
-  .chip.ren{flex-basis:196px;min-width:170px}
-  .hpwrap{min-width:170px}
-  .chip.demand{flex-basis:236px;min-width:216px}
+  .chip.res{flex-basis:184px;min-width:172px}
+  .chip.ren{flex-basis:200px;min-width:190px}
+  .hpwrap{min-width:206px}
+  .chip.demand{flex-basis:250px;min-width:228px}
 }
-#renewal{display:inline-block;min-width:4ch;font-variant-numeric:tabular-nums}
-.chip .meter{width:100%;max-width:130px}
-.chip.ren .meter{margin-top:6px}
 
 /* the town plaque: the badge opens the picker, the name renames inline */
 .townbadge{width:46px;height:46px;flex:0 0 auto;border-radius:50%;border:2.5px solid var(--ink);padding:0;display:grid;place-items:center;box-shadow:0 2px 0 var(--ink);transition:transform .08s,box-shadow .08s}

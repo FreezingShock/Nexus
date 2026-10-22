@@ -15,7 +15,7 @@ export function isBlocked(label, obstacles, pad = 4) {
 // The selectors of interface that a map label must never cover: the top HUD, the left column, the open cards and
 // flyouts, the toolbar, the offline envelope and postcard, the notes, tips and the labels of other tools.
 export const OBSTACLES = [
-  '.top > *', '.leftcol > *', '#inspect', '#settings', '#fly', '#tools', '#demandw', '#hp-panel',
+  '.top > *', '.leftcol > *', '#inspect', '#settings', '#fly', '#tools', '#demandw', '#hp-panel', '#menu',
   '.envelope', '.postcard', '.openbtn', '.notes', '.tipbubble', '.tipnote', '.shortcuts',
   '.gfx-stats', '#placelabel', '#roadlabel', '.ztag',
 ];

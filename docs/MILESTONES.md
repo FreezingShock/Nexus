@@ -1,6 +1,6 @@
 # Milestones and achievements
 
-A panel on the right of the screen (button in the control bar, key **M**) lists every goal with its stages, a progress bar to the next stage and what each stage pays. Rewards are paid by the sim the first time a stage is reached, so the panel only looks.
+A panel on the right of the screen (tile in the top bar menu, key **M**) lists every goal with its stages, a progress bar to the next stage and what each stage pays. Rewards are paid by the sim the first time a stage is reached, so the panel only looks.
 
 ## How it works
 

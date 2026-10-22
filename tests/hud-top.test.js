@@ -186,7 +186,7 @@ test('the top row has every plaque, its hover card and the badge picker, and the
   }
   assert.match(html, /<link rel="stylesheet" href="css\/hud\.css">/);
   assert.match(read('css/hud.css'), /\.pop\{/);
-  assert.match(read('css/hud.css'), /\.chip\.res\{width:176px\}/, 'fixed plaque widths keep the row still');
+  assert.match(read('css/hud.css'), /\.chip\.res\{width:184px\}/, 'fixed plaque widths keep the row still');
 });
 
 test('the old plaque tips are gone from the tooltip list, so there is one card per plaque', () => {
@@ -211,4 +211,19 @@ test('Happiness is a plaque in the top bar with its panel under it, not a card i
   assert.doesNotMatch(mod, /leftcol/);
   assert.match(mod, /\$\('hpchip'\)/);
   assert.doesNotMatch(read('css/happiness.css'), /#happiness-card/);
+});
+
+test('the control cluster keeps pause and speed and moves the other buttons into a hamburger menu', () => {
+  const html = read('index.html');
+  const ctrl = html.slice(html.indexOf('<div class="ctrl card">'), html.indexOf('<nav class="card menu"'));
+  for (const id of ['pause', 'speed', 'menubtn']) assert.match(ctrl, new RegExp('id="' + id + '"'), id);
+  assert.doesNotMatch(ctrl, /id="night"|id="settingsbtn"/, 'the bar itself holds only time and the menu button');
+  const menu = html.slice(html.indexOf('<nav class="card menu"'), html.indexOf('</header>'));
+  assert.match(menu, /id="menugrid"/);
+  assert.match(menu, /id="night"/);
+  assert.match(menu, /id="settingsbtn"/, 'modules insert their buttons before Settings, inside the grid');
+  assert.match(html, /<link rel="stylesheet" href="css\/topbar\.css">/);
+  const mod = read('src/ui/modules/menu.js');
+  assert.match(mod, /order: 100/);
+  assert.match(mod, /achvbtn: 'Milestones'/);
 });

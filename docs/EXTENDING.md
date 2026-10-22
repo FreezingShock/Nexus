@@ -41,3 +41,7 @@ Render systems read sim state and never write it. Keep draw calls low: instance 
 - `onTool(tool, was)`: the active tool changed (null when none); `ctx.tool()` returns the current one
 
 Modules read sim snapshots and send commands; they never mutate `sim.state`. Add markup to `index.html` only inside your own container and styles to your own css file.
+
+## Buttons in the top bar
+
+The top bar keeps only pause, speed and the hamburger. Any other button belongs in the menu: insert it before `#settingsbtn` (as the Goals, Milestones and Shortcuts modules do) and it lands in the menu grid as a tile. Give it an id and an `aria-label`; add a colour in `css/topbar.css` (`#yourbtn{--tc:#hex}`) and a name in `LABELS` in `src/ui/modules/menu.js`.
