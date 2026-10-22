@@ -6,6 +6,7 @@ import {
   ZONE_DEFS, ZONE_COUNT, MAX_LOT_LEVEL, ROAD_REACH, PLACED_LOT_MIN, encodeZones, decodeZones, validZonesString,
   nextRand, lotStats, demandOf, lotIncome, lotParts,
 } from '../zones.js';
+import { lotDescription, lotTileOf } from '../../world/lots.js';
 
 const AREA = GRID_N * GRID_N;
 // Undo for zone paint and erase: old zones go back on their tiles, lots the erase took come back,
@@ -53,6 +54,24 @@ export default {
       candidates: () => candidates(grid),
     };
     sim.zoning.painted = countPaint(grid);
+    // A grown lot answers to its id (lot<tile>) like a placed building: the inspect card, upgrade and bulldoze read it
+    // through sim.building and sim.alive. Other ids fall through to the placement system (or the bare sim).
+    if (!sim.lotsHooked) {
+      sim.lotsHooked = true;
+      const base = { building: sim.building, alive: sim.alive };
+      const lotOf = (id) => {
+        const i = lotTileOf(id);
+        if (i === null || !grid.zone[i]) return null;
+        return state.lots.find(([j]) => j === i) || null;
+      };
+      sim.building = (id) => {
+        const l = lotOf(id);
+        if (!l) return base.building(id);
+        const d = lotDescription(grid.zone[l[0]], l[1], l[2], l[0], (x, z) => grid.roadAt(x, z) !== 0);
+        return d && { ...d, income: ZONE_DEFS[grid.zone[l[0]]].income * l[1] }; // what this lot pays at its level
+      };
+      sim.alive = (id) => (lotTileOf(id) !== null ? lotOf(id) !== null : base.alive(id));
+    }
   },
 
   rate: ({ grid, state }) => lotIncome(state.lots, (i) => grid.zone[i]),
