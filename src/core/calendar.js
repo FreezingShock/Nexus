@@ -20,7 +20,7 @@ export const OPTIONS = {
   season: ['auto', ...SEASONS],
   weather: ['auto', ...WEATHER],
 };
-export const DEFAULTS = { dayLength: 'normal', seasonLength: 'normal', timeLock: 'auto', season: 'auto', weather: 'auto' };
+export const DEFAULTS = { dayLength: 'normal', seasonLength: 'short', timeLock: 'auto', season: 'auto', weather: 'auto' };
 
 export function sanitizeCalendar(raw) {
   const out = { ...DEFAULTS };
@@ -100,14 +100,21 @@ const LOOK = {
   leaves: { cloud: 0.15, leaves: 1 },
 };
 
-// Foliage: how much a green surface takes the season's colour, and which colour. Summer is the plain look.
-const FOLIAGE = {
-  spring: [0.3, 0xC2DE84],
-  summer: [0, 0x9DB874],
-  autumn: [0.85, 0xD98A3E],
-  winter: [0.35, 0x8C7B57],
+// What each season does to the look. Colours are targets that render eases towards; amounts are 0 to 1.
+//   foliage / foliageCol     how much a leaf surface takes the colour (grass, broadleaf canopies)
+//   foliageAlt / autumn      autumn: some leaves go red, the rest gold (autumn is the amount of that split)
+//   blossom                  spring blossom on broadleaf canopies only
+//   field                    the crop colour on farmland
+//   water                    the river colour
+//   haze / sun / strength    the sky's haze colour, the light's colour and its strength
+//   low                      how low the sun sits (1 is the summer arc; winter's is lower, so shadows are longer)
+//   petals / ambientLeaves   falling petals in spring; a few leaves drift down in autumn
+export const SEASON_LOOK = {
+  spring: { foliage: 0.55, foliageCol: 0xC6E27A, blossom: 0.7, field: 0x9FC563, water: 0x6FA9B8, haze: 0xF1E6C8, sun: 0xFFEBC0, strength: 0.95, low: 1, petals: 0.4 },
+  summer: { foliage: 0.35, foliageCol: 0x5E9E3A, field: 0xD8B05A, water: 0x4F9DBE, haze: 0xD7E8EE, sun: 0xFFF0CC, strength: 1.1, low: 1 },
+  autumn: { foliage: 0.95, foliageCol: 0xD9A23A, foliageAlt: 0xB8532E, autumn: 1, field: 0x8E6B47, water: 0x6F8A8C, haze: 0xE8C9A0, sun: 0xFFC47A, strength: 0.8, low: 0.88, ambientLeaves: 0.3 },
+  winter: { foliage: 0.55, foliageCol: 0x8A7A55, field: 0x7A6F62, water: 0xA9C2CB, haze: 0xC9D5DD, sun: 0xD9E6FF, strength: 0.65, low: 0.72 },
 };
-const BLOSSOM = { spring: 0.6 }; // broadleaf canopies only
 
 // The full set of targets for one moment. Render eases its values towards these.
 // season is a name from SEASONS (or an index into it). weather is a kind from WEATHER.
@@ -115,13 +122,18 @@ export function atmosphereTargets({ hour, weather, season }) {
   const light = lightAt(hour);
   const look = LOOK[weather] || {};
   const name = typeof season === 'number' ? SEASONS[season] || 'spring' : SEASONS.includes(season) ? season : 'spring';
-  const [amt, col] = FOLIAGE[name];
+  const L = SEASON_LOOK[name];
+  const dir = light.dir.slice();
+  dir[1] *= L.low;
   return {
-    night: light.night, warm: light.warm, daylight: light.daylight, dir: light.dir,
+    night: light.night, warm: light.warm, daylight: light.daylight, dir,
     cloud: look.cloud || 0, fog: look.fog || 0, rain: look.rain || 0, snow: look.snow || 0,
-    leaves: look.leaves || 0, wet: look.wet || 0,
+    leaves: Math.max(look.leaves || 0, L.ambientLeaves || 0), wet: look.wet || 0,
     cover: Math.max(name === 'winter' ? 0.9 : 0, look.snow ? 1 : 0), // how much snow lies on roofs and grass
-    foliage: amt, foliageCol: col, blossom: BLOSSOM[name] || 0,
+    foliage: L.foliage, foliageCol: L.foliageCol, foliageAlt: L.foliageAlt ?? L.foliageCol, autumn: L.autumn || 0,
+    blossom: L.blossom || 0, field: L.field, water: L.water,
+    haze: L.haze, sun: L.sun, strength: L.strength,
+    petals: (L.petals || 0) * (1 - (look.rain || 0)),
   };
 }
 

@@ -3,9 +3,10 @@
 // reads or writes the sim. The sky, fog and snow cover are set by night.js and season.js.
 import * as THREE from '../../../vendor/three/three.module.min.js';
 
-const MAX = { rain: 900, snow: 520, leaves: 90 };
+const MAX = { rain: 900, snow: 520, leaves: 90, petals: 160 };
 const HALF = 34, TOP = 26;  // the box of falling weather around the town
 const LEAF = [0xC9662E, 0xD99A3A, 0xB8542A, 0xE0B04A].map((h) => new THREE.Color(h));
+const PETAL = [0xFFC9D6, 0xF4B9CB, 0xFFFFFF, 0xF7D6E0].map((h) => new THREE.Color(h));
 
 function layer(geo, mat, max) {
   const m = new THREE.InstancedMesh(geo, mat, max);
@@ -34,9 +35,11 @@ export default {
     const snow = layer(new THREE.IcosahedronGeometry(0.09, 0), new THREE.MeshBasicMaterial({ color: 0xFFFFFF }), MAX.snow);
     const leaves = layer(new THREE.PlaneGeometry(0.22, 0.14), new THREE.MeshBasicMaterial({ color: 0xFFFFFF, side: THREE.DoubleSide }), MAX.leaves);
     for (let i = 0; i < MAX.leaves; i++) leaves.setColorAt(i, LEAF[i % LEAF.length]);
-    world.add(rain, snow, leaves);
+    const petals = layer(new THREE.PlaneGeometry(0.16, 0.11), new THREE.MeshBasicMaterial({ color: 0xFFFFFF, side: THREE.DoubleSide }), MAX.petals);
+    for (let i = 0; i < MAX.petals; i++) petals.setColorAt(i, PETAL[i % PETAL.length]);
+    world.add(rain, snow, leaves, petals);
 
-    const rainP = swarm(MAX.rain), snowP = swarm(MAX.snow), leafP = swarm(MAX.leaves);
+    const rainP = swarm(MAX.rain), snowP = swarm(MAX.snow), leafP = swarm(MAX.leaves), petalP = swarm(MAX.petals);
     const m = new THREE.Matrix4(), p = new THREE.Vector3(), s = new THREE.Vector3(1, 1, 1);
     const q = new THREE.Quaternion(), e = new THREE.Euler();
     const lean = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, -0.16)); // rain slants with a light wind
@@ -65,10 +68,14 @@ export default {
       frame(f) {
         const sky = f.sky, k = effects;
         const nRain = Math.round(MAX.rain * sky.rain * k), nSnow = Math.round(MAX.snow * sky.snow * k), nLeaf = Math.round(MAX.leaves * sky.leaves * k);
+        const nPetal = Math.round(MAX.petals * sky.petals * k);
         run(rain, rainP, nRain, f.dt, f.t, 15, 0, () => m.compose(p, lean, s));
         run(snow, snowP, nSnow, f.dt, f.t, 1.3, 0.5, () => m.compose(p, upright, s));
         run(leaves, leafP, nLeaf, f.dt, f.t, 0.9, 0.9, (ph, t) => {
           m.compose(p, q.setFromEuler(e.set(t * 1.6 + ph, ph * 2, t * 0.9 + ph)), s);
+        });
+        run(petals, petalP, nPetal, f.dt, f.t, 0.55, 1.1, (ph, t) => {
+          m.compose(p, q.setFromEuler(e.set(t * 0.8 + ph, t * 0.5, t * 1.2 + ph)), s);
         });
       },
       quality(rs) { effects = rs.effects; },
