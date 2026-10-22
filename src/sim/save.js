@@ -10,7 +10,7 @@ import { DEFAULT_TOWN } from './town.js';
 export const SAVE_KEY = 'nexus.save';
 export const BACKUP_KEY = 'nexus.save.backup';
 export const UNREADABLE_PREFIX = 'nexus.save.unreadable.';
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 export const MAX_FILE_CHARS = 5 * 1024 * 1024; // a town is a few hundred kilobytes; anything bigger is not one
 export const BACKUP_EVERY_MS = 10 * 60 * 1000; // the backup slot is refreshed at most this often while playing
 
@@ -23,10 +23,39 @@ export const BACKUP_EVERY_MS = 10 * 60 * 1000; // the backup slot is refreshed a
 const resetToStarter = (s) => ({ ...freshState(), speed: [1, 2, 3].includes(s.speed) ? s.speed : 1 });
 resetToStarter.resets = true;
 const addTownBadge = (s) => ({ ...s, town: { ...DEFAULT_TOWN, ...(s.town && typeof s.town === 'object' && !Array.isArray(s.town) ? s.town : {}) } });
+// v5: the grid grows from 64 to 96 tiles a side, with 16 more tiles on every side. Every tile keeps its place in the
+// world, so only the tile keys move: roads, zone paint, district paint, grown lots and placed buildings. The numbers are
+// fixed here on purpose, because this step describes version 4, not today's grid. A reset step (version 3) builds its town
+// on today's grid, so a town that already has the wider zone paint is left alone.
+const OLD_GRID = 64, NEW_GRID = 96, GROW = 16;
+const oldTile = (i) => Number.isInteger(i) && i >= 0 && i < OLD_GRID * OLD_GRID;
+const moveTile = (i) => (Math.floor(i / OLD_GRID) + GROW) * NEW_GRID + (i % OLD_GRID) + GROW;
+// A tile-per-character string (zone paint, district paint) laid out on the wider grid.
+function regridText(text, fill) {
+  const out = new Array(NEW_GRID * NEW_GRID).fill(fill);
+  if (typeof text === 'string') for (let i = 0; i < Math.min(text.length, OLD_GRID * OLD_GRID); i++) out[moveTile(i)] = text[i];
+  return out.join('');
+}
+const regrid = (s) => {
+  if (typeof s.zones === 'string' && s.zones.length === NEW_GRID * NEW_GRID) return s;
+  const roads = {};
+  if (s.roads && typeof s.roads === 'object' && !Array.isArray(s.roads)) {
+    for (const [k, r] of Object.entries(s.roads)) if (oldTile(Number(k))) roads[moveTile(Number(k))] = r;
+  }
+  return {
+    ...s,
+    roads,
+    zones: regridText(s.zones, '0'),
+    dmap: regridText(s.dmap, '0'),
+    lots: Array.isArray(s.lots) ? s.lots.map((l) => (Array.isArray(l) && oldTile(l[0]) ? [moveTile(l[0]), ...l.slice(1)] : l)) : s.lots,
+    placed: Array.isArray(s.placed) ? s.placed.map((r) => (isObj(r) && Number.isInteger(r.gx) && Number.isInteger(r.gz) ? { ...r, gx: r.gx + GROW, gz: r.gz + GROW } : r)) : s.placed,
+  };
+};
 export const migrations = [
   (s) => ({ ...s, trees: seedTrees(getLayout()) }),
   resetToStarter,
   addTownBadge,
+  regrid,
 ];
 
 export function wrap(state, now) {

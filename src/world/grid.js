@@ -1,11 +1,12 @@
 // The shared tile grid. Roads and zones both live on it. Pure data and math: no DOM, no THREE.
 //
-// 64 x 64 tiles of 3 world units. Tile centers sit on multiples of 3, so the town's existing road lines
-// (x or z = 0, +-12, +-24) run through tile centers. Tile (gx, gz) is centered at ((gx - 32) * 3, (gz - 32) * 3).
-// See docs/GRID.md for the ownership rules.
+// 96 x 96 tiles of 3 world units. Tile centers sit on multiples of 3, so the town's existing road lines
+// (x or z = 0, +-12, +-24) run through tile centers. Tile (gx, gz) is centered at ((gx - 48) * 3, (gz - 48) * 3).
+// The grid grew from 64 to 96 tiles a side (version 5 of the save, see save.js), with 16 more tiles on every side,
+// so the middle of the map is still the origin. See docs/GRID.md for the ownership rules.
 import { heightAt, riverX } from './terrain.js';
 
-export const GRID_N = 64;
+export const GRID_N = 96;
 export const TILE = 3;
 export const GRID_HALF = GRID_N / 2;
 

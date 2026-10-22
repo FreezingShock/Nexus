@@ -31,6 +31,10 @@ export function heightAt(x, z) {
   const f = smooth(30, 85, d);
   let h = f * (Math.pow(fbm(x * 0.021 + 3.1, z * 0.021 + 7.7), 1.5) * 30 + fbm(x * 0.09, z * 0.09) * 1.6);
   h = Math.max(0, h - 0.8);
+  // Beyond the old 64-tile grid (96 units out) the ground rolls gently, so the grown grid is mostly buildable plain. Inside
+  // the old grid this is zero, so saved roads and zones keep the ground they were built on.
+  const far = smooth(100, 124, d);
+  if (far > 0) h = h * (1 - far) + (0.9 + 0.9 * fbm(x * 0.03 + 5.3, z * 0.03 - 2.1)) * far;
   h *= 1 - 0.99 * farmMask(x, z);
   if (x > 24) h *= smooth(3, 10, Math.abs(z));
   // The mountain east of the river. The valley road runs straight into its west face, where the tunnel is. The ground

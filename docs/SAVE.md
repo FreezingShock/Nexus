@@ -17,7 +17,11 @@ Then run `npm run registry`. Saves carry the new fields with no change to `save.
 
 ## Changing saved fields that already shipped
 
-Add a migration to `migrations` in `src/sim/save.js`, bump `SAVE_VERSION`, and add a test for the old shape. Current version: 4. `migrations[i]` turns a version `i+1` state into a version `i+2` state. They run in order, one per version, and each sees the output of the one before. Never edit a migration that has shipped. A failing migration never throws to the player: the save is refused with a reason, and the backup is still there.
+Add a migration to `migrations` in `src/sim/save.js`, bump `SAVE_VERSION`, and add a test for the old shape. Current version: 5. `migrations[i]` turns a version `i+1` state into a version `i+2` state. They run in order, one per version, and each sees the output of the one before. Never edit a migration that has shipped. A failing migration never throws to the player: the save is refused with a reason, and the backup is still there.
+
+### Bigger grid (version 5)
+
+Version 5 grows the grid from 64 to 96 tiles a side. It adds 16 tiles on every side, so the middle of the map and every tile's place in the world stay the same. The step (`regrid` in `save.js`) moves the tile keys to the wider grid: `roads` (keyed by tile index), `zones` and `dmap` (one character per tile, now 9216 long), `lots` (`[tile, level, seed]`), and the `gx`/`gz` of each `placed` record (plus 16). Trees, districts, the town and the settings hold world positions or no tiles, so they are untouched. The step's numbers are fixed (64, 96, 16) because it describes version 4. A reset step (version 3) builds its town on today's grid, so a state that already has the wider zone paint is left alone.
 
 ### Town name and badge (version 4)
 

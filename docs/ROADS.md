@@ -1,6 +1,6 @@
 # Roads
 
-Roads live on the shared tile grid (see GRID.md: 64 x 64 tiles of 3 units, tile `(gx, gz)`).
+Roads live on the shared tile grid (see GRID.md: 96 x 96 tiles of 3 units, tile `(gx, gz)`).
 
 ## Data
 - `state.roads[tileIndex] = { t, d?, p }`: type (`two`, `bike`, `one`, `bus`, `free`), direction for one-way (0 east, 1 south, 2 west, 3 north), coins paid (refund and undo use it). Saved. The starter streets are ordinary editable tiles with `p: 0`.

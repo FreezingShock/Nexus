@@ -24,7 +24,7 @@ uniform sampler2D uTiles;
 uniform vec3 uZ1, uZ2, uZ3, uZ4;
 uniform float uGrid, uLots, uTime, uFlash, uNight;
 varying vec3 vW;
-const float N = 64.0;
+const float N = ${GRID_N}.0;
 vec4 tile(vec2 id){
   if (id.x < 0.0 || id.y < 0.0 || id.x >= N || id.y >= N) return vec4(0.0);
   return texture2D(uTiles, (id + 0.5) / N);

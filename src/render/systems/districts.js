@@ -1,4 +1,4 @@
-// Districts on the map: a soft colour wash on each painted tile (one plane, one shader, a 64 x 64 data texture),
+// Districts on the map: a soft colour wash on each painted tile (one plane, one shader, a data texture the size of the grid),
 // a thin border where two districts meet, and a little flag on a pole over each district's middle.
 // Flags are instanced: three meshes in all (poles, and the two halves of the cloth). Labels are projected here and
 // drawn as DOM by the Districts UI module (scene.sys('districts').labels()).
@@ -35,7 +35,7 @@ precision highp float;
 uniform sampler2D uTiles;
 uniform float uNight;
 varying vec3 vW;
-const float N = 64.0;
+const float N = ${GRID_N}.0;
 vec4 tile(vec2 id){
   if (id.x < 0.0 || id.y < 0.0 || id.x >= N || id.y >= N) return vec4(0.0);
   return texture2D(uTiles, (id + 0.5) / N);

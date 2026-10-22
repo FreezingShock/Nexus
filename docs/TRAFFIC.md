@@ -13,7 +13,7 @@ Traffic is derived from the roads and zoning on the shared grid (see GRID.md and
 
 ## Model
 
-- Traffic zones are 8 x 8 tiles, so the 64 x 64 grid has 64 zones. Each zone's trips start and end at its **anchor**: the road tile nearest the zone centre (or the nearest road in town when the zone has none).
+- Traffic zones are 8 x 8 tiles, so the 96 x 96 grid has 144 zones. Each zone's trips start and end at its **anchor**: the road tile nearest the zone centre (or the nearest road in town when the zone has none).
 - Trips come from residents. A resident makes `1.6 / DAY_MIN` trips a game minute. `DAY_MIN = 24`: one town day is 24 game minutes. This is the main tuning knob, and it is a default to confirm with nate.
 - Purposes split the trips: work 0.6 (to jobs), shops 0.25, services 0.1, other homes 0.05.
 - Gravity: a zone's trips to a destination are weighted by `attraction / (travel time + 1)^1.5`, and each origin's trips sum to its total.
@@ -34,7 +34,7 @@ Work runs in steps so a tick stays small. One cycle does this, in order:
 5. **time**: free-flow and congested tree times, to get the commute ratio. 8 per tick.
 6. **commit**: efficiency, income penalty, road colours, and the spawn table for cars.
 
-A cycle takes about 35 ticks with all 64 zones active, fewer on a small town. A road change is picked up at the start of the next cycle.
+A cycle takes about 35 ticks with all zones active (144 on the full grid, where a cycle takes longer), fewer on a small town. A road change is picked up at the start of the next cycle.
 
 ## Visuals
 

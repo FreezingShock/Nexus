@@ -10,7 +10,7 @@ const layout = getLayout();
 
 test('layout is deterministic and holds only the scenery; the village is placed records', () => {
   assert.equal(getLayout(), layout);
-  assert.equal(layout.farms.length, 15);
+  assert.equal(layout.farms.length, 24);
   assert.equal(layout.turbines.length, 2);
   assert.ok(layout.trees.length > 20 && layout.pines.length > 50);
   assert.equal(freshState().placed.length, STARTER_COUNT);
