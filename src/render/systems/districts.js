@@ -5,7 +5,7 @@
 //
 // Reads grid.district and state.districts; writes nothing. Draw calls: 4 (wash, poles, cloth x2).
 import * as THREE from '../../../vendor/three/three.module.min.js';
-import { GRID_N, tileCenter } from '../../world/grid.js';
+import { GRID_N, GRID_HALF, TILE, tileCenter } from '../../world/grid.js';
 import { DISTRICT_COLORS, FLAG_STYLES, MAX_DISTRICTS, districtAnchors, flagColor } from '../../world/districts.js';
 import { groundPlaneGeometry } from '../ground.js';
 import { toonUncached } from '../materials.js';
@@ -41,7 +41,7 @@ vec4 tile(vec2 id){
   return texture2D(uTiles, (id + 0.5) / N);
 }
 void main(){
-  vec2 t = (vW.xz + 97.5) / 3.0;
+  vec2 t = (vW.xz + ${(GRID_HALF * TILE + TILE / 2).toFixed(1)}) / ${TILE.toFixed(1)};
   vec2 id = floor(t), f = fract(t);
   if (id.x < 0.0 || id.y < 0.0 || id.x >= N || id.y >= N) discard;
   vec4 c = tile(id);
