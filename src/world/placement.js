@@ -119,4 +119,18 @@ export function frontRoadCount(grid, gx, gz, fw, fd, rot) {
   return n;
 }
 
+// How far the nearest road is straight out from the front of a lot turned by rot: 0 when a road touches the front edge,
+// 1 when it is one tile further, and so on up to `max`; Infinity when none lies within reach. Pure.
+export function frontRoadDistance(grid, gx, gz, fw, fd, rot, max = 12) {
+  const [dx, dz] = FRONT[((rot % 4) + 4) % 4];
+  for (let s = 0; s <= max; s++) {
+    for (let k = 0; k < (dx === 0 ? fw : fd); k++) {
+      const x = dx === 0 ? gx + k : (dx > 0 ? gx + fw + s : gx - 1 - s);
+      const z = dx === 0 ? (dz > 0 ? gz + fd + s : gz - 1 - s) : gz + k;
+      if (inBounds(x, z) && grid.road[tileIndex(x, z)] !== 0) return s;
+    }
+  }
+  return Infinity;
+}
+
 export { GRID_N };
