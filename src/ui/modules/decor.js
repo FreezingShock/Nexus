@@ -2,10 +2,11 @@
 // to clear pieces the same way. Rarer kinds show their Parts price on the tile; one click spends it for good, then Coins buy each copy.
 // A see-through preview shows every tile (green fits, red does not), and a label follows the cursor with the price or the reason.
 // Reads the sim and sends placeDecor, clearDecor and unlockDecor. Rules and prices live in src/world/decor.js and src/sim/systems/decor.js.
-import { DECOR, MAX_DECOR, MAX_DRAG, decorById, decorCost, decorRefund, isOpen, problemAt, problemText, takenSet } from '../../world/decor.js';
+import { DECOR_CATS, MAX_DECOR, MAX_DRAG, decorById, decorCost, decorIn, decorRefund, isOpen, problemAt, problemText, takenSet } from '../../world/decor.js';
 import { rectTiles, worldToTile } from '../../world/grid.js';
 import { $, fmt } from '../format.js';
-import { coins, esc, tileCard } from '../cards.js';
+import { categoryIcon, coins, esc, tileCard } from '../cards.js';
+import { decorThumb } from '../../render/thumbs.js';
 
 const COIN = '<i class="coin"></i>';
 const ERASE = 'erase';
@@ -22,7 +23,8 @@ const PIC = {
   statue: `<rect x="20" y="30" width="20" height="9" fill="#CFC7B6" ${P}/><path d="M30 30V18" ${P}/><circle cx="30" cy="12" r="5" fill="#7A9A8A" ${P}/><path d="M22 20H38" ${P}/>`,
   gazebo: `<path d="M8 18L30 6L52 18Z" fill="#C96F4F" ${P}/><path d="M14 18V38M30 18V38M46 18V38" ${P}/><path d="M10 38H50" ${P}/>`,
 };
-const pic = (k) => `<svg viewBox="0 0 60 44" aria-hidden="true">${PIC[k]}</svg>`;
+// The real model, drawn once off screen like the Buildings menu; the hand-drawn icon stands in when there is no WebGL.
+const pic = (k) => { const url = decorThumb(k); return url ? `<img src="${url}" alt="" width="96" height="72" decoding="async">` : `<svg viewBox="0 0 60 44" aria-hidden="true">${PIC[k]}</svg>`; };
 const BROOM = `<svg viewBox="0 0 24 24" aria-hidden="true" ${P}><path d="M14 4L10 12"/><path d="M6 13L12 12L17 16L14 21H4Z" fill="#E6BC62"/></svg>`;
 
 export default {
@@ -34,14 +36,14 @@ export default {
     tag.id = 'decorlabel'; tag.dataset.mo = 'tag'; tag.hidden = true; tag.setAttribute('aria-hidden', 'true');
     $('app').appendChild(tag);
 
-    let on = false, kind = 'bench', rot = 0, hover = null, drag = null, pointer = { x: 0, y: 0 }, dirty = false, ticker = 0;
+    let on = false, cat = 'greenery', kind = 'hedge', rot = 0, hover = null, drag = null, pointer = { x: 0, y: 0 }, dirty = false, ticker = 0;
     const erasing = () => kind === ERASE;
     const view = () => scene.sys('decor');
 
     // ---- flyout ----
     const owned = () => sim.state.decor.length;
     function tiles() {
-      const cards = DECOR.map((d) => {
+      const cards = decorIn(cat).map((d) => {
         const open = isOpen(d, sim.state.decorUnlocks), price = decorCost(d, owned());
         return tileCard({
           pic: pic(d.id), title: d.name, tip: d.sub + (open ? '' : ' · ' + d.parts + ' Parts opens it for good'),
@@ -53,7 +55,7 @@ export default {
       return cards.join('');
     }
     // What the tiles show right now; the flyout is redrawn only when this changes, so the strip keeps its scroll.
-    const sigOf = () => kind + '|' + owned() + '|' + sim.state.decorUnlocks.join() + '|' + DECOR.map((d) => (isOpen(d, sim.state.decorUnlocks) ? sim.state.coins < decorCost(d, owned()) : sim.state.parts < d.parts) ? 1 : 0).join('');
+    const sigOf = () => cat + '|' + kind + '|' + owned() + '|' + sim.state.decorUnlocks.join() + '|' + decorIn(cat).map((d) => (isOpen(d, sim.state.decorUnlocks) ? sim.state.coins < decorCost(d, owned()) : sim.state.parts < d.parts) ? 1 : 0).join('');
     let flySig = '';
     function render() {
       flySig = sigOf();
@@ -61,8 +63,9 @@ export default {
       const left = keep ? keep.scrollLeft : 0;
       const d = decorById(kind);
       const detail = erasing() ? 'Click or drag over decorations to clear them' : d.sub;
-      fly.innerHTML = `<div class="pbar"><div class="strip">${tiles()}</div></div>` +
-        `<div class="pfoot"><b class="ptitle">Decor</b>` +
+      const tabs = `<div class="ptabs" role="group" aria-label="Category">${DECOR_CATS.map((c) => `<button type="button" class="tog ptab" data-dcat="${c.id}" aria-pressed="${c.id === cat}" title="${esc(c.name)}" aria-label="${esc(c.name)}">${categoryIcon(c.id)}</button>`).join('')}</div>`;
+      fly.innerHTML = `<div class="pbar">${tabs}<div class="strip">${tiles()}</div></div>` +
+        `<div class="pfoot"><b class="ptitle">${esc(DECOR_CATS.find((c) => c.id === cat).name)}</b>` +
         `<button type="button" class="tog" id="dturn" title="Turn the piece (V)">Turn · V</button>` +
         `<span class="pdetail" title="${esc(detail)}">${esc(detail)}</span>` +
         `<span class="dhint">${owned()} placed</span></div>`;
@@ -72,10 +75,11 @@ export default {
     }
     fly.addEventListener('click', (e) => {
       if (!on) return;
-      const t = e.target.closest('[data-dk],#dturn');
+      const t = e.target.closest('[data-dk],[data-dcat],#dturn');
       if (!t || !fly.contains(t)) return;
       e.stopPropagation();
       if (t.id === 'dturn') { turn(); return; }
+      if (t.dataset.dcat) { cat = t.dataset.dcat; if (!erasing()) kind = decorIn(cat)[0].id; render(); dirty = true; return; }
       const k = t.dataset.dk;
       const def = decorById(k);
       if (def && !isOpen(def, sim.state.decorUnlocks)) { send({ type: 'unlockDecor', k }); if (sim.state.parts >= def.parts) kind = k; render(); return; }
