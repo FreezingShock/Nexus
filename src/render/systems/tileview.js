@@ -8,7 +8,7 @@
 //   clearPreview(), flash()           flash() glows the last preview as it commits
 import * as THREE from '../../../vendor/three/three.module.min.js';
 import { GRID_N, GRID_HALF, TILE, rectTiles, tileIndex, inBounds } from '../../world/grid.js';
-import { ZONE_DEFS, ROAD_REACH } from '../../sim/zones.js';
+import { ZONE_DEFS } from '../../sim/zones.js';
 import { groundPlaneGeometry } from '../ground.js';
 
 const AREA = GRID_N * GRID_N;
@@ -127,7 +127,7 @@ export default {
       for (let i = 0; i < AREA; i++) {
         const gx = i % GRID_N, gz = (i / GRID_N) | 0, zone = grid.zone[i];
         const open = grid.isOpen(gx, gz);
-        const access = (zone || open) && grid.roadWithin(gx, gz, ROAD_REACH);
+        const access = (zone || open) && grid.roadBeside(gx, gz);
         data[i * 4] = zone;
         data[i * 4 + 1] = (open || zone ? 1 : 0) | (access ? 2 : 0) | (grid.lot[i] ? 4 : 0);
       }

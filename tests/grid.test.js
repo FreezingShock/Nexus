@@ -46,6 +46,17 @@ test('the starter village is plain ground: no town pads, and the grid leaves its
   assert.ok(open > 600, 'open tiles: ' + open);
 });
 
+test('roadBeside is the four neighbors only', () => {
+  const g = createSim({ layout: getLayout() }).grid;
+  assert.equal(g.roadBeside(GRID_HALF + 6, GRID_HALF - 1), true, 'a tile touching a street');
+  assert.equal(g.roadBeside(GRID_HALF + 6, GRID_HALF - 2), false, 'two tiles away');
+  assert.equal(g.roadBeside(2, 2), false, 'open country');
+  assert.equal(g.roadBeside(-1, 0), false, 'off the map');
+  for (let gz = 1; gz < GRID_N - 1; gz++) for (let gx = 1; gx < GRID_N - 1; gx++) {
+    assert.equal(g.roadBeside(gx, gz), g.roadNeighbors(gx, gz) > 0, 'agrees with roadNeighbors at ' + gx + ',' + gz);
+  }
+});
+
 test('roadWithin and roadNeighbors', () => {
   const g = createSim({ layout: getLayout() }).grid; // the starter streets are on the grid
   assert.ok(g.roadWithin(GRID_HALF, GRID_HALF - 1, 1));

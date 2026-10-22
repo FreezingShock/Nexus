@@ -22,7 +22,7 @@ Each system writes only its own layer and keeps its own saved fields in `state`.
 
 ## Rules between the systems
 
-- Zone paint needs open ground: `grid.isOpen(gx, gz)` (land, no road, no grown lot). Painting is always allowed there; buildings only grow when a road is within 2 tiles.
+- Zone paint needs open ground: `grid.isOpen(gx, gz)` (land, no road, no grown lot). Painting is always allowed there; buildings only grow on tiles with a road directly beside them (`grid.roadBeside`, the four neighbors). Paint away from a street stays painted and empty, and the paint toast says so.
 - A road may take a tile that has zone paint on it (the paint clears, nothing is charged for it), but never a grown lot. The road system should send `{ type: 'zoneCleared', tiles }` by calling `ctx.sim.dispatch({ type: 'clearZoneTiles', tiles: [[gx, gz], ...] })` for those tiles, or simply write `grid.zone[i] = 0` and let zoning reconcile (it does so each tick).
 - `grid.canRoad(gx, gz)` is the default road test (land, no grown lot). The road system may widen it (bridges over water).
 - Zones do not own roads. Roads do not own zones. If you need something from the other system, read its layer.
@@ -34,5 +34,5 @@ Drawing tools attach capture-phase pointer listeners to the stage element (`scen
 ## Zoning (what is built on the grid)
 
 - Sim: `src/sim/systems/zoning.js` (commands `paintZone {zone, a, b}` and `clearZone {a, b}`, tiles are `[gx, gz]`), pure rules in `src/sim/zones.js`. Zone paint is saved as a 4096-character string, grown buildings as `[tile, level, seed]`. `sim.zoning` exposes `demand()`, `stats()`, `costOf()`.
-- Buildings grow only on painted tiles with a road within 2 tiles (`grid.road` non-zero, any value). Demand never drops below 0.15, so growth only slows.
+- Buildings grow only on painted tiles with a road directly beside them (`grid.roadBeside`: one of the four neighbors has `grid.road` non-zero, any value). Diagonal and two-tile-away roads do not count. A lot that already grew stays if its street is later removed. Demand never drops below 0.15, so growth only slows.
 - Render: `scene.sys('tileview')` draws the dashed grid on open ground (`showGrid(true)`; roads can reuse it), zone paint and the drag preview from one data texture the size of the grid. `src/render/systems/lots.js` draws grown buildings.

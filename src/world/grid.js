@@ -78,6 +78,8 @@ export function createGrid(layout) {
     canRoad: (gx, gz) => inBounds(gx, gz) && base[tileIndex(gx, gz)] === BASE.LAND && lot[tileIndex(gx, gz)] === 0,
     // A road tile sits next to this tile (4-neighborhood).
     roadNeighbors: (gx, gz) => NEIGH.filter(([dx, dz]) => inBounds(gx + dx, gz + dz) && road[tileIndex(gx + dx, gz + dz)] !== 0).length,
+    // A road tile is directly beside this tile (4-neighborhood): the one rule for where zoned buildings may grow.
+    roadBeside: (gx, gz) => NEIGH.some(([dx, dz]) => inBounds(gx + dx, gz + dz) && road[tileIndex(gx + dx, gz + dz)] !== 0),
     // Nearest road tile within `r` tiles (Chebyshev), or false.
     roadWithin(gx, gz, r) {
       for (let dz = -r; dz <= r; dz++) for (let dx = -r; dx <= r; dx++) if (inBounds(gx + dx, gz + dz) && road[tileIndex(gx + dx, gz + dz)] !== 0) return true;
