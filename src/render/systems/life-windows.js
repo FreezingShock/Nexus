@@ -12,16 +12,20 @@ import { allocInstanceColors } from '../geom.js';
 export const MAX_WINDOWS = 16000;
 const GLOWS = [0xFFD98A, 0xFFC96B, 0xFFE3A6, 0xF6B866, 0xFFD98A, 0xFFE3A6];
 const TV = 0xBFD8F0;     // now and then a flickering blue screen instead
-const EASE = 6;          // how quickly a glow settles (per second)
+const EASE = 0.35;       // base fade rate (per second); each window fades at its own pace, 1 to 6 seconds
 const HOUR_STEP = 0.06;  // town hours between re-reads of who is awake
 const SHIFT_BUCKETS = 6;
 
 export function glowMaterial() {
-  const m = new THREE.MeshBasicMaterial({ color: 0xffffff, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  // The glow always covers its whole pane; a window comes on and goes off by fading its alpha, never by changing size.
+  const m = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   m.onBeforeCompile = (sh) => {
     sh.vertexShader = sh.vertexShader
-      .replace('#include <common>', '#include <common>\nattribute float aLit;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\n\ttransformed *= aLit;');
+      .replace('#include <common>', '#include <common>\nattribute float aLit;\nvarying float vLit;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\n\tvLit = aLit;');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying float vLit;')
+      .replace('#include <color_fragment>', '#include <color_fragment>\n\tdiffuseColor.a *= vLit;');
   };
   m.customProgramCacheKey = () => 'nexus-life-glow';
   return m;
@@ -41,7 +45,7 @@ export default {
 
     // per window: what kind of building, its own luck, when at dusk it comes on, its household (for occupancy and bedtime)
     const kind = new Uint8Array(MAX_WINDOWS), roll = new Float32Array(MAX_WINDOWS), thr = new Float32Array(MAX_WINDOWS);
-    const hseed = new Int32Array(MAX_WINDOWS), bucket = new Uint8Array(MAX_WINDOWS), want = new Uint8Array(MAX_WINDOWS);
+    const jit = new Float32Array(MAX_WINDOWS), pace = new Float32Array(MAX_WINDOWS), hseed = new Int32Array(MAX_WINDOWS), bucket = new Uint8Array(MAX_WINDOWS), want = new Uint8Array(MAX_WINDOWS);
     const local = new THREE.Matrix4(), inst = new THREE.Matrix4(), p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3(), c = new THREE.Color();
     const Y = new THREE.Vector3(0, 1, 0);
     let count = 0, seenRev = -1, lastHour = -99, lastFill = -1, lastDark = -1, settling = true;
@@ -57,6 +61,19 @@ export default {
         const ki = kindIndex(k), seed = e.b.seed | 0, shift = householdShift(seed);
         const sb = Math.max(0, Math.min(SHIFT_BUCKETS - 1, Math.floor(((shift + 1) / 2.5) * SHIFT_BUCKETS)));
         let w = 0;
+        // shop fronts: one big pane of glass each, lit through the shop's hours
+        for (const fr of sites.fronts) {
+          if (count >= MAX_WINDOWS) break;
+          p.set(fr.x, fr.y, fr.z); q.identity(); s.set(fr.w, fr.h, 1);
+          inst.multiplyMatrices(e.world, local.compose(p, q, s));
+          mesh.setMatrixAt(count, inst);
+          mesh.setColorAt(count, c.setHex(0xFFD98A));
+          kind[count] = ki; hseed[count] = seed; bucket[count] = sb;
+          roll[count] = 0.4 * unit(seed, 3000 + w); thr[count] = 0.25 + 0.3 * unit(seed, 3100 + w);
+          jit[count] = 0; pace[count] = EASE * (0.5 + 2 * unit(seed, 3200 + w));
+          lit.array[count] = 0;
+          count++; w++;
+        }
         for (const body of sites.bodies) {
           forEachWindow(body, (x, y, z, yaw, ww, hh) => {
             if (count >= MAX_WINDOWS) return;
@@ -69,6 +86,7 @@ export default {
             mesh.setColorAt(count, c);
             kind[count] = ki; hseed[count] = seed; bucket[count] = sb;
             roll[count] = windowRoll(seed, w); thr[count] = dusk(seed, w);
+            jit[count] = (unit(seed, 2000 + w) - 0.5) * 0.3; pace[count] = EASE * (0.5 + 2 * unit(seed, 2500 + w));
             lit.array[count] = 0;
             count++; w++;
           });
@@ -88,7 +106,7 @@ export default {
       }
       const homeK = kindIndex('home'), farmK = kindIndex('farm');
       for (let i = 0; i < count; i++) {
-        let on = roll[i] < share[kind[i] * SHIFT_BUCKETS + bucket[i]];
+        let on = roll[i] + jit[i] < share[kind[i] * SHIFT_BUCKETS + bucket[i]];
         if (on && (kind[i] === homeK || kind[i] === farmK)) on = homeOccupied(hseed[i], fill);
         want[i] = on ? 1 : 0;
       }
@@ -103,14 +121,13 @@ export default {
         if (Math.abs(hour - lastHour) > HOUR_STEP || hour < lastHour || Math.abs(fill - lastFill) > 0.01) { reread(hour, fill); lastHour = hour; lastFill = fill; settling = true; }
         if (Math.abs(night - lastDark) > 0.002) { lastDark = night; settling = true; }
         if (!settling) return;
-        const k = Math.min(1, f.dt * EASE);
         let moving = false, anyOn = false;
         const a = lit.array;
         for (let i = 0; i < count; i++) {
           const target = want[i] && night > thr[i] ? 1 : 0, v = a[i];
           if (v === target) { if (v) anyOn = true; continue; }
-          const nv = v + (target - v) * k;
-          a[i] = Math.abs(nv - target) < 0.02 ? target : nv;
+          const nv = v + (target - v) * Math.min(1, f.dt * pace[i]);
+          a[i] = Math.abs(nv - target) < 0.04 ? target : nv;
           moving = true; if (a[i] > 0) anyOn = true;
         }
         lit.needsUpdate = true;

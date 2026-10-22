@@ -108,6 +108,7 @@ const B = {
       k.cyl(0.04, 0.04, 0.5, 5, x, 0.06, z, C.slate, { edge: false });
       k.cyl(0.26, 0.26, 0.05, 10, x, 0.56, z, C.cream, { edge: false });
       for (const s2 of [-1, 1]) k.box(0.16, 0.22, 0.16, x + s2 * 0.38, 0.06, z, k.P.accent, { edge: false });
+      k.sites.tables.push([x, z]);
     }
     decorate(k, { skip: ['garden', 'lamp'] });
     if (k.level >= 4) k.lamp(k.w * 0.45, k.dep / 2 + 0.55);
@@ -157,7 +158,9 @@ const B = {
     const sx = k.w * 0.34;
     k.cyl(0.38, 0.5, 3.4, 8, sx, k.top, -k.dep * 0.25, C.brick);
     k.cyl(0.5, 0.5, 0.12, 8, sx, k.top + 3.4, -k.dep * 0.25, C.stone, { edge: false });
-    if (k.level >= 3) { k.cyl(0.3, 0.42, 2.6, 8, sx - 1.0, k.top, -k.dep * 0.25, C.brick); k.cyl(0.4, 0.4, 0.1, 8, sx - 1.0, k.top + 2.6, -k.dep * 0.25, C.stone, { edge: false }); }
+    k.sites.stacks.push([sx, k.top + 3.55, -k.dep * 0.25]);
+    k.sites.doors.push([k.doorX, k.dep / 2 + 0.12]);
+    if (k.level >= 3) { k.sites.stacks.push([sx - 1.0, k.top + 2.75, -k.dep * 0.25]); k.cyl(0.3, 0.42, 2.6, 8, sx - 1.0, k.top, -k.dep * 0.25, C.brick); k.cyl(0.4, 0.4, 0.1, 8, sx - 1.0, k.top + 2.6, -k.dep * 0.25, C.stone, { edge: false }); }
     for (let i = 0; i < 3; i++) k.box(0.45, 0.4, 0.4, -k.w * 0.4 + i * 0.5, 0, k.dep / 2 + 0.3, i === 1 ? C.stone : C.wood, { edge: false }); // crates
     decorate(k, { skip: ['chimney', 'cornice', 'gableWindow', 'dormers', 'crown', 'garden'] });
     if (k.level >= 5) k.flag(-k.w * 0.38, k.top + 0.9, -k.dep * 0.1);
@@ -167,7 +170,7 @@ const B = {
     k.body();
     k.gableRoof(clampRise(k.dep, 0.9, 1.4, 0.3), 'x', C.charcoal);
     const n = Math.max(1, Math.round(k.w / 2.4));
-    for (let i = 0; i < n; i++) k.box(1.3, 1.4, 0.14, -k.w / 2 + (i + 0.5) * (k.w / n), PLINTH, k.dep / 2 + 0.05, C.wood);
+    for (let i = 0; i < n; i++) { const bx = -k.w / 2 + (i + 0.5) * (k.w / n); k.box(1.3, 1.4, 0.14, bx, PLINTH, k.dep / 2 + 0.05, C.wood); k.sites.doors.push([bx, k.dep / 2 + 0.12]); }
     k.box(k.w * 0.7, 0.18, 0.7, 0, 0, k.dep / 2 + 0.45, C.stone, { edge: false }); // loading ramp
     decorate(k, { skip: ['chimney', 'gableWindow', 'dormers', 'garden'] });
   },
