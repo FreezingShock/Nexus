@@ -19,6 +19,21 @@ const tree = (k, x, z, s = 1) => {
   k.dome(0.55 * s, x, PLINTH + 0.55 * s, z, s > 0.9 ? C.leaf : C.moss);
 };
 
+// Flat upward quads merged into one geometry: q is [x0, z0, x1, z1, y, ...] for each quad.
+function quadsGeo(q) {
+  const n = q.length / 5, pos = new Float32Array(n * 12), nor = new Float32Array(n * 12), idx = new Uint32Array(n * 6);
+  for (let i = 0; i < n; i++) {
+    const [x0, z0, x1, z1, y] = q.slice(i * 5, i * 5 + 5), o = i * 12;
+    pos.set([x0, y, z0, x1, y, z0, x1, y, z1, x0, y, z1], o);
+    for (let j = 0; j < 4; j++) nor[o + j * 3 + 1] = 1;
+    idx.set([i * 4, i * 4 + 2, i * 4 + 1, i * 4, i * 4 + 3, i * 4 + 2], i * 6);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  g.setIndex(new THREE.BufferAttribute(idx, 1));
+  return g;
+}
+
 const B = {
   cottage(k) {
     k.body(); k.door();
@@ -270,35 +285,50 @@ const B = {
     tree(k, ...at(k, -0.7, 0.7), 0.7);
   },
 
-  // A farm fills its whole lot: tilled soil, a hedge round it with a gate, a farmhouse and a barn in the yard at the
-  // front and crop beds side by side behind them, edge to edge. Beds grow with the lot, so it never shows bare ground.
+  // A farm fills its whole lot, at any size. The front is fixed: a hedge with a gate, a farmhouse and a barn in a yard
+  // 2.6 deep. Behind it the fields repeat to fill what is left: beds side by side in blocks of up to six, split by dirt
+  // paths into blocks no deeper than about seven, so a bigger lot just gets more rows. The beds are flat quads merged
+  // per colour (two triangles each), so a 24 x 24 farm stays a few thousand triangles and a handful of parts.
   farm(k) {
     const base = PLINTH + 0.06, w = k.w, dep = k.dep, hex = (c) => parseInt(c.slice(1), 16);
     k.box(w, 0.06, dep, 0, PLINTH, 0, hex(CROPS[3].row), { edge: false });                  // soil under everything
-    // yard at the front, fields behind it
-    const yardD = Math.min(2.6, dep * 0.3), fx = w - 0.9, fz0 = -dep / 2 + 0.45, fz1 = dep / 2 - yardD - 0.1, fd = fz1 - fz0, fzc = (fz0 + fz1) / 2;
-    const n = Math.max(2, Math.min(8, Math.round(fx / 1.3))), bw = fx / n, side = k.t[4] < 0.5 ? -1 : 1, first = Math.floor(k.t[2] * 4);
-    for (let i = 0; i < n; i++) {
-      const c = CROPS[(first + i) % 3], x = -fx / 2 + (i + 0.5) * bw;                       // wheat, barley and greens in turn
-      k.box(bw - 0.05, 0.1, fd, x, base, fzc, hex(c.base));
-      if (bw > 1.0) k.box(0.14, 0.05, fd - 0.2, x, base + 0.1, fzc, hex(c.row), { edge: false });                 // a row down the bed
+    const YARD = 2.6, PATH = 0.5, BED = 1.3;
+    const fx = w - 0.9, fz0 = -dep / 2 + 0.45, fz1 = dep / 2 - YARD - 0.1, fd = fz1 - fz0;
+    const nb = Math.max(2, Math.round(fx / BED)), gx = Math.ceil(nb / 6), bw = (fx - (gx - 1) * PATH) / nb;
+    const gz = Math.max(1, Math.round(fd / 7)), bd = (fd - (gz - 1) * PATH) / gz;
+    const first = Math.floor(k.t[2] * 3), quads = new Map(), centers = [];
+    const quad = (c, x0, z0, x1, z1, y) => { let q = quads.get(c); if (!q) quads.set(c, q = []); q.push(x0, z0, x1, z1, y); };
+    for (let bz = 0; bz < gz; bz++) {
+      const z0 = fz0 + bz * (bd + PATH);
+      let x = -fx / 2;
+      for (let i = 0; i < nb; i++) {
+        const g = Math.floor(i / 6), left = i - g * 6, inGroup = Math.min(6, nb - g * 6);
+        if (left === 0 && g > 0) x += PATH;
+        const crop = CROPS[(first + i + g * 2 + bz) % 3], x0 = x, x1 = x + bw - 0.05;
+        quad(hex(crop.base), x0, z0, x1, z0 + bd, base + 0.1);
+        if (bw > 1.0) quad(hex(crop.row), (x0 + x1) / 2 - 0.07, z0 + 0.1, (x0 + x1) / 2 + 0.07, z0 + bd - 0.1, base + 0.12); // a row down the bed
+        if (left === Math.floor(inGroup / 2) && (g + bz) % 2 === 0) centers.push([(x0 + x1) / 2, z0 + bd / 2]);
+        x += bw;
+      }
     }
+    for (const [c, q] of quads) k.part(quadsGeo(q), c, 0, 0, 0, { edge: false });
     // hedge round the lot, open at the gate
-    const hx = side * (w / 2 - 0.45 - 1.1), gate = hx, hz = dep / 2 - 0.2, ex = w / 2 - 0.2;
+    const side = k.t[4] < 0.5 ? -1 : 1, hx = side * Math.min(w / 2 - 1.55, 1.5), bx = -side * Math.min(w / 2 - 1.4, 1.55);
+    const hz = dep / 2 - 0.2, ex = w / 2 - 0.2;
     k.hedge(w - 0.4, 0, -dep / 2 + 0.2);
     for (const sx of [-1, 1]) k.box(0.36, 0.42, dep - 0.4, sx * ex, base, 0, C.moss, { edge: false });
-    const left = (gate - 0.6) - (-ex), right = ex - (gate + 0.6);
+    const left = (hx - 0.6) - (-ex), right = ex - (hx + 0.6);
     if (left > 0.3) k.hedge(left, -ex + left / 2, hz);
     if (right > 0.3) k.hedge(right, ex - right / 2, hz);
     // farmhouse
-    const hw = Math.min(2.2, w * 0.4), hd = yardD - 0.9, hzc = dep / 2 - 0.5 - hd / 2;
+    const hw = Math.min(2.2, w * 0.4), hd = YARD - 0.9, hzc = dep / 2 - 0.5 - hd / 2;
     k.box(hw, 1.1, hd, hx, base, hzc, C.cream);
     k.part(hipGeo(hw + 0.3, hd + 0.3, 0.8), k.P.roof, hx, base + 1.1, hzc);
     k.box(0.45, 0.7, 0.1, hx, base, hzc + hd / 2 + 0.04, k.P.accent);
     for (const sx of [-1, 1]) k.box(0.4, 0.34, 0.06, hx + sx * (hw * 0.32), base + 0.5, hzc + hd / 2 + 0.03, C.glass, { edge: false });
     k.box(0.32, 0.6, 0.32, hx + hw * 0.28, base + 1.1, hzc - hd * 0.1, C.brick);
     // barn on the other side
-    const bwid = Math.min(1.7, w * 0.3), bx = -side * (w / 2 - 0.45 - bwid / 2 - 0.1);
+    const bwid = Math.min(1.7, w * 0.3);
     k.box(bwid, 1.2, hd, bx, base, hzc, C.terracotta);
     k.part(prismGeo([[-bwid / 2 - 0.1, 0], [bwid / 2 + 0.1, 0], [0, 0.7]], hd + 0.2), k.P.roof, bx, base + 1.2, hzc);
     k.box(0.8, 0.85, 0.08, bx, base, hzc + hd / 2 + 0.04, C.wood);
@@ -308,9 +338,10 @@ const B = {
     if (k.level >= 4) { const sx = bx + side * (bwid / 2 + 0.4), sz = hzc - hd * 0.2; k.cyl(0.36, 0.36, 1.9, 8, sx, base, sz, C.stone); k.cyl(0, 0.42, 0.45, 8, sx, base + 1.9, sz, k.P.roof); } // a silo
     if (k.level >= 5) {
       k.weathervane(bx, base + 1.9, hzc);
-      const sx = side < 0 ? 1 : -1;                                                         // a scarecrow in the middle bed
-      k.cyl(0.04, 0.04, 0.95, 3, sx * bw * 0.5, base + 0.1, fzc, C.wood, { edge: false });
-      k.box(0.7, 0.07, 0.07, sx * bw * 0.5, base + 0.75, fzc, C.wood, { edge: false });
+      for (const [x, z] of centers.slice(0, 24)) {                                           // a scarecrow in every other block
+        k.cyl(0.04, 0.04, 0.95, 3, x, base + 0.1, z, C.wood, { edge: false });
+        k.box(0.7, 0.07, 0.07, x, base + 0.75, z, C.wood, { edge: false });
+      }
     }
   },
 
