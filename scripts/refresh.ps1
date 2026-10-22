@@ -38,7 +38,7 @@ if ($py) { $exe = 'python'; $pre = @() }
 elseif (Get-Command py -ErrorAction SilentlyContinue) { $exe = 'py'; $pre = @('-3') }
 else { Write-Host 'Python 3 was not found. Install it, or serve this folder with any static server.' -ForegroundColor Yellow; exit 1 }
 
-Start-Process -FilePath $exe -ArgumentList ($pre + @('-m', 'http.server', $Port, '--bind', '127.0.0.1')) -WorkingDirectory $repo -WindowStyle Minimized
+Start-Process -FilePath $exe -ArgumentList ($pre + @('scripts/serve.py', $Port)) -WorkingDirectory $repo -WindowStyle Minimized
 Start-Sleep -Milliseconds 700
 Write-Host "Serving $Branch at http://localhost:$Port/  (hard refresh with Ctrl+F5 if the page looks old)" -ForegroundColor Green
 Start-Process "http://localhost:$Port/"
