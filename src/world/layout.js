@@ -1,9 +1,9 @@
 // The town's scenery as plain data, generated from a fixed seed. No DOM, no THREE.
 // The village itself (streets, buildings, the starter park) is saved state: see starter.js. This file holds only what
-// is not built by the player: farmland, wind turbines, and the trees and pines around the village.
+// is not built by the player: wind turbines, and the trees and pines around the village. Farms are buildings the player places (see models.js).
 import { makeRng } from './rng.js';
 import { heightAt, riverX, farmMask } from './terrain.js';
-import { CROPS, TREE_COLORS } from './palettes.js';
+import { TREE_COLORS } from './palettes.js';
 import { GRID_HALF, TILE, worldToTile, inBounds, tileIndex } from './grid.js';
 import { starterReserved } from './starter.js';
 
@@ -17,15 +17,8 @@ export function getLayout() {
 
 function generate() {
   const rng = makeRng(SEED);
-  const out = { farms: [], turbines: [], trees: [], pines: [] };
+  const out = { turbines: [], trees: [], pines: [] };
 
-  // farmland, west of the village: a patchwork of fields, each with a crop and a hedge on every side (see render/terrain.js).
-  // The rows sit inside the flat strip the farm mask makes (|z| under 26), so every field is level ground.
-  for (let i = 0; i < 6; i++) for (let j = 0; j < 4; j++) {
-    const w = 6.4 + rng() * 1.2, d = 9 + rng() * 1.5;
-    const crop = Math.floor(rng() * CROPS.length);
-    out.farms.push({ x: -40 - i * 8, z: -18 + j * 12, w, d, crop, turned: rng() < 0.5 });
-  }
   out.turbines.push({ x: 40, z: -4, speed: 0.9 }, { x: -30, z: -40, speed: 0.7 });
 
   // Scenery never stands on a street or a building of the starter town. Trees the player clears are saved, so the

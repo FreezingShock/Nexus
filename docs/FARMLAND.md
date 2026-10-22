@@ -1,18 +1,29 @@
-# Farmland
+# Farms
 
-The fields west of the starter village are scenery, built from the seeded layout (`src/world/layout.js`), not saved.
+Farmland is not part of the starting scenery any more. The player builds a **Farm** from the Build menu (the Farms tab,
+the first piece of production), and it claims its whole lot with a farmhouse, a barn and crop beds.
 
-## Data
+## The model
 
-- `layout.farms`: 24 fields in 6 columns and 4 rows, each `{ x, z, w, d, crop, turned }`. `crop` indexes `CROPS` in `src/world/palettes.js` (wheat, barley, greens, tilled). A field's centre tile is `BASE.FARM` on the grid, so nothing is built or routed on it.
-- The rows sit inside the flat strip that `farmMask` makes in `src/world/terrain.js` (|z| under 26). A field on a slope would float or sink, so keep new rows inside that strip, or widen the mask on purpose and accept that the old ground changes.
+- `farm` in `src/world/models.js`, category `farm` (Build tool). Three set sizes: 2 x 3, 3 x 4 and 4 x 4 tiles.
+- Income is the usual `income(floors, level)`. A farm's `floors` count its plots: `minFloors(def, area)` gives 3 plots at
+  2 x 3, 6 at 3 x 4 and 7 at 4 x 4, so a bigger farm pays more (2.7 to 6.3 coins/s at level 1). Upgrading works like any building.
+- Traffic counts a farm as a workplace (`src/sim/traffic.js`), so workers travel to it.
+
+## Flat ground only
+
+`def.flat` makes `checkLot` (src/world/placement.js) also ask for level ground: each tile may rise at most `FLAT_TILE`
+(0.35) and the whole lot at most `FLAT_SPREAD` (0.6), read from the per-tile heights `grid.tlo` and `grid.thi`. A sloped
+spot is refused with the reason `slope` ("A farm needs flat ground"). The flat plain in the west (`farmMask` in
+terrain.js) is where farms fit best.
 
 ## Look
 
-- Render: `buildFarms` in `src/render/terrain.js`. Each crop has one canvas texture with rows along the field's length: a base colour, a darker row and a light ridge. Every field is a plane with its crop's material.
-- Hedges run round all four sides of every field: a body and a cap, one merged mesh each, with ink edges on the body.
-- Seasons: the crop textures are painted at the summer field tint. `patchSeason(..., { field: true })` multiplies the texture by the sky's current field tint over that summer value (`SEASON.fieldRef` in `src/render/season.js`), so autumn and winter shift every crop together and summer shows the colours as painted.
+`farm(k)` in `src/render/models/builders.js`: tilled soil under the whole lot, a hedge round it with a gate, a farmhouse
+and a barn in the yard at the front, and crop beds edge to edge behind them (wheat, barley and greens from `CROPS` in
+palettes.js, a row down each bed). Beds are sized to the lot so there is no bare ground. Level details: hay bales (2),
+a well (3), a silo (4), a weathervane and a scarecrow (5). Stays under the 650 triangle cap at every size and level.
 
-## Budget
+## Tests
 
-The farm is seven draw calls: four crop materials, the hedge body, the hedge cap and one ink line set. It was three before. Not measured on a phone.
+`tests/farmland.test.js`: nothing at spawn, the category and sizes, claiming tiles, income, the flat rule, builds within budget.

@@ -12,7 +12,7 @@ Roads and zones are two systems on one grid. `src/world/grid.js` is the only def
 
 | Layer | Owner | Values |
 | --- | --- | --- |
-| `base` | the world, read only | `BASE.LAND`, `WATER`, `STEEP`, `FARM`. The starter village is `LAND` like any other ground. |
+| `base` | the world, read only | `BASE.LAND`, `WATER`, `STEEP` (`FARM` is no longer set; farms are placed buildings). `grid.tlo` and `grid.thi` hold the lowest and highest ground of each tile, for the farm's flat-ground rule. The starter village is `LAND` like any other ground. |
 | `road` | the road system | `0` none, else a road kind the road system defines. The starter streets are ordinary road entries. |
 | `zone` | zoning | `0` none, `1..4` a zone id |
 | `lot` | zoning and placement | `0` none, `1..` a grown lot (zoning), `40000..` a building record (placement, starter town included) |

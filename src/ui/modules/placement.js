@@ -100,7 +100,7 @@ export default {
         const lot = { gx, gz, fw, fd };
         const plan = planPlacement({ model: ui.model, ...lot, rot });
         if (plan.error) continue;
-        const check = checkLot(sim.grid, plan.gx, plan.gz, plan.fw, plan.fd);
+        const check = checkLot(sim.grid, plan.gx, plan.gz, plan.fw, plan.fd, plan.def);
         out.push({ lot, plan, rot: plan.rot, ok: check.ok, blocked: check.blocked, problem: check.problem });
       }
       return out;

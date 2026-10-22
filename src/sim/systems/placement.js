@@ -5,7 +5,7 @@
 // Ids look like "b1001" so the generic level and removed fields of the save accept them.
 // Undo: placing (one lot or a dragged row) and bulldozing a building push onto sim.undoStack, next to the road undo.
 // The `undo` command takes back whichever of the two was done last.
-import { areaCost, describe, seedOf } from '../../world/models.js';
+import { areaCost, describe, modelById, seedOf } from '../../world/models.js';
 import { LOT_BASE, MAX_PLACED, MAX_ROW, checkLot, lotTiles, planPlacement, problemText } from '../../world/placement.js';
 import { buildCost, income, levelOf } from '../economy.js';
 import { tileIndex, tileOf, GRID_N } from '../../world/grid.js';
@@ -95,7 +95,7 @@ export default {
       const plan = planPlacement(cmd);
       if (plan.error) return;
       if (state.placed.length >= MAX_PLACED) return emit({ type: 'toast', text: 'The town has all the buildings it can hold for now' });
-      const lot = checkLot(grid, plan.gx, plan.gz, plan.fw, plan.fd);
+      const lot = checkLot(grid, plan.gx, plan.gz, plan.fw, plan.fd, plan.def);
       if (!lot.ok) return emit({ type: 'toast', text: problemText(lot.problem) });
       const cost = buildCost(areaCost(plan.def, plan.fw, plan.fd), playerCount(state));
       if (!charge(cost)) return;
@@ -119,7 +119,7 @@ export default {
         const plan = planPlacement(it);
         if (plan.error) { skipped++; continue; }
         if (state.placed.length >= MAX_PLACED) { full = true; break; }
-        if (!checkLot(grid, plan.gx, plan.gz, plan.fw, plan.fd).ok) { skipped++; continue; }
+        if (!checkLot(grid, plan.gx, plan.gz, plan.fw, plan.fd, plan.def).ok) { skipped++; continue; }
         const cost = buildCost(areaCost(plan.def, plan.fw, plan.fd), playerCount(state));
         if (state.coins < cost) { short = true; break; }
         const id = 'b' + state.nextPlaced++;
@@ -196,7 +196,7 @@ function undoPlacement(ctx, entries) {
     } else if (e.kind === 'doze') {
       state.removed = state.removed.filter((id) => id !== e.id);
       if (e.rec) {
-        const lot = checkLot(grid, e.rec.gx, e.rec.gz, e.rec.fw, e.rec.fd);
+        const lot = checkLot(grid, e.rec.gx, e.rec.gz, e.rec.fw, e.rec.fd, modelById(e.rec.model));
         if (!lot.ok) { emit({ type: 'toast', text: 'Something is built on that spot now' }); continue; }
         state.placed.push(e.rec);
       }

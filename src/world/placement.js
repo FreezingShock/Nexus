@@ -31,6 +31,7 @@ const WORDS = {
   water: 'Too wet to build here',
   steep: 'Too steep to build here',
   farm: 'These fields are farmed',
+  slope: 'A farm needs flat ground',
   road: 'A road is in the way',
   taken: 'Something is already built here',
 };
@@ -38,12 +39,23 @@ export const problemText = (p) => WORDS[p] || '';
 
 // Can a fw x fd lot with lowest tile (gx, gz) be built on? { ok, problem, blocked: [[gx, gz], ...], road }
 //   road: a road runs within two tiles (a hint only; buildings can wait for their street)
-export function checkLot(grid, gx, gz, fw, fd) {
+// A model with `flat` (a farm) also wants level ground: each tile nearly flat, and the lot as a whole within FLAT_SPREAD.
+export const FLAT_TILE = 0.35, FLAT_SPREAD = 0.6;
+export function checkLot(grid, gx, gz, fw, fd, def) {
   const blocked = [];
   let problem = '';
   for (const [x, z] of lotTiles(gx, gz, fw, fd)) {
     const p = tileProblem(grid, x, z);
     if (p) { blocked.push([x, z]); if (!problem) problem = p; }
+  }
+  if (def && def.flat && !blocked.length && grid.tlo) {
+    let lo = Infinity, hi = -Infinity;
+    for (const [x, z] of lotTiles(gx, gz, fw, fd)) {
+      const i = tileIndex(x, z);
+      if (grid.thi[i] - grid.tlo[i] > FLAT_TILE) { blocked.push([x, z]); problem = 'slope'; }
+      lo = Math.min(lo, grid.tlo[i]); hi = Math.max(hi, grid.thi[i]);
+    }
+    if (!blocked.length && hi - lo > FLAT_SPREAD) { for (const [x, z] of lotTiles(gx, gz, fw, fd)) blocked.push([x, z]); problem = 'slope'; }
   }
   let road = false;
   for (let z = gz - 2; z < gz + fd + 2 && !road; z++) for (let x = gx - 2; x < gx + fw + 2 && !road; x++) if (inBounds(x, z) && grid.road[tileIndex(x, z)] !== 0) road = true;

@@ -123,7 +123,7 @@ export function zoneDemand(state, grid) {
     const z = zoneOfTile(gx, gz), f = b.floors;
     if (b.cat === 'home') pop[z] += 2 * f;
     else if (b.cat === 'shop') { shops[z] += 1; jobs[z] += 1; pop[z] += f; }
-    else if (b.cat === 'work') jobs[z] += 2 * f;
+    else if (b.cat === 'work' || b.cat === 'farm') jobs[z] += 2 * f;
     else if (b.cat === 'service' || b.cat === 'landmark') services[z] += 1;
   }
   return { pop, jobs, shops, services };

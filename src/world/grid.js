@@ -33,7 +33,7 @@ export function rectTiles(a, b) {
 
 const NEIGH = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
-// Builds the grid for a town layout. `base` comes from the terrain and the layout's farmland; `road`, `zone`,
+// Builds the grid for a town layout. `base` comes from the terrain; `road`, `zone`,
 // `lot` and `district` start empty and are filled by the systems that own them (roads, zoning, placement, districts).
 export function createGrid(layout) {
   const base = new Uint8Array(GRID_N * GRID_N);
@@ -41,6 +41,7 @@ export function createGrid(layout) {
   const zone = new Uint8Array(GRID_N * GRID_N);   // owned by zoning (0 none, else a zone id)
   const lot = new Uint16Array(GRID_N * GRID_N);   // owned by zoning (0 none, else growth lot number)
   const district = new Uint8Array(GRID_N * GRID_N); // owned by districts (0 none, else a district slot 1 to 15)
+  const tlo = new Float32Array(GRID_N * GRID_N), thi = new Float32Array(GRID_N * GRID_N); // lowest and highest ground of each tile
 
   for (let gz = 0; gz < GRID_N; gz++) for (let gx = 0; gx < GRID_N; gx++) {
     const [cx, cz] = tileCenter(gx, gz);
@@ -50,23 +51,13 @@ export function createGrid(layout) {
       if (h < lo) lo = h; if (h > hi) hi = h;
     }
     let k = BASE.LAND;
+    tlo[tileIndex(gx, gz)] = lo; thi[tileIndex(gx, gz)] = hi;
     if (lo < -0.15 || Math.abs(cx - riverX(cz)) < 5) k = BASE.WATER;
     else if (hi > 2.2 || hi - lo > 0.9) k = BASE.STEEP;
     base[tileIndex(gx, gz)] = k;
   }
-  if (layout) {
-    const mark = (cx, cz, hw, hd, fn) => {
-      const [g0x, g0z] = worldToTile(cx - hw, cz - hd), [g1x, g1z] = worldToTile(cx + hw, cz + hd);
-      for (const [gx, gz] of rectTiles([g0x, g0z], [g1x, g1z])) {
-        const [tx, tz] = tileCenter(gx, gz);
-        if (Math.abs(tx - cx) <= hw + 0.01 && Math.abs(tz - cz) <= hd + 0.01) fn(tileIndex(gx, gz));
-      }
-    };
-    for (const f of layout.farms || []) mark(f.x, f.z, (f.turned ? f.d : f.w) / 2 + 1, (f.turned ? f.w : f.d) / 2 + 1, (i) => { if (base[i] === BASE.LAND) base[i] = BASE.FARM; });
-  }
-
   const grid = {
-    N: GRID_N, TILE, base, road, zone, lot, district,
+    N: GRID_N, TILE, base, road, zone, lot, district, tlo, thi,
     inBounds, tileIndex, tileCenter, worldToTile, snapToTile, rectTiles,
     baseAt: (gx, gz) => (inBounds(gx, gz) ? base[tileIndex(gx, gz)] : BASE.STEEP),
     roadAt: (gx, gz) => (inBounds(gx, gz) ? road[tileIndex(gx, gz)] : 0),

@@ -1,6 +1,7 @@
 // The look shared by every build menu: compact tiles with a picture, a name, a price chip and a key badge, plus the
 // zone vignettes, road swatches and category icons. Pure string builders: no DOM, no THREE, so the markup and the
 // numbers can be tested in node. Colours and sizes live in css/menus.css.
+import { minFloors } from '../world/models.js';
 import { income } from '../sim/economy.js';
 import { INDUSTRY, LANDMARKS, PARKS, SERVICES, SHOPS } from '../sim/services-config.js';
 import { ZONE_DEFS } from '../sim/zones.js';
@@ -38,6 +39,7 @@ const ICON_SHAPES = {
   work: '<path d="M3 18V9l4-3 4 3 4-3 4 3v9z" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.8" stroke-linejoin="round"/><rect x="14" y="3" width="3" height="6" fill="#2B2620" opacity=".7"/>',
   landmark: '<rect x="7" y="4" width="8" height="14" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.8"/><path d="M6 4h10l-5-3z" fill="#E6BC62" stroke="#2B2620" stroke-width="1.5" stroke-linejoin="round"/>',
   service: '<rect x="3" y="3" width="16" height="16" rx="5" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.8"/><path d="M11 7v8M7 11h8" stroke="#B8472E" stroke-width="2.6" stroke-linecap="round"/>',
+  farm: '<rect x="3" y="12" width="16" height="7" fill="#E2C27A" stroke="#2B2620" stroke-width="1.8"/><path d="M7 12v7M11 12v7M15 12v7" stroke="#B0AA66" stroke-width="1.4"/><path d="M4 12V8l3-3 3 3v4z" fill="#B8472E" stroke="#2B2620" stroke-width="1.6" stroke-linejoin="round"/>',
   park: '<circle cx="11" cy="8" r="5" fill="#A8C179" stroke="#2B2620" stroke-width="1.8"/><path d="M11 13v6" stroke="#2B2620" stroke-width="2"/>',
 };
 export const categoryIcon = (id) => `<svg viewBox="0 0 22 22" aria-hidden="true">${ICON_SHAPES[id] || ICON_SHAPES.home}</svg>`;
@@ -106,6 +108,10 @@ const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 export function buildingEffect(def) {
   const [lo, hi] = def.floors;
   if (!hi) return '';
+  if (def.cat === 'farm') { // fields fill the lot, so earnings follow the size; they need flat ground
+    const a = income(minFloors(def, 6), 1), b = income(minFloors(def, 16), 1);
+    return `Fields fill the lot · flat ground · earns ${a} to ${b} coins/s`;
+  }
   const floors = lo === hi ? plural(lo, 'floor') : `${lo} to ${hi} floors`;
   const earn = income(lo, 1) === income(hi, 1) ? `${income(lo, 1)}` : `${income(lo, 1)} to ${income(hi, 1)}`;
   return `${floors} · earns ${earn} coins/s`;

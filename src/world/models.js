@@ -18,6 +18,7 @@ export const CATEGORIES = [
   { id: 'home', name: 'Homes', tool: 'build' },
   { id: 'shop', name: 'Shops', tool: 'build' },
   { id: 'work', name: 'Workplaces', tool: 'build' },
+  { id: 'farm', name: 'Farms', tool: 'build' },
   { id: 'landmark', name: 'Landmarks', tool: 'build' },
   { id: 'service', name: 'Services', tool: 'services' },
   { id: 'park', name: 'Parks', tool: 'parks' },
@@ -35,6 +36,9 @@ export const MODELS = [
   { id: 'shop-row',     name: 'Shop row',       cat: 'shop',     sub: 'Awnings and planters',             foot: [[1, 1], [1, 2]], tile: 'row', floors: [2, 3], grow: 0.3, cost: 200, style: 'sash' },
   { id: 'cafe',         name: 'Corner cafe',    cat: 'shop',     sub: 'Terrace tables and string lights', foot: [[1, 1]],                 floors: [2, 3], grow: 0,    cost: 260,  style: 'arched' },
   { id: 'market',       name: 'Market hall',    cat: 'shop',     sub: 'Open arches, a lantern roof',      foot: [[2, 2], [1, 2]],         floors: [1, 1], grow: 0,    cost: 520,  style: 'arched' },
+  // A farm is production, not housing: a farmhouse, a barn and fields that fill every tile it claims. `floors` is its
+  // yield here (it is what the income and upgrade curves read), so a bigger farm earns more. `flat` means it needs level ground.
+  { id: 'farm',         name: 'Farm',           cat: 'farm',     sub: 'A farmhouse, a barn and fields of crops', foot: [[2, 3], [3, 4], [4, 4]], floors: [1, 1], grow: 0.5, cost: 45, style: 'sash', flat: true },
   { id: 'office',       name: 'Office block',   cat: 'work',     sub: 'Ribbon windows, stepped crown',    foot: [[1, 1], [1, 2], [2, 2]], floors: [4, 6], grow: 1,    cost: 560,  style: 'ribbon' },
   { id: 'workshop',     name: 'Workshop',       cat: 'work',     sub: 'Sawtooth roof and a chimney',      foot: [[1, 2], [2, 2]],         floors: [1, 2], grow: 0.3,  cost: 300,  style: 'sash' },
   { id: 'warehouse',    name: 'Warehouse',      cat: 'work',     sub: 'Big doors, plenty of room',        foot: [[1, 2], [2, 2]],         floors: [1, 2], grow: 0,    cost: 240,  style: 'ribbon' },
@@ -100,6 +104,8 @@ export function pickModelForLot(cat, fw, fd, seed = 0) {
 }
 
 export const areaCost = (def, fw, fd) => Math.round(def.cost * fw * fd);
+// Storeys (a farm's yield) a model reaches at its lowest roll on a lot of `area` tiles. The menus show it as the starting income.
+export const minFloors = (def, area) => def.floors[0] + Math.min(6, Math.floor(def.grow * (area - 1) + 0.0001));
 
 // ---- seeds and traits ----
 
