@@ -9,6 +9,12 @@ import { makeParts, worldMatrix, addToBatch } from '../render/buildings.js';
 import { trianglesOf } from '../render/models/builders.js';
 import { CATEGORIES, LANG, canonicalDims, describe, footprintsOf, modelsIn } from '../world/models.js';
 import { TILE } from '../world/grid.js';
+import { createSky } from '../render/sky.js';
+import { atmosphereTargets } from '../core/calendar.js';
+// The kit's stage keeps a fixed day or night: the same eased sky the town uses, with no weather and no season.
+const kitSky = createSky();
+const KIT_DAY = atmosphereTargets({ hour: 12, weather: 'clear', season: 0 }), KIT_NIGHT = atmosphereTargets({ hour: 0, weather: 'clear', season: 0 });
+const kitTargets = (night) => (night ? KIT_NIGHT : KIT_DAY);
 
 const $ = (id) => document.getElementById(id);
 const stage = $('stage');
@@ -145,7 +151,7 @@ let last = performance.now();
 function frame(now) {
   const dt = Math.min(0.1, (now - last) / 1000); last = now;
   camera.step(dt, !!drag);
-  const blend = lighting.update(dt, ui.night ? 1 : 0), on = blend > 0.5;
+  const blend = lighting.update(dt, kitSky.update(dt, kitTargets(ui.night))), on = blend > 0.5;
   if (on !== night) { night = on; applyNight(); }
   renderer.render(scene, camera.cam);
   const w = canvas.clientWidth, h = canvas.clientHeight;

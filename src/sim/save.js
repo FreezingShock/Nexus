@@ -40,7 +40,7 @@ export function sanitize(s, defs = systems) {
     coins: num(s.coins, f.coins), parts: num(s.parts, f.parts),
     levels,
     removed: Array.isArray(s.removed) ? s.removed.filter((x) => typeof x === 'string' && /^b\d+$/.test(x)).slice(0, 500) : [],
-    night: s.night ? 1 : 0, speed: [1, 2, 3].includes(s.speed) ? s.speed : 1, paused: false,
+    speed: [1, 2, 3].includes(s.speed) ? s.speed : 1, paused: false, // night is not saved: it follows the clock (systems/calendar.js)
     offline: off ? { coins: num(off.coins, 0), parts: num(off.parts, 0), awayS: num(off.awayS, 0), fullS: num(off.fullS, 0), easeS: num(off.easeS, 0) } : null,
     log: Array.isArray(s.log) ? s.log.filter((e) => e && typeof e.k === 'string').slice(-8).map((e) => ({ k: e.k.slice(0, 8), n: String(e.n ?? '').slice(0, 40) })) : [],
   };
