@@ -71,10 +71,21 @@ test('a route that joins a street at its end, or crosses it, is not hugging', ()
   assert.deepEqual(reasons([[3, 9], [3, 10], [3, 11], [3, 12], [3, 13]], roads), [], 'a crossing');
 });
 
-test('straight runs may not sit one tile from a parallel street', () => {
+test('a street one free tile (one lot) from a parallel street is allowed', () => {
   const roads = row(10, 0, 10);
-  assert.ok(reasons(line([0, 12], [4, 12]), roads).includes('gap'));
-  assert.deepEqual(reasons(line([0, 13], [4, 13]), roads), [], 'three tiles from the street leaves two tiles of lot');
+  assert.deepEqual(reasons(line([0, 12], [4, 12]), roads), [], 'one tile between the streets is enough room for a lot');
+  assert.deepEqual(reasons(line([0, 13], [4, 13]), roads), []);
+});
+
+test('streets touching side by side are still refused', () => {
+  const roads = row(10, 0, 10);
+  assert.ok(reasons(line([0, 11], [4, 11]), roads).includes('hug'));
+});
+
+test('the auto-bend planner accepts a route one tile from a parallel street', () => {
+  const roads = row(10, 0, 10);
+  const r = chooseRoute({ points: [[0, 12], [6, 14]], roads, blockedBy: open });
+  assert.deepEqual(validateRoute(r.path, roads, open), []);
 });
 
 test('no zig-zags: two turns with one tile between them are refused', () => {
@@ -165,5 +176,5 @@ test('auto-pick keeps the stops of each pivot, so later pivots still land on the
 });
 
 test('every grid rule has a sheet-friendly message', () => {
-  for (const r of ['revisit', 'loop', 'hug', 'gap', 'zigzag', 'long']) assert.ok(BLOCK_TEXT[r], r);
+  for (const r of ['revisit', 'loop', 'hug', 'zigzag', 'long']) assert.ok(BLOCK_TEXT[r], r);
 });
