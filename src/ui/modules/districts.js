@@ -26,7 +26,7 @@ export default {
   create({ sim, send, scene }) {
     const stage = scene.canvas.parentElement;
     const tag = document.createElement('div');
-    tag.className = 'ztag card'; tag.hidden = true;
+    tag.className = 'ztag card'; tag.dataset.mo = 'tag'; tag.hidden = true;
     $('app').appendChild(tag);
     const layer = document.createElement('div');
     layer.className = 'dlayer';

@@ -50,7 +50,7 @@ export default {
     ($('goalsbtn') || $('settingsbtn')).before(btn);
 
     const card = document.createElement('aside');
-    card.id = 'achv'; card.className = 'card'; card.hidden = true;
+    card.id = 'achv'; card.className = 'card'; card.dataset.mo = ''; card.hidden = true;
     card.setAttribute('aria-label', 'Milestones and achievements');
     card.innerHTML = `<button class="x" id="achx" type="button" aria-label="Close">${CLOSE_SVG}</button>
       <div class="band"><h2 class="h-disp">Milestones</h2><div class="sub" id="achsub"></div><div class="meter wide" role="img" aria-label="Stages reached"><i id="achbar"></i></div></div>

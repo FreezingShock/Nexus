@@ -8,7 +8,6 @@
 #roadlabel.bad{background:#F6D9CF;padding-left:14px}
 #roadlabel.poor b{color:var(--action)}
 #roadlabel .coin{width:22px;height:22px;border-radius:50%;border:2.5px solid var(--ink);background:radial-gradient(circle at 50% 50%,var(--paper) 0 28%,var(--mustard) 30%);flex:0 0 auto}
-#roadlabel[hidden]{display:none}
 body.no-select,body.no-select *{-webkit-user-select:none;user-select:none}
 .road-foot{flex-wrap:nowrap;align-items:center}
 .road-foot .sub{font-size:13px;line-height:1.25;max-width:520px}

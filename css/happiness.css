@@ -1,7 +1,6 @@
 /* The Happiness plaque lives in the top bar (hud.css). Its panel drops down under it and holds the summary, what helps,
    what pulls the streets down and a few tips. Paper card like the other hover cards. */
 #hp-panel{position:absolute;top:calc(100% + 14px);left:0;z-index:26;width:340px;max-width:calc(100vw - 32px);box-sizing:border-box;padding:14px 16px 16px;max-height:calc(100vh - var(--hud-bottom,108px) - 24px);overflow:auto;overscroll-behavior:contain}
-#hp-panel[hidden]{display:none}
 .chip.hp.open{box-shadow:0 4px 0 var(--action),0 0 0 3px var(--action)}
 #hp-panel .hp-level{margin:0;font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:21px;color:var(--sky-ink)}
 #hp-panel .hp-summary{margin:2px 0 0;font-size:14px;line-height:1.3;color:var(--ink-soft);font-weight:600}

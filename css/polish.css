@@ -1,7 +1,7 @@
 /* Cozy polish: first-time tips, hover tips, postcard notes and the shortcut sheet. Same cream paper and ink as ui.css. */
 
 /* first-time tip: a sticky note above the hint bar */
-.tipnote{position:absolute;left:var(--gutter);bottom:calc(max(18px,env(safe-area-inset-bottom,0px)) + 56px);width:min(330px,calc(100% - 32px));padding:14px 16px 12px;transform:rotate(-.6deg);z-index:6;animation:pc-in .35s cubic-bezier(.2,.8,.3,1) both}
+.tipnote{position:absolute;left:var(--gutter);bottom:calc(max(18px,env(safe-area-inset-bottom,0px)) + 56px);width:min(330px,calc(100% - 32px));padding:14px 16px 12px;transform:rotate(-.6deg);z-index:6}
 .tn-kick{margin:0 0 4px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--terra)}
 .tn-text{margin:0 0 10px;font-size:15px;font-weight:700;line-height:1.35}
 .tn-praise{color:var(--sage-d)}
@@ -23,7 +23,7 @@
 @keyframes pc-in{from{opacity:0;transform:translateY(-14px) rotate(-3deg)}}
 
 /* shortcut sheet: centred card */
-.shortcuts{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-.3deg);width:min(600px,calc(100% - 32px));max-height:calc(100% - 40px);display:flex;flex-direction:column;padding:0;z-index:12;animation:pc-in .3s cubic-bezier(.2,.8,.3,1) both}
+.shortcuts{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-.3deg);width:min(600px,calc(100% - 32px));max-height:calc(100% - 40px);display:flex;flex-direction:column;padding:0;z-index:12}
 .shortcuts .band{flex:0 0 auto;padding:16px 62px 14px 18px;background:var(--paper-3);background-image:var(--grain);border-bottom:2.5px solid var(--ink);border-radius:17px 21px 0 0}
 .shortcuts .band h2{font-size:25px}
 .shortcuts .pad{overflow:auto;padding:12px 18px 6px;display:grid;grid-template-columns:1fr 1fr;gap:4px 26px;align-content:start;min-height:0}
@@ -42,6 +42,6 @@
   .tipnote{width:calc(100% - 32px)}
 }
 @media (prefers-reduced-motion:reduce){
-  .tipnote,.note,.shortcuts{animation:none}
+  .note{animation:none}
   .note{transition:none}
 }

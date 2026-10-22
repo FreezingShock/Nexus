@@ -13,7 +13,7 @@ export default {
     const view = () => scene.sys('tileview');
     const stage = scene.canvas.parentElement;
     const tag = document.createElement('div');
-    tag.className = 'ztag card'; tag.hidden = true;
+    tag.className = 'ztag card'; tag.dataset.mo = 'tag'; tag.hidden = true;
     $('app').appendChild(tag);
     // The demand widget sits in the top row of the HUD (index.html); this module fills its rows.
     const demandEl = document.getElementById('demandrows');

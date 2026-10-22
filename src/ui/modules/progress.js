@@ -24,7 +24,7 @@ export default {
     $('settingsbtn').before(btn);
 
     const card = document.createElement('aside');
-    card.id = 'goals'; card.className = 'card'; card.hidden = true;
+    card.id = 'goals'; card.className = 'card'; card.dataset.mo = ''; card.hidden = true;
     card.setAttribute('aria-label', 'Town goals');
     card.innerHTML = `<button class="x" id="gx" aria-label="Close">${CLOSE_SVG}</button>
       <div class="band"><h2 class="h-disp">Town goals</h2><div class="sub" id="gday"></div></div>
