@@ -4,9 +4,11 @@
 // Cars read sim.traffic (flow fields and the spawn table). Congestion colours come from grid.load. See docs/TRAFFIC.md.
 import * as T from '../traffic.js';
 import { lotIncome } from '../zones.js';
+import { carTripsPerPerson } from '../schedule.js';
 
 const SOLVE_STEP = 4, MOVE_STEP = 8, WARM_CYCLES = 2;
-const PER_RESIDENT = T.TRIPS_PER_RESIDENT_DAY / T.DAY_MIN;
+// Car trips a resident makes a game minute, from their routines (schedule.js).
+const PER_RESIDENT = carTripsPerPerson() / T.DAY_MIN;
 
 function createModel() {
   const Z2 = T.ZONES * T.ZONES;
@@ -46,7 +48,7 @@ function beginCycle({ state, grid }, m) {
 }
 
 // Solve: one Dijkstra per destination, and the travel time from every zone to it.
-function solveStep(m, n) {
+function solveStep(m, n, people) {
   for (let k = 0; k < n && m.cursor < m.dests.length; k++) {
     const j = m.dests[m.cursor++];
     T.solveField(m.net, m.anchors[j], m.fields[j]);
@@ -54,18 +56,22 @@ function solveStep(m, n) {
     for (let i = 0; i < T.ZONES; i++) { const a = m.anchors[i]; m.costTo[j * T.ZONES + i] = a >= 0 ? dist[a] : Infinity; }
   }
   if (m.cursor >= m.dests.length) {
-    splitTrips(m);
+    splitTrips(m, people);
     m.phase = 'assign'; m.cursor = 0; m.aux.fill(0);
   }
 }
 
 // Gravity split per purpose: residents go to work (jobs), shops, services and other homes.
-function splitTrips(m) {
+function splitTrips(m, people) {
   const d = m.demand;
+  // trips follow the people actually living in town: zone homes only decide where they start, the total is the population
+  let homes = 0;
+  for (let i = 0; i < T.ZONES; i++) homes += d.pop[i];
+  const live = homes > 0 ? Math.max(0, people) / homes : 0;
   const purposes = [[d.jobs, T.SHARE.work], [d.shops, T.SHARE.shop], [d.services, T.SHARE.service], [d.pop, T.SHARE.home]];
   m.total.fill(0);
   purposes.forEach(([attract, share], p) => {
-    for (let i = 0; i < T.ZONES; i++) m.origin[i] = d.pop[i] * PER_RESIDENT * share;
+    for (let i = 0; i < T.ZONES; i++) m.origin[i] = d.pop[i] * live * PER_RESIDENT * share;
     for (let j = 0; j < T.ZONES; j++) m.attr[j] = m.isDest[j] ? attract[j] : 0;
     const out = p === 0 ? m.work : m.part;
     out.fill(0);
@@ -134,7 +140,7 @@ function finish({ state, grid, refresh }, m) {
 }
 
 function stepPhase(ctx, m, n) {
-  if (m.phase === 'solve') solveStep(m, n);
+  if (m.phase === 'solve') solveStep(m, n, ctx.state.pop);
   else if (m.phase === 'assign') assignStep(m, n);
   else if (m.phase === 'time') timeStep(ctx, m, n);
 }

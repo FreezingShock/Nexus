@@ -30,10 +30,6 @@ export function occupantsOf(capacity, p, cap, local, avg) {
   return Math.min(capacity, capacity * (p / cap) * w);
 }
 
-// Cars and walkers that should be on screen for p people.
-export const carsFor = (p) => Math.round(p * POP.carsPerPerson);
-export const walkersFor = (p) => Math.round(p * POP.walkersPerPerson);
-
 // Words and numbers for the panel. Pure.
 export function summaryOf(p, cap, happy) {
   const m = speedOf(happy), rel = m / speedOf(POP.avgHappy);
