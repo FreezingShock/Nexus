@@ -67,13 +67,19 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
     ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(ndc, camera.cam);
     // The nearest of a tree or a building wins. A tree comes back as { tree: id }; a building as its id.
-    const b = town.probe(ray), t = byId.get('trees')?.pick(ray) ?? null;
+    const b = buildingAt(ray), t = byId.get('trees')?.pick(ray) ?? null;
     onPick(t && (!b || t.d < b.d) ? { tree: t.id } : b ? b.id : null);
   });
   canvas.addEventListener('pointercancel', () => { drag = null; canvas.classList.remove('drag'); });
   canvas.addEventListener('wheel', (e) => { e.preventDefault(); camera.wheel(e.deltaY); }, { passive: false });
 
   resize(); camera.place(); camera.bindKeys();
+
+  // The nearest placed or grown building under the ray as { id, d }, or null.
+  function buildingAt(ray) {
+    const a = town.probe(ray), b = byId.get('lots')?.probe(ray) ?? null;
+    return !b || (a && a.d <= b.d) ? a : b;
+  }
 
   let snapTarget = null;
   return {
@@ -118,10 +124,11 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
       if (!r.width || !r.height) return null;
       ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
       ray.setFromCamera(ndc, camera.cam);
-      return town.pick(ray);
+      return buildingAt(ray)?.id ?? null;
     },
-    select: (id) => town.select(id),
-    pop: (id) => town.pop(id),
+    // Placed and grown buildings answer to the same selection and pop calls; each ignores ids it does not own.
+    select: (id) => { town.select(id); byId.get('lots')?.select(id); },
+    pop: (id) => { town.pop(id); byId.get('lots')?.pop(id); },
     rotate: (d) => camera.rotate(d),
     focus: (x, z) => camera.focus(x, z),
 
