@@ -38,7 +38,8 @@ function paintedMesh(pos) {
     for (let k = 0; k < 3; k++) { col[(i + k) * 3] = c.r; col[(i + k) * 3 + 1] = c.g; col[(i + k) * 3 + 2] = c.b; }
   }
   g2.setAttribute('color', new THREE.BufferAttribute(col, 3));
-  const land = new THREE.Mesh(g2, patchSeason(toonUncached(0xffffff, { vertexColors: true }), { leaf: true }));
+  const land = new THREE.Mesh(g2, patchSeason(toonUncached(0xffffff, { vertexColors: true }), { land: true }));
+  land.material.side = THREE.DoubleSide; // the skirts are one-sided walls, lit from either face
   land.receiveShadow = true;
   return land;
 }
@@ -47,8 +48,8 @@ function paintedMesh(pos) {
 function skirt(out, pts) {
   for (let i = 0; i + 1 < pts.length; i++) {
     const [ax, az] = pts[i], [bx, bz] = pts[i + 1], ha = heightAt(ax, az), hb = heightAt(bx, bz);
-    out.push(ax, ha, az, bx, hb, bz, ax, ha - SKIRT, az, bx, hb, bz, bx, hb - SKIRT, bz, ax, ha - SKIRT, az); // both faces: no culling to lose it
-    out.push(ax, ha, az, ax, ha - SKIRT, az, bx, hb, bz, bx, hb, bz, ax, ha - SKIRT, az, bx, hb - SKIRT, bz);
+    // One wall, drawn from both sides by the material. Two coincident copies with opposite winding flickered.
+    out.push(ax, ha, az, bx, hb, bz, ax, ha - SKIRT, az, bx, hb, bz, bx, hb - SKIRT, bz, ax, ha - SKIRT, az);
   }
 }
 const edgePoints = (half, n) => {
@@ -82,7 +83,7 @@ export function buildTerrain(parent) {
     outer.push(x0, hh(x0, z0), z0, x0, hh(x0, z1), z1, x1, hh(x1, z0), z0, x1, hh(x1, z0), z0, x0, hh(x0, z1), z1, x1, hh(x1, z1), z1);
   }
   const pts = (half, m) => edgePoints(half, m);
-  for (const line of pts(S / 2, 38)) skirt(outer, line);
+  // No skirt on the seam: the fine ground's own wall already hangs there, and a second wall on the same line z-fights it.
   parent.add(paintedMesh(new Float32Array(outer)));
 
   const water = new THREE.Mesh(new THREE.PlaneGeometry(OUT_HALF * 2, OUT_HALF * 2), patchSeason(toonUncached(0x7FA3B8), { still: true }));
