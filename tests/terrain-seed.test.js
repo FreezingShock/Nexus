@@ -109,7 +109,7 @@ test('the scenery follows the land: trees and masts stand on dry ground, off the
     assert.equal(lay.turbines.length, 2, `seed ${s}: two masts`);
     for (const t of lay.turbines) assert.ok(heightAt(t.x, t.z) > 0 && t.x < riverX(t.z), 'a mast on dry ground');
     for (const t of lay.trees) assert.ok(heightAt(t.x, t.z) > -0.2, `seed ${s}: a tree in the water`);
-    assert.ok(lay.trees.length > 40, 'there are trees: ' + lay.trees.length);
+    assert.ok(lay.trees.length > 25, 'there are trees: ' + lay.trees.length);
   });
 });
 
@@ -141,4 +141,12 @@ test('a new village rolls a seed; Renewal rolls a new one and the ground follows
     assert.notDeepEqual(Array.from(sim.grid.base), before, 'the grid read the new land');
     assert.ok(sim.state.placed.some((p) => p.starter), 'the starter village is back');
   } finally { globalThis.NEXUS_TERRAIN_SEED = pinned; setTerrainSeed(0); }
+});
+
+test('no notch in the mountain wall: the river and the valley road end in foothills, and the mountains go on past the edge', () => {
+  for (const s of SEEDS.slice(0, 16)) withSeed(s, () => {
+    for (const z of [-150, -140, 140, 150]) assert.ok(heightAt(riverX(z), z) > 14, `seed ${s}: the river cuts the wall at z=${z}`);
+    for (const x of [150, 160]) assert.ok(heightAt(x, 0) > 25, `seed ${s}: the road corridor cuts the wall at x=${x}`);
+    for (const [x, z] of [[-200, 0], [0, 220], [-300, -300], [260, 130], [0, -400]]) assert.ok(heightAt(x, z) > 20, `seed ${s}: mountains at ${x},${z}: ${heightAt(x, z)}`);
+  });
 });

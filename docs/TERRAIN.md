@@ -20,7 +20,9 @@ From the middle out (`ground` in terrain.js):
 1. A flat, buildable centre, 40 to 48 units out (the village and the road east to the tunnel).
 2. Meadows, then **plateaus** (flat terraces with a ramp or cliff between, `terrace`), **rolling hills** and flat valleys,
    mixed by a slow noise so each seed has its own balance; a few inner mountain ridges; one or two **lakes** in the west half.
-3. The edge: from 110 units (warped) out the ground always climbs into mountains up to about 45 high, past the map edge.
+3. The edge: from about 114 units out the ground always climbs into mountains about 45 high, and keeps going past the map edge (higher, with peaks and passes) as far as anyone can look. The river and the valley road fade out in the foothills, so nothing cuts a notch through the wall.
+
+Hills roll everywhere (no dead-flat valleys outside the centre) and terraces carry a gentle swell, so plateau tops are never dull.
 
 Fixed on every seed: the river (`riverX`), the calm meadow banks, the straight valley road along z = 0 east of the village,
 the bridge, the tunnel mountain (x > 71) and everything east of the river (it uses its own fixed seed). The seed rolls
@@ -40,3 +42,7 @@ sweeps 48 seeds: flat centre, mountain edge, starter village, gate, bridge, rive
 
 Not browser-run: how it looks (colour of cliffs and snow, lakes, mountain walls) is for nate to check on localhost, on a
 new village (Settings, Start over).
+
+## Far ground
+
+`render/terrain.js` builds the fine map (2.5 units a vertex) and a coarse ring round it out to 480 units (10 units a vertex), the same `heightAt`. Both have a wall under their seams so no crack shows sky. About 63k triangles in all; one more draw call.
