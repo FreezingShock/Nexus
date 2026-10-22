@@ -2,6 +2,7 @@
 // what helps, what pulls the streets down, and a few cozy tips. Each tip has a Show button that moves the camera to its
 // spot and sends a ripple there. Closes with a click on the plaque, Esc, a right-click, or a click anywhere else. Reads the sim; changes no state.
 import { $ } from '../format.js';
+import { topRight } from '../slot.js';
 import { GRID_HALF, TILE } from '../../world/grid.js';
 
 const el = (tag, cls, text) => {
@@ -86,17 +87,19 @@ export default {
       if (shift) panel.style.marginLeft = shift + 'px';
     }
     function setOpen(on) {
+      if (on) topRight.claim('happiness');
       open = on;
       chip.setAttribute('aria-expanded', String(on));
       panel.hidden = !on;
       chip.classList.toggle('open', on);
       if (on) { render(sim.services.advice()); clampPanel(); }
     }
+    topRight.register('happiness', { isOpen: () => open, close: () => setOpen(false), el: panel });
     chip.addEventListener('click', () => setOpen(!open));
     chip.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(!open); }
     });
-    document.addEventListener('keydown', (e) => { if (open && e.key === 'Escape') { setOpen(false); chip.focus(); } });
+    document.addEventListener('keydown', (e) => { if (open && e.key === 'Escape') { e.stopPropagation(); setOpen(false); chip.focus(); } });
     document.addEventListener('contextmenu', () => { if (open) setOpen(false); });
     // A click anywhere else closes it, so it never sits over the town.
     document.addEventListener('pointerdown', (e) => { if (open && !wrap.contains(e.target)) setOpen(false); });
