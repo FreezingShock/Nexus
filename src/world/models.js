@@ -149,15 +149,3 @@ export function describe(rec, level = 1) {
     pal: rec.pal || PAL_KEYS[Math.floor(t[1] * 4)],
   };
 }
-
-// The hand-made town predates the model catalog. Each of its buildings maps onto a model, keeping its size and look.
-export function describeLayoutBuilding(b, level = b.level) {
-  const model = b.type === 'hall' ? 'town-hall' : b.type === 'church' ? 'church' : b.type === 'factory' ? 'workshop'
-    : b.roof === 'flat' ? 'tower' : b.roof === 'mansard' ? 'mansard' : 'terrace';
-  const seed = seedOf(b.id), t = traitsOf(seed), def = byId.get(model);
-  return {
-    id: b.id, model, name: b.name, cat: def.cat, style: def.style, seed, t, level, rot: 0,
-    floors: b.floors, fw: 0, fd: 0, cw: 0, cd: 0, w: b.w, d: b.d, x: b.x, z: b.z, y: b.y, rotY: b.rotY,
-    pal: b.pal, roofKind: b.roof, dx: b.dx, awning: b.awning, legacy: true,
-  };
-}

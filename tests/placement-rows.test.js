@@ -12,8 +12,10 @@ const layout = getLayout();
 const cottage = modelById('cottage');
 const price = (owned) => buildCost(areaCost(cottage, 1, 1), owned);
 const lot = (x, z) => ({ model: 'cottage', gx: x, gz: z, fw: 1, fd: 1, rot: 0 });
+// The buildings the player placed (the starter town is in state.placed too).
+const mine = (sim) => sim.state.placed.filter((r) => !r.starter);
 
-// The first run of n free 1 x 1 lots in a row, far enough from the founding streets to scan quickly.
+// The first run of n free 1 x 1 lots in a row, scanning from the corner of the map so it stays clear of the village.
 function openRun(sim, n) {
   for (let z = 4; z < 60; z++) for (let x = 4; x + n < 60; x++) {
     let ok = true;
@@ -47,9 +49,9 @@ test('a dragged row places every free lot and charges each at the price it then 
   const [x, z] = openRun(sim, 3);
   const c0 = sim.state.coins;
   sim.dispatch({ type: 'placeMany', items: rowItems(x, z, 3) });
-  assert.equal(sim.state.placed.length, 3);
+  assert.equal(mine(sim).length, 3);
   assert.equal(c0 - sim.state.coins, price(0) + price(1) + price(2));
-  assert.equal(new Set(sim.state.placed.map((r) => r.id)).size, 3);
+  assert.equal(new Set(mine(sim).map((r) => r.id)).size, 3);
   for (let i = 0; i < 3; i++) assert.ok(sim.grid.lot[tileIndex(x + i, z)] >= LOT_BASE);
 });
 
@@ -59,8 +61,8 @@ test('a row skips a lot that is already built and places the rest', () => {
   const [x, z] = openRun(sim, 3);
   sim.dispatch({ type: 'place', ...lot(x + 1, z) });
   sim.dispatch({ type: 'placeMany', items: rowItems(x, z, 3) });
-  assert.equal(sim.state.placed.length, 3); // one from before, two from the row
-  const at = sim.state.placed.map((r) => r.gx).sort((a, b) => a - b);
+  assert.equal(mine(sim).length, 3); // one from before, two from the row
+  const at = mine(sim).map((r) => r.gx).sort((a, b) => a - b);
   assert.deepEqual(at, [x, x + 1, x + 2]);
 });
 
@@ -71,7 +73,7 @@ test('a row stops when coins run out and keeps what it built', () => {
   sim.subscribe((e) => events.push(e));
   sim.state.coins = price(0) + price(1);
   sim.dispatch({ type: 'placeMany', items: rowItems(x, z, 3) });
-  assert.equal(sim.state.placed.length, 2);
+  assert.equal(mine(sim).length, 2);
   assert.equal(sim.state.coins, 0);
   const placed = events.find((e) => e.type === 'placed');
   assert.match(placed.text, /out of coins/);
@@ -84,7 +86,7 @@ test('undo takes back a whole row and refunds exactly what it cost', () => {
   const c0 = sim.state.coins;
   sim.dispatch({ type: 'placeMany', items: rowItems(x, z, 3) });
   sim.dispatch({ type: 'undo' });
-  assert.equal(sim.state.placed.length, 0);
+  assert.equal(mine(sim).length, 0);
   assert.equal(sim.state.coins, c0);
   assert.equal(sim.grid.lot[tileIndex(x, z)], 0);
 });
@@ -98,9 +100,9 @@ test('undo goes newest first across single placements and rows, then reports whe
   sim.dispatch({ type: 'place', ...lot(x, z) });
   sim.dispatch({ type: 'placeMany', items: rowItems(x + 1, z, 2) });
   sim.dispatch({ type: 'undo' });
-  assert.equal(sim.state.placed.length, 1);
+  assert.equal(mine(sim).length, 1);
   sim.dispatch({ type: 'undo' });
-  assert.equal(sim.state.placed.length, 0);
+  assert.equal(mine(sim).length, 0);
   sim.dispatch({ type: 'undo' });
   assert.equal(lastToast(events).text, 'Nothing to undo');
 });
@@ -110,13 +112,13 @@ test('undo brings back a bulldozed building on its lot', () => {
   sim.state.coins = 1e9;
   const [x, z] = openRun(sim, 1);
   sim.dispatch({ type: 'place', ...lot(x, z) });
-  const id = sim.state.placed[0].id;
+  const id = mine(sim)[0].id;
   sim.dispatch({ type: 'bulldoze', id });
   assert.equal(sim.alive(id), false);
   assert.equal(sim.grid.lot[tileIndex(x, z)], 0);
   sim.dispatch({ type: 'undo' });
   assert.equal(sim.alive(id), true);
-  assert.equal(sim.state.placed.length, 1);
+  assert.equal(mine(sim).length, 1);
   assert.ok(sim.grid.lot[tileIndex(x, z)] >= LOT_BASE);
 });
 
@@ -125,12 +127,12 @@ test('one bulldoze sweep is one undo step, however many buildings it took', () =
   sim.state.coins = 1e9;
   const [x, z] = openRun(sim, 3);
   sim.dispatch({ type: 'placeMany', items: rowItems(x, z, 3) });
-  const ids = sim.state.placed.map((r) => r.id);
+  const ids = mine(sim).map((r) => r.id);
   for (const id of ids) sim.dispatch({ type: 'bulldoze', id, group: 7 });
   assert.ok(ids.every((id) => !sim.alive(id)));
   sim.dispatch({ type: 'undo' });
   assert.ok(ids.every((id) => sim.alive(id)));
-  assert.equal(sim.state.placed.length, 3);
+  assert.equal(mine(sim).length, 3);
 });
 
 test('undo takes back the newer of a road stroke and a placement, and leaves the other alone', () => {
@@ -141,7 +143,7 @@ test('undo takes back the newer of a road stroke and a placement, and leaves the
   const [x, z] = openRun(sim, 1);
   sim.dispatch({ type: 'place', ...lot(x, z) });
   sim.dispatch({ type: 'undo' });
-  assert.equal(sim.state.placed.length, 0);
+  assert.equal(mine(sim).length, 0);
   assert.ok(sim.state.roads[tileIndex(rx, rz)], 'the road stays');
   sim.dispatch({ type: 'undo' });
   assert.equal(sim.state.roads[tileIndex(rx, rz)], undefined, 'then the road goes');

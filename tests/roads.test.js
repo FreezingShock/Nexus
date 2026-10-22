@@ -16,14 +16,14 @@ const costOf = (t) => ({ two: 20, bike: 35, one: 45 })[t];
 // open ground north of the town, clear of blocks, water and hills
 const free = [C - 6, C - 14];
 
-test('starter streets are editable tiles: 5 lines each way plus the road east', () => {
+test('starter streets are editable tiles: a main street and a cross street meeting at the square', () => {
   const r = starterRoads();
-  assert.ok(r[key(C, C)] && r[key(C + 4, C - 8)] && r[key(C + 12, C)]);
+  assert.equal(Object.keys(r).length, 25); // 13 + 13 tiles, the crossing counted once
   assert.equal(shapeOf(connMask(r, C, C)).kind, 'cross');
-  assert.equal(shapeOf(connMask(r, C - 8, C - 8)).kind, 'corner');
-  assert.equal(shapeOf(connMask(r, C - 8, C - 4)).kind, 'tee');
-  assert.equal(shapeOf(connMask(r, C + 12, C)).kind, 'straight');
-  assert.equal(shapeOf(connMask(r, C + 16, C)).kind, 'end');
+  assert.equal(shapeOf(connMask(r, C - 4, C)).kind, 'straight');
+  assert.equal(shapeOf(connMask(r, C + 6, C)).kind, 'end');
+  assert.equal(shapeOf(connMask(r, C, C - 6)).kind, 'end');
+  assert.equal(shapeOf(connMask(r, C + 3, C + 3)).kind, 'iso', 'the open land beside the streets is not a road');
 });
 
 test('shapes follow the connections', () => {
@@ -64,13 +64,13 @@ test('roads cannot go on water, hills, parks or standing buildings', () => {
   assert.equal(roadBlock(grid, layout, state, free[0], free[1]), null);
   assert.equal(roadBlock(grid, layout, state, C + 18, C), 'water');
   assert.equal(roadBlock(grid, layout, state, -1, 0), 'bounds');
-  const b = layout.buildings.find((x) => x.type === 'house');
-  const gx = Math.round(b.x / 3) + C, gz = Math.round(b.z / 3) + C;
-  assert.equal(roadBlock(grid, layout, state, gx, gz), 'building');
-  state.removed.push(b.id);
-  assert.equal(roadBlock(grid, layout, state, gx, gz), null, 'a bulldozed building frees its tiles');
-  const park = layout.pads.find((p) => p.park);
-  assert.equal(roadBlock(grid, layout, state, Math.round(park.x / 3) + C, Math.round(park.z / 3) + C), 'park');
+  // a starter house (the terrace on the north side of the main street) and the starter park are built lots
+  const house = state.placed.find((r) => r.id === 'b1000');
+  assert.equal(roadBlock(grid, layout, state, house.gx, house.gz), 'lot');
+  const park = state.placed.find((r) => r.model === 'green');
+  assert.equal(roadBlock(grid, layout, state, park.gx, park.gz), 'lot');
+  sim.dispatch({ type: 'bulldoze', id: house.id });
+  assert.equal(roadBlock(grid, layout, state, house.gx, house.gz), null, 'a bulldozed building frees its tiles');
 });
 
 const stroke = (n, from = free) => Array.from({ length: n }, (_, i) => [from[0] + i, from[1]]);

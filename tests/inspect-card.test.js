@@ -37,7 +37,7 @@ test('picking a placed building opens the card with its name and a live upgrade 
   const { el, sim, panels } = setup();
   const [gx, gz] = freeSpot(sim, 1, 1);
   sim.dispatch({ type: 'place', model: 'cottage', gx, gz, fw: 1, fd: 1, rot: 0 });
-  const id = sim.state.placed[0].id;
+  const id = sim.state.placed.find((r) => !r.starter).id;
   panels.showInspect(id);
   assert.equal(el('inspect').hidden, false, 'card is open');
   assert.match(el('inspect').innerHTML, /Cottage/);
@@ -78,7 +78,7 @@ test('a building demolished while its card is open closes the card on the next f
 
 test('a starter town building opens and refreshes too', () => {
   const { el, sim, panels } = setup();
-  const b = layout.buildings.find((x) => x.floors > 0);
+  const b = sim.state.placed.find((r) => r.starter && r.model === 'cottage');
   panels.showInspect(b.id);
   assert.equal(el('inspect').hidden, false);
   assert.doesNotThrow(() => panels.refreshInspect());

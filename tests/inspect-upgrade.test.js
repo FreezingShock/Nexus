@@ -2,8 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createSim } from '../src/sim/sim.js';
 import { getLayout } from '../src/world/layout.js';
-import { MODELS, modelById } from '../src/world/models.js';
+import { MODELS, describe, modelById } from '../src/world/models.js';
 import { checkLot } from '../src/world/placement.js';
+import { STARTER_COUNT } from '../src/world/starter.js';
 import { upgradeCost } from '../src/sim/economy.js';
 import { BALANCE } from '../src/sim/balance.js';
 
@@ -51,14 +52,15 @@ test('an unknown or stale id reads as nothing: no throw, level 0, cost 0, not al
 
 test('starter town building: level, cost and upgrade', () => {
   const sim = rich();
-  const b = layout.buildings.find((x) => x.floors > 0 && x.level < 5);
-  assert.ok(b, 'the starter town has an upgradable building');
-  assert.equal(sim.level(b.id), b.level);
-  assert.equal(sim.cost(b.id), upgradeCost(b.floors, b.level));
+  const rec = sim.state.placed.find((r) => r.starter && r.model === 'terrace');
+  const b = describe(rec, 1);
+  assert.ok(b.floors > 0, 'the starter village has an upgradable building');
+  assert.equal(sim.level(b.id), 1);
+  assert.equal(sim.cost(b.id), upgradeCost(b.floors, 1));
   const coins = sim.state.coins;
   sim.dispatch({ type: 'upgrade', id: b.id });
-  assert.equal(sim.level(b.id), b.level + 1, 'the card reads the new level');
-  assert.equal(sim.state.coins, coins - upgradeCost(b.floors, b.level), 'pays the cost the card showed');
+  assert.equal(sim.level(b.id), 2, 'the card reads the new level');
+  assert.equal(sim.state.coins, coins - upgradeCost(b.floors, 1), 'pays the cost the card showed');
 });
 
 // Every placeable model is a pickable kind: houses, shops, work, services, landmarks and parks.
@@ -136,7 +138,8 @@ test('after a Renewal the next placed id names the new building, not the old one
   assert.equal(sim.building(first).model, 'tower');
   sim.state.runEarned = BALANCE.renewal.divisor;
   sim.dispatch({ type: 'renew' });
-  assert.equal(sim.state.placed.length, 0, 'the town is empty after a Renewal');
+  assert.equal(sim.state.placed.filter((r) => !r.starter).length, 0, 'no player buildings after a Renewal');
+  assert.equal(sim.state.placed.filter((r) => r.starter).length, STARTER_COUNT, 'the starter village is back');
   const again = place(sim, 'cottage');
   assert.equal(again, first, 'ids start over after a Renewal');
   assert.equal(sim.building(again).model, 'cottage', 'the card and upgrade read the new house');

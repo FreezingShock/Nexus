@@ -16,7 +16,7 @@ export default {
 
     function buildLines() {
       const grid = createGrid(layout), pos = [], seen = new Set();
-      const usable = (gx, gz) => gx >= 0 && gz >= 0 && gx < GRID_N && gz < GRID_N && (grid.baseAt(gx, gz) === BASE.LAND || grid.baseAt(gx, gz) === BASE.TOWN);
+      const usable = (gx, gz) => gx >= 0 && gz >= 0 && gx < GRID_N && gz < GRID_N && grid.baseAt(gx, gz) === BASE.LAND;
       const h = (gx, gz) => { const k = 'h' + gx + ',' + gz; if (seen.has(k)) return; seen.add(k); const x = (gx - GRID_HALF - 0.5) * TILE, z = (gz - GRID_HALF - 0.5) * TILE; pos.push(x, 0.16 + groundY(x, z), z, x + TILE, 0.16 + groundY(x + TILE, z), z); };
       const v = (gx, gz) => { const k = 'v' + gx + ',' + gz; if (seen.has(k)) return; seen.add(k); const x = (gx - GRID_HALF - 0.5) * TILE, z = (gz - GRID_HALF - 0.5) * TILE; pos.push(x, 0.16 + groundY(x, z), z, x, 0.16 + groundY(x, z + TILE), z + TILE); };
       for (let gz = 0; gz < GRID_N; gz++) for (let gx = 0; gx < GRID_N; gx++) {

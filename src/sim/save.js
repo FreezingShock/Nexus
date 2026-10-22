@@ -9,15 +9,20 @@ import { seedTrees } from '../world/trees.js';
 export const SAVE_KEY = 'nexus.save';
 export const BACKUP_KEY = 'nexus.save.backup';
 export const UNREADABLE_PREFIX = 'nexus.save.unreadable.';
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 export const MAX_FILE_CHARS = 5 * 1024 * 1024; // a town is a few hundred kilobytes; anything bigger is not one
 export const BACKUP_EVERY_MS = 10 * 60 * 1000; // the backup slot is refreshed at most this often while playing
 
 // migrations[i] upgrades a state saved at version i+1 to version i+2. Append only; never edit one that has shipped.
 // v2: trees are objects (state.trees). A v1 town gets the trees the generator makes; the trees system then clears
 // any that stand on a road, paint or lot, the same way it does for a fresh town.
+// v3: the town is the new starter town (world/starter.js). Only the settings carry over. A step marked `resets`
+// replaces the town, and unwrap hands the replaced town back so loadGame can keep it in the backup slot.
+const resetToStarter = (s) => ({ ...freshState(), speed: [1, 2, 3].includes(s.speed) ? s.speed : 1 });
+resetToStarter.resets = true;
 export const migrations = [
   (s) => ({ ...s, trees: seedTrees(getLayout()) }),
+  resetToStarter,
 ];
 
 export function wrap(state, now) {
@@ -62,7 +67,9 @@ export function sanitize(s, defs = systems) {
   return out;
 }
 
-// Returns { ok, state, savedAt, v } or { ok:false, error }. savedAt is null when the save has no usable time.
+// Returns { ok, state, savedAt, v, retired } or { ok:false, error }. savedAt is null when the save has no usable time.
+// retired is { state, savedAt } when a reset step replaced the town, else null. It is the town as it was before the
+// reset. That town has the current shape (a reset is the only change), so it can go in the backup slot as this version.
 // `version` and `steps` are injectable so tests can exercise migrations without shipping a new version.
 export function unwrap(raw, { version = SAVE_VERSION, steps = migrations } = {}) {
   let env;
@@ -71,16 +78,19 @@ export function unwrap(raw, { version = SAVE_VERSION, steps = migrations } = {})
   if (env.v > version) return { ok: false, error: 'saved by a newer version' };
   if (!isObj(env.state)) return { ok: false, error: 'no town in this save' };
   try {
-    let state = env.state;
+    let state = env.state, retired = null;
     for (let v = env.v; v < version; v++) {
       const step = steps[v - 1];
       if (typeof step !== 'function') return { ok: false, error: 'no upgrade from version ' + v };
+      const before = state;
       state = step(state);
       if (!isObj(state)) return { ok: false, error: 'an upgrade from version ' + v + ' failed' };
+      if (step.resets) retired = before;
     }
+    const savedAt = Number.isFinite(env.savedAt) && env.savedAt > 0 ? env.savedAt : null;
     return {
-      ok: true, v: env.v, state: sanitize(state),
-      savedAt: Number.isFinite(env.savedAt) && env.savedAt > 0 ? env.savedAt : null,
+      ok: true, v: env.v, state: sanitize(state), savedAt,
+      retired: retired ? { state: retired, savedAt } : null,
     };
   } catch {
     return { ok: false, error: 'could not read this save' };
@@ -169,6 +179,18 @@ export function clearSave(storage = safeStorage()) {
 const STORAGE_OFF = 'This browser will not keep saves, so this town lasts only this visit. Export a copy from Settings.';
 const UNREADABLE = 'Your saved town could not be read. Its text is kept in this browser, and a new town starts here. Import a save file in Settings to bring a town back.';
 const FROM_BACKUP = 'Your latest save could not be read, so your town was restored from its backup.';
+const RESET = 'Your village is now the new starter town. Your old town is in the backup slot: restore it from Settings.';
+
+// A save from before a reset: the starter town takes its place. The old town goes to the backup slot first, and the
+// new town is written at once, so no later autosave can copy the old save over that backup. The new town's clock starts
+// now, so it earns nothing for the time the old town was away.
+function startOver(storage, main, now) {
+  try {
+    keepBackup(storage, JSON.stringify(wrap(main.retired.state, main.retired.savedAt ?? now)));
+    storage.setItem(SAVE_KEY, JSON.stringify(wrap(main.state, now)));
+  } catch { /* the notice still says what happened; autosave reports if storage is gone */ }
+  return { state: main.state, savedAt: now, source: 'save', notice: RESET };
+}
 
 // The town for this visit. Never throws. Source is 'save', 'backup' or 'new'; `notice` is text to show, or ''.
 export function loadGame(storage = safeStorage(), now = Date.now()) {
@@ -178,6 +200,7 @@ export function loadGame(storage = safeStorage(), now = Date.now()) {
   if (!storage) return fresh(STORAGE_OFF);
   if (raw === null) return fresh('');
   const main = unwrap(raw);
+  if (main.ok && main.retired) return startOver(storage, main, now);
   if (main.ok) return { state: main.state, savedAt: main.savedAt, source: 'save', notice: '' };
   // Keep the unreadable text before anything overwrites it, then fall back to the backup.
   try { storage.setItem(UNREADABLE_PREFIX + now, raw); } catch { /* nothing more we can do; the notice still says so */ }

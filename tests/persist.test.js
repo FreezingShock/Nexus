@@ -7,6 +7,7 @@ import {
 import { freshState } from '../src/sim/state.js';
 import { createSim } from '../src/sim/sim.js';
 import { getLayout } from '../src/world/layout.js';
+import { STARTER_COUNT } from '../src/world/starter.js';
 import { systems } from '../src/sim/systems/index.js';
 
 const layout = getLayout();
@@ -150,7 +151,7 @@ test('import rejects anything that is not a Nexus town, before the player is ask
 });
 
 test('import clamps hostile values and keeps a missing save time as null', () => {
-  const r = importText(JSON.stringify({ v: 1, state: { coins: -5, roads: {}, speed: 99, levels: { b1: 1e9 } } }));
+  const r = importText(JSON.stringify({ v: 3, state: { coins: -5, roads: {}, speed: 99, levels: { b1: 1e9 } } }));
   assert.equal(r.ok, true);
   assert.equal(r.savedAt, null);
   assert.equal(r.state.coins, 0);
@@ -227,7 +228,7 @@ test('a whole town survives a save: zones, lots, roads, placed buildings with se
   sim.dispatch({ type: 'paintZone', zone: 1, a: [20, 20], b: [24, 22] });
   sim.dispatch({ type: 'drawRoad', roadType: 'two', path: [[20, 18], [20, 19], [20, 20]] });
   sim.dispatch({ type: 'place', model: 'mansard', gx: 36, gz: 20, fw: 2, fd: 2, rot: 1 });
-  sim.dispatch({ type: 'upgrade', id: layout.buildings[0].id });
+  sim.dispatch({ type: 'upgrade', id: 'b1000' }); // the starter terrace
   for (let i = 0; i < 60; i++) sim.tick();
 
   const raw = JSON.stringify(wrap(sim.prepareSave(), 100));
@@ -238,10 +239,9 @@ test('a whole town survives a save: zones, lots, roads, placed buildings with se
   assert.deepEqual(b.roads, a.roads);
   assert.deepEqual(b.levels, a.levels);
   assert.equal(b.gseed, a.gseed);
-  assert.equal(b.placed.length, 1);
-  assert.equal(b.placed[0].id, a.placed[0].id);
-  assert.equal(b.placed[0].seed, a.placed[0].seed);
-  assert.equal(typeof b.placed[0].seed, 'number');
+  assert.deepEqual(b.placed, a.placed, 'starter and placed buildings, with their flags and seeds');
+  assert.equal(b.placed.filter((r) => r.starter).length, STARTER_COUNT);
+  assert.equal(typeof b.placed.at(-1).seed, 'number');
   assert.equal(back.rate(), sim.rate(), 'the rate is rebuilt from the save, not stored');
   assert.ok(back.grid.lot.some((v) => v >= 40000), 'placed buildings are back on the grid');
 });

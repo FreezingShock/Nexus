@@ -9,10 +9,8 @@ export const GRID_N = 64;
 export const TILE = 3;
 export const GRID_HALF = GRID_N / 2;
 
-// What the ground is. Fixed by the world, never changes during play.
-export const BASE = { LAND: 0, WATER: 1, STEEP: 2, FARM: 3, TOWN: 4 };
-// Value in `road` for the hand-placed streets that ship with the town. The road system owns every other value.
-export const ROAD_STATIC = 255;
+// What the ground is. Fixed by the world, never changes during play. The starter town is plain LAND like the rest.
+export const BASE = { LAND: 0, WATER: 1, STEEP: 2, FARM: 3 };
 
 export const inBounds = (gx, gz) => Number.isInteger(gx) && Number.isInteger(gz) && gx >= 0 && gz >= 0 && gx < GRID_N && gz < GRID_N;
 export const tileIndex = (gx, gz) => gz * GRID_N + gx;
@@ -34,11 +32,11 @@ export function rectTiles(a, b) {
 
 const NEIGH = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
-// Builds the grid for a town layout. `base` and the static roads come from the layout; `road`, `zone` and
-// `lot` start empty and are filled by the systems that own them (roads, zoning).
+// Builds the grid for a town layout. `base` comes from the terrain and the layout's farmland; `road`, `zone`,
+// `lot` and `district` start empty and are filled by the systems that own them (roads, zoning, placement, districts).
 export function createGrid(layout) {
   const base = new Uint8Array(GRID_N * GRID_N);
-  const road = new Uint8Array(GRID_N * GRID_N);   // owned by the road system (0 none, ROAD_STATIC, else a road kind)
+  const road = new Uint8Array(GRID_N * GRID_N);   // owned by the road system (0 none, else a road kind)
   const zone = new Uint8Array(GRID_N * GRID_N);   // owned by zoning (0 none, else a zone id)
   const lot = new Uint16Array(GRID_N * GRID_N);   // owned by zoning (0 none, else growth lot number)
   const district = new Uint8Array(GRID_N * GRID_N); // owned by districts (0 none, else a district slot 1 to 15)
@@ -64,12 +62,6 @@ export function createGrid(layout) {
       }
     };
     for (const f of layout.farms || []) mark(f.x, f.z, (f.turned ? f.d : f.w) / 2 + 1, (f.turned ? f.w : f.d) / 2 + 1, (i) => { if (base[i] === BASE.LAND) base[i] = BASE.FARM; });
-    for (const p of layout.pads || []) mark(p.x, p.z, 4.5, 4.5, (i) => { base[i] = BASE.TOWN; });
-    for (const s of layout.segs || []) {
-      const horiz = s.ax === 'x', px = horiz ? s.center : s.fixed, pz = horiz ? s.fixed : s.center;
-      mark(px, pz, horiz ? s.len / 2 + 1.6 : 1.5, horiz ? 1.5 : s.len / 2 + 1.6, (i) => { road[i] = ROAD_STATIC; });
-    }
-    for (const [a, b] of layout.intersections || []) mark(a, b, 1.5, 1.5, (i) => { road[i] = ROAD_STATIC; });
   }
 
   const grid = {

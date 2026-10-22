@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createSim } from '../src/sim/sim.js';
 import { getLayout } from '../src/world/layout.js';
 import { BALANCE } from '../src/sim/balance.js';
-import { buildCost, bulkCost, coinRate, START_COINS, START_PARTS } from '../src/sim/economy.js';
+import { buildCost, bulkCost, START_COINS, START_PARTS } from '../src/sim/economy.js';
 import { dayKey, goalDef, pendingPoints, pointsMult, runNeededFor, yesterdayKey } from '../src/sim/progress.js';
 import { lotParts, ZONE_DEFS } from '../src/sim/zones.js';
 import { ROAD_TYPES } from '../src/sim/catalog.js';
@@ -63,7 +63,7 @@ test('industrial and civic lots make Parts; residential and commercial make none
 test('Charge: building adds to it, time regenerates it slowly, it never goes past the max', () => {
   const sim = mk();
   sim.state.coins = 1e6;
-  sim.dispatch({ type: 'upgrade', id: layout.buildings[0].id });
+  sim.dispatch({ type: 'upgrade', id: 'b1000' }); // the starter terrace
   assert.equal(sim.state.charge, BALANCE.charge.perAction);
   sim.state.charge = 99.99;
   for (let i = 0; i < 60; i++) sim.tick();
@@ -91,7 +91,7 @@ test('goal progress survives a day change, and finishing a goal pays once and st
   sim.state.coins = 1e7;
   sim.state.goals.slots = [{ k: 'upgrade', p: 1 }, { k: 'paint', p: 0 }, { k: 'road', p: 0 }];
   sim.state.goals.day = '1999-01-01';
-  const id = layout.buildings.find((b) => b.level < 5).id;
+  const id = 'b1000';
   sim.dispatch({ type: 'upgrade', id });
   sim.tick();
   assert.equal(sim.state.goals.slots[0].p, 2, 'progress is kept across the day change');
@@ -110,7 +110,7 @@ test('finishing all open goals in one day pays the daily bonus; a missed day res
   const run = (bonusDay, streak) => {
     const sim = mk();
     sim.state.coins = 1e9;
-    const id = layout.buildings.find((b) => b.level < 5).id;
+    const id = 'b1000';
     sim.state.goals.slots = [{ k: 'upgrade', p: 2 }, { k: 'upgrade', p: 2 }, { k: 'upgrade', p: 2 }];
     sim.state.goals.day = dayKey(T0); sim.state.goals.doneToday = 0; sim.state.goals.bonusDay = bonusDay; sim.state.goals.streak = streak;
     const parts = sim.state.parts, coins = sim.state.coins, cost = sim.cost(id);
@@ -169,7 +169,7 @@ test('Renewal starts the town over and keeps points, unlocks, milestones, lifeti
   const s = sim.state;
   s.coins = 5e9; s.parts = 900; s.runEarned = BALANCE.renewal.divisor * 1.2; s.earned = 6e9; s.points = 2;
   s.roadUnlocks = ['bike']; s.milestones = ['coins-1k']; s.speed = 2; s.stats.placed = 3;
-  s.levels[layout.buildings[0].id] = 4; s.removed.push(layout.buildings[1].id);
+  s.levels['b1000'] = 4; s.removed.push('b1001');
   const roads = s.roads;
   sim.dispatch({ type: 'renew' });
   assert.equal(s.renewals, 1);
@@ -187,7 +187,7 @@ test('Renewal starts the town over and keeps points, unlocks, milestones, lifeti
   assert.equal(s.stats.placed, 3);
   assert.notEqual(s.roads, roads);
   assert.ok(sim.grid.zone.every((z) => z === 0));
-  assert.equal(sim.rate(), Math.round(coinRate(s, layout) * pointsMult(3) * 10) / 10);
+  assert.ok(Math.abs(sim.rate() - Math.round(mk().rate() * pointsMult(3) * 10) / 10) < 0.11, 'the same town, with the points multiplier');
   assert.equal(sim.state, s, 'the same state object is kept, so the rest of the app keeps its reference');
 });
 

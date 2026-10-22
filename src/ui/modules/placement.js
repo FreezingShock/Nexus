@@ -108,7 +108,7 @@ export default {
     // Price of the lots that can be built, in order: each one raises the next, as the sim charges them.
     function priceOf(lots) {
       let total = 0, count = 0;
-      const owned = sim.state.placed.length;
+      const owned = sim.ownedCount();
       for (const l of lots) if (l.ok) { total += buildCost(areaCost(l.plan.def, l.plan.fw, l.plan.fd), owned + count); count++; }
       return { total, count };
     }

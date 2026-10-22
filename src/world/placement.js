@@ -21,7 +21,6 @@ export function tileProblem(grid, gx, gz) {
   if (b === BASE.WATER) return 'water';
   if (b === BASE.STEEP) return 'steep';
   if (b === BASE.FARM) return 'farm';
-  if (b === BASE.TOWN) return 'town';
   if (grid.road[i] !== 0) return 'road';
   if (grid.lot[i] !== 0) return 'taken';
   return '';
@@ -32,7 +31,6 @@ const WORDS = {
   water: 'Too wet to build here',
   steep: 'Too steep to build here',
   farm: 'These fields are farmed',
-  town: 'The old town streets are already full',
   road: 'A road is in the way',
   taken: 'Something is already built here',
 };
@@ -52,7 +50,7 @@ export function checkLot(grid, gx, gz, fw, fd) {
   return { ok: blocked.length === 0, problem, blocked, road };
 }
 
-// District palette by where a building stands, matching the four blocks of the founding town.
+// District palette by where a building stands: four quarters around the middle of the map.
 export function districtPal(x, z) { return x < 0 ? (z < 0 ? 'warm' : 'slate') : (z < 0 ? 'pastel' : 'green'); }
 
 // Normalizes a placement request into a record, or { error }. Pure: does not touch the grid.

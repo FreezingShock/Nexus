@@ -3,18 +3,21 @@ import assert from 'node:assert/strict';
 import * as THREE from '../vendor/three/three.module.min.js';
 import { createSim } from '../src/sim/sim.js';
 import { freshState } from '../src/sim/state.js';
-import { SAVE_VERSION, migrations, unwrap, wrap } from '../src/sim/save.js';
+import { SAVE_VERSION, migrations, sanitize, unwrap, wrap } from '../src/sim/save.js';
 import { getLayout } from '../src/world/layout.js';
 import { BASE, tileIndex, worldToTile } from '../src/world/grid.js';
 import { checkLot } from '../src/world/placement.js';
 import { roadBlock } from '../src/world/roadnet.js';
-import { buildingTiles, sanitizeTrees, seedTrees, speciesOf } from '../src/world/trees.js';
+import { sanitizeTrees, seedTrees, speciesOf } from '../src/world/trees.js';
+import { starterReserved } from '../src/world/starter.js';
 import trees from '../src/render/systems/trees.js';
 
 const layout = getLayout();
 const mk = (state = freshState()) => { state.coins = 1e9; return createSim({ state, layout }); };
 const tileOf = (t) => { const [gx, gz] = worldToTile(t.x, t.z); return [gx, gz]; };
 const json = (x) => JSON.parse(JSON.stringify(x));
+// The buildings the player placed (the starter village is in state.placed too).
+const mine = (sim) => sim.state.placed.filter((r) => !r.starter);
 
 // A tree on open ground, with a free neighbour to its east for a road. Scans the town, so it survives retuning.
 function openTree(sim) {
@@ -30,13 +33,13 @@ function openTree(sim) {
 }
 const treesOn = (sim, gx, gz) => sim.state.trees.filter((t) => { const [x, z] = tileOf(t); return x === gx && z === gz; });
 
-test('the town starts with its trees as objects, none standing on a building', () => {
+test('the town starts with its trees as objects, none standing on a street or a building', () => {
   const sim = mk();
   const ids = sim.state.trees.map((t) => t.id);
-  assert.ok(sim.state.trees.length > 300, 'trees and conifers from the generator');
+  assert.ok(sim.state.trees.length > 100, 'trees and conifers from the generator');
   assert.equal(new Set(ids).size, ids.length, 'ids are unique');
-  const blocked = buildingTiles(layout);
-  for (const t of sim.state.trees) assert.ok(!blocked.has(tileIndex(...tileOf(t))), `${t.id} stands on a building`);
+  const reserved = starterReserved();
+  for (const t of sim.state.trees) assert.ok(!reserved.has(tileIndex(...tileOf(t))), `${t.id} stands on the village`);
 });
 
 test('seeding is deterministic, and the v1 save migration seeds the same trees', () => {
@@ -45,7 +48,7 @@ test('seeding is deterministic, and the v1 save migration seeds the same trees',
   delete old.trees;
   const fromMigration = migrations[0](json(old)).trees;
   assert.deepEqual(fromMigration, seedTrees(layout));
-  assert.equal(SAVE_VERSION, 2);
+  assert.equal(SAVE_VERSION, 3);
 });
 
 test('no tree stands on a road, a zone or a lot once the town is loaded', () => {
@@ -58,16 +61,13 @@ test('no tree stands on a road, a zone or a lot once the town is loaded', () => 
   }
 });
 
-test('an old save that held trees on a road or paint loses those trees on load', () => {
+test('a save that holds trees on paint loses those trees on load', () => {
   const sim = mk();
   const { t, gx, gz } = openTree(sim);
-  // Paint the tile in a v1-shaped state (no trees key), then load it through the migration.
-  const old = json(sim.state);
-  old.zones = old.zones.slice(0, tileIndex(gx, gz)) + '1' + old.zones.slice(tileIndex(gx, gz) + 1);
-  delete old.trees;
-  const loaded = unwrap(JSON.stringify({ v: 1, savedAt: 1, state: old }));
-  assert.ok(loaded.ok);
-  const back = createSim({ state: loaded.state, layout });
+  // Paint the tile inside a saved state that still lists the tree there, then load it.
+  const saved = json(sim.state);
+  saved.zones = saved.zones.slice(0, tileIndex(gx, gz)) + '1' + saved.zones.slice(tileIndex(gx, gz) + 1);
+  const back = createSim({ state: sanitize(saved), layout });
   assert.equal(back.grid.zoneAt(gx, gz), 1);
   assert.equal(back.state.trees.some((o) => o.id === t.id), false, 'the tree on paint is gone');
   assert.ok(back.state.trees.length < sim.state.trees.length);
@@ -104,10 +104,10 @@ test('a placed building takes the trees under its footprint, and undo brings the
   assert.ok(checkLot(sim.grid, gx, gz, 1, 1).ok, 'the spot is open for a building');
   const before = json(sim.state.trees);
   sim.dispatch({ type: 'place', model: 'cottage', gx, gz, fw: 1, fd: 1, rot: 0 });
-  assert.equal(sim.state.placed.length, 1);
+  assert.equal(mine(sim).length, 1);
   assert.equal(treesOn(sim, gx, gz).length, 0);
   sim.dispatch({ type: 'undo' });
-  assert.equal(sim.state.placed.length, 0);
+  assert.equal(mine(sim).length, 0);
   assert.deepEqual(json(sim.state.trees), before);
 });
 
@@ -117,7 +117,7 @@ test('a dragged row of buildings takes its trees in one step, and one undo gives
   const before = json(sim.state.trees);
   const items = [0, 1].map((k) => ({ model: 'cottage', gx: gx + k, gz, fw: 1, fd: 1, rot: 0 }));
   sim.dispatch({ type: 'placeMany', items });
-  assert.ok(sim.state.placed.length >= 1);
+  assert.ok(mine(sim).length >= 1);
   assert.equal(treesOn(sim, gx, gz).length, 0);
   sim.dispatch({ type: 'undo' });
   assert.deepEqual(json(sim.state.trees), before);

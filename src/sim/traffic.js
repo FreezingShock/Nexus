@@ -5,6 +5,7 @@
 // (0 east, 1 south, 2 west, 3 north). Edge ids stay the same when the network is rebuilt.
 import { GRID_N, inBounds, tileIndex, worldToTile } from '../world/grid.js';
 import { DIRS, opposite } from '../world/roadnet.js';
+import { describe } from '../world/models.js';
 
 export const TILES = GRID_N * GRID_N;
 export const EDGES = TILES * 4;
@@ -102,8 +103,9 @@ export function zoneAnchors(active) {
 }
 
 // Trip origins and attractions per traffic zone. Lots come from zoning (residents, shops, workshops, civic halls).
-// The shipped town counts too: houses are homes and every shop-front building is a shop and a job.
-export function zoneDemand(state, grid, layout) {
+// Placed buildings count too, starter town included: homes are residents, shops are shops and jobs, workplaces are jobs,
+// services and landmarks are services. Parks have no storeys and count for nothing here.
+export function zoneDemand(state, grid) {
   const pop = new Float64Array(ZONES), jobs = new Float64Array(ZONES), shops = new Float64Array(ZONES), services = new Float64Array(ZONES);
   for (const [i, level] of state.lots) {
     const z = zoneOfIdx(i), kind = grid.zone[i];
@@ -113,12 +115,16 @@ export function zoneDemand(state, grid, layout) {
     else if (kind === 4) services[z] += level;
   }
   const gone = new Set(state.removed);
-  for (const b of layout.buildings) {
-    if (gone.has(b.id) || !Number.isFinite(b.x) || !Number.isFinite(b.z)) continue;
+  for (const rec of state.placed) {
+    const b = gone.has(rec.id) ? null : describe(rec, 1);
+    if (!b || !b.floors) continue;
     const [gx, gz] = worldToTile(b.x, b.z);
     if (!inBounds(gx, gz)) continue;
-    const z = zoneOfTile(gx, gz), f = b.floors || 1;
-    if (b.awning >= 0) { shops[z] += 1; jobs[z] += 1; pop[z] += f; } else pop[z] += 2 * f;
+    const z = zoneOfTile(gx, gz), f = b.floors;
+    if (b.cat === 'home') pop[z] += 2 * f;
+    else if (b.cat === 'shop') { shops[z] += 1; jobs[z] += 1; pop[z] += f; }
+    else if (b.cat === 'work') jobs[z] += 2 * f;
+    else if (b.cat === 'service' || b.cat === 'landmark') services[z] += 1;
   }
   return { pop, jobs, shops, services };
 }

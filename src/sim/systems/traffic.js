@@ -28,13 +28,13 @@ function createModel() {
 }
 
 // Starts a new cycle: rebuilds the network if the roads changed, reads demand and lists the destinations to solve.
-function beginCycle({ state, grid, layout }, m) {
+function beginCycle({ state, grid }, m) {
   if (state.roads !== m.roadsRef) {
     m.roadsRef = state.roads;
     m.net = T.refreshCosts(T.buildNet(state.roads), m.flow);
     m.anchors = T.zoneAnchors(m.net.active);
   }
-  const d = m.demand = T.zoneDemand(state, grid, layout);
+  const d = m.demand = T.zoneDemand(state, grid);
   m.dests = [];
   m.isDest.fill(0);
   for (let j = 0; j < T.ZONES; j++) {

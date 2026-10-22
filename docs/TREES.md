@@ -14,20 +14,20 @@ Species names come from `speciesOf()` in `src/world/trees.js`: broadleaf by colo
 
 ## Where the rules live
 
-- `src/world/trees.js`: pure data. `seedTrees(layout)`, `sanitizeTrees`, `takeOnTiles`, `takeTree`, `putTrees`, `buildingTiles`, `footprintIndexes`.
+- `src/world/trees.js`: pure data. `seedTrees(layout)`, `sanitizeTrees`, `takeOnTiles`, `takeTree`, `putTrees`, `footprintIndexes`.
 - `src/sim/systems/trees.js`: saved field, load-time reconcile (`init`), the `removeTree` command (free, undoable) and `sim.tree(id)` for the inspect card.
 - `src/render/systems/trees.js`: instanced meshes rebuilt when `state.trees` changes (a new array), puffs for trees that go, and `pick(raycaster)`.
 
 ## Rules
 
-- **Seeding.** A new town, a Renewal and a v1 save all start from `seedTrees(getLayout())`. Trees standing on a building's footprint are left out, so 27 of the 474 generator trees are not in a new town.
+- **Seeding.** A new town, a Renewal, a v1 save and a v2 save (which is replaced by the starter town) all start from `seedTrees(getLayout())`. The layout keeps its trees off the starter village's streets and buildings (`starterReserved()` in `src/world/starter.js`), so none are left to clear.
 - **Clearing.** A tree gives way when its tile is painted with a zone, covered by a road, or taken by a placed building (every tile of its footprint). Each action takes the trees with it and returns them to its undo step, so Ctrl+Z restores exactly the trees that action took. Zone paint, road strokes and placed buildings do this; a bulldoze of a single tree is its own undo step.
 - **Load.** `init` also clears any tree that now stands on a road, paint or lot, so a save never shows a tree inside a building.
 - **Nothing else changes trees.** Trees do not block roads or placement, do not earn income and do not tick. Planting is not built yet.
 
 ## Save
 
-Version 2 (`SAVE_VERSION`). The v1 → v2 migration in `src/sim/save.js` seeds `trees`. A town's trees add about 32 KB to a save.
+Version 3 (`SAVE_VERSION`). The v1 → v2 migration seeds `trees`; the v2 → v3 step replaces the town with the starter town, so its trees come from the seed again. A town's trees add about 32 KB to a save.
 
 ## Tests
 

@@ -159,10 +159,10 @@ test('anchors: the road nearest the zone centre, and a road from elsewhere for z
 });
 
 test('zone demand: residential lots are origins, commercial and industrial lots are jobs, shop fronts are shops', () => {
-  const state = { lots: [[key(2, 2), 2, 0], [key(3, 2), 1, 0], [key(40, 40), 3, 0]], removed: [] };
+  const state = { lots: [[key(2, 2), 2, 0], [key(3, 2), 1, 0], [key(40, 40), 3, 0]], removed: [], placed: [] };
   const grid = { zone: new Uint8Array(TILES) };
   grid.zone[key(2, 2)] = 1; grid.zone[key(3, 2)] = 2; grid.zone[key(40, 40)] = 3;
-  const d = zoneDemand(state, grid, { buildings: [] });
+  const d = zoneDemand(state, grid);
   const z0 = zoneOfTile(2, 2), z1 = zoneOfTile(40, 40);
   assert.equal(d.pop[z0], 8);       // residential level 2 is 4 per level
   assert.equal(d.jobs[z0], 3);      // the commercial lot at level 1 is 3 jobs
