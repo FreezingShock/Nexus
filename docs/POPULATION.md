@@ -32,4 +32,4 @@ A population line in the town plaque's hover card (people, homes full or empty, 
 
 ## Population panel
 
-A chip in the bottom left (key U) opens a paper panel: people against places, a graph of the last 30 minutes (15 s samples kept in the save as `popHist`, at most 120), a dashed capacity line, homes lived in, free places, moving-in rate, pace and time to fill. Hover card on the town plaque shows the same headline numbers.
+A chip in the bottom left (key U) opens a paper panel: people against places, a graph of the last 10 minutes (15 s samples kept in the save as `popHist`, 41 at most), hoverable at each 2-minute step with people, places and moving-in rate, a dashed capacity line, homes lived in, free places, moving-in rate, pace and time to fill. Hover card on the town plaque shows the same headline numbers.

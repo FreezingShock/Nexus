@@ -21,7 +21,7 @@ Add a migration to `migrations` in `src/sim/save.js`, bump `SAVE_VERSION`, and a
 
 ### Population (version 7)
 
-Version 7 adds `state.pop` (people, a float; -1 means "not started") and `state.popHist` (up to 120 `[people, capacity]` samples, 15 sim seconds apart, for the Population panel's graph). An older town starts at 60% of its homes' capacity on first load. See [POPULATION.md](POPULATION.md).
+Version 7 adds `state.pop` (people, a float; -1 means "not started") and `state.popHist` (up to 41 `[people, capacity]` samples, 15 sim seconds apart, for the Population panel's graph). An older town starts at 60% of its homes' capacity on first load. See [POPULATION.md](POPULATION.md).
 
 ### Milestone stages (version 6)
 

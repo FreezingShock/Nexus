@@ -5,7 +5,7 @@ import { freshState } from '../src/sim/state.js';
 import { advance, rateG, speedOf, summaryOf } from '../src/sim/population.js';
 import { unwrap, wrap, migrations } from '../src/sim/save.js';
 import { POP } from '../src/sim/population-config.js';
-import { graphSvg, panelHtml } from '../src/ui/modules/population.js';
+import { graphSvg, panelHtml, steps } from '../src/ui/modules/population.js';
 import { townCard } from '../src/ui/hud-detail.js';
 
 test('growth is closed form: ticking and one big step agree', () => {
@@ -64,7 +64,7 @@ test('offline catch-up uses the closed form', () => {
 test('the history ring stays bounded and saves round-trip', () => {
   const sim = createSim();
   for (let i = 0; i < 15 * 200; i++) sim.tick();
-  assert.ok(sim.state.popHist.length <= 120);
+  assert.ok(sim.state.popHist.length <= 41);
   const back = unwrap(wrap(sim.prepareSave(), Date.now()));
   assert.ok(back.ok);
   assert.ok(Math.abs(back.state.pop - sim.state.pop) < 1e-9);
@@ -102,4 +102,18 @@ test('panel and hover card text', () => {
   assert.match(card, /40 of 100/);
   assert.match(card, /3\.0 a minute/);
   assert.match(townCard({ renewals: 0, points: 0 }), /Renewals/);
+});
+
+test('graph covers 10 minutes with a hover point every 2 minutes', () => {
+  const hist = Array.from({ length: 41 }, (_, i) => [i * 2, 100]);
+  const st = steps(hist);
+  assert.deepEqual(st.map((q) => q.minAgo), [10, 8, 6, 4, 2, 0]);
+  assert.equal(st[st.length - 1].people, 80);
+  assert.equal(st[0].people, 0);
+  assert.ok(Math.abs(st[st.length - 1].perMin - 8) < 1e-9, '16 people per 2 min is 8 a minute');
+  assert.equal(st[0].perMin, null);
+  assert.match(panelHtml(summaryOf(80, 100, 0.5), hist, 0.5, 2), /pp-tip/);
+  assert.doesNotMatch(panelHtml(summaryOf(80, 100, 0.5), hist, 0.5), /pp-tip/);
+  assert.equal(steps([[1, 2]]).length, 1);
+  assert.match(graphSvg(hist, 5), /<line/);
 });
