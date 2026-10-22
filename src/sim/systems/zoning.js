@@ -67,7 +67,7 @@ export default {
       sim.building = (id) => {
         const l = lotOf(id);
         if (!l) return base.building(id);
-        const d = lotDescription(grid.zone[l[0]], l[1], l[2], l[0], (x, z) => grid.roadAt(x, z) !== 0);
+        const d = lotDescription(grid.zone[l[0]], l[1], l[2], l[0], (x, z) => grid.roadAt(x, z) !== 0, state.townPaint);
         return d && { ...d, income: ZONE_DEFS[grid.zone[l[0]]].income * l[1] }; // what this lot pays at its level
       };
       sim.alive = (id) => (lotTileOf(id) !== null ? lotOf(id) !== null : base.alive(id));

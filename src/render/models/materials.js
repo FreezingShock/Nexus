@@ -1,7 +1,7 @@
 // Materials for the building kit. Colors ride on vertex colors, so every plain-colored part of every building
 // shares ONE material (one draw call). Only the textured wall styles need their own materials.
 import * as THREE from '../../../vendor/three/three.module.min.js';
-import { PAL } from '../../world/palettes.js';
+import { PAL, TRIMS } from '../../world/palettes.js';
 import { toonUncached, canvasTexture } from '../materials.js';
 
 // Same three flat tone bands as the rest of the town, driven by vertex color instead of a per-color material.
@@ -79,14 +79,14 @@ export function dimStyle(style) {
 export const nightWall = (m) => m.userData.nightDim || m.userData.night;
 
 // Textured wall material for a palette and window style. Texture repeat is baked into the UVs.
-export function wallStyle(pal, style) {
-  const key = pal + '/' + style;
+export function wallStyle(pal, style, trim = null) {
+  const key = pal + '/' + style + (trim ? '/' + trim : '');
   let m = cache.get(key);
   if (!m) {
     const P = PAL[pal];
     if (typeof document === 'undefined') { m = toonUncached(0xffffff); } // node tests: no canvas, same interface
     else {
-      m = toonUncached(0xffffff, { map: canvasTexture(cell(style, P.wall, hex(P.accent), 'day')) });
+      m = toonUncached(0xffffff, { map: canvasTexture(cell(style, P.wall, hex(trim ? TRIMS[trim].hex : P.accent), 'day')) });
       m.userData.night = nightStyle(style);
       m.userData.nightDim = dimStyle(style);
     }

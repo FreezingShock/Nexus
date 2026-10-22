@@ -17,11 +17,12 @@ export function lotTileOf(id) {
 }
 
 // zone 1..4, level 1..5, seed from the saved lot, tile index, and whether a neighbor tile is a road.
-export function lotDescription(zone, level, seed, tile, roadAt) {
+// `paint` is the town-wide choice ({ wall?, trim?, roof? } from state.townPaint) that grown lots wear, or null.
+export function lotDescription(zone, level, seed, tile, roadAt, paint = null) {
   const [gx, gz] = tileOf(tile);
   let rot = 0;
   for (const [dx, dz, r] of DIRS) if (roadAt(gx + dx, gz + dz)) { rot = r; break; }
   const models = ZONE_MODELS[zone], model = models[(seed >>> 0) % models.length];
-  return describe({ id: lotId(tile), model, gx, gz, fw: 1, fd: 1, rot, seed }, level);
+  return describe({ id: lotId(tile), model, gx, gz, fw: 1, fd: 1, rot, seed, pal: paint && paint.wall, trim: paint && paint.trim, roof: paint && paint.roof }, level);
 }
 export { tileCenter };

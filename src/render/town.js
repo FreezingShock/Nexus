@@ -144,7 +144,7 @@ export function createTown(root, hooks = {}) {
       for (const r of placed) {
         const e = entries.get(r.id);
         if (!e) continue;
-        const sig = (r.pal || '') + '|' + (r.roof || '');
+        const sig = (r.pal || '') + '|' + (r.roof || '') + '|' + (r.trim || '');
         if (e.paint === undefined) e.paint = sig; // first sight: already drawn with this paint
         if (e.paint === sig) continue;
         e.paint = sig;
