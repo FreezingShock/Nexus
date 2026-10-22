@@ -6,6 +6,7 @@ import { makeParts, worldMatrix, addToBatch } from './buildings.js';
 import { describe } from '../world/models.js';
 import { Batch, disposeAll } from './geom.js';
 import { lineMat } from './materials.js';
+import { nightWall } from './models/materials.js';
 
 const HULL = new THREE.MeshBasicMaterial({ color: 0x6DB6EC, side: THREE.BackSide });
 const proxyMat = new THREE.MeshBasicMaterial();
@@ -55,6 +56,7 @@ export function createTown(root, hooks = {}) {
   const entries = new Map();
   let built = [], removed = new Set(), night = false, popping = null, selected = null;
   let placedSig = '', wantPop = new Set();
+  let lifeRev = 0, lifeList = [], lifeSeen = -1; // for render/systems/life-*.js: what is standing, and a counter that moves when it changes
 
   // desc -> entry. `base` is the level the building starts at before any upgrade.
   function addEntry(desc, base) {
@@ -70,9 +72,10 @@ export function createTown(root, hooks = {}) {
   }
 
   function applyNight() {
-    for (const m of built) if (m.isMesh && m.userData.day.userData.night) m.material = night ? m.userData.day.userData.night : m.userData.day;
+    for (const m of built) if (m.isMesh && nightWall(m.userData.day)) m.material = night ? nightWall(m.userData.day) : m.userData.day;
   }
   function rebuild(excludeId) {
+    lifeRev++;
     disposeAll(built, group);
     const items = [];
     for (const e of entries.values()) if (!removed.has(e.b.id) && e.b.id !== excludeId) items.push(e);
@@ -106,7 +109,7 @@ export function createTown(root, hooks = {}) {
     const g = new THREE.Group();
     g.position.set(e.b.x, e.b.y ?? 0.1, e.b.z); g.rotation.y = e.b.rotY;
     for (const p of e.parts) {
-      const mat = p.body ? [p.facadeMat, p.facadeMat, p.mat, p.mat, p.facadeMat, p.facadeMat].map((m) => (night && m.userData.night ? m.userData.night : m)) : p.mat;
+      const mat = p.body ? [p.facadeMat, p.facadeMat, p.mat, p.mat, p.facadeMat, p.facadeMat].map((m) => (night && nightWall(m) ? nightWall(m) : m)) : p.mat;
       const m = new THREE.Mesh(p.geo, mat);
       m.matrixAutoUpdate = false; m.matrix.copy(p.local); m.castShadow = m.receiveShadow = true;
       g.add(m);
@@ -188,5 +191,12 @@ export function createTown(root, hooks = {}) {
     },
     pick(raycaster) { const h = this.probe(raycaster); return h ? h.id : null; },
     hideSelection(v) { selGroup.visible = !v; },
+    // The placed buildings now standing ({ b, parts, world } each; parts.sites says where life can happen) and a counter
+    // that changes whenever the set or a building's look does. The list is rebuilt only when the counter moved.
+    lifeRev: () => lifeRev,
+    lifeEntries() {
+      if (lifeSeen !== lifeRev) { lifeSeen = lifeRev; lifeList = [...entries.values()].filter((e) => !removed.has(e.b.id)); }
+      return lifeList;
+    },
   };
 }

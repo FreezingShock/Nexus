@@ -18,10 +18,10 @@ const hex = (n) => '#' + n.toString(16).padStart(6, '0');
 
 // One 64 px cell is one bay wide and one storey tall; the wall's UVs repeat it.
 function cell(style, wall, accent, mode) {
-  const glow = mode === 'glow', dusk = mode === 'night';
+  const glow = mode === 'glow', dusk = mode === 'night', dim = mode === 'dim';
   const c = document.createElement('canvas'); c.width = c.height = 64;
   const x = c.getContext('2d');
-  const pane = glow ? '#FFC15E' : dusk ? '#FFD98A' : '#7F98A6', bar = glow ? '#000' : dusk ? 'rgba(70,52,40,.9)' : 'rgba(250,243,228,.9)';
+  const pane = glow ? '#FFC15E' : dusk ? '#FFD98A' : dim ? '#454C70' : '#7F98A6', bar = glow ? '#000' : dusk ? 'rgba(70,52,40,.9)' : dim ? 'rgba(34,30,48,.85)' : 'rgba(250,243,228,.9)';
   x.fillStyle = glow ? '#000' : wall; x.fillRect(0, 0, 64, 64);
   if (!glow) { x.fillStyle = 'rgba(43,38,32,.10)'; x.fillRect(0, 58, 64, 6); }
   if (style === 'ribbon') {
@@ -64,6 +64,20 @@ export function nightStyle(style) {
   return m;
 }
 
+// Night walls with dark windows. The town draws its own glow over each window that is lit (render/systems/life-windows.js),
+// so a window can come on at its own time. The postcard's dusk plate has no such layer and keeps the lit walls above.
+const dimCache = new Map();
+export function dimStyle(style) {
+  let m = dimCache.get(style);
+  if (!m) {
+    m = toonUncached(0xffffff, { map: canvasTexture(cell(style, '#6C7191', '#6C7191', 'dim')) });
+    dimCache.set(style, m);
+  }
+  return m;
+}
+// The material a wall wears at night in the town: dark windows when a dim variant exists, the lit walls otherwise.
+export const nightWall = (m) => m.userData.nightDim || m.userData.night;
+
 // Textured wall material for a palette and window style. Texture repeat is baked into the UVs.
 export function wallStyle(pal, style) {
   const key = pal + '/' + style;
@@ -74,6 +88,7 @@ export function wallStyle(pal, style) {
     else {
       m = toonUncached(0xffffff, { map: canvasTexture(cell(style, P.wall, hex(P.accent), 'day')) });
       m.userData.night = nightStyle(style);
+      m.userData.nightDim = dimStyle(style);
     }
     cache.set(key, m);
   }

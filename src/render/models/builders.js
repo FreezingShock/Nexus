@@ -4,7 +4,7 @@
 import * as THREE from '../../../vendor/three/three.module.min.js';
 import { AWNINGS, CROPS } from '../../world/palettes.js';
 import { LANG, modelById } from '../../world/models.js';
-import { createKit, decorate, hipGeo, prismGeo, C } from './kit.js';
+import { createKit, decorate, finishSites, hipGeo, prismGeo, C } from './kit.js';
 
 const { FLOOR_H: FH, PLINTH } = LANG;
 const awn = (k, i = 0) => AWNINGS[(Math.floor(k.t[5] * AWNINGS.length) + i) % AWNINGS.length];
@@ -39,7 +39,7 @@ const B = {
     k.body(); k.door();
     k.hipRoof(clampRise(k.w, 1.0, 1.5, 0.5));
     k.box(1.3, 0.1, 0.7, k.doorX, PLINTH + 1.2, k.dep / 2 + 0.3, k.P.accent, { rx: 0.2 }); // porch hood
-    decorate(k);
+    decorate(k, { hearth: true });
   },
 
   terrace(k) {
@@ -57,7 +57,7 @@ const B = {
       k.door(x, k.dep / 2, i % 2 ? k.P.accent : awn(k, i));
       if (n > 1) k.box(0.9, 0.08, 0.5, x, PLINTH + 1.2, k.dep / 2 + 0.25, awn(k, i + 1), { rx: 0.2 });
     }
-    decorate(k, { units: rises });
+    decorate(k, { units: rises, hearth: true });
   },
 
   mansard(k) {
@@ -364,6 +364,7 @@ export function buildParts(desc) {
   if (!modelById(desc.model)) throw new Error('unknown model "' + desc.model + '"');
   const k = createKit(desc);
   fn(k);
+  k.parts.sites = finishSites(k); // where life can happen on this building (render/life)
   return k.parts;
 }
 
