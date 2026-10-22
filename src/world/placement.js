@@ -21,7 +21,6 @@ export function tileProblem(grid, gx, gz) {
   if (b === BASE.WATER) return 'water';
   if (b === BASE.STEEP) return 'steep';
   if (b === BASE.FARM) return 'farm';
-  if (b === BASE.TOWN) return 'town';
   if (grid.road[i] !== 0) return 'road';
   if (grid.lot[i] !== 0) return 'taken';
   return '';
@@ -32,7 +31,6 @@ const WORDS = {
   water: 'Too wet to build here',
   steep: 'Too steep to build here',
   farm: 'These fields are farmed',
-  town: 'The old town streets are already full',
   road: 'A road is in the way',
   taken: 'Something is already built here',
 };
@@ -52,7 +50,7 @@ export function checkLot(grid, gx, gz, fw, fd) {
   return { ok: blocked.length === 0, problem, blocked, road };
 }
 
-// District palette by where a building stands, matching the four blocks of the founding town.
+// District palette by where a building stands: four quarters around the middle of the map.
 export function districtPal(x, z) { return x < 0 ? (z < 0 ? 'warm' : 'slate') : (z < 0 ? 'pastel' : 'green'); }
 
 // Normalizes a placement request into a record, or { error }. Pure: does not touch the grid.
@@ -71,6 +69,40 @@ export function planPlacement(cmd) {
   const [cx, cz] = tileCenter(gx, gz);
   const x = cx + (fit.fw - 1) * TILE / 2, z = cz + (fit.fd - 1) * TILE / 2;
   return { def, gx, gz, fw: fit.fw, fd: fit.fd, rot, exact: fit.exact, x, z, pal: districtPal(x, z) };
+}
+
+// Lot origins for a row dragged from tile `start` to tile `end`. Lots of fw x fd sit edge to edge along the longer
+// drag direction, the first one centered on `start`. A plain click (start == end) gives one lot. Pure.
+export const MAX_ROW = 40;
+export function rowOrigins(start, end, fw, fd, max = MAX_ROW) {
+  const dx = end[0] - start[0], dz = end[1] - start[1];
+  const along = Math.abs(dx) >= Math.abs(dz);
+  const step = along ? fw : fd, len = along ? dx : dz, dir = len < 0 ? -1 : 1;
+  const n = Math.min(max, Math.floor(Math.abs(len) / step) + 1);
+  const ox = Math.floor((fw - 1) / 2), oz = Math.floor((fd - 1) / 2);
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const k = dir * i * step;
+    const cx = along ? start[0] + k : start[0], cz = along ? start[1] : start[1] + k;
+    out.push([cx - ox, cz - oz]);
+  }
+  return out;
+}
+
+// The front of a building faces +z at rot 0, and each quarter turn turns it the way the renderer does (rotation.y):
+// rot 1 faces +x, rot 2 faces -z, rot 3 faces -x. Pure.
+const FRONT = [[0, 1], [1, 0], [0, -1], [-1, 0]];
+
+// How many road tiles lie just outside the front of a lot (gx, gz, fw x fd) turned by rot. Zero means no street faces it.
+export function frontRoadCount(grid, gx, gz, fw, fd, rot) {
+  const [dx, dz] = FRONT[((rot % 4) + 4) % 4];
+  // the strip one tile beyond the front edge, along that edge
+  const strip = [];
+  if (dx === 0) { const z = dz > 0 ? gz + fd : gz - 1; for (let x = gx; x < gx + fw; x++) strip.push([x, z]); }
+  else { const x = dx > 0 ? gx + fw : gx - 1; for (let z = gz; z < gz + fd; z++) strip.push([x, z]); }
+  let n = 0;
+  for (const [x, z] of strip) if (inBounds(x, z) && grid.road[tileIndex(x, z)] !== 0) n++;
+  return n;
 }
 
 export { GRID_N };

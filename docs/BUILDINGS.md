@@ -13,7 +13,7 @@ Every building is assembled from the same small kit (`src/render/models/kit.js`)
 
 ## Levels
 
-Levels only add details, in this order (`decorate` in the kit): 2 window boxes and door pots; 3 chimney, cornice, round gable window; 4 dormers, front hedges, lamp, balconies on tall blocks; 5 gold cornice, bunting, weathervane or flag. Some models add their own (second smokestack, flag).
+Each upgrade pops the building and throws a small ring of dust (`src/render/systems/puffs.js`); a new zoned building throws a little dust as it goes up. One instanced mesh, so a burst is one draw call. Levels only add details, in this order (`decorate` in the kit): 2 window boxes and door pots; 3 chimney, cornice, round gable window; 4 dormers, front hedges, lamp, balconies on tall blocks; 5 gold cornice, bunting, weathervane or flag. Some models add their own (second smokestack, flag).
 
 ## Footprints
 
@@ -22,6 +22,10 @@ Each model lists the sizes it was drawn for. A turned building swaps its sides. 
 ## Grid contract
 
 Placed buildings write their tiles into the grid's `lot` layer with numbers from 40000 up (`LOT_BASE`), so roads and zoning treat the tiles as built. Placed ids look like `b1001` so the save's level and removed fields accept them.
+
+## Parks
+
+Parks are ground, not buildings: `floors: [0, 0]`, so they never get storeys or levels and the upgrade is refused. A park is still a model (`cat: 'park'`) so it places, saves and bulldozes like any other. Its lawn or paving sits on the plinth; trees (a chunky trunk and a round crown), lamps, benches and water are the details. Keep parks to four or five trees so they stay inside the triangle budget. Services, parks and landmarks and what they do for the tiles around them are in [SERVICES.md](SERVICES.md).
 
 ## Budgets
 

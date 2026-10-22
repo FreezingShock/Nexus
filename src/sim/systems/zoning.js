@@ -1,12 +1,23 @@
 // Zoning: paint zones on grid tiles, buildings grow into painted tiles that have a road nearby.
 // Owns grid.zone and grid.lot. Reads grid.road (the road system owns it). See docs/GRID.md.
 import { GRID_N, BASE, inBounds, rectTiles, tileIndex, tileOf } from '../../world/grid.js';
+import { putTrees, takeOnTiles } from '../../world/trees.js';
 import {
   ZONE_DEFS, ZONE_COUNT, MAX_LOT_LEVEL, ROAD_REACH, PLACED_LOT_MIN, encodeZones, decodeZones, validZonesString,
-  nextRand, lotStats, demandOf, lotIncome,
+  nextRand, lotStats, demandOf, lotIncome, lotParts,
 } from '../zones.js';
 
 const AREA = GRID_N * GRID_N;
+// Undo for zone paint and erase: old zones go back on their tiles, lots the erase took come back,
+// trees that paint cleared come back, and paint's coins are refunded.
+function revertZones(ctx, prev, refund = 0, lots = [], trees = []) {
+  const { grid, state, refresh, sim, syncDisplay } = ctx;
+  for (const [i, z] of prev) grid.zone[i] = z;
+  for (const l of lots) { if (!state.lots.some(([j]) => j === l[0])) state.lots.push(l); grid.lot[l[0]] = l[0] + 1; }
+  state.trees = putTrees(state.trees, trees);
+  if (refund) { state.coins += refund; syncDisplay(); }
+  state.zones = encodeZones(grid.zone); state.zoneRev++; sim.zoning.painted = countPaint(grid); refresh();
+}
 const tileArg = (t) => Array.isArray(t) && t.length === 2 && Number.isInteger(t[0]) && Number.isInteger(t[1]) && inBounds(t[0], t[1]);
 
 export default {
@@ -45,6 +56,13 @@ export default {
   },
 
   rate: ({ grid, state }) => lotIncome(state.lots, (i) => grid.zone[i]),
+  partsRate: ({ grid, state }) => lotParts(state.lots, (i) => grid.zone[i]),
+
+  // A road drawn over paint clears the grid but not the saved layer. Rebuild the saved zones and lots before saving.
+  beforeSave(ctx) {
+    reconcile(ctx);
+    ctx.state.zones = encodeZones(ctx.grid.zone);
+  },
 
   commands: {
     // Paint the rectangle between tiles a and b. Costs per painted tile; stops when coins run out.
@@ -64,16 +82,24 @@ export default {
       if (afford < 1) { emit({ type: 'toast', text: 'Not enough coins for a ' + def.name.toLowerCase() + ' tile (' + def.cost + ')' }); return; }
       if (!charge(afford * def.cost)) return;
       let noRoad = 0;
+      const prev = [], painted = new Set();
       for (let k = 0; k < afford; k++) {
         const i = todo[k];
+        prev.push([i, grid.zone[i]]);
         grid.zone[i] = zone;
+        painted.add(i);
         const [gx, gz] = tileOf(i);
         if (!grid.roadWithin(gx, gz, ROAD_REACH)) noRoad++;
       }
+      // Trees on painted ground give way; undo puts them back.
+      const tk = takeOnTiles(state.trees, painted);
+      if (tk.taken.length) state.trees = tk.kept;
       state.zones = encodeZones(grid.zone); state.zoneRev++; ctx.sim.zoning.painted = countPaint(grid); refresh(); note('zone', def.name);
+      ctx.sim.pushUndo({ revert: (c) => revertZones(c, prev, afford * def.cost, [], tk.taken) });
       let text = 'Painted ' + afford + ' ' + def.name.toLowerCase() + ' tile' + (afford > 1 ? 's' : '') + ' · ' + afford * def.cost + ' coins';
       if (afford < todo.length) text += ' · coins ran out';
       else if (noRoad) text += ' · ' + noRoad + ' need a road nearby';
+      if (tk.taken.length) text += ' · ' + tk.taken.length + ' tree' + (tk.taken.length > 1 ? 's' : '') + ' cleared';
       emit({ type: 'zonePainted', zone, n: afford, cost: afford * def.cost, noRoad, text });
     },
 
@@ -82,16 +108,18 @@ export default {
       const { grid, state, emit, refresh } = ctx;
       if (!tileArg(a) || !tileArg(b)) return;
       let tiles = 0, homes = 0;
-      const dead = new Set();
+      const dead = new Set(), prev = [], lost = [];
       for (const [gx, gz] of rectTiles(a, b)) {
         const i = tileIndex(gx, gz);
         if (!grid.zone[i]) continue;
         tiles++;
-        if (grid.lot[i] === i + 1) { homes++; dead.add(i); grid.lot[i] = 0; } // a grown lot; placed buildings (>= PLACED_LOT_MIN) stay
+        prev.push([i, grid.zone[i]]);
+        if (grid.lot[i] === i + 1) { homes++; dead.add(i); grid.lot[i] = 0; const l = state.lots.find(([j]) => j === i); if (l) lost.push(l.slice()); } // a grown lot; placed buildings (>= PLACED_LOT_MIN) stay
         grid.zone[i] = 0;
       }
       if (!tiles) return;
       if (dead.size) state.lots = state.lots.filter(([i]) => !dead.has(i));
+      ctx.sim.pushUndo({ revert: (c) => revertZones(c, prev, 0, lost) });
       state.zones = encodeZones(grid.zone); state.zoneRev++; ctx.sim.zoning.painted = countPaint(grid); refresh();
       emit({ type: 'zoneCleared', n: tiles, text: 'Cleared ' + tiles + ' tile' + (tiles > 1 ? 's' : '') + (homes ? ' and ' + homes + ' building' + (homes > 1 ? 's' : '') : '') });
     },
@@ -110,7 +138,7 @@ export default {
       if (!list.length) continue;
       const tries = 1 + Math.floor(list.length / 20);
       for (let k = 0; k < tries && list.length; k++) {
-        if (nextRand(state) >= dem[z] * 0.7) continue;
+        if (nextRand(state) >= dem[z] * 0.7 * growthMul(ctx)) continue;
         spawn(ctx, list.splice(Math.floor(nextRand(state) * list.length), 1)[0]);
         changed = true;
       }
@@ -134,7 +162,7 @@ export default {
     const dem = demandOf(stats);
     for (let z = 1; z <= ZONE_COUNT; z++) {
       const list = cand[z];
-      const n = Math.min(list.length, Math.floor(seconds * dem[z] * 0.35 * (1 + list.length / 20)));
+      const n = Math.min(list.length, Math.floor(seconds * dem[z] * 0.35 * (1 + list.length / 20) * growthMul(ctx)));
       for (let k = 0; k < n; k++) spawn(ctx, list.splice(Math.floor(nextRand(state) * list.length), 1)[0]);
     }
     const gain = Math.floor(seconds * 0.01);
@@ -154,6 +182,8 @@ function reconcile({ sim, grid, state }) {
     sim.zoning.painted = countPaint(grid);
   }
 }
+// Happiness from services and parks speeds growth up or down a little (see src/sim/services.js). 1 without them.
+const growthMul = ({ sim }) => (sim.services ? sim.services.growth() : 1);
 function countPaint(grid) { let n = 0; for (let i = 0; i < AREA; i++) if (grid.zone[i]) n++; return n; }
 
 // Painted, empty tiles with a road in reach, per zone. Tiles right next to a road come first.

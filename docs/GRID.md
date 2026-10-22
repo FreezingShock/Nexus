@@ -4,7 +4,7 @@ Roads and zones are two systems on one grid. `src/world/grid.js` is the only def
 
 ## Coordinates
 
-- 64 x 64 tiles, `TILE = 3` world units. Tile `(gx, gz)` has its center at `((gx - 32) * 3, (gz - 32) * 3)`, so the town's existing street lines (0, +-12, +-24) pass through tile centers.
+- 64 x 64 tiles, `TILE = 3` world units. Tile `(gx, gz)` has its center at `((gx - 32) * 3, (gz - 32) * 3)`, so the starter streets and the scenery's coordinates all pass through tile centers.
 - `tileCenter(gx, gz)`, `worldToTile(x, z)`, `snapToTile(x, z)`, `inBounds(gx, gz)`, `tileIndex(gx, gz)` (= `gz * 64 + gx`), `rectTiles(a, b)` (inclusive rectangle, clipped).
 - `scene.ground(clientX, clientY)` returns the world point `{ x, z }` under the cursor. Feed it to `worldToTile`.
 
@@ -12,10 +12,11 @@ Roads and zones are two systems on one grid. `src/world/grid.js` is the only def
 
 | Layer | Owner | Values |
 | --- | --- | --- |
-| `base` | the world, read only | `BASE.LAND`, `WATER`, `STEEP`, `FARM`, `TOWN` |
-| `road` | the road system | `0` none, `ROAD_STATIC` (255, the streets that ship with the town), anything else is a road kind the road system defines |
+| `base` | the world, read only | `BASE.LAND`, `WATER`, `STEEP`, `FARM`. The starter village is `LAND` like any other ground. |
+| `road` | the road system | `0` none, else a road kind the road system defines. The starter streets are ordinary road entries. |
 | `zone` | zoning | `0` none, `1..4` a zone id |
-| `lot` | zoning | `0` none, else the grown lot number on that tile |
+| `lot` | zoning and placement | `0` none, `1..` a grown lot (zoning), `40000..` a building record (placement, starter town included) |
+| `district` | districts | `0` none, else a district slot 1 to 15 (see [DISTRICTS.md](DISTRICTS.md)) |
 
 Each system writes only its own layer and keeps its own saved fields in `state`. It rebuilds its layer from state in an `init(ctx)` hook, which `createSim` calls once. Derived layers are never saved.
 

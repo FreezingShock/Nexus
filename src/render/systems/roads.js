@@ -1,5 +1,5 @@
 // Draws the road network from state.roads: merged chunks, a rippling pop when roads are laid, dust puffs, lamps,
-// the traffic tint and the ghost preview that the pencil tool drives (scene.sys('roads')).
+// the traffic tint (congestion classes from grid.load, set by the traffic sim) and the ghost preview that the pencil tool drives (scene.sys('roads')).
 //   preview({ key, tiles: [{ gx, gz, t, d }], bad })   show a ghost of the roads a stroke would lay (key skips rebuilds)
 //   clearPreview()
 // Chunks are 16 x 16 tiles and cost two draw calls each (one vertex-colored mesh, one line buffer).
@@ -7,9 +7,10 @@ import { GRID_N } from '../../world/grid.js';
 import { DIRS, connMask, shapeOf } from '../../world/roadnet.js';
 import { hash } from '../../world/terrain.js';
 import { Acc, ASPHALT, emitTiles, groundY, roadMaterial, tileWorld } from '../road-mesh.js';
+import { allocInstanceColors } from '../geom.js';
 
 const CHUNK = 16, PER_ROW = GRID_N / CHUNK;
-const TRAFFIC = [[0.616, 0.702, 0.486], [0.851, 0.706, 0.373], [0.722, 0.278, 0.18]];
+const TRAFFIC = [null, [0.616, 0.702, 0.486], [0.851, 0.706, 0.373], [0.722, 0.278, 0.18]]; // by class: free, busy, jammed
 const WAVES = 5, WAVE_GAP = 0.07, POP_S = 0.4;
 const MAX_LAMPS = 260, MAX_PUFFS = 80;
 
@@ -17,26 +18,19 @@ const chunkOf = (idx) => Math.floor((idx % GRID_N) / CHUNK) + Math.floor(Math.fl
 const easeOutBack = (x) => { const c1 = 1.70158, c3 = c1 + 1, k = x - 1; return 1 + c3 * k * k * k + c1 * k * k; };
 const same = (a, b) => a && b && a.t === b.t && a.d === b.d;
 
-// Placeholder congestion until the traffic model lands: busier near the center, noisier on small streets.
-function flowOf(idx, rec) {
-  const gx = idx % GRID_N, gz = Math.floor(idx / GRID_N), [x, z] = tileWorld(gx, gz);
-  let f = Math.min(1.05, Math.max(0.12, 1 - (Math.abs(x) + Math.abs(z)) / 46 + hash(gx * 7, gz * 13) * 0.35));
-  if (rec.t === 'free') f *= 0.5; else if (rec.t === 'one' || rec.t === 'bus') f *= 0.8;
-  return Math.min(1, f);
-}
-function trafficColor(f, out) {
-  const a = TRAFFIC[f < 0.5 ? 0 : 1], b = TRAFFIC[f < 0.5 ? 1 : 2], u = f < 0.5 ? f * 2 : (f - 0.5) * 2;
-  for (let i = 0; i < 3; i++) out[i] = a[i] + (b[i] - a[i]) * u;
+function trafficColor(cls, out) {
+  const c = TRAFFIC[cls];
+  out[0] = c[0]; out[1] = c[1]; out[2] = c[2];
 }
 
 export default {
   id: 'roads',
-  create({ THREE, world }) {
+  create({ THREE, world, grid }) {
     const group = new THREE.Group(); world.add(group);
     const mat = roadMaterial();
     const ghostMat = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.78, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
     const ghostLine = new THREE.LineBasicMaterial({ color: 0x2B2620, transparent: true, opacity: 0.7, depthWrite: false });
-    let roads = null, traffic = false, clock = 0, previewKey = '';
+    let roads = null, traffic = false, clock = 0, previewKey = '', seenLoad = -1;
     const chunks = new Map();      // chunk id -> { mesh, lines, acc }
     let waves = [];                // active pop animations: { group, start, tiles }
     let fresh = new Set();         // tile indices currently drawn by a wave, not yet in a chunk
@@ -65,7 +59,8 @@ export default {
       for (const [idx, r] of c.acc.asphalt) {
         const rec = roads[idx]; if (!rec) continue;
         const base = ASPHALT[rec.t];
-        if (traffic) trafficColor(flowOf(idx, rec), rgb); else { rgb[0] = base[0]; rgb[1] = base[1]; rgb[2] = base[2]; }
+        const cls = traffic ? grid.load[idx] : 0;
+        if (cls) trafficColor(cls, rgb); else { rgb[0] = base[0]; rgb[1] = base[1]; rgb[2] = base[2]; }
         for (let i = r.start; i < r.end; i++) col.setXYZ(i, rgb[0], rgb[1], rgb[2]);
       }
       col.needsUpdate = true;
@@ -138,7 +133,7 @@ export default {
     }
 
     // ---- dust ----
-    const puffMesh = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.2, 0), new THREE.MeshToonMaterial({ color: 0xFFFFFF }), MAX_PUFFS);
+    const puffMesh = allocInstanceColors(new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.2, 0), new THREE.MeshToonMaterial({ color: 0xFFFFFF }), MAX_PUFFS));
     puffMesh.frustumCulled = false; puffMesh.count = 0; group.add(puffMesh);
     const puffs = [];
     const dummy = new THREE.Object3D(), colr = new THREE.Color();
@@ -215,6 +210,7 @@ export default {
         if (f.state.roads !== roads) sync(f.state.roads);
         const want = f.tool === 'traffic';
         if (want !== traffic) { traffic = want; for (const c of chunks.values()) tint(c); }
+        if (traffic && grid.loadRev !== seenLoad) { seenLoad = grid.loadRev; for (const c of chunks.values()) tint(c); }
         // pop waves
         let live = false;
         for (const w of waves) {

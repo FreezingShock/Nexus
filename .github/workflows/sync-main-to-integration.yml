@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
   group: merge-into-integration
@@ -30,6 +31,7 @@ jobs:
         with:
           node-version: 22
       - name: Merge main
+        id: merge
         working-directory: work
         run: |
           git config user.name "github-actions[bot]"
@@ -43,3 +45,12 @@ jobs:
           if [ "$(git rev-parse HEAD)" = "$BEFORE" ]; then echo "integration already contains main"; exit 0; fi
           npm test
           git push origin HEAD:integration
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
+      - name: Tell open PRs that integration moved
+        if: steps.merge.outputs.pushed == 'true'
+        continue-on-error: true
+        working-directory: work
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TOOLS: ${{ github.workspace }}/tools
+        run: node "$TOOLS/scripts/ci-notify-behind.mjs"

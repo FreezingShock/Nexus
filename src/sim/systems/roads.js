@@ -1,10 +1,13 @@
-// Roads on the shared tile grid: the pencil stroke, bulldozing, undo and the Parts unlocks.
+// Roads on the shared tile grid: routed drawing (see src/world/roadnet.js), bulldozing, undo and the Parts unlocks.
 // Saved: state.roads (see src/world/roadnet.js) and state.roadUnlocks. The grid's `road` layer is rebuilt from them.
 import { ROAD_TYPES } from '../catalog.js';
 import { GRID_N, tileIndex } from '../../world/grid.js';
+import { starterProtected } from '../../world/starter.js';
+import { putTrees, takeOnTiles } from '../../world/trees.js';
 import { MAX_STROKE, ROAD_IDS, ROAD_KIND, BLOCK_TEXT, planStroke, roadBlock, starterRoads } from '../../world/roadnet.js';
 
 const UNDO_DEPTH = 24;
+const PROTECTED = starterProtected();   // the bridge and the road into the tunnel: bulldozing refuses them
 const typeOf = (id) => ROAD_TYPES.find((r) => r.id === id);
 const costOf = (id) => (typeOf(id) ? typeOf(id).cost : 0);
 const isTile = (t) => Array.isArray(t) && Number.isInteger(t[0]) && Number.isInteger(t[1]);
@@ -29,19 +32,21 @@ export default {
       }
     } else return { roads: fresh.roads, roadUnlocks: [] };
     const unlocks = Array.isArray(raw.roadUnlocks) ? raw.roadUnlocks.filter((id) => typeOf(id) && typeOf(id).unlockParts) : [];
+    // Roads already on the map stay open: a tier added after a save was made never locks that save's streets.
+    for (const r of Object.values(roads)) if (typeOf(r.t) && typeOf(r.t).unlockParts) unlocks.push(r.t);
     return { roads, roadUnlocks: [...new Set(unlocks)] };
   },
   init(ctx) { ctx.sim.roadUndo = []; syncGrid(ctx); },
   commands: {
-    // path: ordered, 4-connected [gx, gz] tiles drawn with the pencil. One-way roads follow the drawing direction.
+    // path: ordered, 4-connected [gx, gz] tiles of one route (pivots joined by L legs). One-way roads follow the drawing direction.
     drawRoad(ctx, { roadType, path }) {
       const { state, grid, layout, emit, note, charge, sim } = ctx;
       const t = typeOf(roadType);
       if (!t || (t.unlockParts && !state.roadUnlocks.includes(t.id))) return;
       if (!Array.isArray(path) || !path.length || path.length > MAX_STROKE || !path.every(isTile)) return;
       for (let k = 1; k < path.length; k++) if (Math.abs(path[k][0] - path[k - 1][0]) + Math.abs(path[k][1] - path[k - 1][1]) !== 1) return;
-      const plan = planStroke({ path, type: t.id, roads: state.roads, canRoad: (gx, gz) => !roadBlock(grid, layout, state, gx, gz), costOf });
-      if (plan.blocked.length) { emit({ type: 'toast', text: BLOCK_TEXT[roadBlock(grid, layout, state, plan.blocked[0][0], plan.blocked[0][1])] }); return; }
+      const plan = planStroke({ path, type: t.id, roads: state.roads, blockedBy: (gx, gz) => roadBlock(grid, layout, state, gx, gz), costOf });
+      if (plan.problems.length) { emit({ type: 'toast', text: BLOCK_TEXT[plan.problems[0].reason] }); return; }
       if (!plan.tiles.length) return;
       if (!charge(plan.cost)) return;
       const next = { ...state.roads }, prev = [], cleared = [];
@@ -54,13 +59,17 @@ export default {
         if (grid.zone[e.idx]) { grid.zone[e.idx] = 0; cleared.push([e.gx, e.gz]); }
       }
       state.roads = next;
-      sim.roadUndo.push({ prev, paid: plan.cost }); if (sim.roadUndo.length > UNDO_DEPTH) sim.roadUndo.shift();
+      // Trees on the new road give way; the undo step brings them back.
+      const tk = takeOnTiles(state.trees, new Set(plan.tiles.map((e) => e.idx)));
+      if (tk.taken.length) state.trees = tk.kept;
+      sim.roadUndo.push({ prev, paid: plan.cost, trees: tk.taken, seq: sim.nextSeq() }); if (sim.roadUndo.length > UNDO_DEPTH) sim.roadUndo.shift();
       note('road');
       emit({ type: 'roadsChanged', kind: 'draw', tiles: plan.tiles.map((e) => [e.gx, e.gz]), cost: plan.cost });
       if (cleared.length) sim.dispatch({ type: 'clearZoneTiles', tiles: cleared });
     },
 
-    // tiles: [gx, gz] list. Half of what each tile cost comes back; the starter streets refund nothing.
+    // tiles: [gx, gz] list. Half of what each tile cost comes back; the starter streets refund nothing. The bridge and the
+    // tunnel road are skipped (PROTECTED), so a sweep across them removes only the rest.
     bulldozeRoad(ctx, { tiles }) {
       const { state, grid, emit, sim, syncDisplay } = ctx;
       if (!Array.isArray(tiles) || tiles.length > MAX_STROKE * 2 || !tiles.every(isTile)) return;
@@ -68,14 +77,14 @@ export default {
       let refund = 0;
       for (const [gx, gz] of tiles) {
         const idx = tileIndex(gx, gz), old = next[idx];
-        if (gx < 0 || gz < 0 || gx >= GRID_N || gz >= GRID_N || !old) continue;
+        if (gx < 0 || gz < 0 || gx >= GRID_N || gz >= GRID_N || !old || PROTECTED.has(idx)) continue;
         prev.push({ idx, old }); gone.push([gx, gz]);
         refund += Math.floor(old.p / 2);
         delete next[idx]; grid.road[idx] = 0;
       }
       if (!gone.length) return;
       state.roads = next; state.coins += refund; syncDisplay();
-      sim.roadUndo.push({ prev, paid: -refund }); if (sim.roadUndo.length > UNDO_DEPTH) sim.roadUndo.shift();
+      sim.roadUndo.push({ prev, paid: -refund, seq: sim.nextSeq() }); if (sim.roadUndo.length > UNDO_DEPTH) sim.roadUndo.shift();
       emit({ type: 'roadsChanged', kind: 'erase', tiles: gone, cost: -refund });
     },
 
@@ -90,6 +99,7 @@ export default {
         tiles.push([idx % GRID_N, Math.floor(idx / GRID_N)]);
       }
       state.roads = next; state.coins = Math.max(0, state.coins + e.paid); syncDisplay();
+      state.trees = putTrees(state.trees, e.trees || []);
       emit({ type: 'roadsChanged', kind: 'undo', tiles, cost: -e.paid });
     },
 

@@ -1,0 +1,21 @@
+/* Town goals card, its button and the Charge bar on it. Paper cards like the inspect card. */
+.goalsib{position:relative}
+.goalsib .chg{position:absolute;left:8px;right:8px;bottom:5px;height:5px;border-radius:3px;background:var(--paper);border:1.5px solid var(--ink);overflow:hidden}
+.goalsib .chg b{display:block;height:100%;width:0;background:var(--sage);transition:width .4s}
+#goals{width:auto;padding:0}
+#goals .band{padding:16px 62px 14px 18px;background:var(--paper-3);background-image:var(--grain);border-bottom:2.5px solid var(--ink);border-radius:17px 21px 0 0}
+#goals .band h2{font-size:25px}
+#goals .pad{padding:14px 18px 18px;display:flex;flex-direction:column;gap:12px}
+#goals p{margin:0}
+#goals h3{margin:0 0 6px;font-size:16px}
+#goals h3 small{font-weight:600;color:var(--ink-soft);font-size:13px}
+#goals .gsec{display:flex;flex-direction:column;gap:6px;padding-bottom:12px;border-bottom:2px dashed rgba(43,38,32,.25)}
+#goals .gsec:last-child{border-bottom:0;padding-bottom:0}
+#goals .grow{display:flex;align-items:center;justify-content:space-between;gap:10px}
+#goals .grow small{display:block;color:var(--ink-soft);font-size:13px}
+#goals .meter.wide{width:100%;height:12px;margin-top:0}
+#goals .glist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+#goals .glist li{display:flex;flex-direction:column;gap:4px}
+#goals .gp{color:var(--ink-soft);font-size:12px}
+#goals .btn{align-self:flex-start}
+#goals .btn:disabled{opacity:.5}

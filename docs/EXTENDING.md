@@ -11,16 +11,23 @@ A system is a plain object. Every field except `id` is optional:
 - `sanitize(raw, fresh)`: the fields to keep from an untrusted saved state (clamp and validate)
 - `commands`: `{ commandName(ctx, cmd) }`, called by `sim.dispatch({ type: 'commandName', ... })`
 - `rate(ctx)`: extra coins per second, added to the building income
-- `tick(ctx)`: runs once per 1 Hz tick, after income is added
+- `partsRate(ctx)`: extra Parts per second, added to the base Parts rate
+- `mult(ctx)`: a multiplier on all coin income (boosts, Renewal); the product of every system's value
+- `tick(ctx, gain)`: runs once per 1 Hz tick, after income is added; `gain` is the coins that tick paid
+- `offline(ctx, seconds, gainC)`: closed-form catch-up for time away; `gainC` is the coins the absence paid
+- `init(ctx)`: builds grid layers from saved state. It runs again after a Renewal (`ctx.rebuild()`), so it must be safe to run twice (guard any one-time wiring, such as `sim.subscribe`, with a flag on `sim`)
+- `beforeSave(ctx)`: runs before every save and export, to rebuild saved fields derived from the grid (see docs/SAVE.md)
+- `sanitize(raw, fresh)` keeps only your saved keys, validated. Saving and loading are described in docs/SAVE.md
 
-`ctx = { sim, state, layout, emit, note, refresh, charge(cost), syncDisplay() }`. Systems never touch the DOM or Three.js. Other hooks used by existing systems (`init`, `offline`) are described in docs/GRID.md once that lands.
+`ctx = { sim, state, layout, grid, emit, note, refresh, charge(cost), syncDisplay(), rebuild() }`. `refresh()` recomputes the rates after anything that changes them. `sim.now()` is the clock. The economy is described in [ECONOMY.md](ECONOMY.md). Systems never touch the DOM or Three.js. Other hooks used by existing systems (`init`, `offline`) are described in docs/GRID.md once that lands.
 
 ## Render systems: `src/render/systems/<name>.js`
 
 `{ id, create(ctx) }` where `ctx = { THREE, world, layout, camera, scene }`. `create` returns an object whose optional hooks `scene.js` calls:
 
-- `frame(f)`: every frame, `f = { dt, t, simDt, state, tool }` (`simDt` is wall dt scaled by game speed, 0 when paused)
+- `frame(f)`: every frame, `f = { dt, t, simDt, state, tool, sky }` (`simDt` is wall dt scaled by game speed, 0 when paused; `sky` is the eased atmosphere: `night`, `warm`, `daylight`, `cloud`, `fog`, `rain`, `snow`, `leaves`, `wet`, `cover`, `foliage`, `blossom`, see [WEATHER.md](WEATHER.md))
 - `setNight(on)`: when the day/night blend crosses halfway
+- `quality(rs)`: when a graphics setting changes (Settings > Graphics). `rs` is `renderSettings()` from `src/core/quality.js`: `{ shadows, shadowSize, pixelRatio, effects, crowd, edges }`, with `effects` 0 to 1 and `crowd` a multiplier. Scale your own counts or bursts from these; never reach into the sim.
 
 Render systems read sim state and never write it. Keep draw calls low: instance or merge geometry.
 

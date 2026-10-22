@@ -8,8 +8,16 @@ import { createKit, decorate, prismGeo, C } from './kit.js';
 
 const { FLOOR_H: FH, PLINTH } = LANG;
 const awn = (k, i = 0) => AWNINGS[(Math.floor(k.t[5] * AWNINGS.length) + i) % AWNINGS.length];
-const units = (k) => Math.max(1, k.d.legacy ? 1 : k.d.cw);
+const units = (k) => Math.max(1, k.d.cw);
 const clampRise = (w, lo, hi, f) => Math.max(lo, Math.min(hi, w * f));
+
+// Park helpers: a lawn slab, a little tree, and a position given as fractions of the footprint (-1..1 each way).
+const lawn = (k, color = C.leaf) => k.box(k.w, 0.06, k.dep, 0, PLINTH, 0, color, { edge: false });
+const at = (k, fx, fz) => [fx * k.w / 2, fz * k.dep / 2];
+const tree = (k, x, z, s = 1) => {
+  k.cyl(0.07 * s, 0.09 * s, 0.7 * s, 6, x, PLINTH, z, C.wood, { edge: false });
+  k.dome(0.55 * s, x, PLINTH + 0.55 * s, z, s > 0.9 ? C.leaf : C.moss);
+};
 
 const B = {
   cottage(k) {
@@ -23,30 +31,23 @@ const B = {
     const n = units(k), uw = k.w / n;
     k.body();
     const rises = [];
-    if (n === 1 && k.d.roofKind === 'hip') { k.hipRoof(clampRise(k.w, 1.2, 1.6, 0.45)); rises.push({ x: 0, rise: k.roof.rise }); }
-    else if (n === 1 && k.d.roofKind === 'gable') { k.gableRoof(1.5, 'z'); rises.push({ x: 0, rise: 1.5 }); }
-    else {
-      for (let i = 0; i < n; i++) {
-        const x = -k.w / 2 + (i + 0.5) * uw, rise = 1.3 + k.t[(i + 2) % 12] * 0.4;  // each gable a touch different
-        k.part(prismGeo([[-uw / 2 - 0.05, 0], [uw / 2 + 0.05, 0], [0, rise]], k.dep + 0.3), k.P.roof, x, k.top, 0);
-        rises.push({ x, rise });
-      }
-      k.roof = { kind: 'gable', rise: rises[0].rise, along: 'z', y: k.top, span: uw, len: k.dep };
+    for (let i = 0; i < n; i++) {
+      const x = -k.w / 2 + (i + 0.5) * uw, rise = 1.3 + k.t[(i + 2) % 12] * 0.4;  // each gable a touch different
+      k.part(prismGeo([[-uw / 2 - 0.05, 0], [uw / 2 + 0.05, 0], [0, rise]], k.dep + 0.3), k.P.roof, x, k.top, 0);
+      rises.push({ x, rise });
     }
+    k.roof = { kind: 'gable', rise: rises[0].rise, along: 'z', y: k.top, span: uw, len: k.dep };
     for (let i = 0; i < n; i++) {
       const x = n === 1 ? k.doorX : -k.w / 2 + (i + 0.5) * uw + (k.t[4] - 0.5) * uw * 0.25;
       k.door(x, k.dep / 2, i % 2 ? k.P.accent : awn(k, i));
-      if (k.d.awning >= 0 && n === 1 && k.floors <= 3) k.awning(x, k.dep / 2, Math.min(k.w - 0.6, 2.2), AWNINGS[k.d.awning]);
-      else if (n > 1) k.box(0.9, 0.08, 0.5, x, PLINTH + 1.2, k.dep / 2 + 0.25, awn(k, i + 1), { rx: 0.2 });
+      if (n > 1) k.box(0.9, 0.08, 0.5, x, PLINTH + 1.2, k.dep / 2 + 0.25, awn(k, i + 1), { rx: 0.2 });
     }
-    if (k.d.legacy && k.d.roofKind) k.chimneyAt(k.w * 0.22, -k.dep * 0.2, k.roof.rise); // the town's own houses always had one
-    decorate(k, { units: rises, skip: k.d.legacy && k.d.roofKind ? ['chimney'] : [] });
-    if (k.d.legacy && k.d.roofKind && k.level >= 3) k.chimneyAt(-k.w * 0.22, -k.dep * 0.2, k.roof.rise);
+    decorate(k, { units: rises });
   },
 
   mansard(k) {
     k.body(); k.door();
-    if (k.d.legacy ? k.d.awning >= 0 : k.t[5] > 0.35) k.awning(k.doorX, k.dep / 2, Math.min(k.w - 0.6, 2.2), awn(k));
+    if (k.t[5] > 0.35) k.awning(k.doorX, k.dep / 2, Math.min(k.w - 0.6, 2.2), awn(k));
     k.mansardRoof(1.5, 0.55);
     k.dormers(k.w > 4.5 ? 3 : 2);
     if (k.level >= 4) for (let i = 0; i < Math.min(2, k.bx); i++) k.balcony(2, k.bayX(i === 0 ? 0 : k.bx - 1));
@@ -55,7 +56,7 @@ const B = {
 
   tower(k) {
     k.body(); k.door();
-    if (k.d.legacy ? k.d.awning >= 0 : true) k.awning(k.doorX, k.dep / 2, Math.min(k.w - 0.6, 2.2), awn(k));
+    k.awning(k.doorX, k.dep / 2, Math.min(k.w - 0.6, 2.2), awn(k));
     k.flatRoof(0.4);
     // stair house and water tank: the little things every flat roof has
     k.box(k.w * 0.35, 0.8, k.dep * 0.35, k.w * 0.15, k.top + 0.4, -k.dep * 0.1, C.stone);
@@ -134,7 +135,7 @@ const B = {
     k.body(); 
     const teeth = Math.max(2, Math.round(k.w / 1.8));
     k.sawtooth(teeth, 0.9, k.P.roof);
-    k.box(1.3, 1.3, 0.14, k.d.legacy ? -k.w * 0.25 : k.doorX, PLINTH, k.dep / 2 + 0.05, C.wood);   // the big work door
+    k.box(1.3, 1.3, 0.14, k.doorX, PLINTH, k.dep / 2 + 0.05, C.wood);   // the big work door
     const sx = k.w * 0.34;
     k.cyl(0.38, 0.5, 3.4, 8, sx, k.top, -k.dep * 0.25, C.brick);
     k.cyl(0.5, 0.5, 0.12, 8, sx, k.top + 3.4, -k.dep * 0.25, C.stone, { edge: false });
@@ -206,7 +207,6 @@ const B = {
   },
 
   'town-hall'(k) {
-    const legacy = k.d.legacy;
     k.body(); k.door(0, k.dep / 2, k.P.accent, 1.0, 1.25);
     k.mansardRoof(1.5, 0.55);
     for (let i = -1; i <= 1; i += 2) k.box(0.7, 0.6, 0.5, i * k.w * 0.3, k.top + 0.35, k.dep * 0.28, k.P.accent);
@@ -220,13 +220,13 @@ const B = {
     k.box(2.2, 0.12, 0.5, 0, 0, k.dep / 2 + 0.2, C.stone, { edge: false });
     k.box(1.8, 0.12, 0.4, 0, 0.12, k.dep / 2 + 0.18, C.stone, { edge: false });
     k.roof = { kind: 'mansard', rise: 1.5, along: 'x', y: top, inset: 0.55 };
-    decorate(k, { skip: legacy ? ['chimney', 'dormers', 'garden', 'lamp', 'cornice'] : ['chimney', 'dormers', 'cornice'] });
+    decorate(k, { skip: ['chimney', 'dormers', 'cornice'] });
     if (k.level >= 5) k.weathervane(0, top + 6.8, 0);
   },
 
   church(k) {
-    const legacy = k.d.legacy, tw = Math.min(1.9, k.w * 0.62);
-    const tz = legacy ? 3.4 : k.dep / 2 - tw / 2 + 0.15, th = 7.4;
+    const tw = Math.min(1.9, k.w * 0.62);
+    const tz = k.dep / 2 - tw / 2 + 0.15, th = 7.4;
     k.body(); 
     k.gableRoof(clampRise(k.w, 1.4, 1.9, 0.5), 'z');
     // west tower with a spire; it reaches for the sky
@@ -240,6 +240,40 @@ const B = {
     decorate(k, { skip: ['chimney', 'gableWindow', 'garden', 'lamp', 'bunting', 'crown', 'boxes'] });
     if (k.level >= 4) for (const sx of [-1, 1]) { k.cyl(0.05, 0.05, 0.7, 5, sx * (tw / 2 + 0.5), 0, tz + tw / 2 + 0.2, C.slate, { edge: false }); k.box(0.16, 0.2, 0.16, sx * (tw / 2 + 0.5), 0.7, tz + tw / 2 + 0.2, C.lamp, { edge: false }); }
     if (k.level >= 5) k.box(0.9, 0.9, 0.12, 0, k.top + 0.2, k.dep / 2 + 0.04, C.glass, { edge: false });
+  },
+
+  // ---- parks: ground, not buildings. The lawn or paving sits on the plinth; trees, lamps and water are the details ----
+  green(k) {
+    lawn(k);
+    tree(k, ...at(k, -0.45, -0.4), 1.0); tree(k, ...at(k, 0.5, 0.25), 0.8); tree(k, ...at(k, -0.1, 0.6), 0.6);
+    const [bx, bz] = at(k, 0.35, -0.7);
+    k.box(0.9, 0.06, 0.28, bx, PLINTH + 0.06, bz, C.wood, { edge: false });                       // a bench on the path
+  },
+
+  plaza(k) {
+    k.box(k.w - 0.3, 0.06, k.dep - 0.3, 0, PLINTH, 0, C.paper, { edge: false });                 // paving
+    k.cyl(0.85, 0.9, 0.22, 12, 0, PLINTH + 0.06, 0, C.stone);                                    // fountain basin
+    k.cyl(0.66, 0.66, 0.05, 12, 0, PLINTH + 0.18, 0, C.water, { edge: false });
+    for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) k.lamp(sx * (k.w / 2 - 0.3), sz * (k.dep / 2 - 0.3), 1.0);
+  },
+
+  playground(k) {
+    lawn(k);
+    const bz = -0.4 * k.dep / 2;                                                                  // swing set toward the back
+    for (const sx of [-1, 1]) k.cyl(0.05, 0.05, 1.2, 5, sx * 0.55, PLINTH, bz, C.slate, { edge: false });
+    k.box(1.2, 0.08, 0.1, 0, PLINTH + 1.2, bz, C.slate, { edge: false });
+    for (const sx of [-0.2, 0.2]) k.box(0.28, 0.05, 0.18, sx, PLINTH + 0.6, bz, C.wood, { edge: false });
+    k.box(0.4, 0.06, 1.0, 0.45, PLINTH + 0.45, 0.5 * k.dep / 2, C.gold, { rx: -0.45 });            // a little slide
+    tree(k, ...at(k, -0.7, 0.7), 0.7);
+  },
+
+  pond(k) {
+    const r = k.w * 0.36;
+    lawn(k);
+    k.cyl(r + 0.14, r + 0.14, 0.14, 16, 0, PLINTH, 0, C.stone);                                  // stone rim
+    k.cyl(r, r, 0.04, 16, 0, PLINTH + 0.1, 0, C.water, { edge: false });
+    for (const [fx, fz] of [[-0.7, 0.3], [0.55, -0.45], [0.2, 0.7]]) k.cyl(0.03, 0.03, 0.5, 4, fx * r, PLINTH + 0.14, fz * r, C.leaf, { edge: false });
+    k.box(0.9, 0.08, 0.3, 0, PLINTH + 0.3, k.dep / 2 - 0.3, C.wood, { edge: false });               // a bench by the water
   },
 };
 

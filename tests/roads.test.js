@@ -6,7 +6,7 @@ import { sanitize, unwrap, wrap } from '../src/sim/save.js';
 import { getLayout } from '../src/world/layout.js';
 import { tileIndex, GRID_HALF } from '../src/world/grid.js';
 import {
-  DIRS, connMask, elbowPath, extendStroke, pathDirs, planStroke, roadBlock, rulerPath, shapeOf, starterRoads,
+  DIRS, connMask, elbowPath, pathDirs, planStroke, roadBlock, rulerPath, shapeOf, starterRoads,
 } from '../src/world/roadnet.js';
 
 const layout = getLayout();
@@ -16,14 +16,16 @@ const costOf = (t) => ({ two: 20, bike: 35, one: 45 })[t];
 // open ground north of the town, clear of blocks, water and hills
 const free = [C - 6, C - 14];
 
-test('starter streets are editable tiles: 5 lines each way plus the road east', () => {
+test('starter streets are editable tiles: a main street and a cross street meeting at the square', () => {
   const r = starterRoads();
-  assert.ok(r[key(C, C)] && r[key(C + 4, C - 8)] && r[key(C + 12, C)]);
-  assert.equal(shapeOf(connMask(r, C, C)).kind, 'cross');
-  assert.equal(shapeOf(connMask(r, C - 8, C - 8)).kind, 'corner');
-  assert.equal(shapeOf(connMask(r, C - 8, C - 4)).kind, 'tee');
-  assert.equal(shapeOf(connMask(r, C + 12, C)).kind, 'straight');
-  assert.equal(shapeOf(connMask(r, C + 16, C)).kind, 'end');
+  assert.equal(Object.keys(r).length, 36); // a bar of 13 tiles and a stem of 23, the crossing counted once
+  assert.equal(shapeOf(connMask(r, C, C)).kind, 'tee', 'the bar meets the stem');
+  assert.equal(shapeOf(connMask(r, C, C - 4)).kind, 'straight');
+  assert.equal(shapeOf(connMask(r, C + 6, C)).kind, 'straight', 'the stem runs east');
+  assert.equal(shapeOf(connMask(r, C + 23, C)).kind, 'end', 'the stem ends at the tunnel gate');
+  assert.equal(shapeOf(connMask(r, C, C - 6)).kind, 'end');
+  assert.equal(shapeOf(connMask(r, C - 4, C)).kind, 'iso', 'there is no west arm');
+  assert.equal(shapeOf(connMask(r, C + 3, C + 3)).kind, 'iso', 'the open land beside the streets is not a road');
 });
 
 test('shapes follow the connections', () => {
@@ -37,37 +39,14 @@ test('shapes follow the connections', () => {
   assert.equal(shapeOf(connMask(r, 5, 5)).kind, 'tee');
 });
 
-test('pencil stroke follows the pointer, turns, and rewinds when dragged back', () => {
-  let p = [[10, 10]];
-  p = extendStroke(p, [13, 10]).path;
-  assert.deepEqual(p, [[10, 10], [11, 10], [12, 10], [13, 10]]);
-  p = extendStroke(p, [13, 12]).path; // a turn
-  assert.deepEqual(p.slice(-2), [[13, 11], [13, 12]]);
-  p = extendStroke(p, [12, 10]).path; // drag back: the end is erased tile by tile
-  assert.equal(p[p.length - 1].join(), '12,10');
-  assert.ok(p.every((t, i) => i === 0 || Math.abs(t[0] - p[i - 1][0]) + Math.abs(t[1] - p[i - 1][1]) === 1));
-});
-
-test('a fast flick across several tiles still makes a connected path, diagonals become staircases', () => {
-  const p = extendStroke([[0, 0]], [3, 3]).path;
-  assert.equal(p.length, 7);
-  assert.ok(p.every((t, i) => i === 0 || Math.abs(t[0] - p[i - 1][0]) + Math.abs(t[1] - p[i - 1][1]) === 1));
-  assert.deepEqual(p[p.length - 1], [3, 3]);
-});
-
-test('the pencil stops at a refused tile and reports it', () => {
-  const r = extendStroke([[0, 0]], [5, 0], (t) => t[0] < 3);
-  assert.deepEqual(r.path[r.path.length - 1], [2, 0]);
-  assert.deepEqual(r.blocked, [3, 0]);
-});
-
 test('ruler and elbow helpers', () => {
   assert.deepEqual(rulerPath([2, 2], [6, 3]), [[2, 2], [3, 2], [4, 2], [5, 2], [6, 2]]);
   assert.deepEqual(elbowPath([2, 2], [4, 4]).map((t) => t.join()), ['2,2', '3,2', '4,2', '4,3', '4,4']);
   assert.deepEqual(elbowPath([1, 1], [1, 1]), [[1, 1]]);
+  assert.deepEqual(elbowPath([2, 2], [4, 4], true).map((t) => t.join()), ['2,2', '2,3', '2,4', '3,4', '4,4']); // flipped: the vertical leg first
 });
 
-test('one-way directions follow the pencil and the last tile keeps its heading', () => {
+test('one-way directions follow the route and the last tile keeps its heading', () => {
   assert.deepEqual(pathDirs([[0, 0], [1, 0], [1, 1]]), [0, 1, 1]);
   assert.deepEqual(pathDirs([[4, 4]]), [0]);
 });
@@ -75,7 +54,7 @@ test('one-way directions follow the pencil and the last tile keeps its heading',
 test('planStroke: upgrades pay the difference, same type is free', () => {
   const roads = { [key(1, 1)]: { t: 'two', p: 20 }, [key(2, 1)]: { t: 'bike', p: 35 } };
   const path = [[1, 1], [2, 1], [3, 1]];
-  const plan = planStroke({ path, type: 'bike', roads, canRoad: () => true, costOf });
+  const plan = planStroke({ path, type: 'bike', roads, blockedBy: () => null, costOf });
   assert.deepEqual(plan.tiles.map((t) => [t.gx, t.price]), [[1, 15], [3, 35]]);
   assert.equal(plan.cost, 50);
   assert.equal(plan.length, 3);
@@ -87,13 +66,13 @@ test('roads cannot go on water, hills, parks or standing buildings', () => {
   assert.equal(roadBlock(grid, layout, state, free[0], free[1]), null);
   assert.equal(roadBlock(grid, layout, state, C + 18, C), 'water');
   assert.equal(roadBlock(grid, layout, state, -1, 0), 'bounds');
-  const b = layout.buildings.find((x) => x.type === 'house');
-  const gx = Math.round(b.x / 3) + C, gz = Math.round(b.z / 3) + C;
-  assert.equal(roadBlock(grid, layout, state, gx, gz), 'building');
-  state.removed.push(b.id);
-  assert.equal(roadBlock(grid, layout, state, gx, gz), null, 'a bulldozed building frees its tiles');
-  const park = layout.pads.find((p) => p.park);
-  assert.equal(roadBlock(grid, layout, state, Math.round(park.x / 3) + C, Math.round(park.z / 3) + C), 'park');
+  // a starter house (the terrace on the north side of the main street) and the starter park are built lots
+  const house = state.placed.find((r) => r.id === 'b1000');
+  assert.equal(roadBlock(grid, layout, state, house.gx, house.gz), 'lot');
+  const park = state.placed.find((r) => r.model === 'green');
+  assert.equal(roadBlock(grid, layout, state, park.gx, park.gz), 'lot');
+  sim.dispatch({ type: 'bulldoze', id: house.id });
+  assert.equal(roadBlock(grid, layout, state, house.gx, house.gz), null, 'a bulldozed building frees its tiles');
 });
 
 const stroke = (n, from = free) => Array.from({ length: n }, (_, i) => [from[0] + i, from[1]]);
@@ -133,7 +112,8 @@ test('drawRoad refuses bad input: unaffordable, blocked, locked, disconnected', 
 
 test('one-way roads take their direction from the stroke', () => {
   const sim = createSim({ layout });
-  sim.state.coins = 1000;
+  sim.state.coins = 1000; sim.state.parts = 150;
+  sim.dispatch({ type: 'unlockRoad', roadType: 'one' });
   sim.dispatch({ type: 'drawRoad', roadType: 'one', path: [[free[0], free[1]], [free[0], free[1] + 1], [free[0] + 1, free[1] + 1]] });
   const r = sim.state.roads;
   assert.equal(r[key(free[0], free[1])].d, 1);

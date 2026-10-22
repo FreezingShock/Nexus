@@ -13,7 +13,7 @@ const easeOutBack = (k) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.p
 
 export default {
   id: 'lots',
-  create({ world, grid }) {
+  create({ world, grid, sys }) {
     const group = new THREE.Group(); world.add(group);
     const popRoot = new THREE.Group(); world.add(popRoot);
     const cache = new Map();       // key -> { b, parts, world, edges }
@@ -92,6 +92,7 @@ export default {
 
     function startPop(l, grow) {
       const e = entryFor(l);
+      if (grow) sys('puffs')?.burst(e.b.x, e.b.z, 3, 10); // a new building: a little dust as it goes up
       const g = new THREE.Group();
       g.position.set(e.b.x, e.b.y, e.b.z); g.rotation.y = e.b.rotY;
       for (const p of e.parts) {

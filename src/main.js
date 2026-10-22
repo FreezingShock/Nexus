@@ -1,11 +1,13 @@
 // Wires sim, render and UI. The only file that knows all three.
 import { getLayout } from './world/layout.js';
 import { createSim } from './sim/sim.js';
-import { freshState } from './sim/state.js';
-import { readSave, writeSave, clearSave, wrap, unwrap, SAVE_KEY } from './sim/save.js';
+import { loadGame, writeSave, clearSave, exportText, importText, restoreBackup, backupInfo } from './sim/save.js';
 import { createScene } from './render/scene.js';
+import { createQualityStore, detectEnv } from './core/quality.js';
+import { createCalendarStore } from './core/calendar.js';
 import { createUi } from './ui/ui.js';
-import { $ } from './ui/format.js';
+import { createSoundStore } from './audio/mix.js';
+import { $, fmtAgo } from './ui/format.js';
 
 const AUTOSAVE_MS = 45000;
 const params = new URLSearchParams(location.search);
@@ -13,17 +15,17 @@ const layout = getLayout();
 const app = $('app');
 
 // ---- load ----
-const loaded = readSave();
-const state = loaded.ok ? loaded.state : freshState();
+const loaded = loadGame();
+const state = loaded.state;
 const sim = createSim({ state, layout });
 const awayOverride = Number(params.get('away')); // ?away=<seconds> forces an offline return for testing
 if (Number.isFinite(awayOverride) && awayOverride > 0) sim.catchUp(Date.now() - awayOverride * 1000);
-else if (loaded.ok) sim.catchUp(loaded.savedAt);
+else sim.catchUp(loaded.savedAt);
 
 // ---- render ----
 let scene;
 try {
-  scene = createScene({ stage: $('stage'), layout, grid: sim.grid, onPick: (id) => ui.onPick(id) });
+  scene = createScene({ stage: $('stage'), layout, grid: sim.grid, onPick: (id) => ui.onPick(id), onCancel: () => ui.onCancel() });
 } catch (err) {
   const f = document.createElement('div');
   f.className = 'fallback';
@@ -32,12 +34,36 @@ try {
   throw err;
 }
 
+// ---- graphics settings ----
+// Kept under their own key, so Start over leaves them alone. Presets and single options apply live through scene.setQuality.
+const browserStorage = (() => { try { return localStorage; } catch { return null; } })();
+const quality = createQualityStore({ storage: browserStorage, env: detectEnv(), onChange: (q) => scene.setQuality(q) });
+scene.setQuality(quality.get());
+
+// ---- time and weather choices ----
+// Per browser, like the graphics: locks and lengths for the day, the seasons and the weather. They reach the sim
+// (sim.setCalendar), which only changes what the sky shows.
+const calendar = createCalendarStore({ storage: browserStorage, onChange: (o) => sim.setCalendar(o) });
+sim.setCalendar(calendar.get());
+// ---- sound ----
+// Volumes and mute, under their own key (Start over leaves them alone). Nothing plays until the first click or key press.
+const sound = createSoundStore({ storage: browserStorage });
+
 // ---- save / export / import ----
-let saveBlocked = false;
-const save = () => { if (!saveBlocked) writeSave(state, Date.now()); };
+// saveBlocked is set right before a reload that must not be overwritten by the in-memory town (import, restore, start over).
+let saveBlocked = false, lastSaved = null, saveFailing = false;
+const save = () => {
+  if (saveBlocked) return;
+  const now = Date.now();
+  if (writeSave(sim.prepareSave(), now)) { lastSaved = now; saveFailing = false; return; }
+  if (!saveFailing) { saveFailing = true; ui.toast('Autosave could not write to this browser. Export a copy from Settings.'); }
+};
 const actions = {
+  quality,
+  calendar,
+  sound,
   exportSave() {
-    const blob = new Blob([JSON.stringify(wrap(state, Date.now()), null, 2)], { type: 'application/json' });
+    const blob = new Blob([exportText(sim.prepareSave(), Date.now())], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'nexus-save-' + new Date().toISOString().slice(0, 10) + '.json';
@@ -45,7 +71,16 @@ const actions = {
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   },
   importPick() { $('importfile').click(); },
+  // Start over moves the town into the backup slot first, so Settings can restore it.
   reset() { saveBlocked = true; clearSave(); location.reload(); },
+  restore() {
+    saveBlocked = true;
+    if (restoreBackup(undefined, Date.now())) location.reload();
+    else { saveBlocked = false; ui.toast('Could not restore the backup'); }
+  },
+  backup: () => backupInfo(),
+  status: () => (saveFailing ? 'Autosave is having trouble in this browser. Export a copy to keep your town.'
+    : lastSaved ? 'Saved ' + fmtAgo(lastSaved) + '. Autosaves every 45 seconds.' : 'Autosaves every 45 seconds.'),
 };
 $('importfile').addEventListener('change', async (e) => {
   const file = e.target.files && e.target.files[0];
@@ -53,20 +88,26 @@ $('importfile').addEventListener('change', async (e) => {
   if (!file) return;
   let text = '';
   try { text = await file.text(); } catch { ui.toast('Could not read that file'); return; }
-  const r = unwrap(text);
-  if (!r.ok) { ui.toast('Not a usable save: ' + r.error); return; }
-  let stored = false;
-  try { localStorage.setItem(SAVE_KEY, text); stored = true; } catch { /* handled below */ }
-  if (!stored) { ui.toast('This browser will not store saves'); return; }
-  saveBlocked = true; location.reload();
+  const r = importText(text);
+  if (!r.ok) { ui.toast('That is not a Nexus save: ' + r.error); return; }
+  ui.askConfirm({
+    title: 'Replace this town?',
+    text: 'The file holds a town saved ' + fmtAgo(r.savedAt) + '. Your current town moves to the backup slot.',
+    ok: 'Replace my town',
+    onOk: () => {
+      saveBlocked = true;
+      if (writeSave(r.state, Date.now(), undefined, { forceBackup: true })) location.reload();
+      else { saveBlocked = false; ui.toast('This browser will not store saves'); }
+    },
+  });
 });
+if (loaded.notice) setTimeout(() => ui.toast(loaded.notice), 400);
 setInterval(save, AUTOSAVE_MS);
 addEventListener('pagehide', save);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') save(); });
 
 // ---- ui ----
 const ui = createUi({ sim, scene, actions });
-if (state.night) scene.snap(true);
 if (state.offline) ui.showPostcard();
 
 if (params.has('debug')) window.__nexus = { sim, scene, ui, layout };

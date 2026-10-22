@@ -42,3 +42,35 @@ test('continuous at the window boundaries', () => {
     assert.ok(Math.abs(offlineWindow(edge + e).effectiveS - offlineWindow(edge - e).effectiveS) < 1e-3);
   }
 });
+
+// The rate curve as a function of time away: full, then a straight line down to 10%, then flat.
+const rateAt = (t, lantern = 0) => {
+  const W = 4 * H + 2 * H * Math.min(3, lantern);
+  if (t <= W) return 1;
+  if (t <= W + 4 * H) return 1 - 0.9 * (t - W) / (4 * H);
+  return 0.1;
+};
+
+test('the closed form equals the integral of the rate curve, for many absences', () => {
+  for (const hours of [0.5, 3, 4, 5, 7.5, 8, 12, 23.9, 24]) {
+    const away = hours * H;
+    const closed = offlineWindow(away).effectiveS;
+    let numeric = 0;
+    const step = 1; // one-second slices of the curve: a check on the algebra, not a loop used by the game
+    for (let t = 0; t < away; t += step) numeric += rateAt(t + step / 2) * step;
+    assert.ok(Math.abs(closed - numeric) < 2, hours + ' h: closed ' + closed + ' vs integral ' + numeric);
+  }
+});
+
+test('the decay is straight: halfway through it the rate is 55%', () => {
+  const mid = offlineWindow(6 * H).effectiveS - offlineWindow(4 * H).effectiveS; // 2 h of decay
+  const linear = 2 * H * (1 + 0.55) / 2; // average of 100% and 55% over the first 2 h of decay
+  assert.ok(Math.abs(mid - linear) < 1e-6, mid);
+});
+
+test('fullS and easeS split the away time, so the postcard bars add up', () => {
+  for (const hours of [1, 5, 12, 24]) {
+    const w = offlineWindow(hours * H);
+    assert.ok(Math.abs(w.fullS + w.easeS - hours * H) < 1e-6);
+  }
+});

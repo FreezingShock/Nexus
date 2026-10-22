@@ -1,6 +1,7 @@
 // Shared materials and textures. One material per color; one facade material per palette.
 import * as THREE from '../../vendor/three/three.module.min.js';
 import { PAL } from '../world/palettes.js';
+import { patchSeason } from './season.js';
 
 export const INK = 0x2B2620;
 
@@ -12,7 +13,8 @@ gradient.needsUpdate = true;
 export const lineMat = new THREE.LineBasicMaterial({ color: INK });
 export const hullInk = new THREE.MeshBasicMaterial({ color: INK, side: THREE.BackSide });
 
-export const toonUncached = (color, opts) => new THREE.MeshToonMaterial(Object.assign({ color, gradientMap: gradient }, opts || {}));
+// Every toon material takes the season and weather patch (season.js). Tree canopies re-patch with blossom.
+export const toonUncached = (color, opts) => patchSeason(new THREE.MeshToonMaterial(Object.assign({ color, gradientMap: gradient }, opts || {})));
 const cache = new Map();
 export function toon(color) {
   let m = cache.get(color);

@@ -1,10 +1,11 @@
 // The Zones tool: pick a zone (or the eraser), drag a rectangle on the grid, release to paint.
 // Reads sim state, sends paintZone / clearZone, and drives the tileview render system for the grid and the preview.
 import { inBounds, worldToTile } from '../../world/grid.js';
+import { demandCard } from '../hud-detail.js';
 import { ZONE_DEFS } from '../../sim/zones.js';
 import { $, fmt } from '../format.js';
+import { zoneCard } from '../cards.js';
 
-const NAMES = ['R', 'C', 'I'];
 
 export default {
   id: 'zoning',
@@ -14,6 +15,12 @@ export default {
     const tag = document.createElement('div');
     tag.className = 'ztag card'; tag.hidden = true;
     $('app').appendChild(tag);
+    // The demand widget sits in the top row of the HUD (index.html); this module fills its rows.
+    const demandEl = document.getElementById('demandrows');
+    // Declared before the first paint: paintDemand runs during create, so a later const would be in its dead zone.
+    const demandPop = document.getElementById('demandpop');
+    let lastCard = '';
+    paintDemand();
 
     let active = false, brush = 1, drag = null, hoverTile = null, last = null, flashed = false, acc = 0;
 
@@ -89,18 +96,15 @@ export default {
     }
     function cancel() { drag = null; tag.hidden = true; view().clearPreview(); }
 
-    // ---- flyout ----
-    function bars() {
-      const d = sim.zoning.demand();
-      return [1, 2, 3].map((z, k) => `<span class="dem" title="${ZONE_DEFS[z].name} demand"><b>${NAMES[k]}</b><i><u style="width:${Math.round(d[z] * 100)}%;background:${ZONE_DEFS[z].paint}"></u></i></span>`).join('');
-    }
+    // ---- flyout: a strip of zone tiles. Demand lives in the top widget, so the tiles stay small ----
     function renderFly() {
       const f = $('fly'), st = sim.zoning.stats(), n = sim.zoning.painted;
       f.hidden = false;
       f.classList.add('zfly');
-      f.innerHTML = `<div class="head"><h3>Zones</h3><span class="demand"><small>Demand</small> ${bars()}<small>${n} tile${n === 1 ? '' : 's'} painted · ${st.count} building${st.count === 1 ? '' : 's'}</small></span></div><div class="zrow">` +
-        ZONE_DEFS.slice(1).map((z) => `<button class="zbtn" data-zone="${z.id}" aria-pressed="${brush === z.id}"><i style="background:${z.paint}"></i><span><b>${z.name}</b><small>${z.cost} coins a tile</small></span></button>`).join('') +
-        `<button class="zbtn eraser" data-zone="0" aria-pressed="${brush === 0}"><i></i><span><b>Eraser</b><small>Free</small></span></button></div><p class="sub zhelp">Drag on the map to paint a rectangle · keys 1 to 4 pick a zone, 0 erases · buildings grow where a road is close.</p>`;
+      const tiles = ZONE_DEFS.slice(1).map((z, i) => zoneCard({ id: z.id, name: z.name, price: `${z.cost} coins a tile`, key: String(i + 1), pressed: brush === z.id, tip: z.sub })).join('') +
+        zoneCard({ id: 0, name: 'Eraser', price: 'Free', key: '0', pressed: brush === 0, tip: 'Clears zones back to open ground' });
+      f.innerHTML = `<div class="rhead"><b class="ptitle">Zones</b><span class="rhint">Drag on the map to paint · buildings grow near roads · ${n} tile${n === 1 ? '' : 's'} · ${st.count} building${st.count === 1 ? '' : 's'}</span></div>` +
+        `<div class="strip zone-strip">${tiles}</div>`;
       f.querySelectorAll('[data-zone]').forEach((b) => { b.onclick = () => { setBrush(Number(b.dataset.zone)); }; });
     }
     function setBrush(z) {
@@ -132,7 +136,6 @@ export default {
       onTool(t, was) { if (t === 'zones') enter(); else if (was === 'zones') leave(); },
       onEvent(e) {
         if (e.type === 'zonePainted' || e.type === 'zoneCleared') { flashed = true; view().flash(); }
-        if (active && (e.type === 'changed')) { const d = $('fly').querySelector('.demand'); if (d) renderDemand(); }
       },
       onKey(e) {
         if (!active) return false;
@@ -141,17 +144,25 @@ export default {
         return false;
       },
       frame(dt) {
-        if (!active) return;
         acc += dt;
-        if (acc > 1) { acc = 0; renderDemand(); }
+        if (acc > 1) { acc = 0; paintDemand(); }
       },
     };
 
-    function renderDemand() {
-      const el = $('fly').querySelector('.demand');
-      if (!el) return;
-      const st = sim.zoning.stats(), n = sim.zoning.painted;
-      el.innerHTML = `<small>Demand</small> ${bars()}<small>${n} tile${n === 1 ? '' : 's'} painted · ${st.count} building${st.count === 1 ? '' : 's'}</small>`;
+    // The demand widget: one slim bar per zone with demand, in the zone colours. R, C and I, and a hover card with the
+    // full names, the percentage and what drives each bar. The card text lives in hud-detail.js.
+    function paintDemand() {
+      if (!demandEl) return;
+      const d = sim.zoning.demand();
+      demandEl.innerHTML = [1, 2, 3].map((z) => {
+        const pct = Math.round(d[z] * 100);
+        return `<div class="drow2"><span class="dk" style="background:${ZONE_DEFS[z].paint}">${ZONE_DEFS[z].name[0]}</span>` +
+          `<i class="dbar" aria-hidden="true"><u style="width:${pct}%;background:${ZONE_DEFS[z].paint}"></u></i><em>${pct}%</em></div>`;
+      }).join('');
+      if (demandPop) {
+        const card = demandCard(d, sim.zoning.stats(), [null, ZONE_DEFS[1].paint, ZONE_DEFS[2].paint, ZONE_DEFS[3].paint]);
+        if (card !== lastCard) { lastCard = card; demandPop.innerHTML = card; }
+      }
     }
   },
 };

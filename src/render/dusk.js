@@ -2,6 +2,7 @@
 // Rendered with the main renderer into a small render target (one GL context), then copied to the stamp canvases.
 import * as THREE from '../../vendor/three/three.module.min.js';
 import { makeRng } from '../world/rng.js';
+import { describe } from '../world/models.js';
 import { toon, INK, hullInk } from './materials.js';
 import { makeParts, worldMatrix } from './buildings.js';
 import { mergeBuildings } from './town.js';
@@ -38,13 +39,14 @@ export function createDusk(renderer) {
   ground.add(new THREE.BoxGeometry(24, 0.1, 3), toon(0x6B6A7A), xf(0, 0.05, 7), { cast: false });
   ground.build(root);
 
-  const spec = (o, x, z, extra) => ({ id: '', type: 'house', name: '', dx: (rng() - 0.5) * o.w * 0.3, awning: o.floors <= 3 ? 0 : -1, level: 1, x, z, rotY: 0, ...o, ...extra });
+  // Descriptions come from the model catalog, the same path the town takes (describe, then makeParts).
+  const plate = (model, x, z, floors) => ({ ...describe({ id: 'plate-' + model, model, gx: 0, gz: 0, fw: 1, fd: 1, floors }, 1), x, y: 0.1, z });
   const items = [
-    spec({ w: 3.8, d: 3.6, floors: 3, pal: 'warm', roof: 'gable' }, -6, 3),
-    spec({ w: 4, d: 3.8, floors: 5, pal: 'pastel', roof: 'mansard' }, -0.5, -3.5),
-    spec({ w: 3.6, d: 3.6, floors: 2, pal: 'green', roof: 'hip' }, 5, 3),
+    plate('terrace', -6, 3, 3),
+    plate('mansard', -0.5, -3.5, 5),
+    plate('cottage', 5, 3, 2),
   ].map((b) => ({ parts: makeParts(b), world: worldMatrix(b) }));
-  const church = spec({ type: 'church', w: 3.4, d: 6.4, floors: 2, pal: 'slate', roof: 'gable', awning: -1 }, 6.5, -5);
+  const church = plate('church', 6.5, -5, 2);
   items.push({ parts: makeParts(church), world: worldMatrix(church, 0.75) });
   mergeBuildings(root, items, true);
 

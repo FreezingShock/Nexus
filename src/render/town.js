@@ -1,8 +1,8 @@
 // The town's buildings: merged meshes rebuilt from data, picking proxies, selection outline, upgrade pop, night windows.
-// Buildings come from the hand-made layout plus whatever the player has placed (state.placed). Their look follows
+// Buildings come from state.placed: the starter town and whatever the player has placed. Their look follows
 // their level (state.levels), so an upgrade rebuilds the building with its new details.
 import * as THREE from '../../vendor/three/three.module.min.js';
-import { makeParts, describeLegacy, worldMatrix, addToBatch } from './buildings.js';
+import { makeParts, worldMatrix, addToBatch } from './buildings.js';
 import { describe } from '../world/models.js';
 import { Batch, disposeAll } from './geom.js';
 import { lineMat } from './materials.js';
@@ -28,7 +28,8 @@ function proxyFor(parts, world) {
   return proxy;
 }
 
-export function createTown(root, layout) {
+// hooks.burst(x, z, radius, count): a dust puff when a building levels up (the puffs system).
+export function createTown(root, hooks = {}) {
   const group = new THREE.Group(); root.add(group);
   const selGroup = new THREE.Group(); root.add(selGroup);
   const entries = new Map();
@@ -47,8 +48,6 @@ export function createTown(root, layout) {
     e.proxy.geometry.dispose();
     e.proxy = proxyFor(e.parts, e.world);
   }
-
-  for (const b of layout.buildings) addEntry(describeLegacy(b), b.level);
 
   function applyNight() {
     for (const m of built) if (m.isMesh && m.userData.day.userData.night) m.material = night ? m.userData.day.userData.night : m.userData.day;
@@ -107,6 +106,7 @@ export function createTown(root, layout) {
     }
     root.add(g);
     popping = { id, group: g, t: 0 };
+    if (hooks.burst) hooks.burst(e.b.x, e.b.z, 3.4, 16);
   }
 
   rebuild();
@@ -125,7 +125,7 @@ export function createTown(root, layout) {
       if (sig !== placedSig) {
         placedSig = sig;
         const keep = new Set(placed.map((r) => r.id));
-        for (const [id, e] of entries) if (!e.desc.legacy && !keep.has(id)) { e.proxy.geometry.dispose(); entries.delete(id); if (selected === id) setHull(null); }
+        for (const [id, e] of entries) if (!keep.has(id)) { e.proxy.geometry.dispose(); entries.delete(id); if (selected === id) setHull(null); }
         for (const r of placed) if (!entries.has(r.id)) { const d = describe(r, 1); if (d) addEntry(d, 1); }
         dirty = true;
       }
@@ -151,15 +151,16 @@ export function createTown(root, layout) {
       popping.group.scale.set(sx, sy, sx);
       if (selected === popping.id) placeSel(entries.get(selected).b, sx, sy, sx);
     },
-    // Nearest alive building under the ray, or null.
-    pick(raycaster) {
+    // Nearest alive building under the ray as { id, d }, or null. d is the distance, so trees can be compared with it.
+    probe(raycaster) {
       const list = [];
       for (const e of entries.values()) if (!removed.has(e.b.id)) list.push(e.proxy);
       const hit = raycaster.intersectObjects(list, false)[0];
       if (!hit) return null;
-      for (const e of entries.values()) if (e.proxy === hit.object) return e.b.id;
+      for (const e of entries.values()) if (e.proxy === hit.object) return { id: e.b.id, d: hit.distance };
       return null;
     },
+    pick(raycaster) { const h = this.probe(raycaster); return h ? h.id : null; },
     hideSelection(v) { selGroup.visible = !v; },
   };
 }
