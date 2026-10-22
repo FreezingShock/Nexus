@@ -15,7 +15,7 @@ export function createUi({ sim, scene, actions }) {
   const send = (cmd) => sim.dispatch(cmd);
   let tool = null;
 
-  const hud = createHud({ sim, send, onSettings: () => toggleSettings() });
+  const hud = createHud({ sim, send, onSettings: () => toggleSettings(), calendar: actions.calendar });
   const panels = createPanels({
     sim, send, toast: hud.toast,
     onClose: () => select(null),

@@ -3,6 +3,7 @@ import * as THREE from '../../vendor/three/three.module.min.js';
 import { fbm, hash, heightAt } from '../world/terrain.js';
 import { FARM_COLORS } from '../world/palettes.js';
 import { toonUncached, canvasTexture } from './materials.js';
+import { patchSeason } from './season.js';
 import { Batch, xf } from './geom.js';
 
 const S = 380, N = 150;
@@ -38,7 +39,7 @@ export function buildTerrain(parent) {
   const land = new THREE.Mesh(g2, toonUncached(0xffffff, { vertexColors: true }));
   land.receiveShadow = true;
   parent.add(land);
-  const water = new THREE.Mesh(new THREE.PlaneGeometry(S, S), toonUncached(0x7FA3B8));
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(S, S), patchSeason(toonUncached(0x7FA3B8), { still: true }));
   water.rotation.x = -Math.PI / 2; water.position.y = -0.55;
   parent.add(water);
 }

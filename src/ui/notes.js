@@ -3,6 +3,7 @@ const TYPES = {
   goalDone: { title: 'A goal is done', icon: 'star' },
   renewed: { title: 'A fresh start', icon: 'sprout' },
   boosted: { title: 'Charged up', icon: 'bolt' },
+  firstSnow: { title: 'First snow', icon: 'sprout' },
 };
 
 export const NOTE_ICONS = {

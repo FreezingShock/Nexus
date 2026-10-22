@@ -24,7 +24,7 @@ test('sanitize clamps hostile values', () => {
   assert.deepEqual(s.levels, { b1: 99 });
   assert.deepEqual(s.removed, ['b1']);
   assert.equal(s.speed, 1);
-  assert.equal(s.night, 1);
+  assert.equal(s.night, 0); // night follows the clock; a saved value is not kept
   assert.equal(s.offline.coins, 0);
 });
 

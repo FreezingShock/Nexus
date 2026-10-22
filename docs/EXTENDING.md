@@ -25,7 +25,7 @@ A system is a plain object. Every field except `id` is optional:
 
 `{ id, create(ctx) }` where `ctx = { THREE, world, layout, camera, scene }`. `create` returns an object whose optional hooks `scene.js` calls:
 
-- `frame(f)`: every frame, `f = { dt, t, simDt, state, tool }` (`simDt` is wall dt scaled by game speed, 0 when paused)
+- `frame(f)`: every frame, `f = { dt, t, simDt, state, tool, sky }` (`simDt` is wall dt scaled by game speed, 0 when paused; `sky` is the eased atmosphere: `night`, `warm`, `daylight`, `cloud`, `fog`, `rain`, `snow`, `leaves`, `wet`, `cover`, `foliage`, `blossom`, see [WEATHER.md](WEATHER.md))
 - `setNight(on)`: when the day/night blend crosses halfway
 - `quality(rs)`: when a graphics setting changes (Settings > Graphics). `rs` is `renderSettings()` from `src/core/quality.js`: `{ shadows, shadowSize, pixelRatio, effects, crowd, edges }`, with `effects` 0 to 1 and `crowd` a multiplier. Scale your own counts or bursts from these; never reach into the sim.
 

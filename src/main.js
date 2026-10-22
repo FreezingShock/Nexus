@@ -4,6 +4,7 @@ import { createSim } from './sim/sim.js';
 import { loadGame, writeSave, clearSave, exportText, importText, restoreBackup, backupInfo } from './sim/save.js';
 import { createScene } from './render/scene.js';
 import { createQualityStore, detectEnv } from './core/quality.js';
+import { createCalendarStore } from './core/calendar.js';
 import { createUi } from './ui/ui.js';
 import { $, fmtAgo } from './ui/format.js';
 
@@ -38,6 +39,12 @@ const browserStorage = (() => { try { return localStorage; } catch { return null
 const quality = createQualityStore({ storage: browserStorage, env: detectEnv(), onChange: (q) => scene.setQuality(q) });
 scene.setQuality(quality.get());
 
+// ---- time and weather choices ----
+// Per browser, like the graphics: locks and lengths for the day, the seasons and the weather. They reach the sim
+// (sim.setCalendar), which only changes what the sky shows.
+const calendar = createCalendarStore({ storage: browserStorage, onChange: (o) => sim.setCalendar(o) });
+sim.setCalendar(calendar.get());
+
 // ---- save / export / import ----
 // saveBlocked is set right before a reload that must not be overwritten by the in-memory town (import, restore, start over).
 let saveBlocked = false, lastSaved = null, saveFailing = false;
@@ -49,6 +56,7 @@ const save = () => {
 };
 const actions = {
   quality,
+  calendar,
   exportSave() {
     const blob = new Blob([exportText(sim.prepareSave(), Date.now())], { type: 'application/json' });
     const a = document.createElement('a');
@@ -95,7 +103,6 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 
 // ---- ui ----
 const ui = createUi({ sim, scene, actions });
-if (state.night) scene.snap(true);
 if (state.offline) ui.showPostcard();
 
 if (params.has('debug')) window.__nexus = { sim, scene, ui, layout };

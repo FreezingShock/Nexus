@@ -1,30 +1,41 @@
-// Lights and sky. Day and night blend by lerping light and haze; windows swap in the town module.
+// Lights and sky. The sun follows the clock: it arcs across the town, warms at dawn and dusk, dims under cloud, and the
+// moon takes over after dark. Every value comes from the eased sky in render/sky.js. Windows and lamps swap in the
+// town module and the road lamps when the night blend crosses halfway (scene.js).
 import * as THREE from '../../vendor/three/three.module.min.js';
 
-const dayBg = new THREE.Color(0xD7E2E4), nightBg = new THREE.Color(0x3A4468);
-const dayHemi = new THREE.Color(0xFFF3DC), nightHemi = new THREE.Color(0x9AA8D8);
-const daySun = new THREE.Color(0xFFE3B8), nightSun = new THREE.Color(0xB8C8FF);
+const DAY_BG = new THREE.Color(0xD7E2E4), DAWN_BG = new THREE.Color(0xF0C6A6), NIGHT_BG = new THREE.Color(0x3A4468);
+const CLOUD_BG = new THREE.Color(0xB7C0C5), FOG_BG = new THREE.Color(0xC9D2D2);
+const DAY_HEMI = new THREE.Color(0xFFF3DC), NIGHT_HEMI = new THREE.Color(0x9AA8D8);
+const DAY_SUN = new THREE.Color(0xFFE3B8), DAWN_SUN = new THREE.Color(0xFFB273), NIGHT_SUN = new THREE.Color(0xB8C8FF);
+const bg = new THREE.Color(), tone = new THREE.Color();
 
 export function createLighting(scene) {
   scene.background = new THREE.Color(0xD7E2E4);
   scene.fog = new THREE.Fog(0xD7E2E4, 175, 340);
   const hemi = new THREE.HemisphereLight(0xFFF3DC, 0x8A8F62, 0.6); scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xFFE3B8, 0.7);
-  sun.position.set(-40, 70, 30); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+  sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
   Object.assign(sun.shadow.camera, { left: -52, right: 52, top: 52, bottom: -52, near: 1, far: 200 });
   sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.03;
   scene.add(sun);
-  let t = 0;
   return {
-    // returns the blend 0..1 so the caller can swap windows at the midpoint
-    update(dt, night) {
-      t += (night - t) * Math.min(1, dt * 2.5);
-      scene.background.copy(dayBg).lerp(nightBg, t); scene.fog.color.copy(scene.background);
-      hemi.color.copy(dayHemi).lerp(nightHemi, t); hemi.intensity = 0.6 + 0.2 * t;
-      sun.color.copy(daySun).lerp(nightSun, t); sun.intensity = 0.7 - 0.3 * t;
-      return t;
+    // s is the eased sky. Returns the night blend (0 day, 1 night) so the caller can swap windows at the midpoint.
+    update(dt, s) {
+      const day = 1 - s.night;
+      bg.copy(DAY_BG).lerp(DAWN_BG, s.warm * day * 0.85).lerp(CLOUD_BG, s.cloud * 0.6 * day)
+        .lerp(FOG_BG, s.fog * 0.8 * day).lerp(NIGHT_BG, s.night);
+      scene.background.copy(bg); scene.fog.color.copy(bg);
+      scene.fog.near = 175 - 120 * s.fog - 40 * s.cloud;
+      scene.fog.far = 340 - 180 * s.fog - 60 * s.cloud;
+
+      tone.copy(DAY_HEMI).lerp(NIGHT_HEMI, s.night); hemi.color.copy(tone);
+      hemi.intensity = 0.6 + 0.2 * s.night - 0.1 * s.cloud * day;
+
+      tone.copy(DAY_SUN).lerp(DAWN_SUN, s.warm * day).lerp(NIGHT_SUN, s.night); sun.color.copy(tone);
+      sun.intensity = 0.7 * s.daylight * (1 - 0.55 * s.cloud) + 0.35 * s.night;
+      sun.position.copy(s.dir).multiplyScalar(80);
+      return s.night;
     },
-    snap(night) { t = night ? 1 : 0; this.update(0, night); },
     // Graphics settings: the sun's shadow on or off, and its map size. A new size drops the old map; three.js makes one.
     shadows(on, size) {
       sun.castShadow = !!on;
