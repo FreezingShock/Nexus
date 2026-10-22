@@ -9,6 +9,7 @@ import { inBounds, tileIndex, worldToTile } from '../../world/grid.js';
 import { BLOCK_TEXT, chooseRoute, planStroke, roadBlock } from '../../world/roadnet.js';
 import { $, fmt } from '../format.js';
 import { roadSwatch, tileCard } from '../cards.js';
+import { playCue } from '../../audio/cuehub.js';
 
 const costOf = (id) => ROAD_TYPES.find((r) => r.id === id).cost;
 const BLUE = 0x8FB8D6, RED = 0xE3A08E, TERRA = 0xB8472E, GOLD = 0xE6BC62;
@@ -25,7 +26,7 @@ export default {
     const stage = scene.canvas.parentElement, canvas = scene.canvas;
     // anchor: the last committed tile, where the next segment starts. pivots: corners added while drawing this segment.
     let type = 'two', anchor = null, pivots = [], erase = null, hover = null, shift = false, flip = false, pointer = { x: 0, y: 0 };
-    let lastKey = '', rev = 0, lastRoads = state.roads;
+    let lastKey = '', rev = 0, lastRoads = state.roads, previewLen = 0;
     const label = document.createElement('div');
     label.id = 'roadlabel'; label.hidden = true; label.setAttribute('aria-hidden', 'true');
     $('app').appendChild(label);
@@ -84,6 +85,7 @@ export default {
         // no start yet: the tile under the cursor, and whether a road could start there
         for (const n of PAINT_LAYERS.filter((n) => n !== 'hover')) paint(grid, n, []);
         rv.clearPreview();
+        previewLen = 0;
         if (!hover) { paint(grid, 'hover', []); label.hidden = true; return; }
         const why = blockAt(hover[0], hover[1]);
         paint(grid, 'hover', [[hover[0], hover[1], why ? RED : BLUE]], { opacity: 0.5, outline: true });
@@ -94,6 +96,10 @@ export default {
 
       const plan = evaluate(route), bad = plan.problems.length > 0;
       rv.preview({ key, tiles: plan.tiles.map((e) => ({ gx: e.gx, gz: e.gz, t: e.t, d: e.d })), bad });
+      // One soft tick for each tile the route gained since the last look (the engine rate-limits long routes).
+      const grew = plan.tiles.length - previewLen;
+      previewLen = plan.tiles.length;
+      if (grew > 0) playCue('road-grow', { n: plan.tiles.length });
       paint(grid, 'bad', plan.problems.map((p) => [p.at[0], p.at[1], RED]), { opacity: 0.6, outline: true });
       paint(grid, 'start', [[anchor[0], anchor[1], TERRA]], { opacity: 0.55, outline: true });
       paint(grid, 'pivot', pivots.map((p) => [p[0], p[1], GOLD]), { opacity: 0.8, outline: true });

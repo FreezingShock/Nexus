@@ -35,7 +35,7 @@ function engineWith(stub) {
 }
 
 const CUE_NAMES = ['hover', 'select', 'open', 'close', 'tool', 'place', 'road', 'undo', 'zone', 'erase', 'bulldoze',
-  'upgrade', 'goal', 'renew', 'charge', 'postcard', 'deny', 'dusk', 'dawn'];
+  'upgrade', 'goal', 'renew', 'charge', 'postcard', 'deny', 'dusk', 'dawn', 'click', 'tick', 'note', 'road-grow', 'road', 'zone'];
 
 test('unlock builds the graph once, and every cue plays without throwing', () => {
   const stub = stubContext();
@@ -45,7 +45,8 @@ test('unlock builds the graph once, and every cue plays without throwing', () =>
   assert.equal(engine.ready, true);
   assert.ok(stub.calls.oscillators > 0, 'layers and music create oscillators');
   stub.ctx.currentTime = 1;
-  for (const name of CUE_NAMES) engine.cue(name);
+  for (const name of CUE_NAMES) engine.cue(name, { n: 5 });
+  engine.cue('road', { n: 40 }); // a long road is capped, not scheduled 40 times
   assert.equal(engine.cue('no-such-cue'), undefined);
   engine.stop();
 });

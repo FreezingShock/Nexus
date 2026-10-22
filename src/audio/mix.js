@@ -7,7 +7,8 @@ const VERSION = 1;
 
 export const VOLUMES = ['master', 'music', 'effects', 'ambience'];
 export const BUSES = ['music', 'effects', 'ambience'];
-export const DEFAULTS = { master: 0.8, music: 0.5, effects: 0.7, ambience: 0.6, muted: false };
+// Quieter than the first pass: the bed of ambience sits low, so the town feels cozy rather than busy.
+export const DEFAULTS = { master: 0.7, music: 0.4, effects: 0.6, ambience: 0.35, muted: false };
 
 // Keeps a number in 0..1 to two decimals. Anything that is not a finite number is rejected (null).
 export function cleanVolume(v) {

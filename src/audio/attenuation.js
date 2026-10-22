@@ -46,11 +46,19 @@ export const SOURCES = {
   river: RIVER_POINTS,
 };
 
+// How far each source carries. The river has a much shorter reach, so the water comes forward only when the camera is
+// close to it, and never fills the town.
+export const RANGE = {
+  town: { near: NEAR, far: FAR },
+  river: { near: 4, far: 26 },
+};
+
 // Gain per source for one listener: { town: 0..1, river: 0..1 }. Never NaN, never above 1.
 export function sourceGains(listener) {
   const out = {};
   for (const [name, points] of Object.entries(SOURCES)) {
-    out[name] = falloff(distanceTo(listener, points));
+    const r = RANGE[name] || { near: NEAR, far: FAR };
+    out[name] = falloff(distanceTo(listener, points), r.near, r.far);
   }
   return out;
 }
