@@ -4,8 +4,8 @@ import { modelById, describe } from '../../world/models.js';
 import { advance, arrivalRate, capacityOfHome, capacityOfLot, occupantsOf, startPop } from '../population.js';
 import { MOOD } from '../services-config.js';
 
-export const HIST_MAX = 120; // samples kept
-export const HIST_EVERY_S = 15; // one sample per 15 sim seconds, so the graph spans 30 minutes
+export const HIST_MAX = 41; // samples kept
+export const HIST_EVERY_S = 15; // one sample per 15 sim seconds, so 41 samples span the last 10 minutes
 const caches = new WeakMap(); // sim -> { sig, cap, homes }
 
 const happyNow = (sim) => (sim.services ? sim.services.average() : MOOD.base);
