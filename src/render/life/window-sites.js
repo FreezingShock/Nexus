@@ -12,7 +12,7 @@ export const PANE = {
   arched: [0.375, 0.44, 0.47],
   ribbon: [0.81, 0.41, 0.55],
 };
-const SHRINK = 0.86;  // the glow is a little smaller than the pane so the frame still shows
+const SHRINK = 1.12;  // the glow covers the whole pane, a touch over so no dark edge shows
 const OUT = 0.03;     // and a little proud of the wall
 
 // Calls fn(x, y, z, yaw, w, h, face, floor) for every window of a body ({ x, z, y0, w, d, floors, style }) in the

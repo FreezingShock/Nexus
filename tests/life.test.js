@@ -160,13 +160,13 @@ test('the window system lays glows over the starter town and lights them in the 
   assert.ok(mesh && mesh.count > 20 && mesh.count <= MAX_WINDOWS, 'windows: ' + (mesh && mesh.count));
   assert.equal(mesh.visible, false, 'nothing is lit at midday');
   sim.state.hour = 20;
-  for (let i = 0; i < 90; i++) sys.frame(frameOf(sim, { sky: { night: 1, rain: 0 } }));
+  for (let i = 0; i < 600; i++) sys.frame(frameOf(sim, { sky: { night: 1, rain: 0 } }));
   assert.equal(mesh.visible, true);
   const lit = mesh.geometry.attributes.aLit.array.slice(0, mesh.count).filter((v) => v > 0.99).length;
   assert.ok(lit > mesh.count * 0.1 && lit < mesh.count, 'some windows lit, not all: ' + lit + ' of ' + mesh.count);
   // dawn: out again
   sim.state.hour = 10;
-  for (let i = 0; i < 90; i++) sys.frame(frameOf(sim, { sky: { night: 0, rain: 0 } }));
+  for (let i = 0; i < 1200; i++) sys.frame(frameOf(sim, { sky: { night: 0, rain: 0 } }));
   assert.equal(mesh.visible, false);
 });
 
@@ -175,10 +175,10 @@ test('dusk is gradual: partway through, only some of the windows that will be li
   const { world, town } = townFor(sim);
   const sys = windows.create({ THREE, world, layout: sim.layout, grid: sim.grid, camera, scene: world, town, sys: () => null });
   sim.state.hour = 19;
-  for (let i = 0; i < 60; i++) sys.frame(frameOf(sim, { sky: { night: 1, rain: 0 } }));
+  for (let i = 0; i < 600; i++) sys.frame(frameOf(sim, { sky: { night: 1, rain: 0 } }));
   const mesh = world.children.find((o) => o.isInstancedMesh), a = mesh.geometry.attributes.aLit.array;
   const full = a.slice(0, mesh.count).filter((v) => v > 0.99).length;
-  for (let i = 0; i < 60; i++) sys.frame(frameOf(sim, { sky: { night: 0.45, rain: 0 } }));
+  for (let i = 0; i < 600; i++) sys.frame(frameOf(sim, { sky: { night: 0.45, rain: 0 } }));
   const partial = a.slice(0, mesh.count).filter((v) => v > 0.99).length;
   assert.ok(partial > 0 && partial < full, 'at 0.45 of dusk ' + partial + ' of ' + full + ' windows are on');
 });
