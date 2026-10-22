@@ -201,12 +201,12 @@ test('seasons are counted from the game clock in closed form, so time away count
   const sim = mk({ now: () => T0 });
   const len = seasonLengthS(sim.calendarOptions);
   const before = sim.ticks;
-  sim.catchUp(T0 - 3 * 3600 * 1000); // three hours away
+  sim.catchUp(T0 - 2 * 3600 * 1000); // two hours away
   assert.equal(sim.ticks, before, 'catch-up is one evaluation, not a loop over ticks');
-  assert.ok(sim.state.clockS >= 10000);
+  assert.ok(sim.state.clockS >= 7000);
   run(sim);
   const seasons = Math.floor(sim.state.clockS / len);
-  assert.ok(seasons >= 7);
+  assert.ok(seasons >= 6);
   assert.equal(METRICS.seasons({ sim, state: sim.state }), seasons);
   assert.equal(sim.state.ach.done.seasons, 2, 'one season and four seasons are reached, eight is just short');
 });
@@ -266,7 +266,7 @@ test('stages survive a save and a reload, and are not paid a second time', () =>
 });
 
 test('the v6 migration turns paid milestone ids into paid stages and drops the old list', () => {
-  assert.equal(SAVE_VERSION, 7);
+  assert.equal(SAVE_VERSION, 8);
   const old = { ...freshState(), milestones: ['coins-1k', 'coins-100k', 'place-1', 'nope'], earned: 2e5 };
   delete old.ach;
   const r = unwrap(JSON.stringify({ v: 5, savedAt: 1, state: old }));

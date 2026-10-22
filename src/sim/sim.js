@@ -5,10 +5,10 @@ import { registryOf } from '../core/registry.js';
 import { createGrid } from '../world/grid.js';
 import { systems as systemDefs } from './systems/index.js';
 import { BASE_RATE, PARTS_RATE, levelOf, upgradeCost } from './economy.js';
-import { MIN_POSTCARD_S, awaySeconds, offlineWindow } from './offline.js';
+import { MIN_POSTCARD_S, SKIP_INCOME, awaySeconds, offlineWindow } from './offline.js';
 import { freshState } from './state.js';
-import { sanitizeCalendar } from '../core/calendar.js';
-import { refreshCalendar } from './systems/calendar.js';
+import { dawnOfDay, dayLengthS, monthDaysOf, sanitizeCalendar } from '../core/calendar.js';
+import { passedBetween, refreshCalendar, settleSkip } from './systems/calendar.js';
 
 export function createSim({ state = freshState(), layout, now = () => Date.now() } = {}) {
   // The land comes first: the grid, the scenery and every height query read it.
@@ -101,13 +101,16 @@ export function createSim({ state = freshState(), layout, now = () => Date.now()
     const away = awaySeconds(savedAt, now());
     if (away <= 0) return null;
     const w = offlineWindow(away);
+    const fromDay = state.dayIdx;
     const gainC = rate * w.effectiveS, gainP = partsRate * w.effectiveS;
     registry.run('offline', ctx, w.effectiveS, gainC); // grown from here on; income above used the rate before growth
+    const passed = passedBetween(ctx, fromDay, state.dayIdx);
     if (away < MIN_POSTCARD_S) { state.coins += gainC; state.parts += gainP; prev = { coins: state.coins, parts: state.parts }; return null; }
     const o = state.offline;
     state.offline = o
-      ? { coins: o.coins + gainC, parts: o.parts + gainP, awayS: o.awayS + away, fullS: o.fullS + w.fullS, easeS: o.easeS + w.easeS }
-      : { coins: gainC, parts: gainP, awayS: away, fullS: w.fullS, easeS: w.easeS };
+      ? { coins: o.coins + gainC, parts: o.parts + gainP, awayS: o.awayS + away, fullS: o.fullS + w.fullS, easeS: o.easeS + w.easeS,
+          days: (o.days || 0) + state.dayIdx - fromDay, festivals: [...(o.festivals || []), ...passed.festivals].slice(-8), markets: (o.markets || 0) + passed.markets }
+      : { coins: gainC, parts: gainP, awayS: away, fullS: w.fullS, easeS: w.easeS, days: state.dayIdx - fromDay, festivals: passed.festivals.slice(-8), markets: passed.markets };
     return state.offline;
   };
 
@@ -119,6 +122,30 @@ export function createSim({ state = freshState(), layout, now = () => Date.now()
     if (!fn) return;
     fn(ctx, cmd);
     emit({ type: 'changed' });
+  };
+  // Skips the calendar ahead to the dawn of day number `dayIdx`. Closed form, like time away: one evaluation of every
+  // system's offline hook, never a loop over ticks. The skipped time pays SKIP_INCOME of what the same time away would.
+  sim.skipToDay = (dayIdx) => {
+    const day = Math.floor(dayIdx);
+    const md = monthDaysOf(sim.calendarOptions), dayS = dayLengthS(sim.calendarOptions);
+    const target = dawnOfDay(day), delta = target - state.days;
+    if (!Number.isFinite(day) || day <= state.dayIdx || delta <= 0) { emit({ type: 'toast', text: 'That day has already passed' }); return false; }
+    if (day - state.dayIdx > 24 * md) { emit({ type: 'toast', text: 'That is too far ahead; skip up to two years at a time' }); return false; }
+    const seconds = delta * dayS, from = state.dayIdx;
+    const eff = offlineWindow(seconds).effectiveS * SKIP_INCOME;
+    const gainC = rate * eff, gainP = partsRate * eff;
+    const missed = passedBetween(ctx, from, day - 1);
+    registry.run('offline', ctx, eff, gainC);
+    state.coins += gainC; state.parts += gainP;
+    prev = { coins: state.coins, parts: state.parts };
+    settleSkip(ctx, target, seconds, eff);
+    const n = state.dayIdx - from;
+    const bits = missed.festivals.map((f) => f.name + (f.count > 1 ? ' x' + f.count : ''));
+    if (missed.markets) bits.push(missed.markets + (missed.markets > 1 ? ' market days' : ' market day'));
+    emit({ type: 'skipped', title: 'Days drift by', days: n, coins: gainC, parts: gainP, festivals: missed.festivals, markets: missed.markets,
+      text: n + (n > 1 ? ' days' : ' day') + ' slip by.' + (bits.length ? ' In between: ' + bits.join(', ') + '.' : '') +
+        (gainC >= 1 ? ' The town earned ' + Math.floor(gainC).toLocaleString('en-US') + ' coins while you slept.' : '') });
+    return true;
   };
   // Choices from the Settings card. Changing them only changes what the sky shows.
   sim.setCalendar = (o) => { sim.calendarOptions = sanitizeCalendar(o); refreshCalendar(ctx); };

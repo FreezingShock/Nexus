@@ -4,6 +4,7 @@
 import bulldozeSweep from './bulldoze-sweep.js';
 import cameraModes from './camera-modes.js';
 import commute from './commute.js';
+import date from './date.js';
 import decor from './decor.js';
 import districts from './districts.js';
 import feedback from './feedback.js';
@@ -27,6 +28,7 @@ export const uiModules = [
   bulldozeSweep,
   cameraModes,
   commute,
+  date,
   decor,
   districts,
   feedback,

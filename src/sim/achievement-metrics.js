@@ -2,7 +2,7 @@
 // Pure reads of the sim, no DOM. The system keeps the best value each one has ever reached, so a reader may go down
 // (a street is bulldozed, a Renewal clears the town) without taking a stage away.
 import { describe, modelById } from '../world/models.js';
-import { seasonLengthS } from '../core/calendar.js';
+import { monthDaysOf } from '../core/calendar.js';
 import { MAX_LEVEL } from './economy.js';
 import { DIRECT } from './achievements.js';
 
@@ -77,7 +77,7 @@ export const METRICS = {
     return n;
   },
   // Seasons are counted from the game clock in closed form, so time away counts the same as time spent watching.
-  seasons: ({ sim, state }) => Math.floor(Math.max(0, state.clockS) / seasonLengthS(sim.calendarOptions)),
+  seasons: ({ sim, state }) => Math.floor(Math.max(0, state.days) / (3 * monthDaysOf(sim.calendarOptions))),
   snow: ({ state }) => (state.snowYear >= 0 ? 1 : 0),
   streak: ({ state }) => state.goals.streak,
   ...Object.fromEntries(Object.entries(DIRECT).map(([k, fn]) => [k, ({ state }) => fn(state)])),

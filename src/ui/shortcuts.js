@@ -47,6 +47,7 @@ export const SHORTCUT_GROUPS = [
   ] },
   { title: 'Town', rows: [
     { keys: ['G'], text: 'Town goals', file: 'src/ui/modules/progress.js', needle: "e.key === 'g'" },
+    { keys: ['K'], text: 'Calendar: the date, festivals and skipping days', file: 'src/ui/modules/date.js', needle: "toLowerCase() !== 'k'" },
     { keys: ['M'], text: 'Milestones and achievements', file: 'src/ui/modules/milestones.js', needle: "e.key === 'm'" },
     { keys: ['Esc'], text: 'Leave a tool, or close a card', file: 'src/ui/ui.js', needle: "e.key === 'Escape'" },
     { keys: ['Right click'], text: 'Leave a tool, or close a card' },

@@ -5,7 +5,7 @@ sim and render in `src/core/calendar.js`. Nothing here touches the DOM or Three.
 
 ## What is saved and what is not
 
-- Saved: `clockS` (game seconds since the town began), `weatherRoll` (the weather the sky is really having),
+- Saved: `clockS` (game seconds since the town began), `days` (calendar days elapsed, with the fraction: the date and hour come from this), `weatherRoll` (the weather the sky is really having),
   `weatherUntil`, `weatherSeed` and `snowYear`.
 - Derived, never saved, recomputed on load: `hour`, `season`, `weather`, `weatherKind`, `night`.
 - Per browser, never saved in the town: the Settings choices (time lock, day length, season and its length, weather
@@ -22,7 +22,7 @@ sim and render in `src/core/calendar.js`. Nothing here touches the DOM or Three.
 
 ## Rules
 
-- A day is 5, 12 or 24 real minutes at speed 1. A season is 2, 4 or 8 in-game days, so a year is four seasons.
+- A day is 1, 2 or 4 real minutes at speed 1 (default 2). A month is 2, 3 or 4 days (default 3), a season is three months and a year is twelve. The date, holidays and skipping are in [CALENDAR.md](CALENDAR.md).
 - Weather rolls when its time runs out, weighted by season (`WEIGHTS` in `core/calendar.js`). A roll lasts 1.5 to 4 minutes.
 - The first snow of each winter raises a `firstSnow` event, which the postcard notes pick up. It is the only reward
   here; nothing in the economy depends on the weather.
@@ -47,7 +47,7 @@ Snow lies on roofs, lawns and roads in winter, and falls with the snow weather i
 so bare winter trees are the dusted brown canopies, not leafless branches. Fog and rain still change the light on top
 of the season.
 
-Default: a season is two in-game days (24 minutes at the default day length), so a session shows the change.
+Default: a season is nine in-game days (18 minutes at the default day length), so a session shows the change.
 
 ## Render
 

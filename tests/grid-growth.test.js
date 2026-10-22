@@ -16,7 +16,7 @@ test('the grid is 96 tiles a side and its middle is the origin', () => {
   assert.equal(GRID_N, 96);
   assert.deepEqual(tileCenter(GRID_HALF, GRID_HALF), [0, 0]);
   assert.equal(TILE, 3);
-  assert.equal(SAVE_VERSION, 7);
+  assert.equal(SAVE_VERSION, 8);
 });
 
 test('the old 64-tile ground is unchanged: the same land, water and steep tiles as before the grid grew', () => {
