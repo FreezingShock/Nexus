@@ -3,7 +3,7 @@
 // Every helper takes a position whose y is the BOTTOM of the part. Colors come from one small palette (C) plus
 // the district palette (k.P), and ride on vertex colors so plain parts share a single material.
 import * as THREE from '../../../vendor/three/three.module.min.js';
-import { PAL, AWNINGS } from '../../world/palettes.js';
+import { PAL, ROOFS, AWNINGS } from '../../world/palettes.js';
 import { LANG } from '../../world/models.js';
 import { toon } from '../materials.js';
 import { scaleUV, splitGroups, xf } from '../geom.js';
@@ -79,7 +79,7 @@ const dome = (r) => new THREE.SphereGeometry(r, 10, 5, 0, Math.PI * 2, 0, Math.P
 
 // Starts a model: description in, helper object out. `k.parts` is what the renderer merges.
 export function createKit(d) {
-  const P = PAL[d.pal], h = d.floors * FH, parts = [];
+  const P = d.roof ? { ...PAL[d.pal], roof: ROOFS[d.roof].hex } : PAL[d.pal], h = d.floors * FH, parts = [];
   const bx = Math.max(1, Math.round(d.w / BAY)), bz = Math.max(1, Math.round(d.d / BAY));
   const bayXs = [];   // x of each oriel, so trim can leave its column alone
   const k = {

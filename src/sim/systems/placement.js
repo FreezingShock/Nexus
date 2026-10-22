@@ -5,6 +5,7 @@
 // Ids look like "b1001" so the generic level and removed fields of the save accept them.
 // Undo: placing (one lot or a dragged row) and bulldozing a building push onto sim.undoStack, next to the road undo.
 // The `undo` command takes back whichever of the two was done last.
+import { isRoof, isWall } from '../../world/paint.js';
 import { areaCost, describe, modelById, seedOf } from '../../world/models.js';
 import { LOT_BASE, MAX_PLACED, MAX_ROW, checkLot, lotTiles, planPlacement, problemText } from '../../world/placement.js';
 import { buildCost, income, levelOf } from '../economy.js';
@@ -56,7 +57,7 @@ export default {
       const tiles = lotTiles(plan.gx, plan.gz, plan.fw, plan.fd);
       if (tiles.some(([x, z]) => x < 0 || z < 0 || x >= GRID_N || z >= GRID_N || used.has(z * GRID_N + x))) continue;
       tiles.forEach(([x, z]) => used.add(z * GRID_N + x));
-      out.push({ id: r.id, model: r.model, gx: plan.gx, gz: plan.gz, fw: plan.fw, fd: plan.fd, rot: plan.rot, pal: plan.pal, seed: Number.isInteger(r.seed) ? r.seed >>> 0 : seedOf(r.id), starter: r.starter === true });
+      out.push({ id: r.id, model: r.model, gx: plan.gx, gz: plan.gz, fw: plan.fw, fd: plan.fd, rot: plan.rot, pal: isWall(r.pal) ? r.pal : plan.pal, ...(isRoof(r.roof) ? { roof: r.roof } : {}), seed: Number.isInteger(r.seed) ? r.seed >>> 0 : seedOf(r.id), starter: r.starter === true });
       next = Math.max(next, Number(m[1]) + 1);
     }
     const n = Number.isInteger(raw.nextPlaced) ? raw.nextPlaced : FIRST;
@@ -81,7 +82,7 @@ export default {
     const rec = (id) => state.placed.find((r) => r.id === id) || (sim.goneRecords && sim.goneRecords.get(id));
     // Keyed by the record itself: a Renewal starts ids over at b1001, and a cache by id would show the old building.
     const descs = new WeakMap();
-    const desc = (r) => { let d = descs.get(r); if (!d) { d = describe(r, 1); if (d) descs.set(r, d); } return d; };
+    const desc = (r) => { let d = descs.get(r); if (!d || d.pal !== r.pal || d.roof !== (r.roof || null)) { d = describe(r, 1); if (d) descs.set(r, d); } return d; }; // a repaint changes pal or roof in place
     sim.building = (id) => { const r = rec(id); return r ? desc(r) : base.building(id); };
     sim.alive = (id) => (rec(id) ? !state.removed.includes(id) : base.alive(id));
     sim.placedRecords = () => state.placed;

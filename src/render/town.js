@@ -137,6 +137,24 @@ export function createTown(root, hooks = {}) {
         for (const r of placed) if (!entries.has(r.id)) { const d = describe(r, 1); if (d) addEntry(d, 1); }
         dirty = true;
       }
+      // A repaint changes a record's palette or roof in place: describe it again and rebuild that building.
+      for (const r of placed) {
+        const e = entries.get(r.id);
+        if (!e) continue;
+        const sig = (r.pal || '') + '|' + (r.roof || '');
+        if (e.paint === undefined) e.paint = sig; // first sight: already drawn with this paint
+        if (e.paint === sig) continue;
+        e.paint = sig;
+        const d = describe(r, e.level);
+        if (!d) continue;
+        e.desc = e.b = d;
+        e.parts = makeParts(d);
+        e.proxy.geometry.dispose();
+        e.proxy = proxyFor(e.parts, e.world);
+        if (selected === r.id) setHull(r.id);
+        if (hooks.burst) hooks.burst(d.x, d.z, 2.4, 10);
+        dirty = true;
+      }
       let popId = null;
       for (const e of entries.values()) {
         const lv = (s.levels && s.levels[e.b.id]) ?? e.base;

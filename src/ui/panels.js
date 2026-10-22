@@ -1,6 +1,7 @@
 // Inspect card, tool flyouts and the settings card. They read sim data and send commands.
 import { MAX_LEVEL, income, nextLevelGain, trafficOf } from '../sim/economy.js';
-import { PAL } from '../world/palettes.js';
+import { PAL, ROOFS } from '../world/palettes.js';
+import { ROOF_PARTS, WALL_PARTS, roofCost, roofOpen, wallCost, wallOpen } from '../world/paint.js';
 import { speciesOf } from '../world/trees.js';
 import { $, fmt, fmtAgo } from './format.js';
 import { topRight } from './slot.js';
@@ -26,13 +27,36 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
     const park = !b.floors; // parks are ground: no storeys, so nothing to upgrade
     const maxed = lv >= MAX_LEVEL || park;
     box.innerHTML = `<button class="x" id="ix" aria-label="Close">${CLOSE_SVG}</button>
-    <div class="band"><h2 class="h-disp">${b.name}</h2><div class="sub">${park ? 'Park' : b.cat === 'farm' ? b.fw * b.fd + ' tiles of fields' : b.floors + ' floors'} · ${PAL[b.pal].name} palette</div></div>
+    <div class="band"><h2 class="h-disp">${b.name}</h2><div class="sub">${park ? 'Park' : b.cat === 'farm' ? b.fw * b.fd + ' tiles of fields' : b.floors + ' floors'} · ${PAL[(sim.paintOf(id) || b).pal].name} palette</div></div>
     <div class="pad"><div class="lvl">Level ${dots}</div>
     <div class="stats"><div class="stat">Income<b>${b.income ?? income(b.floors, lv)}/s</b></div><div class="stat">Traffic<b>${trafficOf(b.floors)}/min</b></div><div class="stat info">Next level<b>${maxed ? 'Max' : '+' + nextLevelGain(lv) + '%'}</b></div></div>
-    <div class="row"><button class="btn primary grow" id="up" ${maxed || s.coins < cost ? 'disabled' : ''}>${park ? 'Finished' : maxed ? 'Top level' : 'Upgrade · ' + fmt(cost) + ' coins'}</button><button class="btn" id="mv">Move</button></div></div>`;
+    <div class="row"><button class="btn primary grow" id="up" ${maxed || s.coins < cost ? 'disabled' : ''}>${park ? 'Finished' : maxed ? 'Top level' : 'Upgrade · ' + fmt(cost) + ' coins'}</button><button class="btn" id="mv">Move</button></div>${paintHtml(id)}</div>`;
     $('ix').onclick = onClose;
+    box.querySelectorAll('[data-paint]').forEach((el) => { el.onclick = () => paint(id, el.dataset.paint, el.dataset.key); });
     $('up').onclick = () => send({ type: 'upgrade', id });
     $('mv').onclick = () => toast('Move mode comes with the placement grid');
+  }
+  // ---- paint: wall and roof swatches for a placed building ----
+  const hex = (n) => '#' + n.toString(16).padStart(6, '0');
+  function swatches(kind, id, rec) {
+    const wall = kind === 'wall', table = wall ? WALL_PARTS : ROOF_PARTS, open = wall ? wallOpen : roofOpen, cost = wall ? wallCost(rec) : roofCost(rec);
+    return Object.keys(table).map((key) => {
+      const color = wall ? PAL[key].wall : hex(ROOFS[key].hex), name = wall ? PAL[key].name : ROOFS[key].name;
+      const locked = !open(key, s.paintUnlocks), now = (wall ? rec.pal : rec.roof) === key;
+      const tip = locked ? `${name} · ${table[key]} Parts opens it for good` : now ? `${name} · on now` : `${name} · ${fmt(cost)} coins`;
+      return `<button type="button" class="sw${locked ? ' locked' : ''}" data-paint="${kind}" data-key="${key}" aria-pressed="${now}" title="${tip}" aria-label="${tip}" style="--sw:${color}">${locked ? `<small>${table[key]}</small>` : ''}</button>`;
+    }).join('');
+  }
+  function paintHtml(id) {
+    const p = sim.paintOf(id);
+    if (!p) return '';
+    return `<div class="paint"><div class="ph">Walls</div><div class="swrow">${swatches('wall', id, p.rec)}</div><div class="ph">Roof</div><div class="swrow">${swatches('roof', id, p.rec)}</div></div>`;
+  }
+  function paint(id, kind, key) {
+    const open = kind === 'wall' ? wallOpen : roofOpen;
+    if (!open(key, s.paintUnlocks)) send({ type: 'unlockPaint', kind, key });
+    else send({ type: 'paintBuilding', id, [kind]: key });
+    showInspect(id);
   }
   // A town tree: a small card with its species and a free bulldoze. Undo brings it back.
   function showTree(id) {

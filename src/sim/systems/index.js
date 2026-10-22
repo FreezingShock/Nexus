@@ -7,6 +7,7 @@ import core from './core.js';
 import decor from './decor.js';
 import districts from './districts.js';
 import offlinePostcard from './offline-postcard.js';
+import paint from './paint.js';
 import placement from './placement.js';
 import population from './population.js';
 import progression from './progression.js';
@@ -25,6 +26,7 @@ export const systems = [
   decor,
   districts,
   offlinePostcard,
+  paint,
   placement,
   population,
   progression,
