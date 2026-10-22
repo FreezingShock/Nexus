@@ -19,7 +19,7 @@ function glassFrontZ(parts) {
 }
 
 test('mansard and office blocks carry a glass oriel bay on the front at every level and size', () => {
-  for (const id of ['mansard', 'office']) {
+  for (const id of ['mansard', 'office', 'tower']) {
     const m = MODELS.find((x) => x.id === id);
     for (const size of footprintsOf(m)) for (let lv = 1; lv <= 5; lv++) {
       const [fw, fd] = canonicalDims(m, size);

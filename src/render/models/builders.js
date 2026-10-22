@@ -59,6 +59,7 @@ const B = {
     k.body(); k.door();
     k.awning(k.doorX, k.dep / 2, Math.min(k.w - 0.6, 2.2), awn(k));
     k.flatRoof(0.4);
+    k.bay(5, k.bayX(Math.floor((k.bx - 1) / 2)), 1.0);   // an oriel up the tower, above the floor-3 balcony
     // stair house and water tank: the little things every flat roof has
     k.box(k.w * 0.35, 0.8, k.dep * 0.35, k.w * 0.15, k.top + 0.4, -k.dep * 0.1, C.stone);
     if (k.level >= 3) k.cyl(0.3, 0.3, 0.7, 8, -k.w * 0.25, k.top + 0.4, k.dep * 0.15, C.wood);
