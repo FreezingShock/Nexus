@@ -6,6 +6,7 @@ import { createScene } from './render/scene.js';
 import { createQualityStore, detectEnv } from './core/quality.js';
 import { createCalendarStore } from './core/calendar.js';
 import { createUi } from './ui/ui.js';
+import { createSoundStore } from './audio/mix.js';
 import { $, fmtAgo } from './ui/format.js';
 
 const AUTOSAVE_MS = 45000;
@@ -44,6 +45,9 @@ scene.setQuality(quality.get());
 // (sim.setCalendar), which only changes what the sky shows.
 const calendar = createCalendarStore({ storage: browserStorage, onChange: (o) => sim.setCalendar(o) });
 sim.setCalendar(calendar.get());
+// ---- sound ----
+// Volumes and mute, under their own key (Start over leaves them alone). Nothing plays until the first click or key press.
+const sound = createSoundStore({ storage: browserStorage });
 
 // ---- save / export / import ----
 // saveBlocked is set right before a reload that must not be overwritten by the in-memory town (import, restore, start over).
@@ -57,6 +61,7 @@ const save = () => {
 const actions = {
   quality,
   calendar,
+  sound,
   exportSave() {
     const blob = new Blob([exportText(sim.prepareSave(), Date.now())], { type: 'application/json' });
     const a = document.createElement('a');

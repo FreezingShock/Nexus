@@ -5,6 +5,7 @@ import { speciesOf } from '../world/trees.js';
 import { $, fmt, fmtAgo } from './format.js';
 import { mountGraphics } from './graphics.js';
 import { mountAtmos } from './atmos.js';
+import { mountSound } from './sound-settings.js';
 
 const CLOSE_SVG = '<svg width="16" height="16" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2L12 12M12 2L2 12" stroke="#2B2620" stroke-width="2.2" stroke-linecap="round"/></svg>';
 
@@ -86,6 +87,7 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
     box.innerHTML = `<button class="x" id="sx" aria-label="Close">${CLOSE_SVG}</button>
     <div class="band"><h2 class="h-disp">Settings</h2><div class="sub">Your town is saved in this browser</div></div>
     <div class="pad"><div id="atmos"></div><div id="gfx"></div>
+    <div id="snd"></div>
     <p class="sub">${actions.status()}</p>
     <p class="sub">Export a copy to keep it safe or move it to another device.</p>
     <button class="btn" id="exp">Export save</button><button class="btn" id="imp">Import save</button>
@@ -94,6 +96,7 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
     $('sx').onclick = hideSettings;
     if (actions.calendar) mountAtmos($('atmos'), actions.calendar, sim);
     if (actions.quality) mountGraphics($('gfx'), actions.quality);
+    if (actions.sound) mountSound($('snd'), actions.sound);
     $('exp').onclick = actions.exportSave;
     $('imp').onclick = actions.importPick;
     if (back) $('rest').onclick = () => askConfirm({

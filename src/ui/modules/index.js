@@ -14,6 +14,7 @@ import progress from './progress.js';
 import roadTool from './road-tool.js';
 import services from './services.js';
 import shortcutSheet from './shortcut-sheet.js';
+import sound from './sound.js';
 import tooltips from './tooltips.js';
 import zoning from './zoning.js';
 
@@ -31,6 +32,7 @@ export const uiModules = [
   roadTool,
   services,
   shortcutSheet,
+  sound,
   tooltips,
   zoning,
 ];

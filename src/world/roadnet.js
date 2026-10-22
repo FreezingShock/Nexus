@@ -99,6 +99,57 @@ export function routeThrough(points, opts = {}) {
   return { path, stops };
 }
 
+// ---- auto-pick ----
+// Each leg has two L shapes: the longer leg first (the default) or the shorter first. chooseRoute scores every
+// combination of picks and keeps the cleanest route: fewest grid problems, then the least riding along existing
+// roads (a leg that runs along a street scores worse than a T into it), then the fewest new tiles. `flip` (the L key)
+// inverts every pick, so the key becomes an override. Shift makes every leg a single straight shape.
+const PICK_PROBLEM = 1000, PICK_OVERLAP = 4, PICK_ALONG = 6, PICK_LEGS = 6;
+export function chooseRoute({ points, straight = false, flip = false, roads = {}, blockedBy = () => null }) {
+  const shapes = [];
+  for (let k = 1; k < points.length; k++) {
+    const a = points[k - 1], b = points[k];
+    if (straight) { shapes.push([rulerPath(a, b)]); continue; }
+    const first = elbowPath(a, b, false), other = elbowPath(a, b, true);
+    const same = first.length === other.length && first.every((t, i) => t[0] === other[i][0] && t[1] === other[i][1]);
+    shapes.push(same ? [first] : [first, other]);
+  }
+  if (!shapes.length) return { path: [[points[0][0], points[0][1]]], stops: [0] };
+
+  const build = (pick) => {
+    const path = [shapes[0][pick[0]][0]], stops = [0];
+    shapes.forEach((opts, k) => {
+      const leg = opts[pick[k]];
+      for (let j = 1; j < leg.length && path.length < MAX_STROKE; j++) path.push(leg[j]);
+      stops.push(path.length - 1);
+    });
+    return { path: path.map((t) => [t[0], t[1]]), stops };
+  };
+  const cost = (route, pick) => {
+    let c = validateRoute(route.path, roads, blockedBy).length * PICK_PROBLEM;
+    for (let k = 1; k < route.path.length; k++) {
+      const [x, z] = route.path[k], [px, pz] = route.path[k - 1];
+      if (hasRoad(roads, x, z)) { c += PICK_OVERLAP; if (hasRoad(roads, px, pz)) c += PICK_ALONG; } else c += 1;
+    }
+    return c + 0.01 * pick.reduce((a, p) => a + p, 0); // ties keep the default shape
+  };
+
+  // Enumerate picks for the first few legs; any later leg keeps its default shape.
+  const free = Math.min(shapes.length, PICK_LEGS);
+  const radix = shapes.slice(0, free).map((o) => o.length);
+  const total = radix.reduce((a, r) => a * r, 1);
+  let best = null, bestCost = Infinity, bestPick = null;
+  for (let c = 0; c < total; c++) {
+    const pick = new Array(shapes.length).fill(0);
+    let rest = c;
+    for (let k = 0; k < free; k++) { pick[k] = rest % radix[k]; rest = Math.floor(rest / radix[k]); }
+    const route = build(pick), v = cost(route, pick);
+    if (v < bestCost) { bestCost = v; best = route; bestPick = pick; }
+  }
+  if (!flip) return best;
+  return build(bestPick.map((p, k) => (shapes[k].length > 1 ? 1 - p : p)));
+}
+
 // Direction of travel on each route tile: towards the next tile, the last tile keeps the heading it arrived with.
 export function pathDirs(path) {
   const d = path.map((t, k) => (k < path.length - 1 ? dirOf(t, path[k + 1]) : -1));

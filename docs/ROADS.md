@@ -16,7 +16,7 @@ Roads live on the shared tile grid (see GRID.md: 64 x 64 tiles of 3 units, tile 
 `drawRoad { roadType, path }` (ordered 4-connected tiles; one-way follows the path), `bulldozeRoad { tiles }` (half refund), `undoRoad` (session only, 24 deep), `unlockRoad { roadType }`. Event `roadsChanged { kind: draw|erase|undo, tiles, cost }` is the hook for sound and notifications.
 
 ## Routes
-A road is drawn as a chain of pivots: the committed start, any pivots added while drawing, and the cursor. Each pair of points is one L (a leg, a corner, a leg), or a ruler line with Shift. `routeThrough` builds the tile list, `planStroke` prices it and reports `problems` and `joins`, and `validateRoute` applies the grid rules. The sim's `drawRoad` runs the same planner, so the preview and the commit always agree. One click commits one segment (one undo step).
+A road is drawn as a chain of pivots: the committed start, any pivots added while drawing, and the cursor. Each pair of points is one L (a leg, a corner, a leg), or a ruler line with Shift. `chooseRoute` picks each L's bend by scoring both shapes: grid problems first, then riding along existing roads (costly), then new tiles (cheap). L (`flip`) inverts every pick. `routeThrough` builds the tile list for a fixed shape, `planStroke` prices it and reports `problems` and `joins`, and `validateRoute` applies the grid rules. The sim's `drawRoad` runs the same planner, so the preview and the commit always agree. One click commits one segment (one undo step).
 
 ## Grid rules (`validateRoute`)
 Every problem has a reason key in `BLOCK_TEXT`, shown on the reason chip and as the toast.
