@@ -302,7 +302,7 @@ const B = {
     const fx = w - 0.9, fz0 = -dep / 2 + 0.45, fz1 = dep / 2 - YARD - 0.1, fd = fz1 - fz0;
     const nb = Math.max(2, Math.round(fx / BED)), gx = Math.ceil(nb / 6), bw = (fx - (gx - 1) * PATH) / nb;
     const gz = Math.max(1, Math.round(fd / 7)), bd = (fd - (gz - 1) * PATH) / gz;
-    const first = Math.floor(k.t[2] * 3), quads = new Map(), centers = [];
+    const first = Math.floor(k.t[2] * 3), quads = new Map(), centers = [], bedList = [];
     const quad = (c, x0, z0, x1, z1, y) => { let q = quads.get(c); if (!q) quads.set(c, q = []); q.push(x0, z0, x1, z1, y); };
     for (let bz = 0; bz < gz; bz++) {
       const z0 = fz0 + bz * (bd + PATH);
@@ -312,12 +312,15 @@ const B = {
         if (left === 0 && g > 0) x += PATH;
         const crop = CROPS[(first + i + g * 2 + bz) % 3], x0 = x, x1 = x + bw - 0.05;
         quad(hex(crop.base), x0, z0, x1, z0 + bd, base + 0.1);
+        bedList.push([x0, z0, x1, z0 + bd]);
         if (bw > 1.0) quad(hex(crop.row), (x0 + x1) / 2 - 0.07, z0 + 0.1, (x0 + x1) / 2 + 0.07, z0 + bd - 0.1, base + 0.12); // a row down the bed
         if (left === Math.floor(inGroup / 2) && (g + bz) % 2 === 0) centers.push([(x0 + x1) / 2, z0 + bd / 2]);
         x += bw;
       }
     }
     for (const [c, q] of quads) k.part(quadsGeo(q), c, 0, 0, 0, { edge: false });
+    // for the farm's life (render/life/directors/farms.js): the beds, the lane the tractor takes behind the yard, the yard
+    k.sites.farm = { base, beds: bedList, lane: { z: fz1 + 0.25, x0: -fx / 2, x1: fx / 2 }, yard: { z0: dep / 2 - YARD + 0.1, z1: dep / 2 - 0.3 } };
     // hedge round the lot, open at the gate
     const side = k.t[4] < 0.5 ? -1 : 1, hx = side * Math.min(w / 2 - 1.55, 1.5), bx = -side * Math.min(w / 2 - 1.4, 1.55);
     const hz = dep / 2 - 0.2, ex = w / 2 - 0.2;
@@ -331,6 +334,9 @@ const B = {
     k.box(hw, 1.1, hd, hx, base, hzc, k.P.wallHex);          // the farmhouse wears the wall paint
     k.part(hipGeo(hw + 0.3, hd + 0.3, 0.8), k.P.roof, hx, base + 1.1, hzc);
     k.box(0.45, 0.7, 0.1, hx, base, hzc + hd / 2 + 0.04, k.P.accent);
+    k.sites.doors.push([hx, hzc + hd / 2 + 0.1]);
+    k.sites.chimneys.push([hx + hw * 0.28, base + 1.8, hzc - hd * 0.1]);
+    k.sites.farm.house = { x: hx, z: hzc, hw, hd }; k.sites.farm.barn = { x: -side * Math.min(w / 2 - 1.4, 1.55), hw: Math.min(1.7, w * 0.3) / 2 };
     for (const sx of [-1, 1]) k.box(0.4, 0.34, 0.06, hx + sx * (hw * 0.32), base + 0.5, hzc + hd / 2 + 0.03, C.glass, { edge: false });
     k.box(0.32, 0.6, 0.32, hx + hw * 0.28, base + 1.1, hzc - hd * 0.1, C.brick);
     // barn on the other side

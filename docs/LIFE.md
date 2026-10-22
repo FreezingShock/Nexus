@@ -29,6 +29,10 @@ Graphics "Dust, hearts and town life": Off shows no smoke, residents, washing or
 - **Workshops and warehouses:** stacks smoke steadily through the working day (darker, bigger puffs), shift workers in yellow coats at the door, a forklift with a crate shuttles along the yard, a delivery van pulls up at the kerb, waits, and drives off.
 - Scale: visits scale with population fill and the Crowd setting. Light has half the people and no forklifts, vans, cats or washing.
 
+## Farms
+
+`directors/farms.js`. Crop tufts stand in every bed and grow or ripen with the season (spring fresh and small, summer full, autumn gold, winter bare); the growth eases over several seconds, so a change of season is visible. A tractor works the lane behind the yard on dry days from spring to autumn, one to three sheep wander the gap between the house and the barn, and farm hands walk out to a field, stand a while and come back. The farmhouse chimney smokes like a home's. The farm builder records `sites.farm` (beds, lane, yard, house, barn). Three more meshes: crop tufts, tractors, sheep.
+
 ## Draw calls
 
 `life-windows` 1, `life-smoke` 1, `life-town` 6 (people, hanging cloth, cats, blade signs, forklifts, vans). Windows and smoke are hidden while nothing is lit or rising. Not measured on a phone.

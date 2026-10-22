@@ -236,3 +236,26 @@ test('town life builds its pools and runs a day (homes, shops, workplaces) witho
   sys.quality({ effects: 0, crowd: 1 });
   sys.frame(frameOf(sim));
 });
+
+test('a farm records its beds, lane and gap, and its crops grow with the seasons', () => {
+  const sites = makeParts(describe(rec('farm', { fw: 3, fd: 4 }), 1)).sites;
+  assert.ok(sites.farm && sites.farm.beds.length > 2 && sites.farm.lane.x1 > sites.farm.lane.x0);
+  assert.ok(sites.chimneys.length === 1 && sites.doors.length === 1);
+  const sim = createSim({ state: freshState(), layout: getLayout() });
+  sim.state.placed.push({ id: 'b2001', model: 'farm', gx: 60, gz: 60, fw: 3, fd: 4, rot: 0, seed: 99 });
+  const { world, town } = townFor(sim);
+  const sys = lifeTown.create({ THREE, world, layout: sim.layout, grid: sim.grid, camera: { view: { tx: 36, tz: 36, half: 46, zoom: 1 } }, scene: world, town, sys: () => null });
+  const scale = (season, frames) => {
+    sim.state.season = season; sim.state.hour = 12; sim.state.weatherKind = 'clear';
+    for (let i = 0; i < frames; i++) sys.frame(frameOf(sim));
+    const tufts = world.children.filter((o) => o.isInstancedMesh && o.geometry.attributes.aTint && o.count > 100)[0];
+    let big = 0;
+    const m = new THREE.Matrix4(), s = new THREE.Vector3(), p = new THREE.Vector3(), q = new THREE.Quaternion();
+    for (let i = 0; i < tufts.count; i++) { tufts.getMatrixAt(i, m); m.decompose(p, q, s); if (s.x > 0.5) big++; }
+    return { big, n: tufts.count };
+  };
+  const summer = scale('summer', 30);
+  assert.ok(summer.n > 50 && summer.big > summer.n * 0.5, 'ripe in summer: ' + JSON.stringify(summer));
+  const winter = scale('winter', 1500);
+  assert.equal(winter.big, 0, 'bare in winter');
+});

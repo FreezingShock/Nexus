@@ -86,7 +86,7 @@ export function createKit(d) {
   const bayXs = [];   // x of each oriel, so trim can leave its column alone
   // Where the town can show life, in the building's own frame (see render/life). Recorded as the builder places things,
   // so a chimney, door or awning that moves in a builder moves its smoke, its visitors and its flutter with it.
-  const sites = { bodies: [], chimneys: [], doors: [], awnings: [], stacks: [], fronts: [], tables: [] };
+  const sites = { bodies: [], chimneys: [], doors: [], awnings: [], stacks: [], fronts: [], tables: [], farm: null };
   const k = {
     d, P, w: d.w, dep: d.d, floors: d.floors, h, level: d.level, t: d.t, parts, bx, bz, sites,
     top: PLINTH + h,           // y of the wall top

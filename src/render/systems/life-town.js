@@ -1,18 +1,19 @@
 // The town's people and little goings-on, in one place so every zone draws into the same few meshes. It owns the shared
-// pools (people, hanging cloth, ...) and one director per kind of place (life/directors): homes, commercial, industry.
+// pools (people, hanging cloth, ...) and one director per kind of place (life/directors): homes, commercial, industry, farms.
 // Each director builds once per change of the town and then works only on buildings near the camera. Visual only.
 // Graphics: Off draws none, Light has half the people and no cats, washing or forklifts, Full everything. Notes: docs/LIFE.md.
 import { createPools } from '../life/pools.js';
 import { createHomes } from '../life/directors/homes.js';
 import { createCommercial } from '../life/directors/commercial.js';
 import { createIndustry } from '../life/directors/industry.js';
+import { createFarms } from '../life/directors/farms.js';
 
 export default {
   id: 'life-town',
   create({ world, town, camera, sys }) {
     let effects = 1, crowd = 1;
     const pools = createPools(world);
-    const directors = [createHomes(pools), createCommercial(pools), createIndustry(pools)];
+    const directors = [createHomes(pools), createCommercial(pools), createIndustry(pools), createFarms(pools)];
     let seenRev = -1;
     const c = {
       dt: 0, t: 0, hour: 12, night: 0, season: 'spring', wk: 'clear', fill: 0.5, happy: 0.4, rain: 0, effects: 1, crowd: 1, r2: 0, vx: 0, vz: 0,
