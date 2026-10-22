@@ -13,7 +13,7 @@ export const HOVER_TIPS = [
   ['#renewal', 'Renewal: start the town again for income that lasts. It opens after a big run.'],
   ['#pause', 'Pause the town. Nothing is lost.'],
   ['#speed', 'Game speed. Click to cycle.'],
-  ['#night', 'Day or night. Lamps glow after dark.'],
+  ['#night', 'Time of day. Click to lock night, then day, then back to the cycle.'],
   ['#goalsbtn', 'Town goals (G): daily goals, milestones and Renewal.'],
   ['#keysbtn', 'Keyboard shortcuts (?)'],
   ['#settingsbtn', 'Settings: save, export, import and start over.'],

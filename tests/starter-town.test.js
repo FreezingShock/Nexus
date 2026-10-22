@@ -128,14 +128,13 @@ test('a save from before the reset becomes the starter town, keeps settings, and
   const old = mk();
   old.dispatch({ type: 'place', model: 'tower', gx: 40, gz: 20, fw: 2, fd: 2, rot: 0 });
   const oldState = JSON.parse(JSON.stringify(old.state));
-  oldState.coins = 5e6; oldState.night = 1; oldState.speed = 2;
+  oldState.coins = 5e6; oldState.speed = 2;
   storage.setItem(SAVE_KEY, JSON.stringify({ v: 2, savedAt: 1000, state: oldState }));
   const now = 2000000;
   const res = loadGame(storage, now);
   assert.equal(res.source, 'save');
   assert.equal(res.state.coins, START_COINS, 'the new town starts with the starting coins');
-  assert.equal(res.state.night, 1, 'settings are kept');
-  assert.equal(res.state.speed, 2);
+  assert.equal(res.state.speed, 2, 'settings are kept');
   assert.equal(res.savedAt, now, 'the new town earns nothing for the time the old one was away');
   assert.equal(res.state.placed.filter((r) => r.starter).length, STARTER_COUNT);
   assert.equal(res.state.placed.filter((r) => !r.starter).length, 0);

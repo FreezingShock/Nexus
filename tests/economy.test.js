@@ -168,7 +168,7 @@ test('Renewal starts the town over and keeps points, unlocks, milestones, lifeti
   const sim = mk();
   const s = sim.state;
   s.coins = 5e9; s.parts = 900; s.runEarned = BALANCE.renewal.divisor * 1.2; s.earned = 6e9; s.points = 2;
-  s.roadUnlocks = ['bike']; s.milestones = ['coins-1k']; s.night = 1; s.speed = 2; s.stats.placed = 3;
+  s.roadUnlocks = ['bike']; s.milestones = ['coins-1k']; s.speed = 2; s.stats.placed = 3;
   s.levels['b1000'] = 4; s.removed.push('b1001');
   const roads = s.roads;
   sim.dispatch({ type: 'renew' });
@@ -182,7 +182,7 @@ test('Renewal starts the town over and keeps points, unlocks, milestones, lifeti
   assert.equal(s.earned, 6e9);
   assert.deepEqual(s.roadUnlocks, ['bike']);
   assert.deepEqual(s.milestones, ['coins-1k']);
-  assert.equal(s.night, 1);
+  assert.ok([0, 1].includes(s.night)); // night is derived from the clock now, not a saved setting
   assert.equal(s.speed, 2);
   assert.equal(s.stats.placed, 3);
   assert.notEqual(s.roads, roads);

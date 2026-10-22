@@ -21,7 +21,7 @@ Add a migration to `migrations` in `src/sim/save.js`, bump `SAVE_VERSION`, and a
 
 ### Reset steps (version 3)
 
-Version 3 replaces the town with the starter town (`src/world/starter.js`) and keeps only the settings (`night`, `speed`). That step is marked `resets = true`. `unwrap` hands back the town it replaced as `retired`, and `loadGame` writes that town to the backup slot as a version 3 envelope. The town before a reset has the current shape, because a reset is the only change, so Settings can restore it. Restoring that backup gives the old town back and does not run the reset again. A version 2 import file goes through the same reset and becomes the starter town.
+Version 3 replaces the town with the starter town (`src/world/starter.js`) and keeps only the settings that are still saved (`speed`; night follows the clock, so it is not saved). That step is marked `resets = true`. `unwrap` hands back the town it replaced as `retired`, and `loadGame` writes that town to the backup slot as a version 3 envelope. The town before a reset has the current shape, because a reset is the only change, so Settings can restore it. Restoring that backup gives the old town back and does not run the reset again. A version 2 import file goes through the same reset and becomes the starter town.
 
 ## Envelope and storage
 

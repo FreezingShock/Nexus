@@ -10,6 +10,9 @@ import { renderSystems } from './systems/index.js';
 import { createTown } from './town.js';
 import { createDusk } from './dusk.js';
 import { renderSettings } from '../core/quality.js';
+import { atmosphereTargets } from '../core/calendar.js';
+import { createSky } from './sky.js';
+import { applySeason } from './season.js';
 
 const SNAP_W = 480, SNAP_H = 360;
 
@@ -22,6 +25,8 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
 
   const scene = new THREE.Scene();
   const lighting = createLighting(scene);
+  const sky = createSky();
+  let targets = null, targetsOf = { hour: NaN, season: '', weather: '' }; // the sim's sky as render targets, recomputed only on change
   const world = new THREE.Group(); scene.add(world);
   const camera = createCamera();
 
@@ -76,10 +81,17 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
     // Per-frame. `simDt` is wall dt scaled by game speed (0 when paused).
     frame(dt, t, simDt, s, tool) {
       camera.step(dt, drag && drag.moved > 5);
-      const f = { dt, t, simDt, state: s, tool };
+      // The sky eases towards the sim's hour, season and weather; the lights and the shader follow the eased values.
+      if (s.hour !== targetsOf.hour || s.season !== targetsOf.season || s.weatherKind !== targetsOf.weather) {
+        targetsOf = { hour: s.hour, season: s.season, weather: s.weatherKind };
+        targets = atmosphereTargets(targetsOf);
+      }
+      const look = sky.update(dt, targets);
+      applySeason(look);
+      const f = { dt, t, simDt, state: s, tool, sky: look };
       for (const m of mods) if (m.frame) m.frame(f);
-      const blend = lighting.update(dt, s.night);
-      const on = blend > 0.5;
+      const night = lighting.update(dt, look);
+      const on = night > 0.5;
       if (on !== nightOn) { nightOn = on; town.setNight(on); for (const m of mods) if (m.setNight) m.setNight(on); }
       town.setRemoved(s.removed);
       town.setState(s);
@@ -112,7 +124,6 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
     pop: (id) => town.pop(id),
     rotate: (d) => camera.rotate(d),
     focus: (x, z) => camera.focus(x, z),
-    snap: (night) => lighting.snap(night),
 
     // Graphics settings (core/quality.js), applied live. Shadows, the pixel-ratio cap and the sun's map size are set
     // here; each render system with a quality(rs) hook gets the mapped values too.

@@ -7,7 +7,8 @@ import * as THREE from '../../../vendor/three/three.module.min.js';
 import { heightAt } from '../../world/terrain.js';
 import { PINE_COLORS, TREE_COLORS } from '../../world/palettes.js';
 import { MAX_PER_KIND } from '../../world/trees.js';
-import { toon, hullInk } from '../materials.js';
+import { toon, toonUncached, hullInk } from '../materials.js';
+import { patchSeason } from '../season.js';
 
 const MAX_PUFFS = 10; // a big clearing puffs at most this many trees at once
 
@@ -25,9 +26,10 @@ export default {
     const e = new THREE.Euler(), c = new THREE.Color();
     const canopyGeo = new THREE.IcosahedronGeometry(1, 0), trunkGeo = new THREE.CylinderGeometry(0.14, 0.2, 1, 5);
     const coneGeo = new THREE.ConeGeometry(1.35, 4.4, 6, 1);
-    const can = instanced(canopyGeo, toon(0xffffff)), canHull = instanced(canopyGeo, hullInk);
+    // Broadleaf canopies take the spring blossom; conifers keep most of their green all year (foliage 0.3).
+    const can = instanced(canopyGeo, patchSeason(toonUncached(0xffffff), { blossom: true })), canHull = instanced(canopyGeo, hullInk);
     const trunk = instanced(trunkGeo, toon(0x5B4636));
-    const cone = instanced(coneGeo, toon(0xffffff)), coneHull = instanced(coneGeo, hullInk);
+    const cone = instanced(coneGeo, patchSeason(toonUncached(0xffffff), { foliage: 0.3 })), coneHull = instanced(coneGeo, hullInk);
     can.castShadow = trunk.castShadow = cone.castShadow = true;
     world.add(can, canHull, trunk, cone, coneHull);
 

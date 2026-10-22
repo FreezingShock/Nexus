@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { createSim } from '../src/sim/sim.js';
 import { getLayout } from '../src/world/layout.js';
 import { tileIndex, GRID_HALF } from '../src/world/grid.js';
-import { BLOCK_TEXT, planStroke, routeThrough, starterRoads, validateRoute } from '../src/world/roadnet.js';
+import { BLOCK_TEXT, chooseRoute, elbowPath, planStroke, routeThrough, starterRoads, validateRoute } from '../src/world/roadnet.js';
 
 const layout = getLayout();
 const C = GRID_HALF;
@@ -114,6 +114,54 @@ test('drawRoad refuses a looping route and charges nothing', () => {
   sim.dispatch({ type: 'drawRoad', roadType: 'two', path: ring });
   assert.equal(sim.state.coins, 5000);
   assert.equal(sim.state.roads[tileIndex(free[0], free[1])], undefined);
+});
+
+// The two layouts from nate's screenshots: the L's default first leg runs along an existing street.
+const onRoads = (path, roads) => path.filter(([x, z]) => roads[tileIndex(x, z)] !== undefined).length;
+
+test('auto-pick: a start below a street ends at a T into it, not along it (screenshot 1 layout)', () => {
+  const roads = row(C + 6, C - 10, C + 6);
+  const start = [C - 8, C + 9], end = [C - 6, C + 6];
+  assert.equal(elbowPath(start, end)[1].join(), [C - 8, C + 8].join(), 'the default leg runs up and along the street');
+  const r = chooseRoute({ points: [start, end], roads, blockedBy: open });
+  assert.deepEqual(r.path[1], [C - 7, C + 9], 'the auto-pick runs the long way, along the empty row below');
+  assert.deepEqual(r.path[r.path.length - 1], end);
+  assert.deepEqual(r.path[r.path.length - 2], [C - 6, C + 7], 'the last step comes in from the south, across the street');
+  assert.equal(onRoads(r.path, roads), 1, 'only the junction tile is already a road');
+  assert.deepEqual(validateRoute(r.path, roads, open), []);
+});
+
+test('auto-pick: the L key overrides the pick and brings back the riding route', () => {
+  const roads = row(C + 6, C - 10, C + 6);
+  const start = [C - 8, C + 9], end = [C - 6, C + 6];
+  const flipped = chooseRoute({ points: [start, end], flip: true, roads, blockedBy: open });
+  assert.deepEqual(flipped.path[1], [C - 8, C + 8]);
+  assert.ok(onRoads(flipped.path, roads) > 1);
+});
+
+test('auto-pick: an anchor on a street runs off it instead of along it (screenshot 2 layout)', () => {
+  const roads = row(C - 2, C - 12, C + 12);
+  const anchor = [C - 12, C - 2], end = [C - 4, C + 6];
+  assert.deepEqual(elbowPath(anchor, end)[1], [C - 11, C - 2], 'the default runs east along the street');
+  const r = chooseRoute({ points: [anchor, end], roads, blockedBy: open });
+  assert.deepEqual(r.path[1], [C - 12, C - 1], 'the auto-pick turns off south first');
+  assert.equal(onRoads(r.path, roads), 1, 'only the anchor is already a road');
+  assert.deepEqual(validateRoute(r.path, roads, open), []);
+});
+
+test('auto-pick: when the cleaner corner is blocked, the long way around wins', () => {
+  const roads = row(C + 6, C - 10, C + 6);
+  const start = [C - 8, C + 9], end = [C - 6, C + 6];
+  const water = (gx, gz) => (gx === C - 6 && gz === C + 9 ? 'water' : null);
+  const r = chooseRoute({ points: [start, end], roads, blockedBy: water });
+  assert.deepEqual(validateRoute(r.path, roads, water), []);
+  assert.deepEqual(r.path[1], [C - 8, C + 8], 'it takes the other shape, which rides the street for a few tiles');
+});
+
+test('auto-pick keeps the stops of each pivot, so later pivots still land on the route', () => {
+  const r = chooseRoute({ points: [[C - 8, C + 9], [C - 6, C + 6], [C + 2, C + 6]], roads: row(C + 6, C - 10, C + 6), blockedBy: open });
+  assert.equal(r.path[r.stops[1]].join(), [C - 6, C + 6].join());
+  assert.equal(r.path[r.stops[2]].join(), [C + 2, C + 6].join());
 });
 
 test('every grid rule has a sheet-friendly message', () => {

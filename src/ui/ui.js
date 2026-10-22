@@ -15,14 +15,14 @@ export function createUi({ sim, scene, actions }) {
   const send = (cmd) => sim.dispatch(cmd);
   let tool = null;
 
-  const hud = createHud({ sim, send, onSettings: () => toggleSettings() });
+  const hud = createHud({ sim, send, onSettings: () => toggleSettings(), calendar: actions.calendar });
   const panels = createPanels({
     sim, send, toast: hud.toast,
     onClose: () => select(null),
     setTool: (t) => setTool(t),
   });
   const postcard = createPostcard({ sim, send, scene });
-  const mods = registryOf('ui modules', uiModules).list().map((d) => d.create({ sim, send, scene, toast: hud.toast, tool: () => tool, quality: actions.quality }) || {});
+  const mods = registryOf('ui modules', uiModules).list().map((d) => d.create({ sim, send, scene, toast: hud.toast, tool: () => tool, quality: actions.quality, sound: actions.sound }) || {});
 
   function select(id) {
     if (id && !sim.alive(id)) id = null; // only a standing building can be inspected

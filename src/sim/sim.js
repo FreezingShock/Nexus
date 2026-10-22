@@ -6,6 +6,8 @@ import { systems as systemDefs } from './systems/index.js';
 import { BASE_RATE, PARTS_RATE, levelOf, upgradeCost } from './economy.js';
 import { MIN_POSTCARD_S, awaySeconds, offlineWindow } from './offline.js';
 import { freshState } from './state.js';
+import { sanitizeCalendar } from '../core/calendar.js';
+import { refreshCalendar } from './systems/calendar.js';
 
 export function createSim({ state = freshState(), layout = getLayout(), now = () => Date.now() } = {}) {
   const listeners = new Set();
@@ -20,7 +22,8 @@ export function createSim({ state = freshState(), layout = getLayout(), now = ()
     }
   }
   let rate = 0, partsRate = PARTS_RATE;
-  const sim = { state, layout, lastTickMs: 0, ticks: 0 };
+  // Per-browser calendar choices (locks, lengths). Read by systems/calendar.js; never saved.
+  const sim = { state, layout, lastTickMs: 0, ticks: 0, calendarOptions: sanitizeCalendar(null) };
 
   const emit = (e) => listeners.forEach((fn) => fn(e));
   const note = (k, n = '') => { state.log.push({ k, n }); if (state.log.length > 8) state.log.shift(); };
@@ -107,6 +110,8 @@ export function createSim({ state = freshState(), layout = getLayout(), now = ()
     fn(ctx, cmd);
     emit({ type: 'changed' });
   };
+  // Choices from the Settings card. Changing them only changes what the sky shows.
+  sim.setCalendar = (o) => { sim.calendarOptions = sanitizeCalendar(o); refreshCalendar(ctx); };
   sim.grid = grid;
   registry.run('init', ctx); // systems fill the grid layers they own from saved state
   refresh();

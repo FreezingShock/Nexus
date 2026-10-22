@@ -13,6 +13,7 @@ import servicesOverlay from './services-overlay.js';
 import tileview from './tileview.js';
 import trees from './trees.js';
 import turbines from './turbines.js';
+import weather from './weather.js';
 
 export const renderSystems = [
   cars,
@@ -27,4 +28,5 @@ export const renderSystems = [
   tileview,
   trees,
   turbines,
+  weather,
 ];
