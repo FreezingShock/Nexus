@@ -6,7 +6,7 @@
 // so right and middle drag still pan and the wheel still zooms.
 import { ROAD_TYPES } from '../../sim/catalog.js';
 import { inBounds, tileIndex, worldToTile } from '../../world/grid.js';
-import { BLOCK_TEXT, planStroke, roadBlock, routeThrough } from '../../world/roadnet.js';
+import { BLOCK_TEXT, chooseRoute, planStroke, roadBlock } from '../../world/roadnet.js';
 import { $, fmt } from '../format.js';
 import { roadSwatch, tileCard } from '../cards.js';
 
@@ -41,8 +41,9 @@ export default {
       const t = worldToTile(g.x, g.z);
       return inBounds(t[0], t[1]) ? t : null;
     };
-    // The route under the cursor: anchor, each pivot, then the cursor, joined by L legs (straight with Shift).
-    const routeNow = () => (anchor && hover ? routeThrough([anchor, ...pivots, hover], { straight: shift, flip }) : null);
+    // The route through the points: anchor, each pivot, then the cursor. The auto-pick chooses each L's bend.
+    const routeFor = (points) => chooseRoute({ points, straight: shift, flip, roads: state.roads, blockedBy: blockAt });
+    const routeNow = () => (anchor && hover ? routeFor([anchor, ...pivots, hover]) : null);
     const evaluate = (route) => planStroke({ path: route.path, type, roads: state.roads, blockedBy: blockAt, costOf });
     const claim = (e) => { e.stopPropagation(); e.preventDefault(); };
 
@@ -103,7 +104,7 @@ export default {
 
       const first = plan.problems[0];
       if (first) { say(BLOCK_TEXT[first.reason], 'bad'); return; }
-      if (!plan.tiles.length) { say(`<b>Already there</b><small>${plan.length} tiles</small><em>${short()}</em>`); return; }
+      if (!plan.tiles.length) { say(`<b>Already a street</b><small>${plan.length} tiles</small><em>${short()}</em><small>Move the cursor off the road</small>`); return; }
       const poor = state.coins < plan.cost;
       const notes = [
         pivots.length ? `${pivots.length} ${pivots.length === 1 ? 'pivot' : 'pivots'}` : '',
@@ -140,7 +141,7 @@ export default {
     // Space: a pivot at the cursor, or on the route nearest the cursor, after the last pivot.
     function addPivot() {
       if (!anchor || !hover) return false;
-      const route = routeThrough([anchor, ...pivots, hover], { straight: shift, flip });
+      const route = routeFor([anchor, ...pivots, hover]);
       const from = route.stops[route.stops.length - 2], to = route.stops[route.stops.length - 1];
       let best = -1;
       for (let i = from + 1; i <= to; i++) if (best < 0 || manhattan(route.path[i], hover) < manhattan(route.path[best], hover)) best = i;
@@ -162,7 +163,7 @@ export default {
           if (why) { toast(BLOCK_TEXT[why]); return; }
           anchor = t; pivots = []; refresh(true); return;
         }
-        const route = routeThrough([anchor, ...pivots, t], { straight: shift, flip });
+        const route = routeFor([anchor, ...pivots, t]);
         if (commit(route)) { anchor = route.path[route.path.length - 1]; pivots = []; }
         refresh(true);
       } else if (erasing() && isRoad(t)) {
