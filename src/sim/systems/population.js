@@ -70,7 +70,7 @@ export default {
       },
     };
     // The render layer sees only state: hand it a read-only view that is not saved.
-    Object.defineProperty(state, 'popLive', { configurable: true, enumerable: false, get: () => ({ cap: capacity(ctx).cap, perS: sim.population.arrivals() }) });
+    Object.defineProperty(state, 'popLive', { configurable: true, enumerable: false, get: () => { const cap = capacity(ctx).cap; return { cap, perS: sim.population.arrivals(), fill: cap > 0 ? Math.min(1, state.pop / cap) : 0, happy: happyNow(sim) }; } });
   },
 
   tick(ctx) {

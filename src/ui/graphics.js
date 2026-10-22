@@ -6,7 +6,7 @@ const PRESET_LABEL = { low: 'Low', medium: 'Medium', high: 'High', ultra: 'Ultra
 const ROWS = [
   { key: 'shadowSize', label: 'Shadow detail', needs: 'shadows', text: { 1024: '1K', 2048: '2K', 4096: '4K' } },
   { key: 'pixelRatio', label: 'Sharpness', text: { 1: '1×', 1.25: '1.25×', 1.5: '1.5×', 2: '2×' } },
-  { key: 'effects', label: 'Dust and hearts', text: { off: 'Off', light: 'Light', full: 'Full' } },
+  { key: 'effects', label: 'Dust, hearts and town life', text: { off: 'Off', light: 'Light', full: 'Full' } },
   { key: 'crowd', label: 'Traffic and people', text: { light: 'Light', normal: 'Normal', busy: 'Busy' } },
 ];
 const SWITCHES = [

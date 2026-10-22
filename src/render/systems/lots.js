@@ -2,7 +2,7 @@
 // animation for each new or upgraded building. Reads state.lots; never writes sim state.
 import * as THREE from '../../../vendor/three/three.module.min.js';
 import { makeParts, worldMatrix } from '../buildings.js';
-import { toonVC } from '../models/materials.js';
+import { toonVC, nightWall } from '../models/materials.js';
 import { Batch } from '../geom.js';
 import { lineMat } from '../materials.js';
 import { addHull, placeHull, proxyFor } from '../town.js';
@@ -27,6 +27,7 @@ export default {
     let selected = null;           // id of the lot with an outline
     const upgrading = new Set();   // tiles a player upgrade just touched: they throw dust when they pop
     let rev = -1, dirty = false, since = 1, night = false, first = true;
+    let lifeRev = 0, lifeList = []; // for render/systems/life-*.js: the grown lots standing in the merged meshes
     const m = new THREE.Matrix4();
 
     const roadAt = (gx, gz) => grid.roadAt(gx, gz) !== 0;
@@ -72,7 +73,7 @@ export default {
       });
     }
     function applyNight() {
-      for (const mesh of built) if (mesh.isMesh && mesh.userData.day.userData.night) mesh.material = night ? mesh.userData.day.userData.night : mesh.userData.day;
+      for (const mesh of built) if (mesh.isMesh && nightWall(mesh.userData.day)) mesh.material = night ? nightWall(mesh.userData.day) : mesh.userData.day;
     }
     function rebuild() {
       for (const o of built) { group.remove(o); o.geometry.dispose(); }
@@ -86,6 +87,7 @@ export default {
       }
       built = batch.build(group);
       included = keys; applyNight();
+      lifeList = liveLots.map(entryFor).filter((e) => keys.has(e.key)); lifeRev++;
       // settled pops are now inside the merged mesh: remove their stand-ins
       pops = pops.filter((p) => {
         if (p.t >= POP_S && included.has(p.key)) { popRoot.remove(p.group); disposePop(p); return false; }
@@ -106,7 +108,7 @@ export default {
       const g = new THREE.Group();
       g.position.set(e.b.x, e.b.y, e.b.z); g.rotation.y = e.b.rotY;
       for (const p of e.parts) {
-        const mat = p.body ? [p.facadeMat, p.facadeMat, p.mat, p.mat, p.facadeMat, p.facadeMat].map((x) => (night && x.userData.night ? x.userData.night : x)) : p.mat;
+        const mat = p.body ? [p.facadeMat, p.facadeMat, p.mat, p.mat, p.facadeMat, p.facadeMat].map((x) => (night && nightWall(x) ? nightWall(x) : x)) : p.mat;
         const mesh = new THREE.Mesh(p.geo, mat);
         mesh.matrixAutoUpdate = false; mesh.matrix.copy(p.local); mesh.castShadow = mesh.receiveShadow = true;
         g.add(mesh);
@@ -169,6 +171,8 @@ export default {
         return { id: lotId(hit.object.userData.tile), d: hit.distance };
       },
       select,
+      lifeRev: () => lifeRev,
+      lifeEntries: () => lifeList,
       // A player upgrade on a grown lot: its next level change throws dust, as a placed building's does.
       pop(id) {
         const tile = lotTileOf(id);

@@ -6,6 +6,9 @@ import decor from './decor.js';
 import districts from './districts.js';
 import gridOverlay from './grid-overlay.js';
 import happyFx from './happy-fx.js';
+import lifeHomes from './life-homes.js';
+import lifeSmoke from './life-smoke.js';
+import lifeWindows from './life-windows.js';
 import lots from './lots.js';
 import placementGhost from './placement-ghost.js';
 import puffs from './puffs.js';
@@ -23,6 +26,9 @@ export const renderSystems = [
   districts,
   gridOverlay,
   happyFx,
+  lifeHomes,
+  lifeSmoke,
+  lifeWindows,
   lots,
   placementGhost,
   puffs,
