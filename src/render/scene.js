@@ -1,6 +1,7 @@
 // The render side. Reads sim snapshots, never writes them. Owns the renderer, scene and camera.
 import * as THREE from '../../vendor/three/three.module.min.js';
 import { createCamera } from './camera.js';
+import { ISO, orbitPose } from './camera-math.js';
 import { createLighting } from './night.js';
 import { buildTerrain } from './terrain.js';
 import { buildStatic } from './props.js';
@@ -15,6 +16,7 @@ import { createSky } from './sky.js';
 import { applySeason } from './season.js';
 
 const SNAP_W = 480, SNAP_H = 360;
+const SNAP_HALF = 26; // half the view height in world units: the village and its main street fill the frame
 
 export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }) {
   const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -145,8 +147,11 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
     // Renders the town to a 4:3 target and copies it into `dest` (the postcard photo).
     snapshot(dest) {
       if (!snapTarget) snapTarget = new THREE.WebGLRenderTarget(SNAP_W, SNAP_H);
-      const v = camera.view, half = v.half / v.zoom * 0.6;
-      const c = camera.iso.clone(); // the postcard always frames the classic view, even while flying
+      // The postcard always frames the town centre in the classic view, wherever the camera was left (or flying).
+      const half = SNAP_HALF;
+      const c = camera.iso.clone();
+      const p = orbitPose(0, 0, ISO.az, ISO.elev, camera.view.dist);
+      c.position.set(p.x, p.y, p.z); c.lookAt(0, 0, 0);
       c.left = -half * 4 / 3; c.right = half * 4 / 3; c.top = half; c.bottom = -half; c.zoom = 1; c.updateProjectionMatrix();
       town.hideSelection(true);
       const prev = renderer.getRenderTarget();

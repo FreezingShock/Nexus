@@ -31,13 +31,17 @@ function postmark(text) {
   return `<svg class="pmark" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" fill="none" stroke="#2B2620" stroke-width="3"/><circle cx="50" cy="50" r="30" fill="none" stroke="#2B2620" stroke-width="2"/><path id="pm-arc" d="M12 50A38 38 0 0 1 88 50" fill="none"/><text font-size="11" font-family="Capriola,sans-serif" letter-spacing="1.5" fill="#2B2620"><textPath href="#pm-arc" startOffset="50%" text-anchor="middle">WELCOME BACK</textPath></text><text x="50" y="55" text-anchor="middle" font-size="13" font-family="Capriola,sans-serif" fill="#2B2620">${text}</text><path d="M18 78H82M22 86H78" stroke="#2B2620" stroke-width="2.5" stroke-linecap="round"/></svg>`;
 }
 
+const PREVIEW = { awayS: 6 * 3600 + 40 * 60, fullS: 4 * 3600, easeS: 2 * 3600 + 40 * 60, coins: 48250, parts: 312 };
+
 export function createPostcard({ sim, send, scene }) {
   const modal = $('offline'), mail = $('mail');
-  let open = false;
+  let open = false, previewing = false;
 
-  function show() {
-    const o = sim.state.offline;
+  // `sample` previews the postcard with made-up numbers (Settings). Collecting then pays nothing.
+  function show(sample) {
+    const o = sample || sim.state.offline;
     if (!o) return;
+    previewing = !!sample;
     $('awaytime').textContent = fmtDuration(o.awayS);
     // The second postmark gets a distinct arc id so the two <textPath> references do not clash.
     document.querySelectorAll('.pm-host').forEach((h, i) => { h.innerHTML = postmark(fmtPostmark(o.awayS)).replace(/pm-arc/g, 'pm-arc' + i); });
@@ -53,15 +57,22 @@ export function createPostcard({ sim, send, scene }) {
     mail.dataset.state = 'closed';
     modal.hidden = false; open = true;
     scene.snapshot($('snap'));
-    $('openmail').focus();
+    $('envelope').focus();
   }
   function hide() { modal.hidden = true; open = false; }
 
-  $('openmail').onclick = () => { mail.dataset.state = 'open'; setTimeout(() => $('collect').focus(), 1000); };
-  $('collect').onclick = () => { send({ type: 'collectOffline' }); hide(); };
+  // The whole envelope opens the card, by click, tap, Enter or Space.
+  function openMail() {
+    if (mail.dataset.state === 'open') return;
+    mail.dataset.state = 'open';
+    setTimeout(() => $('collect').focus(), 1000);
+  }
+  $('envelope').onclick = openMail;
+  $('envelope').onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openMail(); } };
+  $('collect').onclick = () => { if (!previewing) send({ type: 'collectOffline' }); hide(); };
 
   return {
-    show, hide, isOpen: () => open,
+    show, hide, preview: () => show(PREVIEW), isOpen: () => open,
     // throttled by the caller
     frame(t) { scene.renderDusk(t, [$('stamp1'), $('stamp2')]); },
   };

@@ -93,7 +93,9 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
     <p class="sub">Export a copy to keep it safe or move it to another device.</p>
     <button class="btn" id="exp">Export save</button><button class="btn" id="imp">Import save</button>
     ${back ? `<button class="btn" id="rest">Restore the town from ${fmtAgo(back.savedAt)}</button>` : ''}
+    <button class="btn" id="pcv">Preview the offline postcard</button>
     <button class="btn danger" id="rst">Start over</button></div>`;
+    $('pcv').onclick = actions.previewPostcard;
     $('sx').onclick = hideSettings;
     if (actions.calendar) mountAtmos($('atmos'), actions.calendar, sim);
     if (actions.quality) mountGraphics($('gfx'), actions.quality);
