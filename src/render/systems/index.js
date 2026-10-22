@@ -10,6 +10,7 @@ import placementGhost from './placement-ghost.js';
 import puffs from './puffs.js';
 import roads from './roads.js';
 import servicesOverlay from './services-overlay.js';
+import sky from './sky.js';
 import tileview from './tileview.js';
 import trees from './trees.js';
 import turbines from './turbines.js';
@@ -25,6 +26,7 @@ export const renderSystems = [
   puffs,
   roads,
   servicesOverlay,
+  sky,
   tileview,
   trees,
   turbines,
