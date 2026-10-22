@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createSim } from '../src/sim/sim.js';
 import { getLayout } from '../src/world/layout.js';
-import { BASE_RATE, PARTS_RATE } from '../src/sim/economy.js';
+import { PARTS_RATE } from '../src/sim/economy.js';
 import { CAP_S, offlineWindow } from '../src/sim/offline.js';
 
 const layout = getLayout();
@@ -45,9 +45,9 @@ test('the postcard numbers are the closed-form numbers at the current rate', () 
 
 test('short absences pay straight into the town and leave no postcard', () => {
   const sim = createSim({ layout, now: () => NOW });
-  const c = sim.state.coins, p = sim.state.parts;
+  const c = sim.state.coins, p = sim.state.parts, rate = sim.rate();
   assert.equal(sim.catchUp(at(120)), null);
-  assert.equal(sim.state.coins, c + BASE_RATE * 120);
+  assert.equal(sim.state.coins, c + rate * 120);
   assert.ok(Math.abs(sim.state.parts - (p + PARTS_RATE * 120)) < 1e-9);
 });
 

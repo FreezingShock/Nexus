@@ -91,10 +91,10 @@ test('blocked tiles report their reason; over-long routes are refused', () => {
 
 test('a route that starts on a street and runs out of the town joins it cleanly', () => {
   const roads = starterRoads();
-  const path = [[C + 16, C], [C + 17, C], [C + 18, C], [C + 19, C]];
+  const path = [[C + 6, C], [C + 7, C], [C + 8, C], [C + 9, C]]; // from the east end of the main street
   const plan = planStroke({ path, type: 'two', roads, blockedBy: open, costOf });
   assert.deepEqual(plan.problems, []);
-  assert.deepEqual(plan.joins, [[C + 16, C]], 'the joined street shows as a junction');
+  assert.deepEqual(plan.joins, [[C + 6, C]], 'the joined street shows as a junction');
   assert.equal(plan.tiles.length, 3, 'only the three new tiles are paid for');
 });
 

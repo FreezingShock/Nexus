@@ -17,7 +17,11 @@ Then run `npm run registry`. Saves carry the new fields with no change to `save.
 
 ## Changing saved fields that already shipped
 
-Add a migration to `migrations` in `src/sim/save.js`, bump `SAVE_VERSION`, and add a test for the old shape. `migrations[i]` turns a version `i+1` state into a version `i+2` state. They run in order, one per version, and each sees the output of the one before. Never edit a migration that has shipped. A failing migration never throws to the player: the save is refused with a reason, and the backup is still there.
+Add a migration to `migrations` in `src/sim/save.js`, bump `SAVE_VERSION`, and add a test for the old shape. Current version: 3. `migrations[i]` turns a version `i+1` state into a version `i+2` state. They run in order, one per version, and each sees the output of the one before. Never edit a migration that has shipped. A failing migration never throws to the player: the save is refused with a reason, and the backup is still there.
+
+### Reset steps (version 3)
+
+Version 3 replaces the town with the starter town (`src/world/starter.js`) and keeps only the settings (`night`, `speed`). That step is marked `resets = true`. `unwrap` hands back the town it replaced as `retired`, and `loadGame` writes that town to the backup slot as a version 3 envelope. The town before a reset has the current shape, because a reset is the only change, so Settings can restore it. Restoring that backup gives the old town back and does not run the reset again. A version 2 import file goes through the same reset and becomes the starter town.
 
 ## Envelope and storage
 
@@ -40,6 +44,7 @@ Every storage call is wrapped in try/catch. A private window or blocked storage 
 1. The current save loads if it reads. `source` is `save`.
 2. If it does not read, its text is kept under `nexus.save.unreadable.<time>`, then the backup loads. `source` is `backup`, with a notice.
 3. If neither reads, a fresh town starts with a notice that says where the unreadable text is kept. `source` is `new`.
+4. A save from before a reset step (version 2 today) is replaced by the starter town. The old town goes to the backup slot, the new town is written at once, and it starts its clock at load: it earns nothing for the time the old town was away. `source` is `save`, with a notice.
 
 `unwrap(raw)` validates the envelope, runs migrations, and sanitizes. It never throws.
 

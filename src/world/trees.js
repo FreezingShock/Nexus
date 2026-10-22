@@ -5,7 +5,7 @@
 // generator makes. A tree gives way to anything that takes its tile: zone paint, a road or a placed building.
 // Undo puts the taken records back exactly as they were (takeOnTiles returns them, putTrees restores them).
 // See docs/TREES.md for the rules.
-import { inBounds, tileCenter, tileIndex, TILE, worldToTile } from './grid.js';
+import { inBounds, tileIndex, worldToTile } from './grid.js';
 import { PINE_COLORS, TREE_COLORS } from './palettes.js';
 
 // Broadleaf species, by colour index (TREE_COLORS has five colours).
@@ -19,31 +19,11 @@ export function speciesOf(t) {
   return t.k === 'p' ? 'Pine' : SPECIES[t.col % SPECIES.length];
 }
 
-// Tile indexes a building reaches into. A building owns every tile its footprint touches, so a tree on any of them gives way.
-export function buildingTiles(layout) {
-  const out = new Set();
-  for (const b of layout.buildings) {
-    if (b.x == null || b.z == null) continue;
-    const turned = Math.abs(Math.sin(b.rotY || 0)) > 0.5;
-    const hw = (turned ? b.d : b.w) / 2, hd = (turned ? b.w : b.d) / 2;
-    const [g0x, g0z] = worldToTile(b.x - hw, b.z - hd), [g1x, g1z] = worldToTile(b.x + hw, b.z + hd);
-    for (let gz = g0z; gz <= g1z; gz++) for (let gx = g0x; gx <= g1x; gx++) {
-      if (!inBounds(gx, gz)) continue;
-      const [tx, tz] = tileCenter(gx, gz), h = TILE / 2;
-      if (tx + h > b.x - hw && tx - h < b.x + hw && tz + h > b.z - hd && tz - h < b.z + hd) out.add(tileIndex(gx, gz));
-    }
-  }
-  return out;
-}
-
-// The town's trees as records, in generator order, without any that stand on a building.
-// Roads, paint and lots are not checked here: the trees system does that once the grid is known (see systems/trees.js).
+// The town's trees as records, in generator order. The layout keeps them off the starter town already. Roads, paint and
+// lots are not checked here: the trees system clears those once the grid is known (see systems/trees.js).
 export function seedTrees(layout) {
-  const blocked = buildingTiles(layout);
   const out = [];
   const add = (t, k, col) => {
-    const [gx, gz] = worldToTile(t.x, t.z);
-    if (inBounds(gx, gz) && blocked.has(tileIndex(gx, gz))) return;
     out.push({ id: 't' + out.length, k, x: round(t.x), z: round(t.z), s: round(t.s), rot: round(t.rot), col });
   };
   for (const t of layout.trees) add(t, 'b', t.col);

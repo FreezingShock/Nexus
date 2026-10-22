@@ -78,15 +78,14 @@ test('the sim gives advice for a real town, caches it, and refreshes after a pla
   const layout = getLayout();
   const state = freshState(); state.coins = 1e6;
   const sim = createSim({ state, layout });
+  // the starter village is already built, so the advice starts from it
   const empty = sim.services.advice();
-  assert.equal(empty.level.label, 'Nothing built yet');
+  assert.ok(empty.built > 0, 'the starter village counts as built');
   assert.equal(sim.services.advice(), empty, 'same object while nothing changed');
   let spot = null;
   for (let gz = 2; gz < GRID_N - 2 && !spot; gz++) for (let gx = 2; gx < GRID_N - 2 && !spot; gx++) if (checkLot(sim.grid, gx, gz, 1, 1).ok) spot = [gx, gz];
   sim.dispatch({ type: 'place', model: 'cottage', gx: spot[0], gz: spot[1], fw: 1, fd: 1, rot: 0 });
   const after = sim.services.advice();
   assert.notEqual(after, empty, 'a placement rebuilds the advice');
-  assert.equal(after.built, 1, 'one built tile');
-  assert.ok(after.hurting.some((h) => /1 home has nothing nearby yet/.test(h.text)), 'the lone home is named');
-  assert.deepEqual(after.tips, [], 'one home is below the tip threshold, so no tip yet');
+  assert.equal(after.built, empty.built + 1, 'one more built tile');
 });

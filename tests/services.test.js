@@ -89,12 +89,13 @@ test('tooltips say what a model does, and landmarks show their coins', () => {
 });
 
 test('a placed clinic adds upkeep, covers tiles, and its tiles count as built', () => {
-  const sim = mk();
+  const sim = mk(); // the starter town already has a park (its upkeep is in the baseline)
+  const before = sim.services.summary();
   const at = findLot(sim, 1, 1);
   place(sim, 'clinic', 1, 1, at);
   const s = sim.services.summary();
-  assert.equal(s.services, 1);
-  assert.equal(s.upkeep, SERVICES.clinic.upkeep);
+  assert.equal(s.services, before.services + 1);
+  assert.ok(Math.abs(s.upkeep - before.upkeep - SERVICES.clinic.upkeep) < 1e-9);
   assert.ok(s.built >= 1);
   assert.ok(sim.services.happinessAt(at[0] + 1, at[1]) > MOOD.base, 'the neighbour tile feels the clinic');
   assert.ok(s.average >= MOOD.base && s.average <= 1);
@@ -123,8 +124,9 @@ test('landmarks pay a flat amount that the rate includes', () => {
 
 test('parks place on open ground, cover tiles, and cannot be upgraded', () => {
   const sim = mk();
+  const parks = sim.services.summary().parks;
   const rec = place(sim, 'green', 1, 1, findLot(sim, 1, 1));
-  assert.equal(sim.services.summary().parks, 1);
+  assert.equal(sim.services.summary().parks, parks + 1);
   sim.dispatch({ type: 'upgrade', id: rec.id });
   assert.equal(sim.state.levels[rec.id], undefined, 'a park has no storeys to add');
 });
@@ -134,16 +136,17 @@ test('a placed park survives a save, with its coverage back', () => {
   const at = findLot(sim, 2, 2);
   place(sim, 'pond', 2, 2, at);
   const back = createSim({ state: unwrap(wrap(sim.state, 1)).state, layout });
-  assert.equal(back.services.summary().parks, 1);
+  assert.equal(back.services.summary().parks, sim.services.summary().parks);
   assert.equal(back.services.happinessAt(at[0], at[1]), sim.services.happinessAt(at[0], at[1]));
 });
 
 test('bulldozing a clinic removes its upkeep and coverage', () => {
   const sim = mk();
+  const before = sim.services.summary();
   const rec = place(sim, 'clinic', 1, 1, findLot(sim, 1, 1));
   sim.dispatch({ type: 'bulldoze', id: rec.id });
-  assert.equal(sim.services.summary().services, 0);
-  assert.equal(sim.services.summary().upkeep, 0);
+  assert.equal(sim.services.summary().services, before.services);
+  assert.ok(Math.abs(sim.services.summary().upkeep - before.upkeep) < 1e-9);
 });
 
 test('the overlay writes covered tiles and hides when cleared', () => {

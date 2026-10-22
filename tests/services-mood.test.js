@@ -107,12 +107,13 @@ test('placing a shop next to a home gives that home a gain for its animation', (
   const spot = [[home[0] + 2, home[1]], [home[0] - 2, home[1]], [home[0], home[1] + 2], [home[0], home[1] - 2]]
     .find(([x, z]) => checkLot(sim.grid, x, z, 1, 1).ok);
   assert.ok(spot, 'there is room for a cafe near the cottage');
+  const shops = sim.services.summary().shops; // the starter village has shops of its own
   const cafe = place(sim, 'cafe', 1, 1, spot);
   const fx = sim.services.gainsFor(cafe.id);
   assert.ok(fx, 'a shop placement has gains');
   assert.equal(fx.source.id, cafe.id);
   assert.ok(fx.gains.some(([x, z, g]) => x === home[0] && z === home[1] && g >= MOOD.gainMin), 'the cottage gained');
-  assert.equal(sim.services.summary().shops, 1);
+  assert.equal(sim.services.summary().shops, shops + 1);
 });
 
 test('placing industry lowers nearby homes, and does not start a celebration', () => {

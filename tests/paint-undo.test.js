@@ -6,7 +6,7 @@ import { tileIndex } from '../src/world/grid.js';
 
 const layout = getLayout();
 
-// The first open tile, far from the founding streets.
+// The first open tile, scanning from the corner of the map.
 function openTile(sim) {
   for (let z = 4; z < 60; z++) for (let x = 4; x < 60; x++) if (sim.grid.isOpen(x, z)) return [x, z];
   throw new Error('no open tile in the test town');

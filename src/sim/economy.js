@@ -19,14 +19,3 @@ export const bulkCost = (base, owned, k, r = BALANCE.growth) => (r === 1 ? base 
 
 // A building that is not there (stale id, undone placement) has no level. Callers treat 0 as "nothing here".
 export const levelOf = (state, b) => (b ? state.levels[b.id] ?? b.level : 0);
-
-// Rate is derived from levels, never stored, so it cannot drift from a save.
-export function coinRate(state, layout) {
-  const gone = new Set(state.removed);
-  let r = BASE_RATE;
-  for (const b of layout.buildings) {
-    if (gone.has(b.id)) continue;
-    r += income(b.floors, levelOf(state, b)) - income(b.floors, b.level);
-  }
-  return Math.round(r * 10) / 10;
-}

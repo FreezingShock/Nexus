@@ -1,7 +1,8 @@
-// Player-placed buildings: put any model from the catalog on open ground, at any size it fits.
+// Buildings: put any model from the catalog on open ground, at any size it fits. The starter town is made of the same
+// records (world/starter.js, flagged `starter`), so a starter house is bulldozed, rebuilt and undone like any other.
 // A placed building is a small record in state.placed; its look, floors and income come from the model and its id,
 // so the save stays tiny and a reload rebuilds exactly the same houses.
-// Placed ids look like "b1001" so the generic level and removed fields of the save accept them.
+// Ids look like "b1001" so the generic level and removed fields of the save accept them.
 // Undo: placing (one lot or a dragged row) and bulldozing a building push onto sim.undoStack, next to the road undo.
 // The `undo` command takes back whichever of the two was done last.
 import { areaCost, describe, seedOf } from '../../world/models.js';
@@ -9,10 +10,14 @@ import { LOT_BASE, MAX_PLACED, MAX_ROW, checkLot, lotTiles, planPlacement, probl
 import { buildCost, income, levelOf } from '../economy.js';
 import { tileIndex, GRID_N } from '../../world/grid.js';
 import { footprintIndexes, putTrees, takeOnTiles } from '../../world/trees.js';
+import { STARTER_COUNT, STARTER_FIRST, starterPlaced } from '../../world/starter.js';
 
 const ID = /^b(\d+)$/;
-const FIRST = 1000;
+const FIRST = STARTER_FIRST;
 const UNDO_DEPTH = 40;
+
+// Building cost grows with the player's own placements. The starter town does not count towards the price.
+const playerCount = (state) => state.placed.reduce((n, r) => n + (r.starter ? 0 : 1), 0);
 
 // Stamps every alive placed building into the grid's lot layer, and frees the tiles of removed ones.
 function sync({ sim, state, grid }) {
@@ -35,7 +40,7 @@ function popStep(stack) {
 
 export default {
   id: 'placement',
-  state: () => ({ placed: [], nextPlaced: FIRST }),
+  state: () => ({ placed: starterPlaced(), nextPlaced: FIRST + STARTER_COUNT }),
 
   // Untrusted save in, only well-formed records out. Overlaps and impossible sizes are dropped.
   sanitize(raw) {
@@ -50,7 +55,7 @@ export default {
       const tiles = lotTiles(plan.gx, plan.gz, plan.fw, plan.fd);
       if (tiles.some(([x, z]) => x < 0 || z < 0 || x >= GRID_N || z >= GRID_N || used.has(z * GRID_N + x))) continue;
       tiles.forEach(([x, z]) => used.add(z * GRID_N + x));
-      out.push({ id: r.id, model: r.model, gx: plan.gx, gz: plan.gz, fw: plan.fw, fd: plan.fd, rot: plan.rot, pal: plan.pal, seed: Number.isInteger(r.seed) ? r.seed >>> 0 : seedOf(r.id) });
+      out.push({ id: r.id, model: r.model, gx: plan.gx, gz: plan.gz, fw: plan.fw, fd: plan.fd, rot: plan.rot, pal: plan.pal, seed: Number.isInteger(r.seed) ? r.seed >>> 0 : seedOf(r.id), starter: r.starter === true });
       next = Math.max(next, Number(m[1]) + 1);
     }
     const n = Number.isInteger(raw.nextPlaced) ? raw.nextPlaced : FIRST;
@@ -70,7 +75,8 @@ export default {
     sim.placementHooked = true;
     const base = { building: sim.building, alive: sim.alive };
     // Each placed building costs more than the last: base x growth^placed (see balance.js).
-    sim.placeCost = (def, fw, fd) => buildCost(areaCost(def, fw, fd), state.placed.length);
+    sim.placeCost = (def, fw, fd) => buildCost(areaCost(def, fw, fd), playerCount(state));
+    sim.ownedCount = () => playerCount(state); // what the next price is based on (the placement picker shows it)
     const rec = (id) => state.placed.find((r) => r.id === id) || (sim.goneRecords && sim.goneRecords.get(id));
     // Keyed by the record itself: a Renewal starts ids over at b1001, and a cache by id would show the old building.
     const descs = new WeakMap();
@@ -90,10 +96,10 @@ export default {
       if (state.placed.length >= MAX_PLACED) return emit({ type: 'toast', text: 'The town has all the buildings it can hold for now' });
       const lot = checkLot(grid, plan.gx, plan.gz, plan.fw, plan.fd);
       if (!lot.ok) return emit({ type: 'toast', text: problemText(lot.problem) });
-      const cost = buildCost(areaCost(plan.def, plan.fw, plan.fd), state.placed.length);
+      const cost = buildCost(areaCost(plan.def, plan.fw, plan.fd), playerCount(state));
       if (!charge(cost)) return;
       const id = 'b' + state.nextPlaced++;
-      state.placed.push({ id, model: plan.def.id, gx: plan.gx, gz: plan.gz, fw: plan.fw, fd: plan.fd, rot: plan.rot, pal: plan.pal, seed: seedOf(id) });
+      state.placed.push({ id, model: plan.def.id, gx: plan.gx, gz: plan.gz, fw: plan.fw, fd: plan.fd, rot: plan.rot, pal: plan.pal, seed: seedOf(id), starter: false });
       const tk = takeOnTiles(state.trees, footprintIndexes(plan.gx, plan.gz, plan.fw, plan.fd));
       if (tk.taken.length) state.trees = tk.kept;
       sim.pushUndo({ kind: 'place', ids: [id], paid: cost, trees: tk.taken });
@@ -113,11 +119,11 @@ export default {
         if (plan.error) { skipped++; continue; }
         if (state.placed.length >= MAX_PLACED) { full = true; break; }
         if (!checkLot(grid, plan.gx, plan.gz, plan.fw, plan.fd).ok) { skipped++; continue; }
-        const cost = buildCost(areaCost(plan.def, plan.fw, plan.fd), state.placed.length);
+        const cost = buildCost(areaCost(plan.def, plan.fw, plan.fd), playerCount(state));
         if (state.coins < cost) { short = true; break; }
         const id = 'b' + state.nextPlaced++;
         state.coins -= cost; paid += cost;
-        state.placed.push({ id, model: plan.def.id, gx: plan.gx, gz: plan.gz, fw: plan.fw, fd: plan.fd, rot: plan.rot, pal: plan.pal, seed: seedOf(id) });
+        state.placed.push({ id, model: plan.def.id, gx: plan.gx, gz: plan.gz, fw: plan.fw, fd: plan.fd, rot: plan.rot, pal: plan.pal, seed: seedOf(id), starter: false });
         const tk = takeOnTiles(state.trees, footprintIndexes(plan.gx, plan.gz, plan.fw, plan.fd));
         if (tk.taken.length) { state.trees = tk.kept; trees.push(...tk.taken); }
         ids.push(id); def = def || plan.def;
@@ -158,13 +164,15 @@ export default {
     },
   },
 
-  // Placed buildings pay full income at their level; the founding town's income is already in the base rate.
+  // Player buildings pay their full income at their level. Starter buildings pay only what their levels add above
+  // the first level: the village's first income is already in the base rate, as it always was.
   rate(ctx) {
     sync(ctx);
     let r = 0;
     for (const rec of ctx.state.placed) {
       const d = describe(rec, 1);
-      r += income(d.floors, levelOf(ctx.state, { id: rec.id, level: 1 }));
+      const lv = levelOf(ctx.state, { id: rec.id, level: 1 });
+      r += rec.starter ? income(d.floors, lv) - income(d.floors, 1) : income(d.floors, lv);
     }
     return r;
   },

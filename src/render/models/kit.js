@@ -112,7 +112,7 @@ export function createKit(d) {
     },
     plinth(w = d.w, dd = d.d, x = 0, z = 0) {
       k.box(w + 0.15, PLINTH, dd + 0.15, x, 0, z, C.stone);
-      if (!d.legacy) k.box(w + 0.1, 0.7, dd + 0.1, x, -0.7, z, C.stone, { edge: false }); // foundation: hides the gap on a slope
+      k.box(w + 0.1, 0.7, dd + 0.1, x, -0.7, z, C.stone, { edge: false }); // foundation: hides the gap on a slope
     },
 
     // ---- openings and street level ----

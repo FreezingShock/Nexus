@@ -6,28 +6,23 @@
 //   p  coins paid for the tile (the starter streets paid nothing), used for refunds
 // Tiles connect to every 4-neighbor that is also a road, so shapes (curves, tees, crossings) are derived, never stored.
 import { GRID_N, GRID_HALF, inBounds, tileIndex, tileOf } from './grid.js';
-import { LINES } from './layout.js';
 import { heightAt } from './terrain.js';
+import { starterStreetTiles } from './starter.js';
 
 // Direction index -> grid step. 0 east (+x), 1 south (+z), 2 west (-x), 3 north (-z).
 export const DIRS = [[1, 0], [0, 1], [-1, 0], [0, -1]];
 export const opposite = (d) => (d + 2) & 3;
 export const dirOf = (a, b) => DIRS.findIndex(([dx, dz]) => a[0] + dx === b[0] && a[1] + dz === b[1]);
 
-// Numeric kind written to grid.road for each type (0 is "no road", 255 is reserved for ROAD_STATIC).
+// Numeric kind written to grid.road for each type (0 is "no road").
 export const ROAD_KIND = { two: 1, bike: 2, one: 3, bus: 4, free: 5 };
 export const ROAD_IDS = Object.keys(ROAD_KIND);
 export const MAX_STROKE = 240;
 
-// The streets the town ships with, as editable tiles (a 5 by 5 street grid plus the road east to the workshop).
+// The streets the village ships with, as editable tiles (see world/starter.js). They paid nothing, so they refund nothing.
 export function starterRoads() {
   const roads = {};
-  const put = (gx, gz) => { roads[tileIndex(gx, gz)] = { t: 'two', p: 0 }; };
-  for (const L of LINES) {
-    const g = GRID_HALF + L / 3;
-    for (let k = -8; k <= 8; k++) { put(g, GRID_HALF + k * 1); put(GRID_HALF + k, g); }
-  }
-  for (let gx = GRID_HALF + 9; gx <= GRID_HALF + 16; gx++) put(gx, GRID_HALF);
+  for (const [gx, gz] of starterStreetTiles()) roads[tileIndex(gx, gz)] = { t: 'two', p: 0 };
   return roads;
 }
 
@@ -214,31 +209,9 @@ function tooSteep(gx, gz) {
   return slope[k] === 2;
 }
 
-const blockerCache = new WeakMap();
-// Map tileIndex -> { ids: [building ids overlapping the tile], park: bool } for the town's hand-placed blocks.
-function blockersOf(layout) {
-  let m = blockerCache.get(layout);
-  if (m) return m;
-  m = new Map();
-  const at = (gx, gz) => { const k = tileIndex(gx, gz); let e = m.get(k); if (!e) { e = { ids: [], park: false }; m.set(k, e); } return e; };
-  const tile = (x) => Math.floor(x / 3 + 0.5) + GRID_HALF;
-  for (const b of layout.buildings) {
-    const quarter = Math.abs(Math.sin(b.rotY || 0)) > 0.5;
-    const hw = (quarter ? b.d : b.w) / 2, hd = (quarter ? b.w : b.d) / 2;
-    for (let gx = tile(b.x - hw); gx <= tile(b.x + hw); gx++) for (let gz = tile(b.z - hd); gz <= tile(b.z + hd); gz++) {
-      const cx = (gx - GRID_HALF) * 3, cz = (gz - GRID_HALF) * 3;
-      if (Math.min(b.x + hw, cx + 1.5) - Math.max(b.x - hw, cx - 1.5) > 0.5 && Math.min(b.z + hd, cz + 1.5) - Math.max(b.z - hd, cz - 1.5) > 0.5) at(gx, gz).ids.push(b.id);
-    }
-  }
-  for (const p of layout.pads) if (p.park) {
-    for (let gx = tile(p.x - 4); gx <= tile(p.x + 4); gx++) for (let gz = tile(p.z - 4); gz <= tile(p.z + 4); gz++) at(gx, gz).park = true;
-  }
-  blockerCache.set(layout, m);
-  return m;
-}
-
 // Why a road cannot go on this tile, or null when it can. Roads may cover zone paint (the paint clears) and may
-// replace other roads, but not water, hills, farmland, grown lots, parks or buildings that are still standing.
+// replace other roads, but not water, hills, farmland, or a lot that is built (a starter or player building, or grown).
+// `layout` and `state` are kept for the callers; buildings are on the grid's lot layer, so only the grid is read here.
 export function roadBlock(grid, layout, state, gx, gz) {
   if (!inBounds(gx, gz)) return 'bounds';
   const b = grid.baseAt(gx, gz);
@@ -246,11 +219,6 @@ export function roadBlock(grid, layout, state, gx, gz) {
   if (b === 2 || tooSteep(gx, gz)) return 'steep';
   if (b === 3) return 'farm';
   if (grid.lotAt(gx, gz)) return 'lot';
-  if (b === 4) {
-    const e = blockersOf(layout).get(tileIndex(gx, gz));
-    if (e && e.park) return 'park';
-    if (e && e.ids.some((id) => !state.removed.includes(id))) return 'building';
-  }
   return null;
 }
 

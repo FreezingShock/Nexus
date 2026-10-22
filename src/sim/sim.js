@@ -3,13 +3,12 @@ import { getLayout } from '../world/layout.js';
 import { registryOf } from '../core/registry.js';
 import { createGrid } from '../world/grid.js';
 import { systems as systemDefs } from './systems/index.js';
-import { PARTS_RATE, coinRate, levelOf, upgradeCost } from './economy.js';
+import { BASE_RATE, PARTS_RATE, levelOf, upgradeCost } from './economy.js';
 import { MIN_POSTCARD_S, awaySeconds, offlineWindow } from './offline.js';
 import { freshState } from './state.js';
 
 export function createSim({ state = freshState(), layout = getLayout(), now = () => Date.now() } = {}) {
   const listeners = new Set();
-  const byId = new Map(layout.buildings.map((b) => [b.id, b]));
   let acc = 0;
   let prev = { coins: state.coins, parts: state.parts };
   const registry = registryOf('sim systems', systemDefs);
@@ -34,7 +33,7 @@ export function createSim({ state = freshState(), layout = getLayout(), now = ()
   };
   // Coins: buildings and systems' `rate`, then every system's `mult` (boost, Renewal). Parts: base plus systems' `partsRate`.
   const refresh = () => {
-    let coins = coinRate(state, layout), parts = PARTS_RATE, m = 1;
+    let coins = BASE_RATE, parts = PARTS_RATE, m = 1;
     for (const d of registry.list()) {
       if (d.rate) coins += d.rate(ctx);
       if (d.partsRate) parts += d.partsRate(ctx);
@@ -51,9 +50,9 @@ export function createSim({ state = freshState(), layout = getLayout(), now = ()
   sim.rate = () => rate;
   sim.partsRate = () => partsRate;
   sim.now = now;
-  sim.building = (id) => byId.get(id);
-  sim.alive = (id) => byId.has(id) && !state.removed.includes(id);
-  // Go through sim.building, not the layout map: placed records override it (see systems/placement.js).
+  // Buildings are placed records (the starter town included): the placement system answers for them.
+  sim.building = () => null;
+  sim.alive = () => false;
   sim.level = (id) => levelOf(state, sim.building(id));
   sim.cost = (id) => { const b = sim.building(id); return b ? upgradeCost(b.floors, levelOf(state, b)) : 0; };
   // Interpolated currency for display: between the previous and current tick.

@@ -18,7 +18,7 @@ Traffic is derived from the roads and zoning on the shared grid (see GRID.md and
 - Purposes split the trips: work 0.6 (to jobs), shops 0.25, services 0.1, other homes 0.05.
 - Gravity: a zone's trips to a destination are weighted by `attraction / (travel time + 1)^1.5`, and each origin's trips sum to its total.
 - Trips are one-way. The 1.6 figure counts every one-way trip.
-- Lots from zoning count: residential 4 people per level, commercial 3 shops and 3 jobs per level, industrial 4 jobs per level, civic 1 service per level. The shipped town counts too: houses are homes (2 per floor) and shop-front buildings are shops and jobs.
+- Lots from zoning count: residential 4 people per level, commercial 3 shops and 3 jobs per level, industrial 4 jobs per level, civic 1 service per level. Placed buildings count too, the starter village included (see [STARTER-TOWN.md](STARTER-TOWN.md)): homes are 2 people per floor, shops are a shop and a job each plus a person per floor, workplaces are 2 jobs per floor, and services and landmarks are one service each. Parks have no storeys and count for nothing.
 - Road capacity is lanes per direction times planning capacity per lane (vehicles per game minute). Free-flow minutes per tile differ by tier (see `ROAD_FLOW`).
 - BPR: `t = t0 (1 + 0.15 (v/c)^4)`. Road colours: free below 0.6 load, busy below 0.9, jammed above.
 - Commute efficiency is `1 - (congested / free-flow commute time - 1)`, clamped to 0.6 to 1.0. It multiplies zone income: the penalty is `(eff - 1) x zone income`, so it can only take income away.
