@@ -18,7 +18,7 @@ export function mergeBuildings(parent, items, night) {
 }
 
 // A click target for the whole building (tower and roof included), a box around its parts.
-function proxyFor(parts, world) {
+export function proxyFor(parts, world) {
   const bb = new THREE.Box3(), tmp = new THREE.Box3();
   for (const p of parts) { p.geo.computeBoundingBox(); tmp.copy(p.geo.boundingBox).applyMatrix4(p.local); bb.union(tmp); }
   const size = bb.getSize(new THREE.Vector3()), c = bb.getCenter(new THREE.Vector3());
@@ -26,6 +26,26 @@ function proxyFor(parts, world) {
   proxy.matrixAutoUpdate = false;
   proxy.matrix.copy(world); proxy.matrixWorld.copy(world);
   return proxy;
+}
+
+// The selection outline: a back-face copy of every part, grown a little, so the silhouette follows the camera.
+// Shared with grown lots (render/systems/lots.js), which draw their own outline in their own group.
+const HULL_GROW = 0.14;
+export function addHull(group, parts) {
+  const sz = new THREE.Vector3(), c = new THREE.Vector3(), t = HULL_GROW;
+  for (const p of parts) {
+    p.geo.computeBoundingBox();
+    const bb = p.geo.boundingBox; bb.getSize(sz); bb.getCenter(c);
+    const sx = (sz.x + 2 * t) / Math.max(sz.x, 0.05), sy = (sz.y + 2 * t) / Math.max(sz.y, 0.05), sz2 = (sz.z + 2 * t) / Math.max(sz.z, 0.05);
+    const adj = new THREE.Matrix4().compose(new THREE.Vector3(c.x * (1 - sx), c.y * (1 - sy), c.z * (1 - sz2)), new THREE.Quaternion(), new THREE.Vector3(sx, sy, sz2));
+    const h = new THREE.Mesh(p.geo, HULL);
+    h.matrixAutoUpdate = false;
+    h.matrix.multiplyMatrices(p.local, adj);
+    group.add(h);
+  }
+}
+export function placeHull(group, b, sx, sy, sz) {
+  group.position.set(b.x, b.y ?? 0.1, b.z); group.rotation.set(0, b.rotY, 0); group.scale.set(sx, sy, sz);
 }
 
 // hooks.burst(x, z, radius, count): a dust puff when a building levels up (the puffs system).
@@ -61,26 +81,14 @@ export function createTown(root, hooks = {}) {
   }
 
   function clearHull() { selGroup.clear(); } // hull meshes share the parts' geometry: nothing to dispose
-  // Back-face copy of every part, grown a little: the silhouette outline follows the camera.
   function setHull(id) {
     clearHull(); selected = id;
     if (!id || !entries.has(id)) { selected = null; return; }
-    const e = entries.get(id), sz = new THREE.Vector3(), c = new THREE.Vector3(), t = 0.14;
+    const e = entries.get(id);
     placeSel(e.b, 1, 1, 1);
-    for (const p of e.parts) {
-      p.geo.computeBoundingBox();
-      const bb = p.geo.boundingBox; bb.getSize(sz); bb.getCenter(c);
-      const sx = (sz.x + 2 * t) / Math.max(sz.x, 0.05), sy = (sz.y + 2 * t) / Math.max(sz.y, 0.05), sz2 = (sz.z + 2 * t) / Math.max(sz.z, 0.05);
-      const adj = new THREE.Matrix4().compose(new THREE.Vector3(c.x * (1 - sx), c.y * (1 - sy), c.z * (1 - sz2)), new THREE.Quaternion(), new THREE.Vector3(sx, sy, sz2));
-      const h = new THREE.Mesh(p.geo, HULL);
-      h.matrixAutoUpdate = false;
-      h.matrix.multiplyMatrices(p.local, adj);
-      selGroup.add(h);
-    }
+    addHull(selGroup, e.parts);
   }
-  function placeSel(b, sx, sy, sz) {
-    selGroup.position.set(b.x, b.y ?? 0.1, b.z); selGroup.rotation.set(0, b.rotY, 0); selGroup.scale.set(sx, sy, sz);
-  }
+  function placeSel(b, sx, sy, sz) { placeHull(selGroup, b, sx, sy, sz); }
 
   function endPop() {
     if (!popping) return;

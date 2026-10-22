@@ -68,6 +68,14 @@ export function demandOf(s) {
   ];
 }
 
+// Sets the level of the grown lot on tile i (its state.lots entry). False when no building grew there.
+export function setLotLevel(lots, i, level) {
+  const l = lots.find(([j]) => j === i);
+  if (!l) return false;
+  l[1] = Math.min(MAX_LOT_LEVEL, Math.max(1, level | 0));
+  return true;
+}
+
 export function lotIncome(lots, zoneAt) {
   let r = 0;
   for (const [i, level] of lots) { const d = ZONE_DEFS[zoneAt(i)]; if (d) r += d.income * level; }

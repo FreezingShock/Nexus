@@ -8,7 +8,8 @@
 import { areaCost, describe, seedOf } from '../../world/models.js';
 import { LOT_BASE, MAX_PLACED, MAX_ROW, checkLot, lotTiles, planPlacement, problemText } from '../../world/placement.js';
 import { buildCost, income, levelOf } from '../economy.js';
-import { tileIndex, GRID_N } from '../../world/grid.js';
+import { tileIndex, tileOf, GRID_N } from '../../world/grid.js';
+import { lotTileOf } from '../../world/lots.js';
 import { footprintIndexes, putTrees, takeOnTiles } from '../../world/trees.js';
 import { STARTER_COUNT, STARTER_FIRST, starterPlaced } from '../../world/starter.js';
 
@@ -156,6 +157,9 @@ export default {
     bulldoze(ctx, { id, group }) {
       const { sim, state, emit, note, refresh } = ctx;
       if (!sim.alive(id)) return;
+      // A grown building is not a placed record: its tile's zone goes, which takes the building with it. Undo brings both back.
+      const tile = lotTileOf(id);
+      if (tile !== null) return sim.dispatch({ type: 'clearZone', a: tileOf(tile), b: tileOf(tile) });
       const rec = state.placed.find((r) => r.id === id) || null;
       state.removed.push(id);
       sim.pushUndo({ kind: 'doze', id, rec, group: Number.isInteger(group) ? group : null });
