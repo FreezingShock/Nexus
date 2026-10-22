@@ -1,15 +1,16 @@
 // A plane that hugs the terrain at grid resolution, shared by the tile overlays.
 import * as THREE from '../../vendor/three/three.module.min.js';
 import { GRID_N, TILE, GRID_HALF } from '../world/grid.js';
-import { heightAt } from '../world/terrain.js';
+import { heightAt, terrainRev } from '../world/terrain.js';
 
 const V = GRID_N + 1;
 const EDGE = -GRID_HALF * TILE - TILE / 2; // world coordinate of the grid's low corner
-let corners = null;
+let corners = null, cornersRev = -1;
 
 // Terrain height at each tile corner, (GRID_N + 1) squared, row = z index.
 export function cornerHeights() {
-  if (!corners) {
+  if (!corners || cornersRev !== terrainRev()) {
+    cornersRev = terrainRev();
     corners = new Float32Array(V * V);
     for (let j = 0; j < V; j++) for (let i = 0; i < V; i++) corners[j * V + i] = Math.max(0, heightAt(EDGE + i * TILE, EDGE + j * TILE));
   }

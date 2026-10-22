@@ -6,7 +6,7 @@
 //   p  coins paid for the tile (the starter streets paid nothing), used for refunds
 // Tiles connect to every 4-neighbor that is also a road, so shapes (curves, tees, crossings) are derived, never stored.
 import { GRID_N, GRID_HALF, inBounds, tileIndex, tileOf } from './grid.js';
-import { heightAt } from './terrain.js';
+import { heightAt, terrainRev, terrainSeed } from './terrain.js';
 import { starterStreetTiles } from './starter.js';
 
 // Direction index -> grid step. 0 east (+x), 1 south (+z), 2 west (-x), 3 north (-z).
@@ -248,14 +248,16 @@ export const tileOfKey = (k) => tileOf(Number(k));
 
 // ---- what may hold a road ----
 // Roads follow the ground, but a tile that rises or tilts too much still reads as too steep for one.
-const slope = new Int8Array(GRID_N * GRID_N); // 0 unknown, 1 flat, 2 steep
+let slope = new Int8Array(GRID_N * GRID_N), slopeRev = -1; // 0 unknown, 1 flat, 2 steep; dropped when the land changes
 function tooSteep(gx, gz) {
+  if (slopeRev !== terrainRev()) { slope = new Int8Array(GRID_N * GRID_N); slopeRev = terrainRev(); }
   const k = tileIndex(gx, gz);
   if (!slope[k]) {
     const cx = (gx - GRID_HALF) * 3, cz = (gz - GRID_HALF) * 3;
     let hi = -Infinity, lo = Infinity;
     for (const [dx, dz] of [[0, 0], [-1.5, -1.5], [1.5, -1.5], [-1.5, 1.5], [1.5, 1.5]]) { const h = Math.max(0, heightAt(cx + dx, cz + dz)); hi = Math.max(hi, h); lo = Math.min(lo, h); }
-    slope[k] = hi > 0.9 || hi - lo > 0.5 ? 2 : 1;
+    // The same slope rule as zones and farms. Old land also refused any road higher than 0.9; seeded land has plateaus.
+    slope[k] = (terrainSeed() === 0 && hi > 0.9) || hi - lo > 0.5 ? 2 : 1;
   }
   return slope[k] === 2;
 }

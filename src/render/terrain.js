@@ -22,11 +22,19 @@ export function buildTerrain(parent) {
   const q = g2.attributes.position, col = new Float32Array(q.count * 3);
   const sage = new THREE.Color(0x9DB874), olive = new THREE.Color(0x748A55), bed = new THREE.Color(0x6F7F5C), lawn = new THREE.Color(0xA9C47F);
   const meadow = new THREE.Color(0xB7CB82), deep = new THREE.Color(0x83A367), flower = new THREE.Color(0xD9C07A), c = new THREE.Color();
+  const stone = new THREE.Color(0xA89C86), snow = new THREE.Color(0xEFE8D8);
   for (let i = 0; i < q.count; i += 3) {
     const cy = (q.getY(i) + q.getY(i + 1) + q.getY(i + 2)) / 3, cx = (q.getX(i) + q.getX(i + 1) + q.getX(i + 2)) / 3, cz = (q.getZ(i) + q.getZ(i + 1) + q.getZ(i + 2)) / 3;
     const m = fbm(cx * 0.05 + 11, cz * 0.05 + 4), hv = hash(i, 5);
+    const ax = q.getX(i + 1) - q.getX(i), ay = q.getY(i + 1) - q.getY(i), az = q.getZ(i + 1) - q.getZ(i);
+    const bx = q.getX(i + 2) - q.getX(i), by = q.getY(i + 2) - q.getY(i), bz = q.getZ(i + 2) - q.getZ(i);
+    const nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx; // face normal
+    const up = Math.abs(ny) / (Math.hypot(nx, ny, nz) || 1);                      // 1 flat, 0 a wall
     c.copy(sage).lerp(m > 0.5 ? meadow : deep, Math.min(1, Math.abs(m - 0.5) * 2.4));
     c.lerp(olive, smooth(0.8, 5, cy));
+    // Cliffs and the high mountains show warm stone; the very top is pale, like an old painting of snow.
+    c.lerp(stone, smooth(0.82, 0.6, up) * 0.85 + smooth(14, 26, cy) * 0.5);
+    c.lerp(snow, smooth(30, 40, cy) * 0.8);
     if (cy < -0.2) c.copy(bed);
     c.multiplyScalar(0.94 + hv * 0.12);
     if (hv > 0.985 && cy > -0.2) c.lerp(flower, 0.5);

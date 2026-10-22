@@ -17,7 +17,7 @@ Then run `npm run registry`. Saves carry the new fields with no change to `save.
 
 ## Changing saved fields that already shipped
 
-Add a migration to `migrations` in `src/sim/save.js`, bump `SAVE_VERSION`, and add a test for the old shape. Current version: 6. `migrations[i]` turns a version `i+1` state into a version `i+2` state. They run in order, one per version, and each sees the output of the one before. Never edit a migration that has shipped. A failing migration never throws to the player: the save is refused with a reason, and the backup is still there.
+Add a migration to `migrations` in `src/sim/save.js`, bump `SAVE_VERSION`, and add a test for the old shape. Current version: 6. (`terrainSeed` is read as 0 when missing, so it needed no version: see [TERRAIN.md](TERRAIN.md).) `migrations[i]` turns a version `i+1` state into a version `i+2` state. They run in order, one per version, and each sees the output of the one before. Never edit a migration that has shipped. A failing migration never throws to the player: the save is refused with a reason, and the backup is still there.
 
 ### Milestone stages (version 6)
 

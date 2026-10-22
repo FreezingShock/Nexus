@@ -4,13 +4,14 @@
 // (x or z = 0, +-12, +-24) run through tile centers. Tile (gx, gz) is centered at ((gx - 48) * 3, (gz - 48) * 3).
 // The grid grew from 64 to 96 tiles a side (version 5 of the save, see save.js), with 16 more tiles on every side,
 // so the middle of the map is still the origin. See docs/GRID.md for the ownership rules.
-import { heightAt, riverX } from './terrain.js';
+import { heightAt, riverX, terrainSeed } from './terrain.js';
 
 export const GRID_N = 96;
 export const TILE = 3;
 export const GRID_HALF = GRID_N / 2;
 
 // What the ground is. Fixed by the world, never changes during play. The starter town is plain LAND like the rest.
+export const MOUNTAIN_TOP = 26; // seeded land: ground higher than this is never built on, however level its top
 export const BASE = { LAND: 0, WATER: 1, STEEP: 2, FARM: 3 };
 
 export const inBounds = (gx, gz) => Number.isInteger(gx) && Number.isInteger(gz) && gx >= 0 && gz >= 0 && gx < GRID_N && gz < GRID_N;
@@ -43,21 +44,28 @@ export function createGrid(layout) {
   const district = new Uint8Array(GRID_N * GRID_N); // owned by districts (0 none, else a district slot 1 to 15)
   const tlo = new Float32Array(GRID_N * GRID_N), thi = new Float32Array(GRID_N * GRID_N); // lowest and highest ground of each tile
 
-  for (let gz = 0; gz < GRID_N; gz++) for (let gx = 0; gx < GRID_N; gx++) {
-    const [cx, cz] = tileCenter(gx, gz);
-    let lo = Infinity, hi = -Infinity;
-    for (const [dx, dz] of [[0, 0], [-1.5, -1.5], [1.5, -1.5], [-1.5, 1.5], [1.5, 1.5]]) {
-      const h = heightAt(cx + dx, cz + dz);
-      if (h < lo) lo = h; if (h > hi) hi = h;
+  // What the ground is, from the terrain: water, or too steep. Read again by regen() when the land changes (Renewal).
+  // Buildable ground is decided by slope: no tile may rise or fall more than 0.9 across its corners and middle. The old
+  // land (seed 0) also called everything above 2.2 steep; seeded land has plateaus, so only the mountain tops are barred.
+  const regen = () => {
+    const legacy = terrainSeed() === 0;
+    for (let gz = 0; gz < GRID_N; gz++) for (let gx = 0; gx < GRID_N; gx++) {
+      const [cx, cz] = tileCenter(gx, gz);
+      let lo = Infinity, hi = -Infinity;
+      for (const [dx, dz] of [[0, 0], [-1.5, -1.5], [1.5, -1.5], [-1.5, 1.5], [1.5, 1.5]]) {
+        const h = heightAt(cx + dx, cz + dz);
+        if (h < lo) lo = h; if (h > hi) hi = h;
+      }
+      let k = BASE.LAND;
+      tlo[tileIndex(gx, gz)] = lo; thi[tileIndex(gx, gz)] = hi;
+      if (lo < -0.15 || Math.abs(cx - riverX(cz)) < 5) k = BASE.WATER;
+      else if (hi - lo > 0.9 || hi > (legacy ? 2.2 : MOUNTAIN_TOP)) k = BASE.STEEP;
+      base[tileIndex(gx, gz)] = k;
     }
-    let k = BASE.LAND;
-    tlo[tileIndex(gx, gz)] = lo; thi[tileIndex(gx, gz)] = hi;
-    if (lo < -0.15 || Math.abs(cx - riverX(cz)) < 5) k = BASE.WATER;
-    else if (hi > 2.2 || hi - lo > 0.9) k = BASE.STEEP;
-    base[tileIndex(gx, gz)] = k;
-  }
+  };
+  regen();
   const grid = {
-    N: GRID_N, TILE, base, road, zone, lot, district, tlo, thi,
+    N: GRID_N, TILE, regen, base, road, zone, lot, district, tlo, thi,
     inBounds, tileIndex, tileCenter, worldToTile, snapToTile, rectTiles,
     baseAt: (gx, gz) => (inBounds(gx, gz) ? base[tileIndex(gx, gz)] : BASE.STEEP),
     roadAt: (gx, gz) => (inBounds(gx, gz) ? road[tileIndex(gx, gz)] : 0),
