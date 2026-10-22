@@ -12,7 +12,7 @@ import { getLayout } from '../src/world/layout.js';
 import { offlineWindow } from '../src/sim/offline.js';
 
 const layout = getLayout();
-const normal = { ...DEFAULTS };          // a 12-minute day, 4-day seasons
+const normal = { ...DEFAULTS };          // a 2-minute day, 3-day months
 const DAY = DAY_LENGTHS.normal, SEASON = seasonLengthS(DEFAULTS); // the default season, whatever it is
 
 test('the clock starts at eight in the morning and wraps every in-game day', () => {
@@ -48,8 +48,8 @@ test('seasons and years follow the season length, and a season is four to a year
   assert.equal(seasonIndexOf(4 * SEASON, SEASON), 0, 'winter is followed by spring');
   assert.equal(yearOf(4 * SEASON - 1, SEASON), 0);
   assert.equal(yearOf(4 * SEASON, SEASON), 1);
-  assert.equal(seasonLengthS({ ...normal, seasonLength: 'short' }), DAY * 2);
-  assert.equal(seasonLengthS({ ...normal, seasonLength: 'long' }), DAY * 8);
+  assert.equal(seasonLengthS({ ...normal, seasonLength: 'short' }), DAY * 6);
+  assert.equal(seasonLengthS({ ...normal, seasonLength: 'long' }), DAY * 12);
   assert.equal(dayLengthS({ ...normal, dayLength: 'quick' }), DAY_LENGTHS.quick);
 });
 
@@ -170,6 +170,7 @@ test('a snowfall in a new winter raises the first-snow event once', () => {
   sim.subscribe((e) => events.push(e));
   const snowSeed = () => { let c = 1; while (pickWeather(unitOf(nextSeed(c)), 3) !== 'snow') c++; return c; };
   const winterStart = 3 * SEASON;
+  sim.state.days = winterStart / DAY + 0.1; // December
   sim.state.clockS = winterStart;
   sim.state.weatherSeed = snowSeed();
   sim.state.weatherUntil = winterStart;

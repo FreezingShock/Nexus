@@ -12,7 +12,7 @@ import { isSeed } from '../world/terrain.js';
 export const SAVE_KEY = 'nexus.save';
 export const BACKUP_KEY = 'nexus.save.backup';
 export const UNREADABLE_PREFIX = 'nexus.save.unreadable.';
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 export const MAX_FILE_CHARS = 5 * 1024 * 1024; // a town is a few hundred kilobytes; anything bigger is not one
 export const BACKUP_EVERY_MS = 10 * 60 * 1000; // the backup slot is refreshed at most this often while playing
 
@@ -62,6 +62,9 @@ const addAchievements = (s) => {
 // v7: population (state.pop). An older town has no head-count yet: -1 lets the population system start it at a share of
 // the capacity of its homes.
 const addPopulation = (s) => ({ ...s, pop: -1, popHist: [] });
+// v8: the calendar counts days (state.days). An older town's clock turns into days at the old twelve-minute day, so it keeps
+// roughly the number of days it had seen; the date follows from that.
+const addCalendarDays = (s) => ({ ...s, days: Number.isFinite(s.clockS) && s.clockS > 0 ? s.clockS / 720 : 0 });
 export const migrations = [
   (s) => ({ ...s, trees: seedTrees(getLayout()) }),
   resetToStarter,
@@ -69,6 +72,7 @@ export const migrations = [
   regrid,
   addAchievements,
   addPopulation,
+  addCalendarDays,
 ];
 
 export function wrap(state, now) {
@@ -93,7 +97,9 @@ export function sanitize(s, defs = systems) {
     removed: Array.isArray(s.removed) ? s.removed.filter((x) => typeof x === 'string' && /^b\d+$/.test(x)).slice(0, 500) : [],
     terrainSeed: isSeed(s.terrainSeed) ? s.terrainSeed : 0, // a save without one is an old town: it keeps the old land
     speed: [1, 2, 3].includes(s.speed) ? s.speed : 1, paused: false, // night is not saved: it follows the clock (systems/calendar.js)
-    offline: off ? { coins: num(off.coins, 0), parts: num(off.parts, 0), awayS: num(off.awayS, 0), fullS: num(off.fullS, 0), easeS: num(off.easeS, 0) } : null,
+    offline: off ? { coins: num(off.coins, 0), parts: num(off.parts, 0), awayS: num(off.awayS, 0), fullS: num(off.fullS, 0), easeS: num(off.easeS, 0),
+      days: Math.floor(num(off.days, 0)), markets: Math.floor(num(off.markets, 0)),
+      festivals: Array.isArray(off.festivals) ? off.festivals.filter((f) => isObj(f) && typeof f.name === 'string').slice(0, 8).map((f) => ({ id: String(f.id || '').slice(0, 20), name: f.name.slice(0, 40), count: Math.max(1, Math.floor(num(f.count, 1))) })) : [] } : null,
     log: Array.isArray(s.log) ? s.log.filter((e) => e && typeof e.k === 'string').slice(-8).map((e) => ({ k: e.k.slice(0, 8), n: String(e.n ?? '').slice(0, 40) })) : [],
   };
   for (const d of defs) {

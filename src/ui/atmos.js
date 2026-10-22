@@ -4,8 +4,8 @@
 import { clockText } from '../core/calendar.js';
 
 const SEG_ROWS = [
-  { key: 'dayLength', label: 'Day length', text: { quick: '5 min', normal: '12 min', slow: '24 min' } },
-  { key: 'seasonLength', label: 'Season length', text: { short: 'Short', normal: 'Normal', long: 'Long' } },
+  { key: 'dayLength', label: 'Day length', text: { quick: '1 min', normal: '2 min', slow: '4 min' } },
+  { key: 'seasonLength', label: 'Month length', text: { short: '2 days', normal: '3 days', long: '4 days' } },
 ];
 // Picture tiles. Seasons get a colour and a pattern (drawn in css/settings.css by data-value); the rest get a small icon.
 const SEASON_TILES = { auto: 'Follow the clock', spring: 'Spring', summer: 'Summer', autumn: 'Autumn', winter: 'Winter' };

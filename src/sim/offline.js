@@ -5,6 +5,7 @@ export const DECAY_S = 4 * 3600;
 export const FLOOR = 0.1;
 export const LANTERN_BONUS_S = 2 * 3600; // per Lantern level, max 3
 export const MIN_POSTCARD_S = 300;
+export const SKIP_INCOME = 0.5; // skipping calendar days pays this share of what the same time away would
 
 export function awaySeconds(savedAt, now) {
   const d = (now - savedAt) / 1000;

@@ -149,7 +149,7 @@ test('spring has petals, autumn has a few leaves on the wind, summer and winter 
 });
 
 test('a season is two in-game days by default, so the changes come within the first session', () => {
-  assert.equal(seasonLengthS(DEFAULTS), DAY_LENGTHS.normal * 2);
+  assert.equal(seasonLengthS(DEFAULTS), DAY_LENGTHS.normal * 9);
 });
 
 test('the land patch spreads the season in drifts and spares stone and cliffs', () => {

@@ -19,6 +19,14 @@ function note(log, night) {
   return night ? m + ' The lamps look lovely tonight.' : m;
 }
 
+// A line about the days that went by: how many, and the festivals the town kept without you.
+function awayCalendar(o) {
+  if (!o.days) return '';
+  const fests = (o.festivals || []).map((f) => f.name + (f.count > 1 ? ' (' + f.count + ' times)' : ''));
+  const days = o.days + (o.days > 1 ? ' days' : ' day') + ' went by.';
+  return ' ' + days + (fests.length ? ' We kept ' + fests.join(', ') + ' for you.' : '');
+}
+
 function caption(night) {
   const h = new Date().getHours();
   if (night || h >= 21 || h < 5) return 'Our town tonight';
@@ -52,7 +60,7 @@ export function createPostcard({ sim, send, scene }) {
     $('cap-ease').textContent = ease > 60 ? fmtDuration(ease) + ' easing off' : '';
     $('gain-coins').textContent = '+' + fmt(o.coins);
     $('gain-parts').textContent = '+' + fmt(o.parts);
-    $('pcmsg').textContent = note(sim.state.log, sim.state.night);
+    $('pcmsg').textContent = note(sim.state.log, sim.state.night) + awayCalendar(o);
     $('photocap').textContent = caption(sim.state.night);
     mail.dataset.state = 'closed';
     modal.hidden = false; open = true;

@@ -1,0 +1,38 @@
+/* The date plaque (bottom-right), its hover card and the calendar panel. Cream paper, terracotta action, ink outline. */
+.datechip{position:absolute;right:max(16px,env(safe-area-inset-right,0px));bottom:max(18px,env(safe-area-inset-bottom,0px));z-index:6;display:flex;align-items:center;gap:10px;padding:8px 16px 8px 9px;cursor:pointer;text-align:left;transform:rotate(.8deg);transition:transform .15s ease}
+.datechip:hover,.datechip[aria-expanded="true"]{transform:rotate(0) translateY(-2px)}
+.dbadge{flex:0 0 auto;width:40px;height:40px;border-radius:50%;border:2.5px solid var(--ink);display:grid;place-items:center;background:var(--sage);box-shadow:0 2px 0 var(--ink)}
+.datechip[data-season="spring"] .dbadge{background:#C9DDA0}
+.datechip[data-season="summer"] .dbadge{background:var(--mustard)}
+.datechip[data-season="autumn"] .dbadge{background:#D9895E}
+.datechip[data-season="winter"] .dbadge{background:var(--sky-soft)}
+.dtxt b{display:block;font-size:22px;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dtxt small{display:block;margin-top:3px;font-size:12.5px;font-weight:700;color:var(--ink-soft);white-space:nowrap}
+.dflag{flex:0 0 auto;width:12px;height:12px;border-radius:50%;border:2px solid var(--ink);background:var(--action);box-shadow:0 1.5px 0 var(--ink)}
+.dflag[data-kind="market"]{background:var(--mustard)}
+.dflag[hidden]{display:none}
+
+.datetip{position:absolute;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(max(18px,env(safe-area-inset-bottom,0px)) + 66px);z-index:8;display:flex;flex-direction:column;gap:3px;padding:10px 14px;font-size:13px;font-weight:700;color:var(--ink-soft);pointer-events:none;max-width:260px}
+.datetip b{font-size:16px;color:var(--ink)}
+.datetip .tnow{color:var(--action)}
+
+.datepanel{position:absolute;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(max(18px,env(safe-area-inset-bottom,0px)) + 70px);z-index:9;width:340px;max-width:calc(100vw - 32px);max-height:calc(100vh - var(--hud-bottom,108px) - 120px);overflow:auto;overscroll-behavior:contain;padding:0;box-sizing:border-box}
+.datepanel .band{padding:14px 52px 12px 16px;background:var(--paper-3);background-image:var(--grain);border-bottom:2.5px solid var(--ink);border-radius:17px 21px 0 0}
+.datepanel .band h2{font-size:21px}
+.datepanel .pad{padding:12px 16px 14px;display:flex;flex-direction:column;gap:10px}
+.datepanel .gsec h3{margin:0 0 6px;font-size:15px}
+.dquick{display:flex;flex-direction:column;gap:6px}
+.dquick .btn{display:flex;justify-content:space-between;align-items:center;gap:10px;text-align:left}
+.dquick .btn small{font-size:12px;opacity:.75;white-space:nowrap}
+.dpick{display:grid;grid-template-columns:62px 1fr 1fr;gap:8px;margin-bottom:8px}
+.dpick label{display:flex;flex-direction:column;gap:3px;font-size:12px;font-weight:700;color:var(--ink-soft)}
+.dpick select{font:inherit;font-size:14px;font-weight:700;color:var(--ink);background:var(--paper);border:2px solid var(--ink);border-radius:10px;padding:5px 6px}
+#dpgo{width:100%}
+#dpgo:disabled{opacity:.5;cursor:not-allowed}
+#dpwhy:empty{display:none}
+#dpnext{list-style:none;margin:0;padding:0}
+#dpnext li{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:5px 0;border-bottom:1.5px dashed rgba(43,38,32,.2);font-size:13.5px;font-weight:700}
+#dpnext li:last-child{border-bottom:0}
+#dpnext small{font-size:12px;color:var(--ink-soft);text-align:right}
+.dnote{margin:0;font-size:12.5px}
+@media (max-width:760px){.datechip{bottom:max(76px,env(safe-area-inset-bottom,0px))}.datepanel{bottom:140px}}
