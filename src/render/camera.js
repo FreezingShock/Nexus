@@ -14,11 +14,15 @@ const NEAR = -400;
 export function createCamera() {
   const iso = new THREE.OrthographicCamera(-1, 1, 1, -1, NEAR, 900);
   const fly = new THREE.PerspectiveCamera(50, 1, 0.25, 900);
+  // The photo lens: the orbit view seen through a perspective camera (photo mode only). It frames the same patch of town
+  // as the orthographic view at the same zoom, then looks at it from the same angle.
+  const pers = new THREE.PerspectiveCamera(38, 1, 0.5, 1500);
   // `view` is the orbit state. Other systems read its tx, tz, half and zoom. In free-fly, tx and tz follow the free camera.
   const view = {
     tx: 0, tz: 0, ttx: 0, ttz: 0,
     az: ISO.az, taz: ISO.az, elev: ISO.elev, telev: ISO.elev,
     zoom: 1, tzoom: 1, dist: 150, half: 46,
+    lens: 'ortho', fov: 38, lo: ISO.elevMin, // lens: 'ortho' or 'persp'; lo is the lowest tilt (photo mode lowers it to street level)
   };
   const free = { pos: { x: 0, y: 0, z: 0 }, vel: { x: 0, y: 0, z: 0 }, yaw: ISO.az, pitch: 0 };
   const keys = new Set();
@@ -28,6 +32,13 @@ export function createCamera() {
     const p = orbitPose(view.tx, view.tz, view.az, view.elev, view.dist);
     iso.position.set(p.x, p.y, p.z);
     iso.lookAt(view.tx, 0, view.tz);
+    if (view.lens === 'persp') placePers();
+  };
+  const placePers = () => {
+    const d = (view.half / view.zoom) / Math.tan(view.fov * Math.PI / 360);
+    const p = orbitPose(view.tx, view.tz, view.az, view.elev, d);
+    pers.position.set(p.x, p.y, p.z);
+    pers.lookAt(view.tx, 0, view.tz);
   };
   const placeFree = () => {
     fly.position.set(free.pos.x, free.pos.y, free.pos.z);
@@ -39,11 +50,12 @@ export function createCamera() {
     iso.left = -view.half * a; iso.right = view.half * a; iso.top = view.half; iso.bottom = -view.half;
     iso.zoom = view.zoom; iso.updateProjectionMatrix();
     fly.aspect = a; fly.updateProjectionMatrix();
+    pers.aspect = a; pers.fov = view.fov; pers.updateProjectionMatrix();
   };
 
   const api = {
-    get cam() { return mode === 'fly' ? fly : iso; },
-    iso, fly, view, free,
+    get cam() { return mode === 'fly' ? fly : view.lens === 'persp' ? pers : iso; },
+    iso, fly, pers, view, free,
     get mode() { return mode; },
     get keys() { return keys; },
     // Keeps the orbit camera placed even in free-fly, so the postcard snapshot still has the town framing.
@@ -57,7 +69,7 @@ export function createCamera() {
       if (mode === 'iso') {
         const spin = orbitSpin(it, step);
         view.taz += spin.dAz;
-        view.telev = clamp(view.telev + spin.dElev, ISO.elevMin, ISO.elevMax);
+        view.telev = clamp(view.telev + spin.dElev, view.lo, ISO.elevMax);
         const m = orbitMove(it, view.az, (2 * view.half) / view.zoom, step);
         view.ttx = clamp(view.ttx + m.dx, -TOWN_LIMIT, TOWN_LIMIT);
         view.ttz = clamp(view.ttz + m.dz, -TOWN_LIMIT, TOWN_LIMIT);
@@ -68,6 +80,7 @@ export function createCamera() {
         else { view.tx = view.ttx; view.tz = view.ttz; }
         place();
         iso.zoom = view.zoom; iso.updateProjectionMatrix();
+        if (view.lens === 'persp' && pers.fov !== view.fov) { pers.fov = view.fov; pers.updateProjectionMatrix(); }
       } else {
         free.vel = flyVelocity(free.vel, it, free.yaw, free.pitch, 9, step);
         free.pos = flyMove(free.pos, free.vel, step);
@@ -136,7 +149,7 @@ export function createCamera() {
       }
       if (shift) {
         view.taz -= dx * 0.008;
-        view.telev = clamp(view.telev + dy * 0.004, ISO.elevMin, ISO.elevMax);
+        view.telev = clamp(view.telev + dy * 0.004, view.lo, ISO.elevMax);
         return;
       }
       api.pan(dx, dy, pxHeight);
@@ -160,6 +173,18 @@ export function createCamera() {
     // Steps the view a quarter turn (kept for the design kit). Held Q and E now rotate continuously.
     rotate(d) { view.taz += d * Math.PI / 2; },
     focus(x, z) { view.ttx = x; view.ttz = z; },
+    // Photo lens: 'ortho' (the game's view) or 'persp' (a perspective camera with a field of view in degrees).
+    setLens(lens, fov = view.fov) {
+      view.lens = lens === 'persp' ? 'persp' : 'ortho';
+      view.fov = clamp(fov, 20, 80);
+      pers.fov = view.fov; pers.updateProjectionMatrix();
+      place();
+    },
+    // Lowest tilt the orbit view may take. Only photo mode goes below the classic limit; leaving it clamps the tilt back.
+    setFloor(lo) {
+      view.lo = clamp(lo, 0.05, ISO.elevMin);
+      view.telev = Math.max(view.telev, view.lo); view.elev = Math.max(view.elev, view.lo);
+    },
   };
   return api;
 }

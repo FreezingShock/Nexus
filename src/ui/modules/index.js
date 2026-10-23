@@ -15,6 +15,7 @@ import milestones from './milestones.js';
 import notes from './notes.js';
 import onboarding from './onboarding.js';
 import paintTown from './paint-town.js';
+import photo from './photo.js';
 import placement from './placement.js';
 import population from './population.js';
 import progress from './progress.js';
@@ -41,6 +42,7 @@ export const uiModules = [
   notes,
   onboarding,
   paintTown,
+  photo,
   placement,
   population,
   progress,

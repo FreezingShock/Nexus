@@ -41,6 +41,7 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
   const byId = new Map(sysDefs.map((d, i) => [d.id, mods[i]]));
   ensureInstanceColors(scene); // after the systems build: every instanced mesh in the town carries a colour buffer
   let dusk = null, nightOn = false, drag = null;
+  let hourOverride = null, inert = false, grabCb = null; // photo mode: a chosen hour, clicks that do nothing, a pending capture
 
   function resize() {
     const w = stage.clientWidth || innerWidth, h = stage.clientHeight || innerHeight;
@@ -62,6 +63,7 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
   canvas.addEventListener('pointerup', (e) => {
     const was = drag; drag = null; canvas.classList.remove('drag');
     if (!was || was.moved > 5) return;
+    if (inert) return; // photo mode: the town is only looked at
     if (was.button === 2) { onCancel(); return; } // right-click with no drag: cancel the tool or close a card
     if (was.button !== 0) return;
     const r = canvas.getBoundingClientRect();
@@ -89,8 +91,9 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
     frame(dt, t, simDt, s, tool) {
       camera.step(dt, drag && drag.moved > 5);
       // The sky eases towards the sim's hour, season and weather; the lights and the shader follow the eased values.
-      if (s.hour !== targetsOf.hour || s.season !== targetsOf.season || s.weatherKind !== targetsOf.weather) {
-        targetsOf = { hour: s.hour, season: s.season, weather: s.weatherKind };
+      const hour = hourOverride ?? s.hour;
+      if (hour !== targetsOf.hour || s.season !== targetsOf.season || s.weatherKind !== targetsOf.weather) {
+        targetsOf = { hour, season: s.season, weather: s.weatherKind };
         targets = atmosphereTargets(targetsOf);
       }
       const look = sky.update(dt, targets);
@@ -104,7 +107,13 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
       town.setState(s);
       town.update(dt);
       renderer.render(scene, camera.cam);
+      if (grabCb) { const cb = grabCb; grabCb = null; cb(canvas); } // the buffer is only valid until this frame ends
     },
+    // Photo mode. A chosen hour (null goes back to the sim's clock), clicks that do nothing, and a one-shot capture:
+    // `cb(canvas)` runs straight after the next render, while the drawing buffer still holds the picture.
+    setHour: (h) => { hourOverride = h; },
+    setInert: (on) => { inert = !!on; },
+    grab: (cb) => { grabCb = cb; },
     // The object a render system returned from create(), for UI modules that drive it (e.g. zoning's brush).
     sys: (id) => byId.get(id) || null,
     // World point under a screen position on the ground plane (y = 0), or null. Shared by every drawing tool.
