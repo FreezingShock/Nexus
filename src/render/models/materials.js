@@ -54,12 +54,14 @@ function cell(style, wall, accent, mode) {
 const cache = new Map();
 const nightCache = new Map();
 
-// Night walls: lit windows through the emissive map. Shared across palettes (the dark wall is the same at night).
-export function nightStyle(style) {
-  let m = nightCache.get(style);
+// Night walls: lit windows through the emissive map. The wall keeps its daytime colour (the dim night light does the
+// darkening), so each palette and trim gets its own material; only the panes change.
+export function nightStyle(style, wall, accent) {
+  const key = style + '/' + wall + '/' + accent;
+  let m = nightCache.get(key);
   if (!m) {
-    m = toonUncached(0xffffff, { map: canvasTexture(cell(style, '#6C7191', '#6C7191', 'night')), emissive: 0xffffff, emissiveMap: canvasTexture(cell(style, '#000', '#000', 'glow')), emissiveIntensity: 0.85 });
-    nightCache.set(style, m);
+    m = toonUncached(0xffffff, { map: canvasTexture(cell(style, wall, accent, 'night')), emissive: 0xffffff, emissiveMap: canvasTexture(cell(style, '#000', '#000', 'glow')), emissiveIntensity: 0.85 });
+    nightCache.set(key, m);
   }
   return m;
 }
@@ -67,11 +69,12 @@ export function nightStyle(style) {
 // Night walls with dark windows. The town draws its own glow over each window that is lit (render/systems/life-windows.js),
 // so a window can come on at its own time. The postcard's dusk plate has no such layer and keeps the lit walls above.
 const dimCache = new Map();
-export function dimStyle(style) {
-  let m = dimCache.get(style);
+export function dimStyle(style, wall, accent) {
+  const key = style + '/' + wall + '/' + accent;
+  let m = dimCache.get(key);
   if (!m) {
-    m = toonUncached(0xffffff, { map: canvasTexture(cell(style, '#6C7191', '#6C7191', 'dim')) });
-    dimCache.set(style, m);
+    m = toonUncached(0xffffff, { map: canvasTexture(cell(style, wall, accent, 'dim')) });
+    dimCache.set(key, m);
   }
   return m;
 }
@@ -86,9 +89,10 @@ export function wallStyle(pal, style, trim = null) {
     const P = PAL[pal];
     if (typeof document === 'undefined') { m = toonUncached(0xffffff); } // node tests: no canvas, same interface
     else {
-      m = toonUncached(0xffffff, { map: canvasTexture(cell(style, P.wall, hex(trim ? TRIMS[trim].hex : P.accent), 'day')) });
-      m.userData.night = nightStyle(style);
-      m.userData.nightDim = dimStyle(style);
+      const accent = hex(trim ? TRIMS[trim].hex : P.accent);
+      m = toonUncached(0xffffff, { map: canvasTexture(cell(style, P.wall, accent, 'day')) });
+      m.userData.night = nightStyle(style, P.wall, accent);
+      m.userData.nightDim = dimStyle(style, P.wall, accent);
     }
     cache.set(key, m);
   }
