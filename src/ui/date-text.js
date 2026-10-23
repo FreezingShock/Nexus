@@ -1,9 +1,8 @@
 // Words and choices for the date plaque and the skip panel. Pure (no DOM), so the node tests cover them.
-import { MONTH_NAMES, MONTH_SHORT, SEASONS, clockText, dayOfDate, seasonOfMonth } from '../core/calendar.js';
+import { MONTH_NAMES, MONTH_SHORT, SEASONS, clockText, seasonOfMonth } from '../core/calendar.js';
 import { HOLIDAYS, MARKET, holidayOn, marketOn, nextHolidayDay } from '../core/holidays.js';
 
 const cap = (w) => w.charAt(0).toUpperCase() + w.slice(1);
-export const SKIP_MAX_YEARS = 2; // the longest single skip; the sim refuses more
 export const seasonName = (state) => cap(SEASONS[seasonOfMonth(state.month)]);
 
 export const shortDate = (state) => MONTH_SHORT[state.month] + ' ' + state.dayOfMonth;
@@ -48,12 +47,27 @@ export function quickSkips(state, monthDays) {
   return out.map((q) => ({ ...q, inDays: q.day - state.dayIdx }));
 }
 
-// The date picker's answer: the day number for a year, month (0 to 11) and day, or why it cannot be skipped to.
-export function pick(state, monthDays, year, month, day) {
-  const d = dayOfDate(year, month, Math.min(day, monthDays), monthDays);
-  if (d < 0) return { ok: false, why: 'Before the town began' };
-  if (d <= state.dayIdx) return { ok: false, why: d === state.dayIdx ? 'That is today' : 'That day has passed' };
-  if (d - state.dayIdx > SKIP_MAX_YEARS * 12 * monthDays) return { ok: false, why: 'Too far ahead' };
-  return { ok: true, day: d, inDays: d - state.dayIdx, text: 'Skip ' + (d - state.dayIdx) + ((d - state.dayIdx) > 1 ? ' days' : ' day') + ' to ' + Math.min(day, monthDays) + ' ' + MONTH_SHORT[month] + ', Year ' + year };
+// The month page: one cell per day of the current month, each marked past, today or ahead, with what it holds.
+export function monthCells(state, monthDays) {
+  const first = state.dayIdx - (state.dayOfMonth - 1);
+  return Array.from({ length: monthDays }, (_, i) => {
+    const d = first + i, h = holidayOn(d, monthDays);
+    return { day: i + 1, dayIdx: d, when: d < state.dayIdx ? 'past' : d === state.dayIdx ? 'today' : 'ahead', holiday: h ? h.id : '', name: h ? h.name : '', market: marketOn(d) };
+  });
 }
+
+// The year ribbon: twelve months of this calendar year, each with its season and any festival it holds.
+export function yearRibbon(state, monthDays) {
+  return MONTH_SHORT.map((short, m) => {
+    const h = HOLIDAYS.find((x) => !x.weather && x.month === m);
+    return { month: m, short, season: SEASONS[seasonOfMonth(m)], current: m === state.month, holiday: h ? h.id : '', name: h ? h.name : '' };
+  });
+}
+
+// Skip to the first day of next month: the one skip beyond "tomorrow" (a month is only a few days, so nothing longer is offered).
+export function nextMonthSkip(state, monthDays) {
+  const day = state.dayIdx - (state.dayOfMonth - 1) + monthDays;
+  return { day, inDays: day - state.dayIdx, month: (state.month + 1) % 12 };
+}
+export const skipText = (n) => 'Skip ' + n + (n > 1 ? ' days' : ' day');
 export { clockText };
