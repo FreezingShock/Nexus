@@ -30,33 +30,61 @@ varying vec3 vW;
 void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`;
 
 // Tile texel: rgb = the district's colour, a = its slot / 255 (0 = no district). Borders are drawn where the slot changes.
+// uPrev (red channel) holds the live selection from the Districts tool: 1 = tiles being painted, 2 = tiles being erased,
+// 3 = the tile (or brush) under the cursor. uFocus is the slot being painted with; its tiles are drawn a little stronger.
 const FRAG = `
 precision highp float;
-uniform sampler2D uTiles;
-uniform float uNight;
+uniform sampler2D uTiles, uPrev;
+uniform vec3 uPrevCol;
+uniform float uNight, uTime, uFocus;
 varying vec3 vW;
 const float N = ${GRID_N}.0;
 vec4 tile(vec2 id){
   if (id.x < 0.0 || id.y < 0.0 || id.x >= N || id.y >= N) return vec4(0.0);
   return texture2D(uTiles, (id + 0.5) / N);
 }
+float kind(vec2 id){
+  if (id.x < 0.0 || id.y < 0.0 || id.x >= N || id.y >= N) return 0.0;
+  return floor(texture2D(uPrev, (id + 0.5) / N).r * 255.0 + 0.5);
+}
 void main(){
   vec2 t = (vW.xz + ${(GRID_HALF * TILE + TILE / 2).toFixed(1)}) / ${TILE.toFixed(1)};
   vec2 id = floor(t), f = fract(t);
   if (id.x < 0.0 || id.y < 0.0 || id.x >= N || id.y >= N) discard;
   vec4 c = tile(id);
-  if (c.a < 0.001) discard;
+  float k = kind(id);
+  if (c.a < 0.001 && k < 0.5) discard;
   // the edge we are nearest to, and the tile across it
   vec2 side = vec2(f.x < 0.5 ? -1.0 : 1.0, f.y < 0.5 ? -1.0 : 1.0);
   vec2 dist = vec2(f.x < 0.5 ? f.x : 1.0 - f.x, f.y < 0.5 ? f.y : 1.0 - f.y);
-  float bx = (tile(id + vec2(side.x, 0.0)).a != c.a && dist.x < 0.075) ? 1.0 : 0.0;
-  float bz = (tile(id + vec2(0.0, side.y)).a != c.a && dist.y < 0.075) ? 1.0 : 0.0;
-  float line = max(bx, bz);
-  // soft wash: a little lighter toward the tile edge, so neighbours blend
-  float soft = mix(0.7, 1.0, smoothstep(0.0, 0.3, min(dist.x, dist.y)));
   vec3 ink = vec3(0.17, 0.15, 0.125);
-  vec3 col = mix(c.rgb, ink, 0.45 * line);
-  float alpha = mix(0.2 * soft, 0.5, line);
+  vec3 col = vec3(0.0);
+  float alpha = 0.0;
+  if (c.a >= 0.001) {
+    float bx = (tile(id + vec2(side.x, 0.0)).a != c.a && dist.x < 0.075) ? 1.0 : 0.0;
+    float bz = (tile(id + vec2(0.0, side.y)).a != c.a && dist.y < 0.075) ? 1.0 : 0.0;
+    float line = max(bx, bz);
+    // soft wash: a little lighter toward the tile edge, so neighbours blend
+    float soft = mix(0.7, 1.0, smoothstep(0.0, 0.3, min(dist.x, dist.y)));
+    col = mix(c.rgb, ink, 0.45 * line);
+    float focus = (uFocus > 0.5 && abs(c.a * 255.0 - uFocus) < 0.5) ? 1.0 : 0.0;
+    alpha = mix(0.2 * soft, 0.5, line) + 0.12 * focus;
+  }
+  if (k > 0.5) {
+    // the selection: a stronger fill, an ink outline round the whole shape, a slow pulse so it reads as live
+    float pulse = 0.5 + 0.5 * sin(uTime * 5.0);
+    float ox = (kind(id + vec2(side.x, 0.0)) != k && dist.x < 0.09) ? 1.0 : 0.0;
+    float oz = (kind(id + vec2(0.0, side.y)) != k && dist.y < 0.09) ? 1.0 : 0.0;
+    float edge = max(ox, oz);
+    vec3 pc = k < 1.5 ? uPrevCol : k < 2.5 ? vec3(0.72, 0.28, 0.18) : uPrevCol;
+    float fill = k < 1.5 ? 0.5 + 0.12 * pulse : k < 2.5 ? 0.3 : 0.22;
+    if (k > 1.5 && k < 2.5) fill *= mix(0.35, 1.0, step(0.5, fract((t.x + t.y) * 2.0)));
+    float a = max(fill, edge * 0.95);
+    vec3 pcol = mix(pc, ink, edge);
+    float oa = a + alpha * (1.0 - a);
+    col = oa > 0.0001 ? (pcol * a + col * alpha * (1.0 - a)) / oa : col;
+    alpha = oa;
+  }
   col *= 1.0 - 0.25 * uNight;
   gl_FragColor = vec4(col, alpha);
 }`;
@@ -70,8 +98,12 @@ export default {
     const data = new Uint8Array(AREA * 4);
     const tex = new THREE.DataTexture(data, GRID_N, GRID_N, THREE.RGBAFormat);
     tex.minFilter = tex.magFilter = THREE.NearestFilter; tex.generateMipmaps = false; tex.needsUpdate = true;
+    // the live selection from the Districts tool: one byte per tile in the red channel (see FRAG)
+    const pdata = new Uint8Array(AREA * 4);
+    const ptex = new THREE.DataTexture(pdata, GRID_N, GRID_N, THREE.RGBAFormat);
+    ptex.minFilter = ptex.magFilter = THREE.NearestFilter; ptex.generateMipmaps = false; ptex.needsUpdate = true;
     const washMat = new THREE.ShaderMaterial({
-      uniforms: { uTiles: { value: tex }, uNight: { value: 0 } },
+      uniforms: { uTiles: { value: tex }, uPrev: { value: ptex }, uPrevCol: { value: new THREE.Color('#C96F4F') }, uNight: { value: 0 }, uTime: { value: 0 }, uFocus: { value: 0 } },
       vertexShader: VERT, fragmentShader: FRAG, transparent: true, depthWrite: false,
       polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
     });
@@ -102,6 +134,7 @@ export default {
     let anchors = [];          // [{ slot, x, y, z, style, colA, colB }] for the districts that have tiles
     let lastTiles = new Uint8Array(AREA);
     let lastSig = '';
+    let hasTiles = false, selected = [];
 
     // Rewrites the wash texture from the grid. Called when tiles or colours change.
     function writeWash(state) {
@@ -174,10 +207,24 @@ export default {
           lastSig = sig;
           writeWash(state);
           layoutFlags(state);
-          wash.visible = grid.district.some((s) => s !== 0);
+          hasTiles = grid.district.some((s) => s !== 0);
+          wash.visible = hasTiles || selected.length > 0;
         }
         if (anchors.length) flutter(f.t);
+        washMat.uniforms.uTime.value = f.t;
       },
+      // Live selection for the Districts tool. `tiles` are tile indexes; kind 1 paints, 2 erases, 3 is the hover.
+      select(tiles, kind, hex) {
+        for (const i of selected) pdata[i * 4] = 0;
+        selected = tiles;
+        for (const i of tiles) pdata[i * 4] = kind;
+        if (hex) washMat.uniforms.uPrevCol.value.set(hex);
+        ptex.needsUpdate = true;
+        wash.visible = hasTiles || selected.length > 0;
+      },
+      clearSelect() { this.select([], 0); },
+      // The slot being painted with, drawn a little stronger than the rest (0 for none).
+      focus(slot) { washMat.uniforms.uFocus.value = slot || 0; },
       setNight(on) { washMat.uniforms.uNight.value = on ? 1 : 0; },
       // Screen positions of each flag's top, in normalised device coordinates (-1 to 1), for the UI's labels.
       labels(camera) {
