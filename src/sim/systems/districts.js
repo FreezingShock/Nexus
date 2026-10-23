@@ -8,6 +8,12 @@ import {
 const AREA = GRID_N * GRID_N;
 const tileArg = (t) => Array.isArray(t) && t.length === 2 && Number.isInteger(t[0]) && Number.isInteger(t[1]) && inBounds(t[0], t[1]);
 const clampInt = (v, lo, hi, d) => (Number.isInteger(v) ? Math.min(hi, Math.max(lo, v)) : d);
+// A command names its tiles as a rectangle (a, b) or, for brush strokes, as a list of tiles.
+const MAX_TILES = GRID_N * GRID_N;
+const tilesArg = ({ a, b, tiles }) => {
+  if (Array.isArray(tiles)) return tiles.length <= MAX_TILES && tiles.every(tileArg) ? tiles : null;
+  return tileArg(a) && tileArg(b) ? rectTiles(a, b) : null;
+};
 const isObj = (x) => !!x && typeof x === 'object' && !Array.isArray(x);
 
 // Undo for district paint and erase: the old slot goes back on each tile. Free, so no coins move.
@@ -72,12 +78,14 @@ export default {
     },
 
     // Paint the rectangle between tiles a and b with a district slot. Water is never painted.
-    paintDistrict(ctx, { slot, a, b }) {
+    paintDistrict(ctx, cmd) {
+      const { slot } = cmd;
       const { state, grid, emit } = ctx;
-      if (!isSlot(slot) || !tileArg(a) || !tileArg(b) || !state.districts.some((d) => d.slot === slot)) return;
+      const list = tilesArg(cmd);
+      if (!isSlot(slot) || !list || !state.districts.some((d) => d.slot === slot)) return;
       let changed = 0, water = 0;
       const prev = [];
-      for (const [gx, gz] of rectTiles(a, b)) {
+      for (const [gx, gz] of list) {
         const i = tileIndex(gx, gz);
         if (grid.base[i] === BASE.WATER) { water++; continue; }
         if (grid.district[i] !== slot) { prev.push([i, grid.district[i]]); grid.district[i] = slot; changed++; }
@@ -88,12 +96,13 @@ export default {
     },
 
     // Clear the district on every tile of the rectangle. Free.
-    eraseDistrict(ctx, { a, b }) {
+    eraseDistrict(ctx, cmd) {
       const { state, grid } = ctx;
-      if (!tileArg(a) || !tileArg(b)) return;
+      const list = tilesArg(cmd);
+      if (!list) return;
       let changed = 0;
       const prev = [];
-      for (const [gx, gz] of rectTiles(a, b)) {
+      for (const [gx, gz] of list) {
         const i = tileIndex(gx, gz);
         if (grid.district[i]) { prev.push([i, grid.district[i]]); grid.district[i] = 0; changed++; }
       }

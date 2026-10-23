@@ -1,8 +1,9 @@
 // The Districts tool: start a district, drag on the map to paint it, and see its flag and name over the town.
+// Two ways to pick tiles: a box, or a brush. The picked tiles are drawn on the map while you drag (render system select()).
 // Sends newDistrict, paintDistrict, eraseDistrict, renameDistrict, shuffleDistrictName and deleteDistrict.
 // Reads sim state, and the districts render system (scene.sys('districts').labels) for where the labels go.
-import { inBounds, worldToTile, rectTiles, GRID_N, BASE } from '../../world/grid.js';
-import { DISTRICT_COLORS, FLAG_STYLES, MAX_DISTRICTS, NAME_MAX, flagColor, lotsByDistrict } from '../../world/districts.js';
+import { inBounds, worldToTile, rectTiles, tileIndex, GRID_N, BASE } from '../../world/grid.js';
+import { DISTRICT_COLORS, FLAG_STYLES, MAX_DISTRICTS, NAME_MAX, flagColor, discTiles, strokeTiles } from '../../world/districts.js';
 import { $ } from '../format.js';
 import { OBSTACLES, isBlocked } from '../label-fit.js';
 
@@ -34,6 +35,9 @@ export default {
     const labelEls = new Map();
 
     let active = false, brush = null, drag = null, sig = '';
+    let mode = 'box', size = 1;       // 'box' | 'brush'; brush radius 0, 1 or 2 is S, M, L
+    const RADIUS = [0, 1, 2];
+    const view = () => scene.sys('districts');
 
     const state = () => sim.state;
     const find = (slot) => state().districts.find((d) => d.slot === slot);
@@ -44,28 +48,47 @@ export default {
       const t = worldToTile(p.x, p.z);
       return drag ? clampTile(t) : inBounds(t[0], t[1]) ? t : null;
     }
+    const isLand = (gx, gz) => sim.grid.baseAt(gx, gz) !== BASE.WATER;
 
-    // ---- floating tag: the rectangle being painted, or the district under the cursor ----
+    // ---- the selection on the map: tile indexes, drawn by the render system ----
+    function tilesOfDrag() {
+      if (mode === 'box') return rectTiles(drag.a, drag.b);
+      return drag.pts;
+    }
+    function showSelection(hover) {
+      const sys = view();
+      if (!sys) return;
+      const erase = brush === ERASE;
+      const col = erase ? null : (find(brush) ? flagColor(find(brush)) : null);
+      if (drag) {
+        const idx = [];
+        for (const [gx, gz] of tilesOfDrag()) if (erase || isLand(gx, gz)) idx.push(tileIndex(gx, gz));
+        sys.select(idx, erase ? 2 : 1, col);
+        return idx.length;
+      }
+      if (hover && brush !== null) {
+        const tiles = mode === 'box' ? [hover] : discTiles(hover, RADIUS[size]);
+        sys.select(tiles.filter(([gx, gz]) => erase || isLand(gx, gz)).map(([gx, gz]) => tileIndex(gx, gz)), 3, col);
+      } else sys.clearSelect();
+      return 0;
+    }
+
+    // ---- floating tag: how many tiles the selection holds, or the district under the cursor ----
     function showTag(e, text, bad) {
       tag.textContent = text; tag.hidden = false; tag.classList.toggle('bad', !!bad);
       const w = tag.offsetWidth, x = Math.min(e.clientX + 18, innerWidth - w - 12);
       tag.style.transform = `translate(${Math.max(8, x)}px, ${Math.min(e.clientY + 22, innerHeight - 70)}px)`;
     }
-    function rectLand(a, b) {
-      let n = 0;
-      for (const [gx, gz] of rectTiles(a, b)) if (sim.grid.baseAt(gx, gz) !== BASE.WATER) n++;
-      return n;
-    }
     function describe(e) {
-      if (drag) {
-        const n = rectLand(drag.a, drag.b);
-        if (brush === ERASE) { showTag(e, n ? `Erase · ${n} tile${n === 1 ? '' : 's'}` : 'Nothing to erase here'); return; }
-        const d = find(brush);
-        if (!d) { tag.hidden = true; return; }
-        showTag(e, `${d.name} · ${n} tile${n === 1 ? '' : 's'}` + (n ? '' : ' · rivers keep their names'), !n);
-        return;
-      }
-      tag.hidden = true;
+      const n = showSelection(null);
+      if (brush === ERASE) { showTag(e, n ? `Erase ${n}` : 'Nothing here'); return; }
+      const d = find(brush);
+      if (!d) { tag.hidden = true; return; }
+      showTag(e, `${d.name} · ${n}`, !n);
+    }
+    function cancel() {
+      drag = null; tag.hidden = true;
+      showSelection(null);
     }
 
     // ---- pointer: capture on the stage, left button only; other buttons still pan ----
@@ -75,21 +98,32 @@ export default {
       if (!t) return;
       e.stopPropagation(); e.preventDefault();
       try { stage.setPointerCapture(e.pointerId); } catch { /* not capturable: fine */ }
-      drag = { a: t, b: t, id: e.pointerId };
+      drag = { a: t, b: t, id: e.pointerId, last: t, seen: new Set(), pts: [] };
+      if (mode === 'brush') addStroke(t, t);
       describe(e);
     };
+    function addStroke(from, to) {
+      for (const tt of strokeTiles(from, to, RADIUS[size])) {
+        const k = tileIndex(tt[0], tt[1]);
+        if (!drag.seen.has(k)) { drag.seen.add(k); drag.pts.push(tt); }
+      }
+    }
     const onMove = (e) => {
       if (!active) return;
       if (drag) {
         if (e.pointerId !== drag.id) return;
         e.stopPropagation();
         const t = tileAt(e);
-        if (t) drag.b = t;
+        if (t) {
+          drag.b = t;
+          if (mode === 'brush') { addStroke(drag.last, t); drag.last = t; }
+        }
         describe(e);
         return;
       }
       if (e.buttons & 6) return;
       const t = tileAt(e);
+      showSelection(t);
       const slot = t ? sim.grid.districtAt(t[0], t[1]) : 0;
       const d = slot && find(slot);
       if (d) showTag(e, d.name); else tag.hidden = true;
@@ -98,10 +132,13 @@ export default {
       if (!active || !drag || e.pointerId !== drag.id || e.button !== 0) return;
       e.stopPropagation();
       const d = drag; drag = null; tag.hidden = true;
-      if (brush === ERASE) send({ type: 'eraseDistrict', a: d.a, b: d.b });
-      else if (find(brush)) send({ type: 'paintDistrict', slot: brush, a: d.a, b: d.b });
+      view() && view().clearSelect();
+      const shape = mode === 'box' ? { a: d.a, b: d.b } : { tiles: d.pts };
+      if (brush === ERASE) send({ type: 'eraseDistrict', ...shape });
+      else if (find(brush)) send({ type: 'paintDistrict', slot: brush, ...shape });
     };
-    const onLeave = () => { if (!drag) tag.hidden = true; };
+    const onLeave = () => { if (!drag) { tag.hidden = true; showSelection(null); } };
+    const onKey = (e) => { if (active && drag && e.key === 'Escape') { e.stopPropagation(); cancel(); } };
 
     // ---- flyout ----
     function tileCounts() {
@@ -110,16 +147,26 @@ export default {
       return out;
     }
     function countsText() {
-      const tiles = tileCounts(), lots = lotsByDistrict(sim.grid.district, state().lots);
+      const tiles = tileCounts();
       for (const d of state().districts) {
         const el = document.querySelector(`[data-count="${d.slot}"]`);
         if (!el) continue;
-        const t = tiles.get(d.slot) || 0, l = lots.get(d.slot) || 0;
-        el.textContent = t ? `${t} tile${t === 1 ? '' : 's'} · ${l} building${l === 1 ? '' : 's'}` : 'No tiles yet. Drag on the map to paint it.';
+        const t = tiles.get(d.slot) || 0;
+        el.textContent = t ? `${t} tile${t === 1 ? '' : 's'}` : 'Empty';
       }
     }
     function signature() {
-      return state().districts.map((d) => [d.slot, d.name, d.pal, d.style].join(':')).join('|') + '#' + brush;
+      return state().districts.map((d) => [d.slot, d.name, d.pal, d.style].join(':')).join('|') + '#' + brush + mode + size;
+    }
+    const ICON_DICE = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="3"/><circle cx="5.6" cy="5.6" r=".9" fill="currentColor"/><circle cx="10.4" cy="10.4" r=".9" fill="currentColor"/><circle cx="8" cy="8" r=".9" fill="currentColor"/></svg>';
+    const ICON_X = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
+    const ICON_BOX = '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="3 2.4" aria-hidden="true"><rect x="3" y="3" width="12" height="12" rx="1.5"/></svg>';
+    const ICON_BRUSH = '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.5 2.5l3 3-7 7-3-3z"/><path d="M5.5 9.5C3.5 10 3 12 2.5 15.5 6 15 8 14.5 8.5 12.5"/></svg>';
+    const ICON_ERASER = '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M7 15l-4-4 7.5-7.5 5 5L9 15z"/><path d="M6 8l5 5M9 15h6"/></svg>';
+    function hintText() {
+      if (!state().districts.length) return 'Start with a new district';
+      if (brush === ERASE) return mode === 'box' ? 'Drag a box to erase' : 'Brush over tiles to erase';
+      return mode === 'box' ? 'Drag a box to paint' : 'Brush over tiles to paint';
     }
     function renderFly() {
       const f = $('fly');
@@ -133,19 +180,26 @@ export default {
             <input class="dname" maxlength="${NAME_MAX}" value="${esc(d.name)}" aria-label="District name">
             <small data-count="${d.slot}"></small>
           </div>
-          <button class="btn dsmall" data-shuffle="${d.slot}" title="A new name, same flag">Shuffle</button>
-          <button class="btn dsmall" data-del="${d.slot}" title="Remove the district; its tiles stay as town">Remove</button>
+          <button class="dicon" data-shuffle="${d.slot}" title="New name, same flag" aria-label="New name">${ICON_DICE}</button>
+          <button class="dicon" data-del="${d.slot}" title="Remove; its tiles stay as town" aria-label="Remove district">${ICON_X}</button>
         </li>`).join('');
-      f.innerHTML = `<div class="head"><h3>Districts</h3><span>Name a neighbourhood, then drag on the map to paint it</span></div>
-        <div class="drow-top">
-          <button class="btn primary" id="dNew" ${list.length >= MAX_DISTRICTS ? 'disabled' : ''}>${list.length >= MAX_DISTRICTS ? 'All ' + MAX_DISTRICTS + ' named' : 'New district'}</button>
-          <button class="btn dbtn" data-brush="${ERASE}" aria-pressed="${brush === ERASE}" title="Clears district paint; free">Eraser</button>
+      const full = list.length >= MAX_DISTRICTS;
+      f.innerHTML = `<div class="head"><h3>Districts</h3><span>${hintText()}</span></div>
+        <div class="dtools">
+          <div class="dseg" role="group" aria-label="Selection">
+            <button data-mode="box" aria-pressed="${mode === 'box'}" title="Drag a box">${ICON_BOX}<span>Box</span></button>
+            <button data-mode="brush" aria-pressed="${mode === 'brush'}" title="Paint tiles freehand">${ICON_BRUSH}<span>Brush</span></button>
+          </div>
+          ${mode === 'brush' ? `<div class="dseg dsize" role="group" aria-label="Brush size">${['S', 'M', 'L'].map((l, k) => `<button data-size="${k}" aria-pressed="${size === k}" title="Brush size ${l}">${l}</button>`).join('')}</div>` : ''}
+          <button class="dseg-erase" data-brush="${ERASE}" aria-pressed="${brush === ERASE}" title="Clear district paint; free">${ICON_ERASER}<span>Eraser</span></button>
         </div>
-        ${list.length ? `<ul class="dlist">${rows}</ul>` : '<p class="sub dhelp">Start a district and it gets a flag and a name over the town. Districts are free and never change what a building costs.</p>'}
-        <p class="sub dhelp">Drag to paint a rectangle, click one tile at a time. Rivers keep their own names.</p>`;
+        ${list.length ? `<ul class="dlist">${rows}</ul>` : ''}
+        <button class="btn primary dnew" id="dNew" ${full ? 'disabled' : ''}>${full ? 'All ' + MAX_DISTRICTS + ' named' : '+ New district'}</button>`;
       f.querySelectorAll('[data-brush]').forEach((b) => {
-        b.onclick = () => { brush = b.dataset.brush === ERASE ? ERASE : Number(b.dataset.brush); renderFly(); };
+        b.onclick = () => { brush = b.dataset.brush === ERASE ? ERASE : Number(b.dataset.brush); syncFocus(); renderFly(); };
       });
+      f.querySelectorAll('[data-mode]').forEach((b) => { b.onclick = () => { mode = b.dataset.mode; renderFly(); }; });
+      f.querySelectorAll('[data-size]').forEach((b) => { b.onclick = () => { size = Number(b.dataset.size); renderFly(); }; });
       f.querySelectorAll('.dname').forEach((input) => {
         const slot = Number(input.closest('.drow').dataset.slot);
         input.onchange = () => send({ type: 'renameDistrict', slot, name: input.value });
@@ -157,6 +211,7 @@ export default {
           const slot = Number(b.dataset.del);
           if (brush === slot) brush = null;
           send({ type: 'deleteDistrict', slot });
+          syncFocus();
         };
       });
       const add = $('dNew');
@@ -165,6 +220,7 @@ export default {
         const newest = state().districts[state().districts.length - 1];
         if (!newest) return;
         brush = newest.slot;
+        syncFocus();
         renderFly();
         const input = document.querySelector(`.drow[data-slot="${newest.slot}"] .dname`);
         if (input) { input.focus(); input.select(); }
@@ -172,6 +228,8 @@ export default {
       sig = signature();
       countsText();
     }
+    const syncFocus = () => { const v = view(); if (v) v.focus(typeof brush === 'number' ? brush : 0); };
+
     // Rebuild the list only when its names, flags or choice change, so a name being typed is never replaced.
     function refresh() {
       if (!active) return;
@@ -234,10 +292,14 @@ export default {
       stage.addEventListener('pointermove', onMove, true);
       stage.addEventListener('pointerup', onUp, true);
       stage.addEventListener('pointerleave', onLeave);
+      addEventListener('keydown', onKey, true);
+      syncFocus();
       renderFly();
     }
     function leave() {
       active = false; drag = null; tag.hidden = true;
+      const v = view(); if (v) { v.clearSelect(); v.focus(0); }
+      removeEventListener('keydown', onKey, true);
       stage.classList.remove('districts');
       stage.removeEventListener('pointerdown', onDown, true);
       stage.removeEventListener('pointermove', onMove, true);

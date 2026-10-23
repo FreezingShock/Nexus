@@ -10,9 +10,17 @@
 
 .fly.dfly{padding:12px 16px 12px;width:min(440px,calc(100vw - 32px))}
 .dfly .head{margin-bottom:8px}
-.drow-top{display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;margin-bottom:6px}
-.drow-top .btn.primary{flex:1 1 180px;min-height:48px}
-.dbtn{flex:1 1 140px;min-height:48px}
+.dtools{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;margin-bottom:8px}
+.dseg{display:flex;border:2.5px solid var(--ink);border-radius:12px;overflow:hidden;background:var(--paper);box-shadow:0 2px 0 var(--ink)}
+.dseg button,.dseg-erase{display:flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:0 12px;border:0;background:none;font:800 14px/1 var(--body);color:var(--ink);cursor:pointer}
+.dseg button+button{border-left:2px solid var(--ink)}
+.dseg button[aria-pressed="true"]{background:var(--action);color:#FFFDF6}
+.dsize button{padding:0 11px}
+.dseg-erase{border:2.5px solid var(--ink);border-radius:12px;background:var(--paper);box-shadow:0 2px 0 var(--ink);margin-left:auto}
+.dseg-erase[aria-pressed="true"]{background:var(--action);color:#FFFDF6}
+.dnew{width:100%;min-height:44px;margin-top:8px}
+.dicon{flex:0 0 auto;display:grid;place-items:center;width:32px;height:32px;padding:0;border:0;border-radius:9px;background:none;color:var(--ink-soft);cursor:pointer}
+.dicon:hover{background:var(--paper-3);color:var(--ink)}
 .dlist{list-style:none;margin:0;padding:0;max-height:min(44vh,360px);overflow:auto}
 .drow{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:2px dashed var(--paper-3)}
 .drow:last-child{border-bottom:0}
@@ -25,5 +33,3 @@
 .dname:hover{border-color:var(--paper-3)}
 .dname:focus{outline:none;border-color:var(--action);background:#FFFDF6}
 .dtext small{font-size:12.5px;color:var(--ink-soft);font-weight:700;padding-left:8px}
-.dsmall{flex:0 0 auto;padding:6px 9px;min-height:36px;font-size:13px}
-.dhelp{margin:8px 0 0;font-size:13px}
