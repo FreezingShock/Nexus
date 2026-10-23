@@ -72,10 +72,10 @@ test('the icon set draws an SVG for every icon, and an unknown name draws the ho
   assert.equal(townIconSvg('nope'), townIconSvg('house'));
 });
 
-// ---- save: version 4 and the migration ----
+// ---- save: version 6 and the migration ----
 
-test('the save is version 4, and a version 3 town gets the default name and badge', () => {
-  assert.equal(SAVE_VERSION, 4);
+test('the save is version 8, and a version 3 town gets the default name and badge', () => {
+  assert.equal(SAVE_VERSION, 8);
   const old = { coins: 500, roads: {}, speed: 2, levels: {} };
   const migrated = migrations[2](old);
   assert.deepEqual(migrated.town, DEFAULT_TOWN);
@@ -131,7 +131,7 @@ test('the sim reports the income split by system, for the hover cards', () => {
 // ---- hover-card text ----
 
 test('the hover cards show exact numbers, the next unlock and the Renewal progress', () => {
-  const s = { ...freshState(), coins: 8059, parts: 302, runEarned: 0, points: 0, renewals: 0, earned: 9000 };
+  const s = { ...freshState(), coins: 8059, parts: 502, runEarned: 0, points: 0, renewals: 0, earned: 9000 };
   const bd = { coins: { base: 12, placement: 8.2, services: -0.4 }, parts: { base: 0.4 }, mult: {} };
   const coins = coinsCard(s, 20.2, bd);
   assert.match(coins, /<b>8,059<\/b> in hand/);
@@ -140,8 +140,8 @@ test('the hover cards show exact numbers, the next unlock and the Renewal progre
   assert.match(coins, /−/, 'upkeep reads as a minus');
   const parts = partsCard(s, 0.4, bd);
   assert.match(parts, /Bike street/, 'the cheapest locked road is the next unlock');
-  assert.match(parts, /Ready: 150 Parts to open it/, 'with enough Parts, the card says so');
-  assert.match(partsCard({ ...s, parts: 40 }, 0.4, bd), /40 of 150 Parts/, 'short of the cost, it shows the progress');
+  assert.match(parts, /Ready: 450 Parts to open it/, 'with enough Parts, the card says so');
+  assert.match(partsCard({ ...s, parts: 40 }, 0.4, bd), /40 of 450 Parts/, 'short of the cost, it shows the progress');
   const ren = renewalCard(s);
   assert.match(ren, /Opens at 10,000,000 coins/);
   assert.match(ren, /0%/);
@@ -181,7 +181,7 @@ test('the town card never includes the town name, so saved text stays out of the
 test('the top row has every plaque, its hover card and the badge picker, and the stylesheet is linked', () => {
   const html = read('index.html');
   for (const id of ['townplaque', 'townname', 'townedit', 'townbadge', 'townpop', 'townpick', 'coinschip', 'coinspop',
-    'partschip', 'partspop', 'renchip', 'renpop', 'demandw', 'demandrows', 'demandpop', 'coins', 'parts', 'rate', 'prate', 'renewal', 'renewalbar']) {
+    'partschip', 'partspop', 'renchip', 'renpop', 'hpchip', 'hppop', 'hp-panel', 'hppct', 'hpbar', 'demandw', 'demandrows', 'demandpop', 'coins', 'parts', 'rate', 'prate', 'renewal', 'renewalbar']) {
     assert.match(html, new RegExp('id="' + id + '"'), id);
   }
   assert.match(html, /<link rel="stylesheet" href="css\/hud\.css">/);
@@ -192,4 +192,38 @@ test('the top row has every plaque, its hover card and the badge picker, and the
 test('the old plaque tips are gone from the tooltip list, so there is one card per plaque', () => {
   const hovers = read('src/ui/hovers.js');
   assert.doesNotMatch(hovers, /'#coins'|'#parts'|'#renewal'/);
+});
+
+test('the town plaque grows to fit its name and steps the type down for a long one', () => {
+  const css = read('css/hud.css');
+  assert.match(css, /\.brand\{width:fit-content;min-width:232px;max-width:\d+px/);
+  assert.match(css, /\.brand\[data-len="long"\] \.townnamebtn\{font-size:\d+px\}/);
+  assert.match(read('src/ui/hud.js'), /plaque\.dataset\.len/);
+});
+
+test('Happiness is a plaque in the top bar with its panel under it, not a card in the left column', () => {
+  const html = read('index.html');
+  const chips = html.slice(html.indexOf('<div class="chips">'), html.indexOf('<div class="ctrl card">'));
+  assert.match(chips, /id="hpchip"/);
+  assert.match(chips, /id="hp-panel"/);
+  assert.ok(chips.indexOf('id="hpchip"') < chips.indexOf('id="demandw"'), 'Happiness sits before Demand');
+  const mod = read('src/ui/modules/happiness.js');
+  assert.doesNotMatch(mod, /leftcol/);
+  assert.match(mod, /\$\('hpchip'\)/);
+  assert.doesNotMatch(read('css/happiness.css'), /#happiness-card/);
+});
+
+test('the control cluster keeps pause and speed and moves the other buttons into a hamburger menu', () => {
+  const html = read('index.html');
+  const ctrl = html.slice(html.indexOf('<div class="ctrl card">'), html.indexOf('<nav class="card menu"'));
+  for (const id of ['pause', 'speed', 'menubtn']) assert.match(ctrl, new RegExp('id="' + id + '"'), id);
+  assert.doesNotMatch(ctrl, /id="night"|id="settingsbtn"/, 'the bar itself holds only time and the menu button');
+  const menu = html.slice(html.indexOf('<nav class="card menu"'), html.indexOf('</header>'));
+  assert.match(menu, /id="menugrid"/);
+  assert.match(menu, /id="night"/);
+  assert.match(menu, /id="settingsbtn"/, 'modules insert their buttons before Settings, inside the grid');
+  assert.match(html, /<link rel="stylesheet" href="css\/topbar\.css">/);
+  const mod = read('src/ui/modules/menu.js');
+  assert.match(mod, /order: 100/);
+  assert.match(mod, /achvbtn: 'Milestones'/);
 });

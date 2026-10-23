@@ -12,7 +12,8 @@ export const HOVER_TIPS = [
   ['#pause', 'Pause the town. Nothing is lost.'],
   ['#speed', 'Game speed. Click to cycle.'],
   ['#night', 'Time of day. Click to lock night, then day, then back to the cycle.'],
-  ['#goalsbtn', 'Town goals (G): daily goals, milestones and Renewal.'],
+  ['#goalsbtn', 'Town goals (G): daily goals, the Charge boost and Renewal.'],
+  ['#achvbtn', 'Milestones (M): every goal, its stages and what each one pays.'],
   ['#keysbtn', 'Keyboard shortcuts (?)'],
   ['#settingsbtn', 'Settings: save, export, import and start over.'],
 ];

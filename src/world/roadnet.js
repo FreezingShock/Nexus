@@ -6,7 +6,7 @@
 //   p  coins paid for the tile (the starter streets paid nothing), used for refunds
 // Tiles connect to every 4-neighbor that is also a road, so shapes (curves, tees, crossings) are derived, never stored.
 import { GRID_N, GRID_HALF, inBounds, tileIndex, tileOf } from './grid.js';
-import { heightAt } from './terrain.js';
+import { heightAt, terrainRev, terrainSeed } from './terrain.js';
 import { starterStreetTiles } from './starter.js';
 
 // Direction index -> grid step. 0 east (+x), 1 south (+z), 2 west (-x), 3 north (-z).
@@ -155,15 +155,11 @@ export function pathDirs(path) {
 
 // Tiles of the route that count as "new": the grid rules below apply only to these, and existing roads are
 // joins or crossings, which are always allowed.
-// Spacing between parallel streets: two roads may not sit one tile apart (the tile between would be a sliver lot).
-const SLIVER = 2;
-
 // The grid rules. Every problem is { reason, at, k } in path order; reason is a key of BLOCK_TEXT. `blockedBy(gx, gz)`
 // returns why a tile cannot hold a road (from roadBlock), or null.
 //   revisit  the route crosses itself
 //   loop     a tile touches the route somewhere other than its neighbors, or closes a 2 by 2 block of road
 //   hug      a new tile touches an existing street that the route does not join at that tile
-//   gap      a straight run sits one tile from a parallel street
 //   zigzag   two turns in a row with a single tile between them
 //   long     longer than one road may be
 export function validateRoute(path, roads, blockedBy = () => null) {
@@ -204,14 +200,6 @@ export function validateRoute(path, roads, blockedBy = () => null) {
       const sq = [[gx + ox, gz + oz], [gx + ox + 1, gz + oz], [gx + ox, gz + oz + 1], [gx + ox + 1, gz + oz + 1]];
       if (sq.every(([x, z]) => inBounds(x, z) && roadish(x, z))) { flag('loop', k); break; }
     }
-    if (prev && next && (prev[0] === next[0] || prev[1] === next[1])) {
-      const horiz = prev[1] === gz;
-      for (const s of [-SLIVER, SLIVER]) {
-        const x = horiz ? gx : gx + s, z = horiz ? gz + s : gz;
-        const along = horiz ? roadish(x - 1, z) || roadish(x + 1, z) : roadish(x, z - 1) || roadish(x, z + 1);
-        if (roadish(x, z) && along) { flag('gap', k); break; }
-      }
-    }
   });
 
   let lastTurn = -Infinity;
@@ -248,14 +236,16 @@ export const tileOfKey = (k) => tileOf(Number(k));
 
 // ---- what may hold a road ----
 // Roads follow the ground, but a tile that rises or tilts too much still reads as too steep for one.
-const slope = new Int8Array(GRID_N * GRID_N); // 0 unknown, 1 flat, 2 steep
+let slope = new Int8Array(GRID_N * GRID_N), slopeRev = -1; // 0 unknown, 1 flat, 2 steep; dropped when the land changes
 function tooSteep(gx, gz) {
+  if (slopeRev !== terrainRev()) { slope = new Int8Array(GRID_N * GRID_N); slopeRev = terrainRev(); }
   const k = tileIndex(gx, gz);
   if (!slope[k]) {
     const cx = (gx - GRID_HALF) * 3, cz = (gz - GRID_HALF) * 3;
     let hi = -Infinity, lo = Infinity;
     for (const [dx, dz] of [[0, 0], [-1.5, -1.5], [1.5, -1.5], [-1.5, 1.5], [1.5, 1.5]]) { const h = Math.max(0, heightAt(cx + dx, cz + dz)); hi = Math.max(hi, h); lo = Math.min(lo, h); }
-    slope[k] = hi > 0.9 || hi - lo > 0.5 ? 2 : 1;
+    // The same slope rule as zones and farms. Old land also refused any road higher than 0.9; seeded land has plateaus.
+    slope[k] = (terrainSeed() === 0 && hi > 0.9) || hi - lo > 0.5 ? 2 : 1;
   }
   return slope[k] === 2;
 }
@@ -278,5 +268,5 @@ export const BLOCK_TEXT = {
   bounds: 'The map ends here', water: 'Water in the way', steep: 'Too steep for a road', farm: 'Farmland in the way',
   lot: 'A building is in the way', building: 'A building is in the way', park: 'A park is in the way',
   revisit: 'The road would cross itself', loop: 'That would close a tiny loop', hug: 'Too close to another street',
-  gap: 'Leave room for a lot between streets', zigzag: 'No zig-zags: give each turn a tile to breathe', long: 'Too long for one road',
+  zigzag: 'No zig-zags: give each turn a tile to breathe', long: 'Too long for one road',
 };

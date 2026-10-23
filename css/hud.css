@@ -1,5 +1,6 @@
-/* Top HUD row: the town plaque, the currency and Renewal plaques, the Demand plaque, and their hover cards.
-   Every plaque has one height and a fixed width, so a number that grows never moves its neighbours. Loaded last. */
+/* Top HUD row: the town plaque, the currency and Renewal plaques, Happiness, Demand, and their hover cards.
+   Every plaque has one height and a fixed width, so a number that grows never moves its neighbours. Only the town plaque
+   sizes to its name. Wide windows keep the row on one line, plaques shrinking a little when it gets tight. Loaded last. */
 :root{--plaque-h:74px}
 
 /* The header is its own stacking layer, so its hover cards sit above the left column and the other cards. */
@@ -11,19 +12,37 @@
 .plaque:active{transform:translateY(2px);box-shadow:0 2px 0 var(--ink),0 6px 12px rgba(43,38,32,.2)}
 .plaque:focus-visible{outline:3px solid var(--sky);outline-offset:4px}
 .brand,.chip{height:var(--plaque-h);box-sizing:border-box}
-.brand{width:232px;padding:8px 16px 8px 10px;gap:10px;font-size:28px;flex:0 0 auto;transform:rotate(-1.4deg)}
+.brand{width:fit-content;min-width:232px;max-width:372px;padding:8px 18px 8px 10px;gap:10px;font-size:28px;flex:0 0 auto;transform:rotate(-1.4deg)}
 .brand.plaque:hover,.brand.plaque:focus-visible{transform:translateY(-2px) rotate(-1.4deg)}
 .brand.plaque:active{transform:translateY(2px) rotate(-1.4deg)}
-.chip{min-width:0;flex:0 0 auto;padding:9px 16px 9px 10px}
+.chips{gap:10px;flex-wrap:wrap;min-width:0}
+.chip{min-width:0;flex:0 1 auto;padding:9px 14px 9px 10px;gap:10px}
+.chip .badge{width:40px;height:40px}
+.chip .badge svg{width:24px;height:24px}
 .chip.res{width:184px}
-.chip.ren{width:220px}
-.chip.ren b{font-size:19px}
-.chip.demand{width:240px;height:var(--plaque-h)}
+.chip.ren{width:200px}
+.chip.demand{width:250px;height:var(--plaque-h)}
+.hpwrap{position:relative;flex:0 1 214px;min-width:0}
+.chip.hp{width:100%;cursor:pointer}
 .chip .cval{min-width:0;flex:1 1 auto;display:block}
 .chip .cval b{white-space:nowrap;overflow:hidden}
-#renewal{display:inline-block;min-width:4ch;font-variant-numeric:tabular-nums}
-.chip .meter{width:100%;max-width:130px}
-.chip.ren .meter{margin-top:6px}
+/* Renewal and Happiness: the name on the left, the percentage on the right, one meter under both */
+.chip.ren .cval b,.chip.hp .cval b{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:17px}
+.chip.ren .cval b span,.chip.hp .cval b span{font-size:19px;font-variant-numeric:tabular-nums}
+#hppct{display:inline-block;min-width:3ch;text-align:right}
+#renewal{display:inline-block;min-width:3ch;text-align:right}
+.chip .meter{width:100%;max-width:none}
+.chip.ren .meter,.chip.hp .meter{margin-top:7px;height:15px}
+.chip.hp .meter i{width:0;background:var(--sky);transition:width .6s ease}
+.chip.hp.open>.pop{display:none}
+/* one line from this width up, the plaques shrinking a little but never below the point where a number would clip */
+@media (min-width:1480px){
+  .chips{flex-wrap:nowrap}
+  .chip.res{flex-basis:184px;min-width:172px}
+  .chip.ren{flex-basis:200px;min-width:190px}
+  .hpwrap{min-width:206px}
+  .chip.demand{flex-basis:250px;min-width:228px}
+}
 
 /* the town plaque: the badge opens the picker, the name renames inline */
 .townbadge{width:46px;height:46px;flex:0 0 auto;border-radius:50%;border:2.5px solid var(--ink);padding:0;display:grid;place-items:center;box-shadow:0 2px 0 var(--ink);transition:transform .08s,box-shadow .08s}
@@ -31,6 +50,9 @@
 .townbadge[aria-expanded="true"]{outline:3px solid var(--sky);outline-offset:3px}
 .townbadge svg{display:block}
 .townname{min-width:0;flex:1 1 auto}
+/* a long name steps its type down a little instead of being cut short */
+.brand[data-len="mid"] .townnamebtn{font-size:24px}
+.brand[data-len="long"] .townnamebtn{font-size:20px}
 .townnamebtn{display:block;width:100%;margin:0;padding:2px 6px;border:0;border-radius:10px;background:none;font-family:var(--display);font-weight:800;font-size:28px;font-variation-settings:"SOFT" 100,"WONK" 1;line-height:1.15;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
 .townnamebtn:hover{background:rgba(43,38,32,.07)}
 .townedit{display:block;width:100%;box-sizing:border-box;margin:0;padding:2px 8px;border:2px solid var(--ink);border-radius:10px;background:var(--paper);font-family:var(--display);font-weight:800;font-size:24px;font-variation-settings:"SOFT" 100,"WONK" 1;color:var(--ink)}

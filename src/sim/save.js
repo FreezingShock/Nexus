@@ -6,11 +6,13 @@ import { systems } from './systems/index.js';
 import { getLayout } from '../world/layout.js';
 import { seedTrees } from '../world/trees.js';
 import { DEFAULT_TOWN } from './town.js';
+import { legacyDone } from './achievements.js';
+import { isSeed } from '../world/terrain.js';
 
 export const SAVE_KEY = 'nexus.save';
 export const BACKUP_KEY = 'nexus.save.backup';
 export const UNREADABLE_PREFIX = 'nexus.save.unreadable.';
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 8;
 export const MAX_FILE_CHARS = 5 * 1024 * 1024; // a town is a few hundred kilobytes; anything bigger is not one
 export const BACKUP_EVERY_MS = 10 * 60 * 1000; // the backup slot is refreshed at most this often while playing
 
@@ -23,10 +25,54 @@ export const BACKUP_EVERY_MS = 10 * 60 * 1000; // the backup slot is refreshed a
 const resetToStarter = (s) => ({ ...freshState(), speed: [1, 2, 3].includes(s.speed) ? s.speed : 1 });
 resetToStarter.resets = true;
 const addTownBadge = (s) => ({ ...s, town: { ...DEFAULT_TOWN, ...(s.town && typeof s.town === 'object' && !Array.isArray(s.town) ? s.town : {}) } });
+// v5: the grid grows from 64 to 96 tiles a side, with 16 more tiles on every side. Every tile keeps its place in the
+// world, so only the tile keys move: roads, zone paint, district paint, grown lots and placed buildings. The numbers are
+// fixed here on purpose, because this step describes version 4, not today's grid. A reset step (version 3) builds its town
+// on today's grid, so a town that already has the wider zone paint is left alone.
+const OLD_GRID = 64, NEW_GRID = 96, GROW = 16;
+const oldTile = (i) => Number.isInteger(i) && i >= 0 && i < OLD_GRID * OLD_GRID;
+const moveTile = (i) => (Math.floor(i / OLD_GRID) + GROW) * NEW_GRID + (i % OLD_GRID) + GROW;
+// A tile-per-character string (zone paint, district paint) laid out on the wider grid.
+function regridText(text, fill) {
+  const out = new Array(NEW_GRID * NEW_GRID).fill(fill);
+  if (typeof text === 'string') for (let i = 0; i < Math.min(text.length, OLD_GRID * OLD_GRID); i++) out[moveTile(i)] = text[i];
+  return out.join('');
+}
+const regrid = (s) => {
+  if (typeof s.zones === 'string' && s.zones.length === NEW_GRID * NEW_GRID) return s;
+  const roads = {};
+  if (s.roads && typeof s.roads === 'object' && !Array.isArray(s.roads)) {
+    for (const [k, r] of Object.entries(s.roads)) if (oldTile(Number(k))) roads[moveTile(Number(k))] = r;
+  }
+  return {
+    ...s,
+    roads,
+    zones: regridText(s.zones, '0'),
+    dmap: regridText(s.dmap, '0'),
+    lots: Array.isArray(s.lots) ? s.lots.map((l) => (Array.isArray(l) && oldTile(l[0]) ? [moveTile(l[0]), ...l.slice(1)] : l)) : s.lots,
+    placed: Array.isArray(s.placed) ? s.placed.map((r) => (isObj(r) && Number.isInteger(r.gx) && Number.isInteger(r.gz) ? { ...r, gx: r.gx + GROW, gz: r.gz + GROW } : r)) : s.placed,
+  };
+};
+// v6: milestones become stages (state.ach). The flat list of paid milestone ids is turned into the matching stages, marked
+// paid so none of them pays twice; stages the town has already outgrown pay out on the first tick after loading.
+const addAchievements = (s) => {
+  const { milestones, ...rest } = s;
+  return { ...rest, ach: { done: legacyDone(milestones), best: {}, counts: { goalsDone: 0, dailies: 0 } } };
+};
+// v7: population (state.pop). An older town has no head-count yet: -1 lets the population system start it at a share of
+// the capacity of its homes.
+const addPopulation = (s) => ({ ...s, pop: -1, popHist: [] });
+// v8: the calendar counts days (state.days). An older town's clock turns into days at the old twelve-minute day, so it keeps
+// roughly the number of days it had seen; the date follows from that.
+const addCalendarDays = (s) => ({ ...s, days: Number.isFinite(s.clockS) && s.clockS > 0 ? s.clockS / 720 : 0 });
 export const migrations = [
   (s) => ({ ...s, trees: seedTrees(getLayout()) }),
   resetToStarter,
   addTownBadge,
+  regrid,
+  addAchievements,
+  addPopulation,
+  addCalendarDays,
 ];
 
 export function wrap(state, now) {
@@ -49,8 +95,11 @@ export function sanitize(s, defs = systems) {
     coins: num(s.coins, f.coins), parts: num(s.parts, f.parts),
     levels,
     removed: Array.isArray(s.removed) ? s.removed.filter((x) => typeof x === 'string' && /^b\d+$/.test(x)).slice(0, 500) : [],
+    terrainSeed: isSeed(s.terrainSeed) ? s.terrainSeed : 0, // a save without one is an old town: it keeps the old land
     speed: [1, 2, 3].includes(s.speed) ? s.speed : 1, paused: false, // night is not saved: it follows the clock (systems/calendar.js)
-    offline: off ? { coins: num(off.coins, 0), parts: num(off.parts, 0), awayS: num(off.awayS, 0), fullS: num(off.fullS, 0), easeS: num(off.easeS, 0) } : null,
+    offline: off ? { coins: num(off.coins, 0), parts: num(off.parts, 0), awayS: num(off.awayS, 0), fullS: num(off.fullS, 0), easeS: num(off.easeS, 0),
+      days: Math.floor(num(off.days, 0)), markets: Math.floor(num(off.markets, 0)),
+      festivals: Array.isArray(off.festivals) ? off.festivals.filter((f) => isObj(f) && typeof f.name === 'string').slice(0, 8).map((f) => ({ id: String(f.id || '').slice(0, 20), name: f.name.slice(0, 40), count: Math.max(1, Math.floor(num(f.count, 1))) })) : [] } : null,
     log: Array.isArray(s.log) ? s.log.filter((e) => e && typeof e.k === 'string').slice(-8).map((e) => ({ k: e.k.slice(0, 8), n: String(e.n ?? '').slice(0, 40) })) : [],
   };
   for (const d of defs) {

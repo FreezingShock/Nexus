@@ -115,8 +115,17 @@ test('reward events get a postcard note, and nothing else does', () => {
 });
 
 test('every note icon exists', () => {
-  for (const name of ['star', 'sprout', 'bolt']) assert.ok(NOTE_ICONS[name], name);
-  for (const t of ['goalDone', 'renewed', 'boosted']) assert.ok(NOTE_ICONS[noteFor({ type: t, text: 'x' }).icon]);
+  for (const name of ['star', 'sprout', 'bolt', 'medal']) assert.ok(NOTE_ICONS[name], name);
+  for (const t of ['goalDone', 'renewed', 'boosted', 'milestone']) assert.ok(NOTE_ICONS[noteFor({ type: t, text: 'x' }).icon]);
+});
+
+test('a milestone gets a postcard with its own title and the colour of its stage, and a bad colour is ignored', () => {
+  const n = noteFor({ type: 'milestone', title: 'Gold · Builder', tint: '#E6BC62', text: '40 buildings placed · +20,000 coins' });
+  assert.equal(n.title, 'Gold · Builder');
+  assert.equal(n.tint, '#E6BC62');
+  assert.equal(n.icon, 'medal');
+  assert.equal(noteFor({ type: 'milestone', tint: 'red; background:url(x)', text: 'x' }).tint, null);
+  assert.equal(noteFor({ type: 'milestone', text: 'x' }).title, 'A milestone');
 });
 
 test('the toast is skipped only for note events in ui.js', () => {

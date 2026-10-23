@@ -20,6 +20,7 @@ export function createHud({ sim, send, onSettings, calendar }) {
   $('speed').onclick = () => send({ type: 'cycleSpeed' });
   // Time of day: the sky follows the clock, and this button locks it to night, then day, then back to the cycle.
   const NEXT_LOCK = { auto: 'night', night: 'day', day: 'auto' }, LOCK_TEXT = { auto: 'Time of day: cycle', night: 'Time of day: night locked', day: 'Time of day: day locked' };
+  const LOCK_SUB = { auto: 'Follows the clock', night: 'Locked to night', day: 'Locked to day' };
   $('night').onclick = () => {
     if (!calendar) return;
     const lock = NEXT_LOCK[calendar.get().timeLock] || 'auto';
@@ -30,7 +31,7 @@ export function createHud({ sim, send, onSettings, calendar }) {
   $('settingsbtn').onclick = onSettings;
 
   // ---- town plaque: rename inline, pick a badge
-  const nameBtn = $('townname'), nameIn = $('townedit'), badge = $('townbadge'), pick = $('townpick');
+  const plaque = $('townplaque'), nameBtn = $('townname'), nameIn = $('townedit'), badge = $('townbadge'), pick = $('townpick');
   const pops = { town: $('townpop'), coins: $('coinspop'), parts: $('partspop'), renewal: $('renpop') };
   const lastPop = {};
   let editing = false, pickOpen = false, lastTown = '';
@@ -46,6 +47,10 @@ export function createHud({ sim, send, onSettings, calendar }) {
     if (key === lastTown) return;
     lastTown = key;
     nameBtn.textContent = t.name;
+    // The plaque grows to fit the name; a longer one steps the type down so it still shows in full.
+    const len = [...t.name].length;
+    plaque.dataset.len = len > 18 ? 'long' : len > 12 ? 'mid' : 'short';
+    nameBtn.title = t.name;
     badge.innerHTML = townIconSvg(t.icon, 28);
     badge.style.background = townColor(t.color);
     badge.setAttribute('aria-label', `Town badge: ${ICON_LABEL[t.icon]}, ${COLOR_LABEL[t.color]}. Change it`);
@@ -56,6 +61,7 @@ export function createHud({ sim, send, onSettings, calendar }) {
   function startRename() {
     if (editing) return;
     editing = true;
+    plaque.style.width = plaque.offsetWidth + 'px'; // the plaque holds its width while the field is open
     nameIn.value = s.town.name;
     nameBtn.hidden = true; nameIn.hidden = false;
     nameIn.focus(); nameIn.select();
@@ -64,6 +70,7 @@ export function createHud({ sim, send, onSettings, calendar }) {
   function endRename(keep) {
     if (!editing) return;
     editing = false;
+    plaque.style.width = '';
     const name = keep ? cleanName(nameIn.value) : null;
     nameIn.hidden = true; nameBtn.hidden = false;
     if (name && name !== s.town.name) send({ type: 'renameTown', name });
@@ -119,7 +126,8 @@ export function createHud({ sim, send, onSettings, calendar }) {
   }
   function paintCards() {
     const bd = sim.breakdown ? sim.breakdown() : { coins: {}, parts: {}, mult: {} };
-    paintPop('town', townCard(s));
+    const pp = sim.population;
+    paintPop('town', townCard(s, pp ? { people: pp.people(), capacity: pp.capacity(), perMin: pp.arrivals() * 60 } : null));
     paintPop('coins', coinsCard(s, sim.rate(), bd));
     paintPop('parts', partsCard(s, sim.partsRate(), bd));
     paintPop('renewal', renewalCard(s));
@@ -131,6 +139,8 @@ export function createHud({ sim, send, onSettings, calendar }) {
     const lock = calendar ? calendar.get().timeLock : 'auto';
     $('night').setAttribute('aria-pressed', String(lock !== 'auto'));
     $('night').setAttribute('aria-label', LOCK_TEXT[lock]);
+    $('night').dataset.label = 'Time of day'; // the menu tile's name, and under it the state
+    $('night').dataset.sub = LOCK_SUB[lock];
     $('rate').textContent = fmtRateCompact(sim.rate());
     $('prate').textContent = fmtRateCompact(sim.partsRate());
     paintTown();

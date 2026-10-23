@@ -1,8 +1,11 @@
-// Economy and progression: Charge boosts, Parts-paid goals, a daily bonus with a streak, milestones and Renewal.
+// Economy and progression: Charge boosts, Parts-paid goals, a daily bonus with a streak and Renewal.
+// Milestones and achievements have their own system (systems/achievements.js).
 // Income multiplier comes from `mult`. Everything here is saved through state() and sanitize(); see docs/ECONOMY.md.
 // Hooks run again after Renewal (ctx.rebuild), so init subscribes only once.
 import { BALANCE } from '../balance.js';
 import { freshState } from '../state.js';
+import { setTerrainSeed } from '../../world/terrain.js';
+import { getLayout } from '../../world/layout.js';
 import { dayKey, goalDef, pendingPoints, pickGoal, pointsMult, rewardText, yesterdayKey } from '../progress.js';
 
 const CH = BALANCE.charge;
@@ -12,7 +15,6 @@ const CHARGE_EVENTS = new Set(['placed', 'zonePainted', 'upgraded']);
 const num = (x, d, lo = 0, hi = 1e15) => (Number.isFinite(x) ? Math.min(hi, Math.max(lo, x)) : d);
 const int = (x, d, lo = 0, hi = 1e9) => (Number.isInteger(x) ? Math.min(hi, Math.max(lo, x)) : d);
 const STAT_KEYS = ['placed', 'painted', 'roadTiles', 'upgrades', 'boosts'];
-const KNOWN_MILESTONES = new Set(BALANCE.milestones.map((m) => m.id));
 
 function freshGoals() {
   let seq = 0;
@@ -20,12 +22,6 @@ function freshGoals() {
   for (let i = 0; i < GOALS.open; i++) { const p = pickGoal(seq, slots.map((s) => s.k)); seq = p.seq; slots.push({ k: p.k, p: 0 }); }
   return { slots, seq, day: '', doneToday: 0, bonusDay: '', streak: 0 }; // the day is stamped on the first tick
 }
-
-const valueOf = (state, stat) => {
-  if (stat === 'earned') return state.earned;
-  if (stat === 'renewals') return state.renewals;
-  return state.stats[stat] || 0;
-};
 
 function payReward(ctx, reward) {
   const { state, syncDisplay } = ctx;
@@ -60,7 +56,7 @@ function completeGoal(ctx, i, def) {
   const next = pickGoal(g.seq, g.slots.filter((_, j) => j !== i).map((s) => s.k));
   g.seq = next.seq;
   g.slots[i] = { k: next.k, p: 0 };
-  emit({ type: 'goalDone', text: 'Goal done: ' + def.name + ' · ' + rewardText(def.reward) });
+  emit({ type: 'goalDone', kind: 'goal', text: 'Goal done: ' + def.name + ' · ' + rewardText(def.reward) });
   if (g.doneToday >= GOALS.open && g.bonusDay !== dayKey(ctx.sim.now())) dailyBonus(ctx);
 }
 
@@ -72,17 +68,7 @@ function dailyBonus(ctx) {
   const b = GOALS.dailyBonus;
   const parts = b.parts + b.perStreakDay * Math.min(g.streak - 1, b.maxStreakDays);
   state.parts += parts; ctx.syncDisplay();
-  emit({ type: 'goalDone', text: 'Daily set done · +' + parts + ' Parts · ' + g.streak + '-day streak' });
-}
-
-function checkMilestones(ctx) {
-  const { state, emit } = ctx;
-  for (const m of BALANCE.milestones) {
-    if (state.milestones.includes(m.id) || valueOf(state, m.stat) < m.n) continue;
-    state.milestones = [...state.milestones, m.id];
-    payReward(ctx, m.reward);
-    emit({ type: 'goalDone', text: 'Milestone: ' + m.text + ' · ' + rewardText(m.reward) });
-  }
+  emit({ type: 'goalDone', kind: 'daily', text: 'Daily set done · +' + parts + ' Parts · ' + g.streak + '-day streak' });
 }
 
 const addCharge = (state, n) => { state.charge = Math.min(CH.max, state.charge + n); };
@@ -97,7 +83,6 @@ export default {
     charge: 0,          // 0..100 active-play meter
     boostS: 0,          // seconds of boost left (cleared on load: a boost never runs while away)
     stats: { placed: 0, painted: 0, roadTiles: 0, upgrades: 0, boosts: 0 },
-    milestones: [],     // ids of milestones already paid
     goals: freshGoals(),
   }),
 
@@ -115,7 +100,6 @@ export default {
       points: int(raw.points, 0, 0, 10000), renewals: int(raw.renewals, 0, 0, 1e6),
       charge: num(raw.charge, 0, 0, CH.max), boostS: 0,
       stats,
-      milestones: Array.isArray(raw.milestones) ? [...new Set(raw.milestones.filter((id) => KNOWN_MILESTONES.has(id)))] : [],
       goals,
     };
   },
@@ -135,19 +119,23 @@ export default {
       emit({ type: 'boosted', text: 'Charged up: coins ×' + CH.boostMult + ' for a minute' });
     },
 
-    // Starts the town over. Keeps points, renewals, unlocked road tiers, milestones, goals, Charge, settings, the town's name and badge, and lifetime coins.
+    // Starts the town over. Keeps points, renewals, unlocked road tiers, milestones (state.ach), goals, Charge, settings, the town's name and badge, and lifetime coins.
     renew(ctx) {
       const { sim, state, grid, emit, refresh, syncDisplay, rebuild } = ctx;
       const gain = pendingPoints(state.runEarned);
       if (gain < 1) return emit({ type: 'toast', text: 'Renewal opens after ' + BALANCE.renewal.divisor.toLocaleString('en-US') + ' coins in one run' });
       const keep = {
         earned: state.earned, points: state.points + gain, renewals: state.renewals + 1,
-        charge: state.charge, stats: state.stats, milestones: state.milestones, goals: state.goals, town: state.town,
+        charge: state.charge, stats: state.stats, ach: state.ach, goals: state.goals, town: state.town,
         roadUnlocks: state.roadUnlocks, night: state.night, speed: state.speed, paused: state.paused,
       };
       const fresh = freshState();
       for (const k of Object.keys(state)) delete state[k];
       Object.assign(state, fresh, keep, { runEarned: 0, offline: null, log: [] });
+      // Renewal rolls new land (freshState rolled the seed). The grid reads the terrain again, and the scenery with it.
+      setTerrainSeed(state.terrainSeed);
+      grid.regen();
+      Object.assign(sim.layout, getLayout());
       grid.zone.fill(0); grid.road.fill(0); grid.lot.fill(0);
       rebuild();
       syncDisplay(); refresh();
@@ -163,11 +151,9 @@ export default {
     rollDay(ctx);
     if (state.charge < CH.max) state.charge = Math.min(CH.max, state.charge + CH.regenPerS);
     if (state.boostS > 0) { state.boostS = Math.max(0, state.boostS - 1); if (!state.boostS) refresh(); }
-    checkMilestones(ctx);
   },
 
   // Closed-form catch-up: gainC is the coins the absence paid. Boosts never run while away.
-  // Milestones are left to the next tick, so a welcome-back never pops rewards in the middle of loading.
   offline(ctx, seconds, gainC = 0) {
     const { state } = ctx;
     state.earned += gainC; state.runEarned += gainC;
@@ -191,5 +177,4 @@ function onEvent(ctx, e) {
     default: return;
   }
   if (CHARGE_EVENTS.has(e.type) || e.type === 'roadsChanged') addCharge(state, CH.perAction);
-  checkMilestones(ctx);
 }

@@ -3,7 +3,7 @@
 export const TIP_STEPS = [
   { id: 'road', text: 'Start with a street. Press R, then drag across the grass to lay a road.',
     praise: 'A street at last. Visitors can find you now.', done: (st) => st.roadTiles > 0 },
-  { id: 'zone', text: 'Press Z and paint a few tiles. Homes and shops grow there on their own once a road is close.',
+  { id: 'zone', text: 'Press Z and paint a few tiles. Homes and shops grow there on their own once a road runs right beside them.',
     praise: 'Paint is down. Give it a little time.', done: (st) => st.painted > 0 },
   { id: 'build', text: 'Press B and click a plot to place your first building. Each one makes the next a little dearer.',
     praise: 'Your first building. Look at it go.', done: (st) => st.placed > 0 },

@@ -21,8 +21,7 @@ export const ROAD_FLOW = {
   bus: { lanes: 1, lane: 15, t0: 0.8 },
   free: { lanes: 2, lane: 25, t0: 0.5 },
 };
-// Planning values. Trips are one-way. One town day is DAY_MIN game minutes, which is a tuning knob.
-export const TRIPS_PER_RESIDENT_DAY = 1.6;
+// Planning values. Trips are one-way. One town day is DAY_MIN game minutes, which is a tuning knob. Trips per resident come from their routines (schedule.js).
 export const DAY_MIN = 24;
 export const BETA = 1.5;                    // gravity distance decay
 export const SHARE = { work: 0.6, shop: 0.25, service: 0.1, home: 0.05 }; // sums to 1
@@ -124,6 +123,7 @@ export function zoneDemand(state, grid) {
     if (b.cat === 'home') pop[z] += 2 * f;
     else if (b.cat === 'shop') { shops[z] += 1; jobs[z] += 1; pop[z] += f; }
     else if (b.cat === 'work') jobs[z] += 2 * f;
+    else if (b.cat === 'farm') jobs[z] += 2 * Math.min(f, 12); // a big farm is many fields, but its crew stays small
     else if (b.cat === 'service' || b.cat === 'landmark') services[z] += 1;
   }
   return { pop, jobs, shops, services };

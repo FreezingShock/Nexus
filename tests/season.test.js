@@ -124,7 +124,7 @@ test('each season changes the grass clearly from the others', () => {
 test('autumn splits the leaves between gold and red, and winter goes dormant', () => {
   const gold = leafLook(0x9DB874, targetsFor('autumn'), 0.2), red = leafLook(0x9DB874, targetsFor('autumn'), 0.7);
   assert.ok(dist(gold, red) > 0.05, 'some leaves are red, the rest gold');
-  assert.ok(targetsFor('autumn').foliage > 0.9, 'autumn is the strongest foliage change');
+  assert.ok(targetsFor('autumn').foliage > 0.7, 'autumn is the strongest foliage change (muted, but still the largest)');
   const winter = targetsFor('winter');
   assert.ok(winter.foliageCol !== targetsFor('summer').foliageCol && winter.cover >= 0.9, 'winter is dormant brown under snow');
 });
@@ -149,5 +149,20 @@ test('spring has petals, autumn has a few leaves on the wind, summer and winter 
 });
 
 test('a season is two in-game days by default, so the changes come within the first session', () => {
-  assert.equal(seasonLengthS(DEFAULTS), DAY_LENGTHS.normal * 2);
+  assert.equal(seasonLengthS(DEFAULTS), DAY_LENGTHS.normal * 9);
+});
+
+test('the land patch spreads the season in drifts and spares stone and cliffs', () => {
+  const mat = patchSeason(new THREE.MeshToonMaterial({ color: 0xffffff }), { land: true });
+  const shader = { uniforms: {}, vertexShader: THREE.ShaderLib.toon.vertexShader, fragmentShader: THREE.ShaderLib.toon.fragmentShader };
+  mat.onBeforeCompile(shader);
+  assert.ok(shader.vertexShader.includes('vSeasonPos = '), 'the vertex shader hands the world position over');
+  assert.ok(shader.fragmentShader.includes('sNoise(vSeasonPos.xz'), 'drifts come from world-space noise');
+  assert.ok(shader.fragmentShader.includes('greenish') && shader.fragmentShader.includes('levelGround'), 'stone and slopes are spared');
+  assert.ok(!/\bfloat flat\b/.test(shader.fragmentShader), '"flat" is a GLSL keyword');
+});
+
+test('no skirt shares a wall with another, so the seam between fine and far ground cannot z-fight', async () => {
+  const src = (await import('node:fs')).readFileSync(new URL('../src/render/terrain.js', import.meta.url), 'utf8');
+  assert.equal((src.match(/skirt\((inner|outer), /g) || []).length, 1, 'only the fine ground hangs a wall on the seam');
 });

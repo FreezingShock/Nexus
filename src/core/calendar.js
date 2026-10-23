@@ -8,8 +8,9 @@ const VERSION = 1;
 
 export const SEASONS = ['spring', 'summer', 'autumn', 'winter'];
 export const WEATHER = ['clear', 'cloudy', 'rain', 'snow', 'fog', 'leaves'];
-export const DAY_LENGTHS = { quick: 300, normal: 720, slow: 1440 }; // real seconds in one in-game day
-export const SEASON_DAYS = { short: 2, normal: 4, long: 8 };          // in-game days in one season
+export const DAY_LENGTHS = { quick: 60, normal: 120, slow: 240 };   // real seconds in one in-game day
+export const MONTH_DAYS = { short: 2, normal: 3, long: 4 };          // in-game days in one month (the `seasonLength` choice)
+export const SEASON_DAYS = { short: 6, normal: 9, long: 12 };        // a season is three months
 const START_HOUR = 8;                                                  // a new town wakes at eight
 
 // What each option may hold. Anything else in storage is ignored and the default is used.
@@ -20,7 +21,7 @@ export const OPTIONS = {
   season: ['auto', ...SEASONS],
   weather: ['auto', ...WEATHER],
 };
-export const DEFAULTS = { dayLength: 'normal', seasonLength: 'short', timeLock: 'auto', season: 'auto', weather: 'auto' };
+export const DEFAULTS = { dayLength: 'normal', seasonLength: 'normal', timeLock: 'auto', season: 'auto', weather: 'auto' };
 
 export function sanitizeCalendar(raw) {
   const out = { ...DEFAULTS };
@@ -35,12 +36,40 @@ export const SOUND_WEATHER = { clear: 'clear', cloudy: 'clear', fog: 'clear', ra
 
 export const dayLengthS = (o) => DAY_LENGTHS[o.dayLength] ?? DAY_LENGTHS.normal;
 export const seasonLengthS = (o) => dayLengthS(o) * (SEASON_DAYS[o.seasonLength] ?? SEASON_DAYS.normal);
+export const monthDaysOf = (o) => MONTH_DAYS[o.seasonLength] ?? MONTH_DAYS.normal;
 
 // The hour of the in-game day, 0 to 24, for a clock in seconds. Never negative: a negative clock counts as 0.
 export function hourOf(clockS, dayS) {
   const day = Math.max(0, clockS) / dayS;
   return (START_HOUR + (day - Math.floor(day)) * 24) % 24;
 }
+
+// The date. `days` is the town's calendar days elapsed (fractional, saved): 0 is eight in the morning on the 1st of March
+// of Year 1, so a new town wakes in spring. A day starts at midnight, a month is `monthDays` days, a year is twelve months
+// (it turns at January, so winter spans two years), and a season is three months from March.
+export const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+export const MONTH_SHORT = MONTH_NAMES.map((m) => m.slice(0, 3));
+const EPOCH_MONTH = 2; // March
+const DAY_SHIFT = 1 / 3; // the town starts at 08:00, a third of the way through the day
+export const seasonOfMonth = (month) => Math.floor(((month + 10) % 12) / 3);
+// The calendar day number (0 = the first morning) the time `days` falls in. A day turns over at midnight.
+export const dayIndexOf = (days) => Math.floor(Math.max(0, days) + DAY_SHIFT + 1e-9);
+// Everything the plaque and the holiday table need to know about a day number.
+export function dateOfDay(dayIdx, monthDays) {
+  const d = Math.max(0, Math.floor(dayIdx)), md = Math.max(1, monthDays | 0);
+  const monthsElapsed = Math.floor(d / md), m = monthsElapsed + EPOCH_MONTH;
+  const month = m % 12;
+  return { dayIdx: d, month, day: (d % md) + 1, monthDays: md, year: 1 + Math.floor(m / 12), season: seasonOfMonth(month),
+    cycle: Math.floor(monthsElapsed / 12), dayOfSeason: d % (md * 3) };
+}
+// The day number of a date, or -1 before the town began.
+export function dayOfDate(year, month, day, monthDays) {
+  const monthsElapsed = (year - 1) * 12 + month - EPOCH_MONTH;
+  return monthsElapsed < 0 ? -1 : monthsElapsed * monthDays + (day - 1);
+}
+// Dawn (six in the morning) of a day number, in `days`.
+export const dawnOfDay = (dayIdx) => dayIdx + 0.25 - DAY_SHIFT;
+export function hourOfDays(days) { const t = Math.max(0, days) + DAY_SHIFT; return (t - Math.floor(t)) * 24; }
 
 // Index into SEASONS for a clock in seconds, and the year number (a year is four seasons).
 export function seasonIndexOf(clockS, seasonS) { return Math.floor(Math.max(0, clockS) / seasonS) % 4; }
@@ -112,7 +141,7 @@ const LOOK = {
 export const SEASON_LOOK = {
   spring: { foliage: 0.55, foliageCol: 0xC6E27A, blossom: 0.7, field: 0x9FC563, water: 0x6FA9B8, haze: 0xF1E6C8, sun: 0xFFEBC0, strength: 0.95, low: 1, petals: 0.4 },
   summer: { foliage: 0.35, foliageCol: 0x5E9E3A, field: 0xD8B05A, water: 0x4F9DBE, haze: 0xD7E8EE, sun: 0xFFF0CC, strength: 1.1, low: 1 },
-  autumn: { foliage: 0.95, foliageCol: 0xD9A23A, foliageAlt: 0xB8532E, autumn: 1, field: 0x8E6B47, water: 0x6F8A8C, haze: 0xE8C9A0, sun: 0xFFC47A, strength: 0.8, low: 0.88, ambientLeaves: 0.3 },
+  autumn: { foliage: 0.8, foliageCol: 0xC9A24E, foliageAlt: 0xA5532F, autumn: 1, field: 0x8E6B47, water: 0x6F8A8C, haze: 0xE8C9A0, sun: 0xFFC47A, strength: 0.8, low: 0.88, ambientLeaves: 0.3 },
   winter: { foliage: 0.55, foliageCol: 0x8A7A55, field: 0x7A6F62, water: 0xA9C2CB, haze: 0xC9D5DD, sun: 0xD9E6FF, strength: 0.65, low: 0.72 },
 };
 

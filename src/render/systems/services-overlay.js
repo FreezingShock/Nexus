@@ -1,6 +1,6 @@
 // The services overlay: a soft tint on the tiles a service, park or shop reaches, a warm haze on the tiles industry eases,
 // a stronger tint on the tiles of the building under the cursor, and a ripple that spreads when something is placed.
-// One plane, one draw call, drawn per pixel from a 64 x 64 data texture (like tileview). The ripple is part of the same
+// One plane, one draw call, drawn per pixel from a data texture the size of the grid (like tileview). The ripple is part of the same
 // shader, so it costs no draw call either.
 //
 // API for UI modules (scene.sys('services-overlay')):
@@ -28,14 +28,14 @@ uniform float uNight;
 uniform vec2 uRipC;
 uniform float uRipR, uRipA;
 varying vec3 vW;
-const float N = 64.0;
+const float N = ${GRID_N}.0;
 vec4 over(vec4 base, vec4 s){
   float a = s.a + base.a * (1.0 - s.a);
   vec3 c = a > 0.0001 ? (s.rgb * s.a + base.rgb * base.a * (1.0 - s.a)) / a : vec3(0.0);
   return vec4(c, a);
 }
 void main(){
-  vec2 t = (vW.xz + 97.5) / 3.0;
+  vec2 t = (vW.xz + ${(GRID_HALF * TILE + TILE / 2).toFixed(1)}) / ${TILE.toFixed(1)};
   vec2 id = floor(t), f = fract(t);
   if (id.x < 0.0 || id.y < 0.0 || id.x >= N || id.y >= N) discard;
   vec4 d = texture2D(uTiles, (id + 0.5) / N);

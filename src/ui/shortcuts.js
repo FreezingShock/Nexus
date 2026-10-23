@@ -1,7 +1,7 @@
 // Keyboard bindings shown on the shortcut sheet. Tool keys are the real bindings (ui.js reads TOOL_KEYS).
 // Other rows name the file that handles the key, and tests/polish.test.js checks that the key is still there,
 // so the sheet cannot drift from the game.
-export const TOOL_KEYS = { r: 'roads', z: 'zones', b: 'build', c: 'services', p: 'parks', t: 'traffic', x: 'bulldoze', n: 'districts' };
+export const TOOL_KEYS = { r: 'roads', z: 'zones', b: 'build', c: 'services', p: 'parks', t: 'traffic', x: 'bulldoze', n: 'districts', y: 'decor' };
 
 export const TOOL_INFO = {
   roads: ['Roads', 'draw streets and lanes'],
@@ -12,6 +12,7 @@ export const TOOL_INFO = {
   traffic: ['Traffic', 'see how full each road is'],
   bulldoze: ['Bulldoze', 'click a building to clear it'],
   districts: ['Districts', 'name a neighbourhood and paint it'],
+  decor: ['Decor', 'benches, lamps, fountains and flowers'],
 };
 
 const toolRows = Object.entries(TOOL_KEYS).map(([k, tool]) => ({
@@ -41,11 +42,14 @@ export const SHORTCUT_GROUPS = [
     { keys: ['Shift'], text: 'Move faster', file: 'src/render/camera-math.js', needle: "has('shift')" },
     { keys: ['F'], text: 'Free fly: walk at ground level', file: 'src/ui/modules/camera-modes.js', needle: "k === 'f'" },
     { keys: ['H'], text: 'Home: the classic town view', file: 'src/ui/modules/camera-modes.js', needle: "k === 'h'" },
+    { keys: ['O'], text: 'Photo mode: filters, viewpoints, a slow cinematic camera and saving a picture', file: 'src/ui/modules/photo.js', needle: "k === 'o'" },
     { keys: ['Drag'], text: 'Pan the town' },
     { keys: ['Scroll'], text: 'Zoom in and out' },
   ] },
   { title: 'Town', rows: [
     { keys: ['G'], text: 'Town goals', file: 'src/ui/modules/progress.js', needle: "e.key === 'g'" },
+    { keys: ['K'], text: 'Calendar: the date, festivals and skipping days', file: 'src/ui/modules/date.js', needle: "toLowerCase() !== 'k'" },
+    { keys: ['M'], text: 'Milestones and achievements', file: 'src/ui/modules/milestones.js', needle: "e.key === 'm'" },
     { keys: ['Esc'], text: 'Leave a tool, or close a card', file: 'src/ui/ui.js', needle: "e.key === 'Escape'" },
     { keys: ['Right click'], text: 'Leave a tool, or close a card' },
     { keys: ['?'], text: 'Show or hide this sheet', file: 'src/ui/modules/shortcut-sheet.js', needle: "e.key === '?'" },

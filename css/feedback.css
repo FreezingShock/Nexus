@@ -1,0 +1,11 @@
+/* Gentle feedback: floats, rings, counter pops, and a springier press on buttons. Reduced motion is switched off globally in ui.css. */
+.fx-layer{position:fixed;inset:0;pointer-events:none;z-index:7;overflow:hidden}
+.fx-ring{position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;border:2.5px solid var(--terra);border-radius:50%;opacity:.8;animation:fx-ring .45s cubic-bezier(.2,.7,.3,1) both}
+@keyframes fx-ring{to{transform:scale(3.2);opacity:0}}
+.fx-float{position:absolute;transform:translate(-50%,-50%);padding:1px 8px 2px;border:2px solid var(--ink);border-radius:10px;background:var(--paper);font:800 13px/1.2 var(--body);color:var(--sage-d);box-shadow:0 2px 0 var(--ink);white-space:nowrap;animation:fx-float 1.6s ease-out both}
+@keyframes fx-float{0%{opacity:0;transform:translate(-50%,-30%) scale(.7)}15%{opacity:1;transform:translate(-50%,-60%) scale(1.05)}25%{transform:translate(-50%,-70%) scale(1)}100%{opacity:0;transform:translate(-50%,-230%) scale(1)}}
+.fx-bump{transform-origin:left center;animation:fx-bump .32s cubic-bezier(.3,1.8,.5,1)}
+@keyframes fx-bump{0%{transform:scale(1)}40%{transform:scale(1.09)}100%{transform:scale(1)}}
+/* a press goes down fast and springs back with a small overshoot */
+.btn,.ib{transition:transform .22s cubic-bezier(.3,1.7,.5,1),box-shadow .12s}
+.btn:active,.ib:active{transition:transform .05s,box-shadow .05s}

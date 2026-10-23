@@ -9,7 +9,7 @@ A new town opens on a small village core. Every tile of it is ordinary ground, a
 - **Bridge and tunnel.** The stem crosses the river on the bridge (world x 46 to 68) and ends at the tunnel gate, a dead end at the foot of a mountain east of the river. The mountain is terrain (`heightAt` in `src/world/terrain.js`), with a stone arch and a dark mouth where the road goes in (`buildStatic` in `src/render/props.js`). The ground is level up to the gate.
 - **Traffic at the gate.** Some new cars and townsfolk come out of the tunnel at the gate and head into town. Some cars leave town along the stem and drive into the tunnel, where they are removed. Nothing counts them yet: population will come through here later. See `src/render/vehicle-agents.js` and `src/render/townsfolk.js`.
 - **Trees.** Street trees and a few scattered ones around the village, generated in `src/world/layout.js` and kept off the village's streets and buildings. The middle stays open for growth.
-- **Scenery.** Farmland to the west, two wind turbines, and pines out past the village. None of it is part of the town's tiles.
+- **Scenery.** Two wind turbines, and pines out past the village. None of it is part of the town's tiles.
 
 ## Rules
 
@@ -26,7 +26,7 @@ A new town opens on a small village core. Every tile of it is ordinary ground, a
 ## Where the code is
 
 - `src/world/starter.js`: the streets, the buildings, the records and the reserved tiles.
-- `src/world/layout.js`: scenery only (farms, turbines, trees, pines).
+- `src/world/layout.js`: scenery only (turbines, trees, pines).
 - `src/sim/systems/placement.js`: the records, `starter` flag, the price count and the income rule.
 - `src/world/roadnet.js`: `starterRoads()` reads the streets.
 

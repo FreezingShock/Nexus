@@ -14,6 +14,7 @@ import { DIRS, opposite } from '../world/roadnet.js';
 import { ROAD_FLOW, TILES, ZONES, ZONE_SIDE, ZONE_N, stepBetween } from '../sim/traffic.js';
 import { TUNNEL_GATE } from '../world/starter.js';
 import { makeRng } from '../world/rng.js';
+import { unit } from '../sim/schedule.js';
 
 export const CAR = 0, BUS = 1;
 export const DRIVE = 0, PARK = 1;
@@ -384,11 +385,29 @@ export class Fleet {
     this.cumReady = true;
   }
 
+  // The resident who takes the wheel: one of env.persons (the residents out driving now) who is not in a car already.
+  // -1 when the caller gave no residents (tests, bare scenarios); null when everyone out is already driving.
+  pickPerson(env) {
+    const n = env.personN | 0;
+    if (!env.persons || n <= 0) return env.persons ? null : -1;
+    const used = new Set();
+    for (const a of this.agents) if (a.alive && a.kind === CAR && a.person >= 0) used.add(a.person);
+    const start = Math.floor(this.rng() * n);
+    for (let k = 0; k < n; k++) {
+      const id = env.persons[(start + k) % n];
+      if (!used.has(id)) return id;
+    }
+    return null;
+  }
+
   // A new car: from the tunnel, from town towards the tunnel, or a trip between two zones.
   spawnCar(env) {
+    this.driver = this.pickPerson(env);
+    if (this.driver === null) return;
     const r = this.rng();
-    if (r < TUNNEL_IN && this.spawnFromTunnel(env)) return;
-    if (r < TUNNEL_IN + TUNNEL_OUT && this.spawnToTunnel(env)) return;
+    const tin = TUNNEL_IN + Math.min(0.25, (env.arrivals || 0) * 0.3); // newcomers arrive by the tunnel
+    if (r < tin && this.spawnFromTunnel(env)) return;
+    if (r < tin + TUNNEL_OUT && this.spawnToTunnel(env)) return;
     this.spawnTrip(env);
   }
 
@@ -442,8 +461,10 @@ export class Fleet {
 
   launch(u, d, lane, pref, j, env, exit = false) {
     const a = this.slot(CAR);
-    a.type = Math.floor(this.rng() * 3);
-    a.colour = Math.floor(this.rng() * 6);
+    // a resident keeps their own car: the model and colour come from who is driving
+    a.person = this.driver;
+    a.type = Math.floor((this.driver >= 0 ? unit(this.driver, 21) : this.rng()) * 1000);
+    a.colour = Math.floor((this.driver >= 0 ? unit(this.driver, 22) : this.rng()) * 1000);
     a.dest = j;
     a.exit = exit;
     a.tour = null;
@@ -519,7 +540,7 @@ export class Fleet {
       a = { id: this.agents.length, link: -1, type: 0, colour: 0, tile: 0, mv: 0, out: 0, nt: -1, pref: 0, lane: 0, x: 0, v: 0, v0: 1, dest: -1, tour: null, k: 0, wait: 0, since: 0, xNew: 0, vNew: 0, want: -1, queued: false, atLine: false, t: 0, age: 0, state: DRIVE, alive: false, kind };
       this.agents.push(a);
     }
-    Object.assign(a, { kind, alive: true, state: DRIVE, t: 0, age: 0, wait: 0, since: 0, queued: false, atLine: false, want: -1, xNew: 0, vNew: 0 });
+    Object.assign(a, { kind, person: -1, alive: true, state: DRIVE, t: 0, age: 0, wait: 0, since: 0, queued: false, atLine: false, want: -1, xNew: 0, vNew: 0 });
     return a;
   }
 

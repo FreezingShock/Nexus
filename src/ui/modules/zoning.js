@@ -1,6 +1,6 @@
 // The Zones tool: pick a zone (or the eraser), drag a rectangle on the grid, release to paint.
 // Reads sim state, sends paintZone / clearZone, and drives the tileview render system for the grid and the preview.
-import { inBounds, worldToTile } from '../../world/grid.js';
+import { GRID_N, inBounds, worldToTile } from '../../world/grid.js';
 import { demandCard } from '../hud-detail.js';
 import { ZONE_DEFS } from '../../sim/zones.js';
 import { $, fmt } from '../format.js';
@@ -13,7 +13,7 @@ export default {
     const view = () => scene.sys('tileview');
     const stage = scene.canvas.parentElement;
     const tag = document.createElement('div');
-    tag.className = 'ztag card'; tag.hidden = true;
+    tag.className = 'ztag card'; tag.dataset.mo = 'tag'; tag.hidden = true;
     $('app').appendChild(tag);
     // The demand widget sits in the top row of the HUD (index.html); this module fills its rows.
     const demandEl = document.getElementById('demandrows');
@@ -25,7 +25,7 @@ export default {
     let active = false, brush = 1, drag = null, hoverTile = null, last = null, flashed = false, acc = 0;
 
     const def = () => ZONE_DEFS[brush];
-    const clampTile = (t) => [Math.max(0, Math.min(63, t[0])), Math.max(0, Math.min(63, t[1]))];
+    const clampTile = (t) => [Math.max(0, Math.min(GRID_N - 1, t[0])), Math.max(0, Math.min(GRID_N - 1, t[1]))];
     function tileAt(e) {
       const p = scene.ground(e.clientX, e.clientY);
       if (!p) return null;
@@ -149,16 +149,23 @@ export default {
       },
     };
 
-    // The demand widget: one slim bar per zone with demand, in the zone colours. R, C and I, and a hover card with the
-    // full names, the percentage and what drives each bar. The card text lives in hud-detail.js.
+    // The demand widget: one pill per zone, R, C and I, filled left to right in the zone colour, with the letter and the
+    // percentage on top. A hover card has the full names and what drives each one. The card text lives in hud-detail.js.
     function paintDemand() {
       if (!demandEl) return;
       const d = sim.zoning.demand();
-      demandEl.innerHTML = [1, 2, 3].map((z) => {
-        const pct = Math.round(d[z] * 100);
-        return `<div class="drow2"><span class="dk" style="background:${ZONE_DEFS[z].paint}">${ZONE_DEFS[z].name[0]}</span>` +
-          `<i class="dbar" aria-hidden="true"><u style="width:${pct}%;background:${ZONE_DEFS[z].paint}"></u></i><em>${pct}%</em></div>`;
-      }).join('');
+      // Built once, then only the widths and numbers change, so a bar glides to its new length.
+      if (demandEl.children.length !== 3) {
+        demandEl.innerHTML = [1, 2, 3].map((z) =>
+          `<div class="dpill" role="img"><u style="background:${ZONE_DEFS[z].paint}"></u>` +
+          `<span class="dk" style="background:${ZONE_DEFS[z].paint}">${ZONE_DEFS[z].name[0]}</span><em></em></div>`).join('');
+      }
+      [1, 2, 3].forEach((z, i) => {
+        const pct = Math.round(d[z] * 100), pill = demandEl.children[i];
+        pill.setAttribute('aria-label', `${ZONE_DEFS[z].name} demand ${pct}%`);
+        pill.firstChild.style.width = pct + '%';
+        pill.lastChild.textContent = pct + '%';
+      });
       if (demandPop) {
         const card = demandCard(d, sim.zoning.stats(), [null, ZONE_DEFS[1].paint, ZONE_DEFS[2].paint, ZONE_DEFS[3].paint]);
         if (card !== lastCard) { lastCard = card; demandPop.innerHTML = card; }

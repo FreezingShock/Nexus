@@ -65,13 +65,14 @@ export function cueFor(e) {
     case 'placed': return 'place';
     case 'bulldozed': return 'bulldoze';
     case 'upgraded': return 'upgrade';
+    case 'painted': return 'sparkle';
     case 'roadsChanged':
       if (e.kind === 'draw') return 'road';
       if (e.kind === 'undo') return 'undo';
       return 'erase';
     case 'zonePainted': return 'zone';
     case 'zoneCleared': return 'erase';
-    case 'goalDone': return 'goal';
+    case 'goalDone': case 'milestone': return 'goal';
     case 'renewed': return 'renew';
     case 'boosted': return 'charge';
     case 'toast': return typeof e.text === 'string' && /Not enough/.test(e.text) ? 'deny' : null;

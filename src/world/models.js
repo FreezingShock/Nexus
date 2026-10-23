@@ -4,6 +4,8 @@
 import { makeRng } from './rng.js';
 import { TILE, GRID_HALF } from './grid.js';
 import { heightAt } from './terrain.js';
+import { BALANCE } from '../sim/balance.js';
+import { PAL, ROOFS, TRIMS } from './palettes.js';
 
 export const LANG = {
   FLOOR_H: 1.1,     // one storey, world units
@@ -18,6 +20,7 @@ export const CATEGORIES = [
   { id: 'home', name: 'Homes', tool: 'build' },
   { id: 'shop', name: 'Shops', tool: 'build' },
   { id: 'work', name: 'Workplaces', tool: 'build' },
+  { id: 'farm', name: 'Farms', tool: 'build' },
   { id: 'landmark', name: 'Landmarks', tool: 'build' },
   { id: 'service', name: 'Services', tool: 'services' },
   { id: 'park', name: 'Parks', tool: 'parks' },
@@ -35,6 +38,11 @@ export const MODELS = [
   { id: 'shop-row',     name: 'Shop row',       cat: 'shop',     sub: 'Awnings and planters',             foot: [[1, 1], [1, 2]], tile: 'row', floors: [2, 3], grow: 0.3, cost: 200, style: 'sash' },
   { id: 'cafe',         name: 'Corner cafe',    cat: 'shop',     sub: 'Terrace tables and string lights', foot: [[1, 1]],                 floors: [2, 3], grow: 0,    cost: 260,  style: 'arched' },
   { id: 'market',       name: 'Market hall',    cat: 'shop',     sub: 'Open arches, a lantern roof',      foot: [[2, 2], [1, 2]],         floors: [1, 1], grow: 0,    cost: 520,  style: 'arched' },
+  // A farm is production, not housing: a farmhouse, a barn and fields that fill every tile it claims. It is the one model
+  // with no fixed sizes: `free` lets the player drag any lot from min (across x deep, in the model's own frame, so the
+  // house always has room) up to max tiles a side, and the fields behind the fixed front repeat to fill it.
+  // `perTile` makes its `floors` (the yield the income and upgrade curves read) grow with the area, uncapped. `flat` means level ground.
+  { id: 'farm',         name: 'Farm',           cat: 'farm',     sub: 'A farmhouse, a barn and fields of crops', foot: [[2, 3]], floors: [1, 1], grow: 0, perTile: 0.5, cost: 45, style: 'sash', flat: true, free: { min: [2, 3], max: 24 } },
   { id: 'office',       name: 'Office block',   cat: 'work',     sub: 'Ribbon windows, stepped crown',    foot: [[1, 1], [1, 2], [2, 2]], floors: [4, 6], grow: 1,    cost: 560,  style: 'ribbon' },
   { id: 'workshop',     name: 'Workshop',       cat: 'work',     sub: 'Sawtooth roof and a chimney',      foot: [[1, 2], [2, 2]],         floors: [1, 2], grow: 0.3,  cost: 300,  style: 'sash' },
   { id: 'warehouse',    name: 'Warehouse',      cat: 'work',     sub: 'Big doors, plenty of room',        foot: [[1, 2], [2, 2]],         floors: [1, 2], grow: 0,    cost: 240,  style: 'ribbon' },
@@ -50,6 +58,9 @@ export const MODELS = [
   { id: 'playground',   name: 'Playground',     cat: 'park',     sub: 'Swings and a little slide',        foot: [[1, 1], [1, 2]],         floors: [0, 0], grow: 0,    cost: 140,  style: 'sash' },
   { id: 'pond',         name: 'Pond',           cat: 'park',     sub: 'Water, reeds and a bench',         foot: [[2, 2]],                 floors: [0, 0], grow: 0,    cost: 180,  style: 'sash' },
 ];
+
+// Prices are scaled once here, from BALANCE.priceMult (see balance.js).
+for (const m of MODELS) m.cost = Math.round(m.cost * BALANCE.priceMult);
 
 const byId = new Map(MODELS.map((m) => [m.id, m]));
 export const modelById = (id) => byId.get(id) || null;
@@ -75,6 +86,10 @@ export const canonicalDims = (def, size) => (def.tile === 'row' ? [size[1], size
 //   exact: the lot is a size the model was drawn for (or a row of units)
 //   otherwise: the largest drawn size that fits inside the lot; the caller centers it or leaves the rest open
 export function fitFootprint(def, fw, fd) {
+  if (def.free) { // any lot with a side of at least min[0], the other at least min[1], neither past max
+    const [lo, hi] = [Math.min(fw, fd), Math.max(fw, fd)];
+    return lo >= def.free.min[0] && hi >= def.free.min[1] && hi <= def.free.max ? { fw, fd, exact: true } : null;
+  }
   const want = [fw, fd];
   const sizes = footprintsOf(def);
   const has = (a, b) => sizes.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
@@ -100,6 +115,9 @@ export function pickModelForLot(cat, fw, fd, seed = 0) {
 }
 
 export const areaCost = (def, fw, fd) => Math.round(def.cost * fw * fd);
+// Storeys (a farm's yield) a model reaches at its lowest roll on a lot of `area` tiles. The menus show it as the starting income.
+export const floorsFor = (def, area, roll = 0) => (def.perTile ? Math.max(1, Math.round(area * def.perTile)) : Math.min(12, def.floors[0] + roll + Math.min(6, Math.floor(def.grow * (area - 1) + 0.0001))));
+export const minFloors = (def, area) => floorsFor(def, area);
 
 // ---- seeds and traits ----
 
@@ -134,8 +152,7 @@ export function describe(rec, level = 1) {
   const cw = rot % 2 ? rec.fd : rec.fw, cd = rot % 2 ? rec.fw : rec.fd; // footprint in the model's own frame
   const area = rec.fw * rec.fd;
   const [lo, hi] = def.floors;
-  const extra = Math.min(6, Math.floor(def.grow * (area - 1) + 0.0001));
-  const floors = rec.floors ?? Math.min(12, lo + Math.floor(t[0] * (hi - lo + 1)) + extra);
+  const floors = rec.floors ?? floorsFor(def, area, Math.floor(t[0] * (hi - lo + 1)));
   const x = (rec.gx + (rec.fw - 1) / 2 - GRID_HALF) * TILE, z = (rec.gz + (rec.fd - 1) / 2 - GRID_HALF) * TILE;
   // stand on the highest corner so a building on a gentle slope never sinks; the kit's foundation fills the gap below
   let y = 0.1;
@@ -146,6 +163,8 @@ export function describe(rec, level = 1) {
     w: cw * TILE - LANG.MARGIN, d: cd * TILE - LANG.MARGIN,
     x, y, z,
     rotY: rot * Math.PI / 2,
-    pal: rec.pal || PAL_KEYS[Math.floor(t[1] * 4)],
+    pal: PAL[rec.pal] ? rec.pal : PAL_KEYS[Math.floor(t[1] * 4)],
+    roof: ROOFS[rec.roof] ? rec.roof : null,
+    trim: TRIMS[rec.trim] ? rec.trim : null,
   };
 }

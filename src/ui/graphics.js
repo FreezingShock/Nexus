@@ -6,7 +6,7 @@ const PRESET_LABEL = { low: 'Low', medium: 'Medium', high: 'High', ultra: 'Ultra
 const ROWS = [
   { key: 'shadowSize', label: 'Shadow detail', needs: 'shadows', text: { 1024: '1K', 2048: '2K', 4096: '4K' } },
   { key: 'pixelRatio', label: 'Sharpness', text: { 1: '1×', 1.25: '1.25×', 1.5: '1.5×', 2: '2×' } },
-  { key: 'effects', label: 'Dust and hearts', text: { off: 'Off', light: 'Light', full: 'Full' } },
+  { key: 'effects', label: 'Dust, hearts and town life', text: { off: 'Off', light: 'Light', full: 'Full' } },
   { key: 'crowd', label: 'Traffic and people', text: { light: 'Light', normal: 'Normal', busy: 'Busy' } },
 ];
 const SWITCHES = [
@@ -28,7 +28,6 @@ export function graphicsMarkup(q) {
     `<button class="gfx-sw" role="switch" data-switch="${s.key}" aria-checked="${String(!!q[s.key])}"><span>${s.label}</span><i aria-hidden="true"></i></button>`).join('');
   const note = q.preset === 'custom' ? 'Custom: you changed an option, so no preset is selected.' : 'Preset: ' + PRESET_LABEL[q.preset] + '.';
   return `<section class="gfx" aria-label="Graphics">
-    <h3 class="h-disp">Graphics</h3>
     <div class="gfx-presets" role="group" aria-label="Graphics preset">${presets}</div>
     <p class="sub gfx-note">${note}</p>
     ${rows}

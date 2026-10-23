@@ -12,7 +12,7 @@ const PAD_LEVEL = 0.12;    // total loudness of a chord before the mood's padLev
 // Cozy and low: each layer's trim sits well under 1, so the bed of sound stays under the music and the clicks.
 const TRIM = { murmur: 0.35, traffic: 0.3, water: 0.3, wind: 0.45, rain: 0.35, hush: 0.4, rustle: 0.2, birds: 0.7, owls: 0.8, crickets: 0.7, cicadas: 0.6 };
 const WATER_CAP = 0.3;     // the river is never loud; distance decides how close it comes (attenuation.js)
-const MIN_GAP = { hover: 0.11, tick: 0.05, 'road-grow': 0.055, click: 0.04, select: 0.04, note: 2 }; // seconds between repeats
+const MIN_GAP = { hover: 0.11, tick: 0.05, 'road-grow': 0.055, click: 0.04, select: 0.04, note: 2, arrive: 4, sparkle: 0.25 }; // seconds between repeats
 const DRIFT_S = [6, 14];   // each layer wanders between these gaps, so the bed never settles into a loop
 const BIRD_PATTERNS = [[0, 0.09], [0, 0.09, 0.2], [0, 0.07, 0.14, 0.26], [0, 0.12]];
 
@@ -217,6 +217,9 @@ export function createEngine({ win = globalThis } = {}) {
     renew: (t) => [523.25, 783.99, 1046.5].forEach((f, i) => bell(t + i * 0.14, f, 2.8, 0.18)),
     charge: (t) => { sweep(t, 'lowpass', 300, 2600, 0.7, 0.12); blip(t, 260, 0.7, 0.04, 'sine', 620); },
     postcard: (t) => { noiseBurst(t, 'highpass', 3000, 0.22, 0.07); blip(t + 0.3, 120, 0.05, 0.16); },
+    // A family arriving: two soft rising notes. A sparkle: one tiny high twinkle.
+    arrive: (t) => { bell(t, 659.25, 1.1, 0.07, 0.5); bell(t + 0.16, 987.77, 1.4, 0.06, 0.5); },
+    sparkle: (t) => { blip(t, 2093, 0.14, 0.02, 'sine', 2349); blip(t + 0.07, 3135.96, 0.12, 0.014, 'sine'); },
     deny: (t) => blip(t, 220, 0.1, 0.03, 'sine', 180),
     dusk: (t) => bell(t, 329.63, 2.2, 0.16),
     dawn: (t) => { rooster(t); bell(t + 1.1, 659.25, 2.4, 0.14); },

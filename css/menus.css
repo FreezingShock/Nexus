@@ -49,6 +49,7 @@
 /* the footer: size, turn, what the selected model is, and its price */
 .pfoot{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;padding-top:8px;border-top:2px dashed var(--paper-3);min-width:0}
 .pfoot .psize{display:inline-flex;gap:6px;flex:0 0 auto}
+.pfoot .psize.hint{font-size:12px;opacity:.75;letter-spacing:.02em;white-space:nowrap}
 .pfoot .tog{height:32px;padding:0 10px;font-size:13px;border-radius:10px;flex:0 0 auto}
 .pdetail{flex:1 1 auto;min-width:0;font-size:12.5px;font-weight:700;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pprice{flex:0 0 auto;font-size:14px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -62,12 +63,13 @@
 .lchip i{display:block;width:22px;height:14px;border-radius:5px;border:2px solid var(--ink)}
 .btn[aria-pressed="true"]{background:#F9DFC9;box-shadow:0 4px 0 var(--action);border-color:var(--action)}
 
-/* Demand: a plaque in the top HUD row, the same width and height as its neighbours. Three bars: R, C, I. Hover for the drivers. */
-.chip.demand{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center;min-width:0;padding:6px 14px 6px 12px;pointer-events:auto}
-.dtitle{font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:15px;line-height:1;white-space:nowrap}
-.drows{display:flex;flex-direction:column;gap:4px;min-width:0}
-.drow2{display:grid;grid-template-columns:16px minmax(0,1fr) 34px;align-items:center;gap:6px;font-size:11px;line-height:1;font-weight:800;color:var(--ink)}
-.drow2 .dk{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--ink);display:grid;place-items:center;font-family:var(--display);font-size:10px;font-weight:800;line-height:1;color:var(--ink)}
-.dbar{display:block;height:9px;min-width:0;border-radius:5px;border:1.5px solid var(--ink);background:var(--paper);overflow:hidden}
-.dbar u{display:block;height:100%;text-decoration:none;transition:width .6s}
-.drow2 em{font-style:normal;text-align:right;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+/* Demand: a plaque in the top HUD row. A title, then three pills, R, C and I. Each pill fills left to right in its zone
+   colour with the letter and the percentage on top. Hover for the drivers. */
+.chip.demand{display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:5px;min-width:0;padding:7px 12px 8px;pointer-events:auto}
+.dtitle{font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:17px;line-height:1;white-space:nowrap;text-align:left;padding-left:4px}
+.drows{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;min-width:0}
+.dpill{position:relative;display:flex;align-items:center;justify-content:space-between;gap:2px;height:30px;box-sizing:border-box;padding:0 8px 0 3px;border-radius:15px;border:2.5px solid var(--ink);background:var(--paper);overflow:hidden;font-weight:800;font-size:14px;line-height:1;color:var(--ink)}
+.dpill u{position:absolute;left:0;top:0;bottom:0;text-decoration:none;transition:width .6s ease;opacity:.85}
+.dpill .dk,.dpill em{position:relative}
+.dpill .dk{flex:0 0 auto;width:20px;height:20px;border-radius:50%;border:2px solid var(--ink);display:grid;place-items:center;font-family:var(--display);font-size:12px;font-weight:800}
+.dpill em{font-style:normal;font-variant-numeric:tabular-nums}

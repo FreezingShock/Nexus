@@ -1,0 +1,11 @@
+/* The Decor tool: its cursor label copies the placement label's look. */
+#decorlabel{position:fixed;left:0;top:0;z-index:20;display:flex;align-items:center;gap:8px;padding:6px 14px 6px 8px;border:2.5px solid var(--ink);border-radius:999px;background:var(--paper);box-shadow:0 3px 0 var(--ink),0 10px 18px rgba(43,38,32,.2);font-weight:800;font-size:15px;white-space:nowrap;pointer-events:none;font-variant-numeric:tabular-nums}
+#decorlabel b{font-size:16px}
+#decorlabel small{font-size:13px;color:var(--ink-soft);font-weight:700}
+#decorlabel .need{color:var(--action)}
+#decorlabel.bad{background:#F6D9CF;padding-left:14px}
+#decorlabel.poor b{color:var(--action)}
+#decorlabel .coin{width:22px;height:22px;border-radius:50%;border:2.5px solid var(--ink);background:radial-gradient(circle at 50% 50%,var(--paper) 0 28%,var(--mustard) 30%);flex:0 0 auto}
+.tile.erase .pic{display:flex;align-items:center;justify-content:center;background:#F4DDD3}
+.tile.erase .pic svg{width:44px;height:44px}
+.fly .dhint{font-size:13px;color:var(--ink-soft);font-weight:700}

@@ -81,3 +81,46 @@ export function lotsByDistrict(layer, lots) {
   }
   return out;
 }
+
+// ---- selection shapes for the Districts tool (pure: tiles in, tiles out) ----
+
+// Every tile on the straight line between two tiles (Bresenham), so a fast brush stroke leaves no gaps.
+export function lineTiles(a, b) {
+  const out = [];
+  let [x, z] = a;
+  const dx = Math.abs(b[0] - x), dz = Math.abs(b[1] - z), sx = x < b[0] ? 1 : -1, sz = z < b[1] ? 1 : -1;
+  let err = dx - dz;
+  for (;;) {
+    out.push([x, z]);
+    if (x === b[0] && z === b[1]) break;
+    const e2 = 2 * err;
+    if (e2 > -dz) { err -= dz; x += sx; }
+    if (e2 < dx) { err += dx; z += sz; }
+  }
+  return out;
+}
+
+// A round brush: every in-grid tile within `radius` of the centre. Radius 0 is the one tile.
+export function discTiles(c, radius) {
+  const out = [];
+  for (let dz = -radius; dz <= radius; dz++) {
+    for (let dx = -radius; dx <= radius; dx++) {
+      if (dx * dx + dz * dz > radius * radius + radius * 0.8) continue;
+      const x = c[0] + dx, z = c[1] + dz;
+      if (x >= 0 && z >= 0 && x < GRID_N && z < GRID_N) out.push([x, z]);
+    }
+  }
+  return out;
+}
+
+// The tiles of a brush stroke from the last tile to this one: the disc swept along the line, each tile once.
+export function strokeTiles(from, to, radius) {
+  const seen = new Set(), out = [];
+  for (const c of lineTiles(from, to)) {
+    for (const t of discTiles(c, radius)) {
+      const k = t[1] * GRID_N + t[0];
+      if (!seen.has(k)) { seen.add(k); out.push(t); }
+    }
+  }
+  return out;
+}

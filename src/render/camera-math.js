@@ -1,10 +1,12 @@
 // Pure camera math: no Three.js and no DOM, so the tests can run it in node.
+import { GRID_HALF, TILE } from '../world/grid.js';
 // Conventions: yaw 0 looks toward -z; increasing yaw turns left. Pitch is positive when looking up.
 // The orbit (isometric) camera sits at target + (sin az, cos az) * dist and looks back at the target.
 
-export const ISO = { az: Math.PI / 4, elev: 0.62, elevMin: 0.2, elevMax: 1.42 };
+export const ISO = { az: Math.PI / 4, elev: 0.62, elevMin: 0.38, elevMax: 1.42 };
+// elevMin keeps the view high enough that the far ground (480 units out, see render/terrain.js) always fills the top of the screen.
 export const TOWN_LIMIT = 70;      // the orbit target stays this close to the middle of the town
-export const FLY_LIMIT = 96;       // the free camera may roam to the edge of the 64-tile grid (3 units a tile)
+export const FLY_LIMIT = GRID_HALF * TILE; // the free camera may roam to the edge of the grid (3 units a tile)
 export const EYE_MIN = 1.5;        // lowest free-camera height: just above the streets
 export const EYE_MAX = 60;
 export const FLY_PITCH = 1.45;     // free camera can look almost straight up or down

@@ -6,7 +6,6 @@ export const ZONE_COUNT = 4;
 export const MAX_LOT_LEVEL = 5;
 // Values in grid.lot at or above this belong to player-placed buildings (src/world/placement.js). Zoning leaves them alone.
 export const PLACED_LOT_MIN = 40000;
-export const ROAD_REACH = 2; // buildings only grow when a road is within this many tiles
 
 // paint = the tint on the map; coins = cost per tile; income = coins per second per building level
 export const ZONE_DEFS = [
@@ -66,6 +65,14 @@ export function demandOf(s) {
     clamp(0.5 + 0.5 * (s.pop * 0.4 + 3 - s.ind) / (s.pop * 0.4 + s.ind + 6), 0.15, 1),
     clamp(s.pop / 80, 0.2, 0.8),
   ];
+}
+
+// Sets the level of the grown lot on tile i (its state.lots entry). False when no building grew there.
+export function setLotLevel(lots, i, level) {
+  const l = lots.find(([j]) => j === i);
+  if (!l) return false;
+  l[1] = Math.min(MAX_LOT_LEVEL, Math.max(1, level | 0));
+  return true;
 }
 
 export function lotIncome(lots, zoneAt) {

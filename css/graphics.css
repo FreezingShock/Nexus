@@ -19,4 +19,3 @@
 .gfx-sw[aria-checked="true"] i{background:var(--sky)}
 .gfx-sw[aria-checked="true"] i::after{transform:translateX(20px)}
 .gfx-stats{position:fixed;left:12px;bottom:12px;z-index:5;padding:4px 9px;border-radius:10px;border:2px solid var(--ink);background:var(--paper);font:700 12px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--ink);pointer-events:none;box-shadow:0 2px 0 var(--ink)}
-.gfx-stats[hidden]{display:none}

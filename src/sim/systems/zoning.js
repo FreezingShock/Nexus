@@ -1,11 +1,12 @@
-// Zoning: paint zones on grid tiles, buildings grow into painted tiles that have a road nearby.
+// Zoning: paint zones on grid tiles, buildings grow into painted tiles that sit directly beside a road.
 // Owns grid.zone and grid.lot. Reads grid.road (the road system owns it). See docs/GRID.md.
 import { GRID_N, BASE, inBounds, rectTiles, tileIndex, tileOf } from '../../world/grid.js';
 import { putTrees, takeOnTiles } from '../../world/trees.js';
 import {
-  ZONE_DEFS, ZONE_COUNT, MAX_LOT_LEVEL, ROAD_REACH, PLACED_LOT_MIN, encodeZones, decodeZones, validZonesString,
+  ZONE_DEFS, ZONE_COUNT, MAX_LOT_LEVEL, PLACED_LOT_MIN, encodeZones, decodeZones, validZonesString,
   nextRand, lotStats, demandOf, lotIncome, lotParts,
 } from '../zones.js';
+import { lotDescription, lotTileOf } from '../../world/lots.js';
 
 const AREA = GRID_N * GRID_N;
 // Undo for zone paint and erase: old zones go back on their tiles, lots the erase took come back,
@@ -53,6 +54,24 @@ export default {
       candidates: () => candidates(grid),
     };
     sim.zoning.painted = countPaint(grid);
+    // A grown lot answers to its id (lot<tile>) like a placed building: the inspect card, upgrade and bulldoze read it
+    // through sim.building and sim.alive. Other ids fall through to the placement system (or the bare sim).
+    if (!sim.lotsHooked) {
+      sim.lotsHooked = true;
+      const base = { building: sim.building, alive: sim.alive };
+      const lotOf = (id) => {
+        const i = lotTileOf(id);
+        if (i === null || !grid.zone[i]) return null;
+        return state.lots.find(([j]) => j === i) || null;
+      };
+      sim.building = (id) => {
+        const l = lotOf(id);
+        if (!l) return base.building(id);
+        const d = lotDescription(grid.zone[l[0]], l[1], l[2], l[0], (x, z) => grid.roadAt(x, z) !== 0, state.townPaint);
+        return d && { ...d, income: ZONE_DEFS[grid.zone[l[0]]].income * l[1] }; // what this lot pays at its level
+      };
+      sim.alive = (id) => (lotTileOf(id) !== null ? lotOf(id) !== null : base.alive(id));
+    }
   },
 
   rate: ({ grid, state }) => lotIncome(state.lots, (i) => grid.zone[i]),
@@ -89,7 +108,7 @@ export default {
         grid.zone[i] = zone;
         painted.add(i);
         const [gx, gz] = tileOf(i);
-        if (!grid.roadWithin(gx, gz, ROAD_REACH)) noRoad++;
+        if (!grid.roadBeside(gx, gz)) noRoad++;
       }
       // Trees on painted ground give way; undo puts them back.
       const tk = takeOnTiles(state.trees, painted);
@@ -98,7 +117,7 @@ export default {
       ctx.sim.pushUndo({ revert: (c) => revertZones(c, prev, afford * def.cost, [], tk.taken) });
       let text = 'Painted ' + afford + ' ' + def.name.toLowerCase() + ' tile' + (afford > 1 ? 's' : '') + ' · ' + afford * def.cost + ' coins';
       if (afford < todo.length) text += ' · coins ran out';
-      else if (noRoad) text += ' · ' + noRoad + ' need a road nearby';
+      else if (noRoad) text += ' · ' + noRoad + (noRoad > 1 ? ' tiles stay' : ' tile stays') + ' empty until a road runs beside ' + (noRoad > 1 ? 'them' : 'it');
       if (tk.taken.length) text += ' · ' + tk.taken.length + ' tree' + (tk.taken.length > 1 ? 's' : '') + ' cleared';
       emit({ type: 'zonePainted', zone, n: afford, cost: afford * def.cost, noRoad, text });
     },
@@ -186,15 +205,14 @@ function reconcile({ sim, grid, state }) {
 const growthMul = ({ sim }) => (sim.services ? sim.services.growth() : 1);
 function countPaint(grid) { let n = 0; for (let i = 0; i < AREA; i++) if (grid.zone[i]) n++; return n; }
 
-// Painted, empty tiles with a road in reach, per zone. Tiles right next to a road come first.
+// Painted, empty tiles with a road directly beside them, per zone. Paint away from a street stays painted and empty;
+// lots that already grew keep standing if their street later goes (nothing here demolishes them).
 function candidates(grid) {
   const out = [[], [], [], [], []];
   for (let i = 0; i < AREA; i++) {
     const z = grid.zone[i];
     if (!z || grid.lot[i]) continue;
-    const gx = i % GRID_N, gz = (i / GRID_N) | 0;
-    if (grid.roadNeighbors(gx, gz)) out[z].unshift(i);
-    else if (grid.roadWithin(gx, gz, ROAD_REACH)) out[z].push(i);
+    if (grid.roadBeside(i % GRID_N, (i / GRID_N) | 0)) out[z].unshift(i);
   }
   return out;
 }

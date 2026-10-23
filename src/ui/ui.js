@@ -7,6 +7,7 @@ import { registryOf } from '../core/registry.js';
 import { uiModules } from './modules/index.js';
 import { TOOL_KEYS } from './shortcuts.js';
 import { isNoteEvent } from './notes.js';
+import { topRight } from './slot.js';
 
 // S is taken by the camera (WASD), so Services moves to C. Camera keys live in src/render/camera.js and modules/camera-modes.js.
 // TOOL_KEYS lives in shortcuts.js so the shortcut sheet lists the same keys.
@@ -22,13 +23,17 @@ export function createUi({ sim, scene, actions }) {
     setTool: (t) => setTool(t),
   });
   const postcard = createPostcard({ sim, send, scene });
-  const mods = registryOf('ui modules', uiModules).list().map((d) => d.create({ sim, send, scene, toast: hud.toast, tool: () => tool, quality: actions.quality, sound: actions.sound }) || {});
+  const mods = registryOf('ui modules', uiModules).list().map((d) => d.create({ sim, send, scene, toast: hud.toast, tool: () => tool, setTool: (t) => setTool(t), quality: actions.quality, sound: actions.sound }) || {});
 
   function select(id) {
     if (id && !sim.alive(id)) id = null; // only a standing building can be inspected
     scene.select(id);
     if (id) panels.showInspect(id); else panels.hideInspect();
   }
+  // The top-right corner holds one surface at a time. The menu, Milestones and the Happiness panel register themselves;
+  // the Inspect card (which also holds a tree's card) and Settings are registered here, where their close paths live.
+  topRight.register('inspect', { isOpen: () => !$('inspect').hidden, close: () => select(null), el: $('inspect') });
+  topRight.register('settings', { isOpen: () => panels.settingsOpen(), close: () => panels.hideSettings(), el: $('settings') });
   function selectTree(id) {
     scene.select(null);
     panels.showTree(id);
@@ -102,6 +107,7 @@ export function createUi({ sim, scene, actions }) {
     onPick, onCancel,
     hud, postcard, toast: hud.toast,
     showPostcard: () => postcard.show(),
+    previewPostcard: () => { if (panels.settingsOpen()) panels.hideSettings(); postcard.preview(); },
     // Opens Settings if needed and asks a question inside it (import uses this).
     askConfirm: (opts) => { if (!panels.settingsOpen()) toggleSettings(); panels.askConfirm(opts); },
     frame(dt, t, alpha) {

@@ -1,13 +1,23 @@
 // Inspect card, tool flyouts and the settings card. They read sim data and send commands.
 import { MAX_LEVEL, income, nextLevelGain, trafficOf } from '../sim/economy.js';
 import { PAL } from '../world/palettes.js';
+import { costOf, isOpen, partsOf, tableOf } from '../world/paint.js';
 import { speciesOf } from '../world/trees.js';
 import { $, fmt, fmtAgo } from './format.js';
+import { topRight } from './slot.js';
 import { mountGraphics } from './graphics.js';
 import { mountAtmos } from './atmos.js';
 import { mountSound } from './sound-settings.js';
 
 const CLOSE_SVG = '<svg width="16" height="16" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2L12 12M12 2L2 12" stroke="#2B2620" stroke-width="2.2" stroke-linecap="round"/></svg>';
+
+// The Settings groups, each with the tile colour of its menu cousin (css/topbar.css).
+const TABS = [
+  { id: 'sky', label: 'Sky', color: '#F6DDA0', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="#2B2620" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="10" r="3.2"/><path d="M9 3.5v1.4M2.5 10h1.4M4.4 5.4l1 1M13.6 5.4l-1 1M8 20h9.5a3.2 3.2 0 0 0 .3-6.4 4.6 4.6 0 0 0-8.4.8A3 3 0 0 0 8 20z"/></svg>' },
+  { id: 'gfx', label: 'Graphics', color: '#D3E4C4', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="#2B2620" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>' },
+  { id: 'snd', label: 'Sound', color: '#F2C9BA', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="#2B2620" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5zM15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>' },
+  { id: 'town', label: 'Town', color: '#D2E3EE', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="#2B2620" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 11L12 4l8.5 7M6 9.5V20h12V9.5M10 20v-5h4v5"/></svg>' },
+];
 
 export function createPanels({ sim, send, toast, onClose, setTool }) {
   const s = sim.state;
@@ -19,18 +29,44 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
     if (!b || !sim.alive(id)) { hideInspect(); return; } // a pick with no building behind it closes the card
     ui.selected = id; ui.tree = null;
     const box = $('inspect'), lv = sim.level(id), cost = sim.cost(id);
+    topRight.claim('inspect'); // the menu, Settings or Milestones step aside
     box.hidden = false;
     const dots = [1, 2, 3, 4, 5].map((i) => `<i class="${i <= lv ? 'on' : ''}"></i>`).join('');
     const park = !b.floors; // parks are ground: no storeys, so nothing to upgrade
     const maxed = lv >= MAX_LEVEL || park;
     box.innerHTML = `<button class="x" id="ix" aria-label="Close">${CLOSE_SVG}</button>
-    <div class="band"><h2 class="h-disp">${b.name}</h2><div class="sub">${park ? 'Park' : b.floors + ' floors'} · ${PAL[b.pal].name} palette</div></div>
+    <div class="band"><h2 class="h-disp">${b.name}</h2><div class="sub">${park ? 'Park' : b.cat === 'farm' ? b.fw * b.fd + ' tiles of fields' : b.floors + ' floors'} · ${PAL[(sim.paintOf(id) || b).pal].name} palette</div></div>
     <div class="pad"><div class="lvl">Level ${dots}</div>
-    <div class="stats"><div class="stat">Income<b>${income(b.floors, lv)}/s</b></div><div class="stat">Traffic<b>${trafficOf(b.floors)}/min</b></div><div class="stat info">Next level<b>${maxed ? 'Max' : '+' + nextLevelGain(lv) + '%'}</b></div></div>
-    <div class="row"><button class="btn primary grow" id="up" ${maxed || s.coins < cost ? 'disabled' : ''}>${park ? 'Finished' : maxed ? 'Top level' : 'Upgrade · ' + fmt(cost) + ' coins'}</button><button class="btn" id="mv">Move</button></div></div>`;
+    <div class="stats"><div class="stat">Income<b>${b.income ?? income(b.floors, lv)}/s</b></div><div class="stat">Traffic<b>${trafficOf(b.floors)}/min</b></div><div class="stat info">Next level<b>${maxed ? 'Max' : '+' + nextLevelGain(lv) + '%'}</b></div></div>
+    <div class="row"><button class="btn primary grow" id="up" ${maxed || s.coins < cost ? 'disabled' : ''}>${park ? 'Finished' : maxed ? 'Top level' : 'Upgrade · ' + fmt(cost) + ' coins'}</button><button class="btn" id="mv">Move</button></div>${paintHtml(id)}</div>`;
     $('ix').onclick = onClose;
+    box.querySelectorAll('[data-paint]').forEach((el) => { el.onclick = () => paint(id, el.dataset.paint, el.dataset.key); });
     $('up').onclick = () => send({ type: 'upgrade', id });
     $('mv').onclick = () => toast('Move mode comes with the placement grid');
+  }
+  // ---- paint: wall, trim and roof swatches for a placed building ----
+  const hex = (n) => '#' + n.toString(16).padStart(6, '0');
+  const PAINT_ROWS = [['wall', 'Walls'], ['trim', 'Trim'], ['roof', 'Roof']];
+  const wornKey = (kind, p) => (kind === 'wall' ? p.pal : kind === 'trim' ? p.trim : p.roof);
+  function swatches(kind, p) {
+    const table = tableOf(kind), parts = partsOf(kind), cost = costOf(kind, p.rec), now = wornKey(kind, p);
+    return Object.keys(parts).map((key) => {
+      const e = table[key], color = kind === 'wall' ? e.wall : hex(e.hex), locked = !isOpen(kind, key, s.paintUnlocks);
+      const two = kind === 'wall' && e.two ? ' · two-tone' : '';
+      const tip = locked ? `${e.name}${two} · ${parts[key]} Parts opens it for good` : key === now ? `${e.name}${two} · on now` : `${e.name}${two} · ${fmt(cost)} coins`;
+      const trimDot = kind === 'wall' ? `<i class="trim" style="background:${hex(e.accent)}"></i>` : '';
+      return `<button type="button" class="sw${locked ? ' locked' : ''}" data-paint="${kind}" data-key="${key}" aria-pressed="${key === now}" title="${tip}" aria-label="${tip}" style="--sw:${color}">${trimDot}${locked ? `<small>${parts[key]}</small>` : ''}</button>`;
+    }).join('');
+  }
+  function paintHtml(id) {
+    const p = sim.paintable(id) && sim.paintOf(id);
+    if (!p) return '';
+    return `<div class="paint">${PAINT_ROWS.map(([k, name]) => `<div class="ph">${name}</div><div class="swrow">${swatches(k, p)}</div>`).join('')}</div>`;
+  }
+  function paint(id, kind, key) {
+    if (!isOpen(kind, key, s.paintUnlocks)) send({ type: 'unlockPaint', kind, key });
+    else send({ type: 'paintBuilding', id, [kind]: key });
+    showInspect(id);
   }
   // A town tree: a small card with its species and a free bulldoze. Undo brings it back.
   function showTree(id) {
@@ -38,6 +74,7 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
     if (!t) { hideInspect(); return; }
     ui.selected = null; ui.tree = id;
     const box = $('inspect');
+    topRight.claim('inspect');
     box.hidden = false;
     box.innerHTML = `<button class="x" id="ix" aria-label="Close">${CLOSE_SVG}</button>
     <div class="band"><h2 class="h-disp">${speciesOf(t)}</h2><div class="sub">${t.k === 'p' ? 'Conifer' : 'Broadleaf'} · a town tree</div></div>
@@ -78,21 +115,49 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
 
   // ---- settings ----
   // Autosave status, export, import, restore and start over. Destructive steps ask first, inline.
+  let settingsTab = 'sky'; // the group shown, remembered while the page is open
   let shown = null; // the actions the card was opened with, so "Not now" can return to it
   function showSettings(actions) {
     shown = actions;
     const box = $('settings');
+    topRight.claim('settings');
     box.hidden = false;
     const back = actions.backup();
+    const tab = TABS.some((t) => t.id === settingsTab) ? settingsTab : TABS[0].id;
+    const tabs = TABS.map((t) => `<button class="stab" role="tab" id="st-${t.id}" data-tab="${t.id}" aria-selected="${String(t.id === tab)}" aria-controls="sp-${t.id}" style="--tc:${t.color}">${t.icon}<span>${t.label}</span></button>`).join('');
+    const pane = (id, inner) => `<div class="spane" role="tabpanel" id="sp-${id}" aria-labelledby="st-${id}" style="--tc:${TABS.find((t) => t.id === id).color}"${id === tab ? '' : ' hidden'}>${inner}</div>`;
     box.innerHTML = `<button class="x" id="sx" aria-label="Close">${CLOSE_SVG}</button>
     <div class="band"><h2 class="h-disp">Settings</h2><div class="sub">Your town is saved in this browser</div></div>
-    <div class="pad"><div id="atmos"></div><div id="gfx"></div>
-    <div id="snd"></div>
-    <p class="sub">${actions.status()}</p>
-    <p class="sub">Export a copy to keep it safe or move it to another device.</p>
-    <button class="btn" id="exp">Export save</button><button class="btn" id="imp">Import save</button>
-    ${back ? `<button class="btn" id="rest">Restore the town from ${fmtAgo(back.savedAt)}</button>` : ''}
-    <button class="btn danger" id="rst">Start over</button></div>`;
+    <div class="stabs" role="tablist" aria-label="Settings groups">${tabs}</div>
+    <div class="pad">
+    ${pane('sky', '<div id="atmos"></div>')}
+    ${pane('gfx', '<div id="gfx"></div>')}
+    ${pane('snd', '<div id="snd"></div>')}
+    ${pane('town', `<section class="sbox"><h3 class="h-disp">Your town</h3>
+      <p class="sub">${actions.status()}</p>
+      <p class="sub">${sim.state.terrainSeed ? 'Land seed ' + sim.state.terrainSeed + '. Start over or Renewal rolls a new valley.' : 'This town keeps its original land. Start over or Renewal rolls a new valley.'}</p>
+      <button class="btn" id="pcv">Preview the offline postcard</button></section>
+      <section class="sbox"><h3 class="h-disp">Keep a copy</h3>
+      <p class="sub">Export a copy to keep it safe or move it to another device.</p>
+      <div class="sbtns"><button class="btn" id="exp">Export save</button><button class="btn" id="imp">Import save</button></div>
+      ${back ? `<button class="btn" id="rest">Restore the town from ${fmtAgo(back.savedAt)}</button>` : ''}</section>
+      <section class="sbox sdanger"><h3 class="h-disp">Fresh start</h3>
+      <p class="sub">The current town moves to the backup slot first.</p>
+      <button class="btn danger" id="rst">Start over</button></section>`)}
+    </div>`;
+    const pick = (id) => {
+      settingsTab = id;
+      for (const b of box.querySelectorAll('.stab')) b.setAttribute('aria-selected', String(b.dataset.tab === id));
+      for (const t of TABS) box.querySelector('#sp-' + t.id).hidden = t.id !== id;
+    };
+    box.querySelector('.stabs').onclick = (e) => { const b = e.target.closest('.stab'); if (b) pick(b.dataset.tab); };
+    box.querySelector('.stabs').onkeydown = (e) => {
+      const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (!d) return;
+      const i = TABS.findIndex((t) => t.id === settingsTab), n = TABS[(i + d + TABS.length) % TABS.length].id;
+      pick(n); box.querySelector('#st-' + n).focus();
+    };
+    $('pcv').onclick = actions.previewPostcard;
     $('sx').onclick = hideSettings;
     if (actions.calendar) mountAtmos($('atmos'), actions.calendar, sim);
     if (actions.quality) mountGraphics($('gfx'), actions.quality);
@@ -111,6 +176,7 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
   // Replaces the settings body with a question and two choices. Used by import and the destructive steps above.
   function askConfirm({ title, text, ok, onOk, danger = false }) {
     const box = $('settings');
+    topRight.claim('settings');
     box.hidden = false;
     box.innerHTML = `<button class="x" id="sx" aria-label="Close">${CLOSE_SVG}</button>
     <div class="band"><h2 class="h-disp">${title}</h2></div>

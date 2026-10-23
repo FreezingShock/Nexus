@@ -1,8 +1,9 @@
 // The render side. Reads sim snapshots, never writes them. Owns the renderer, scene and camera.
 import * as THREE from '../../vendor/three/three.module.min.js';
 import { createCamera } from './camera.js';
+import { ISO, orbitPose } from './camera-math.js';
 import { createLighting } from './night.js';
-import { buildTerrain, buildFarms } from './terrain.js';
+import { buildTerrain } from './terrain.js';
 import { buildStatic } from './props.js';
 import { ensureInstanceColors } from './geom.js';
 import { registryOf } from '../core/registry.js';
@@ -15,6 +16,7 @@ import { createSky } from './sky.js';
 import { applySeason } from './season.js';
 
 const SNAP_W = 480, SNAP_H = 360;
+const SNAP_HALF = 26; // half the view height in world units: the village and its main street fill the frame
 
 export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }) {
   const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -31,15 +33,15 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
   const camera = createCamera();
 
   buildTerrain(world);
-  buildFarms(world, layout.farms);
   buildStatic(world, layout);
   // Dust puffs come from the puffs system, which is created below: look it up when a building pops, not here.
   const town = createTown(world, { burst: (x, z, r, n) => byId.get('puffs')?.burst(x, z, r, n) });
   const sysDefs = registryOf('render systems', renderSystems).list();
-  const mods = sysDefs.map((d) => d.create({ THREE, world, layout, grid, camera, scene, sys: (id) => byId.get(id) || null }) || {});
+  const mods = sysDefs.map((d) => d.create({ THREE, world, layout, grid, camera, scene, town, sys: (id) => byId.get(id) || null }) || {});
   const byId = new Map(sysDefs.map((d, i) => [d.id, mods[i]]));
   ensureInstanceColors(scene); // after the systems build: every instanced mesh in the town carries a colour buffer
   let dusk = null, nightOn = false, drag = null;
+  let hourOverride = null, inert = false, grabCb = null; // photo mode: a chosen hour, clicks that do nothing, a pending capture
 
   function resize() {
     const w = stage.clientWidth || innerWidth, h = stage.clientHeight || innerHeight;
@@ -50,7 +52,7 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
   new ResizeObserver(resize).observe(stage);
 
   // pointer: drag to pan, click to pick, wheel to zoom
-  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), proj = new THREE.Vector3();
   canvas.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, moved: 0, button: e.button }; canvas.setPointerCapture(e.pointerId); });
   canvas.addEventListener('pointermove', (e) => {
     if (!drag) return;
@@ -61,19 +63,26 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
   canvas.addEventListener('pointerup', (e) => {
     const was = drag; drag = null; canvas.classList.remove('drag');
     if (!was || was.moved > 5) return;
+    if (inert) return; // photo mode: the town is only looked at
     if (was.button === 2) { onCancel(); return; } // right-click with no drag: cancel the tool or close a card
     if (was.button !== 0) return;
     const r = canvas.getBoundingClientRect();
     ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(ndc, camera.cam);
     // The nearest of a tree or a building wins. A tree comes back as { tree: id }; a building as its id.
-    const b = town.probe(ray), t = byId.get('trees')?.pick(ray) ?? null;
+    const b = buildingAt(ray), t = byId.get('trees')?.pick(ray) ?? null;
     onPick(t && (!b || t.d < b.d) ? { tree: t.id } : b ? b.id : null);
   });
   canvas.addEventListener('pointercancel', () => { drag = null; canvas.classList.remove('drag'); });
   canvas.addEventListener('wheel', (e) => { e.preventDefault(); camera.wheel(e.deltaY); }, { passive: false });
 
   resize(); camera.place(); camera.bindKeys();
+
+  // The nearest placed or grown building under the ray as { id, d }, or null.
+  function buildingAt(ray) {
+    const a = town.probe(ray), b = byId.get('lots')?.probe(ray) ?? null;
+    return !b || (a && a.d <= b.d) ? a : b;
+  }
 
   let snapTarget = null;
   return {
@@ -82,8 +91,9 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
     frame(dt, t, simDt, s, tool) {
       camera.step(dt, drag && drag.moved > 5);
       // The sky eases towards the sim's hour, season and weather; the lights and the shader follow the eased values.
-      if (s.hour !== targetsOf.hour || s.season !== targetsOf.season || s.weatherKind !== targetsOf.weather) {
-        targetsOf = { hour: s.hour, season: s.season, weather: s.weatherKind };
+      const hour = hourOverride ?? s.hour;
+      if (hour !== targetsOf.hour || s.season !== targetsOf.season || s.weatherKind !== targetsOf.weather) {
+        targetsOf = { hour, season: s.season, weather: s.weatherKind };
         targets = atmosphereTargets(targetsOf);
       }
       const look = sky.update(dt, targets);
@@ -97,7 +107,13 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
       town.setState(s);
       town.update(dt);
       renderer.render(scene, camera.cam);
+      if (grabCb) { const cb = grabCb; grabCb = null; cb(canvas); } // the buffer is only valid until this frame ends
     },
+    // Photo mode. A chosen hour (null goes back to the sim's clock), clicks that do nothing, and a one-shot capture:
+    // `cb(canvas)` runs straight after the next render, while the drawing buffer still holds the picture.
+    setHour: (h) => { hourOverride = h; },
+    setInert: (on) => { inert = !!on; },
+    grab: (cb) => { grabCb = cb; },
     // The object a render system returned from create(), for UI modules that drive it (e.g. zoning's brush).
     sys: (id) => byId.get(id) || null,
     // World point under a screen position on the ground plane (y = 0), or null. Shared by every drawing tool.
@@ -118,10 +134,20 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
       if (!r.width || !r.height) return null;
       ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
       ray.setFromCamera(ndc, camera.cam);
-      return town.pick(ray);
+      return buildingAt(ray)?.id ?? null;
     },
-    select: (id) => town.select(id),
-    pop: (id) => town.pop(id),
+    // Placed and grown buildings answer to the same selection and pop calls; each ignores ids it does not own.
+    select: (id) => { town.select(id); byId.get('lots')?.select(id); },
+    pop: (id) => { town.pop(id); byId.get('lots')?.pop(id); },
+    settle: (id) => town.settle(id),
+    // Client pixel of a world point, or null when it is behind the camera. For HTML that floats over the town.
+    project(x, y, z) {
+      const r = canvas.getBoundingClientRect();
+      if (!r.width || !r.height) return null;
+      proj.set(x, y, z).project(camera.cam);
+      if (proj.z > 1) return null;
+      return { x: r.left + (proj.x * 0.5 + 0.5) * r.width, y: r.top + (-proj.y * 0.5 + 0.5) * r.height };
+    },
     rotate: (d) => camera.rotate(d),
     focus: (x, z) => camera.focus(x, z),
 
@@ -139,8 +165,11 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
     // Renders the town to a 4:3 target and copies it into `dest` (the postcard photo).
     snapshot(dest) {
       if (!snapTarget) snapTarget = new THREE.WebGLRenderTarget(SNAP_W, SNAP_H);
-      const v = camera.view, half = v.half / v.zoom * 0.6;
-      const c = camera.iso.clone(); // the postcard always frames the classic view, even while flying
+      // The postcard always frames the town centre in the classic view, wherever the camera was left (or flying).
+      const half = SNAP_HALF;
+      const c = camera.iso.clone();
+      const p = orbitPose(0, 0, ISO.az, ISO.elev, camera.view.dist);
+      c.position.set(p.x, p.y, p.z); c.lookAt(0, 0, 0);
       c.left = -half * 4 / 3; c.right = half * 4 / 3; c.top = half; c.bottom = -half; c.zoom = 1; c.updateProjectionMatrix();
       town.hideSelection(true);
       const prev = renderer.getRenderTarget();

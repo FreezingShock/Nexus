@@ -31,6 +31,7 @@ const WORDS = {
   water: 'Too wet to build here',
   steep: 'Too steep to build here',
   farm: 'These fields are farmed',
+  slope: 'A farm needs flat ground',
   road: 'A road is in the way',
   taken: 'Something is already built here',
 };
@@ -38,12 +39,23 @@ export const problemText = (p) => WORDS[p] || '';
 
 // Can a fw x fd lot with lowest tile (gx, gz) be built on? { ok, problem, blocked: [[gx, gz], ...], road }
 //   road: a road runs within two tiles (a hint only; buildings can wait for their street)
-export function checkLot(grid, gx, gz, fw, fd) {
+// A model with `flat` (a farm) also wants level ground: each tile nearly flat, and the lot as a whole within FLAT_SPREAD.
+export const FLAT_TILE = 0.35, FLAT_SPREAD = 0.6;
+export function checkLot(grid, gx, gz, fw, fd, def) {
   const blocked = [];
   let problem = '';
   for (const [x, z] of lotTiles(gx, gz, fw, fd)) {
     const p = tileProblem(grid, x, z);
     if (p) { blocked.push([x, z]); if (!problem) problem = p; }
+  }
+  if (def && def.flat && !blocked.length && grid.tlo) {
+    let lo = Infinity, hi = -Infinity;
+    for (const [x, z] of lotTiles(gx, gz, fw, fd)) {
+      const i = tileIndex(x, z);
+      if (grid.thi[i] - grid.tlo[i] > FLAT_TILE) { blocked.push([x, z]); problem = 'slope'; }
+      lo = Math.min(lo, grid.tlo[i]); hi = Math.max(hi, grid.thi[i]);
+    }
+    if (!blocked.length && hi - lo > FLAT_SPREAD) { for (const [x, z] of lotTiles(gx, gz, fw, fd)) blocked.push([x, z]); problem = 'slope'; }
   }
   let road = false;
   for (let z = gz - 2; z < gz + fd + 2 && !road; z++) for (let x = gx - 2; x < gx + fw + 2 && !road; x++) if (inBounds(x, z) && grid.road[tileIndex(x, z)] !== 0) road = true;
@@ -60,10 +72,12 @@ export function planPlacement(cmd) {
   const def = modelById(cmd && cmd.model);
   if (!def) return { error: 'unknown model' };
   const ints = [cmd.gx, cmd.gz, cmd.fw, cmd.fd].every(Number.isInteger);
-  if (!ints || cmd.fw < 1 || cmd.fd < 1 || cmd.fw > 6 || cmd.fd > 6) return { error: 'bad lot' };
+  const most = def.free ? def.free.max : 6;
+  if (!ints || cmd.fw < 1 || cmd.fd < 1 || cmd.fw > most || cmd.fd > most) return { error: 'bad lot' };
   const fit = fitFootprint(def, cmd.fw, cmd.fd);
   if (!fit) return { error: 'does not fit' };
   let rot = Number.isInteger(cmd.rot) ? ((cmd.rot % 4) + 4) % 4 : 0;
+  if (def.free && (rot % 2 ? fit.fw : fit.fd) < def.free.min[1]) rot = (rot + 1) % 4; // the house needs depth: turn so the long side runs deep
   if (def.tile === 'row' && fit.fw !== fit.fd) { const want = fit.fw > fit.fd ? 0 : 1; if (rot % 2 !== want) rot = (rot + 1) % 4; }
   const gx = cmd.gx + Math.floor((cmd.fw - fit.fw) / 2), gz = cmd.gz + Math.floor((cmd.fd - fit.fd) / 2);
   const [cx, cz] = tileCenter(gx, gz);
@@ -103,6 +117,38 @@ export function frontRoadCount(grid, gx, gz, fw, fd, rot) {
   let n = 0;
   for (const [x, z] of strip) if (inBounds(x, z) && grid.road[tileIndex(x, z)] !== 0) n++;
   return n;
+}
+
+// How far the nearest road is straight out from the front of a lot turned by rot: 0 when a road touches the front edge,
+// 1 when it is one tile further, and so on up to `max`; Infinity when none lies within reach. Pure.
+export function frontRoadDistance(grid, gx, gz, fw, fd, rot, max = 12) {
+  const [dx, dz] = FRONT[((rot % 4) + 4) % 4];
+  for (let s = 0; s <= max; s++) {
+    for (let k = 0; k < (dx === 0 ? fw : fd); k++) {
+      const x = dx === 0 ? gx + k : (dx > 0 ? gx + fw + s : gx - 1 - s);
+      const z = dx === 0 ? (dz > 0 ? gz + fd + s : gz - 1 - s) : gz + k;
+      if (inBounds(x, z) && grid.road[tileIndex(x, z)] !== 0) return s;
+    }
+  }
+  return Infinity;
+}
+
+// The lot of a free-size model dragged from tile `start` to tile `end`, for the turn `rot`: { gx, gz, fw, fd }. Pure.
+// The start tile is always a corner of the lot, so the edge you began on stays where you pressed and the lot grows away
+// from it in the drag direction. Where the drag gives no direction (a click, or a drag along one axis only), the lot
+// grows away from a road beside the start tile, so a farm begun against a street never slides a tile off it.
+// A click is the smallest lot, laid out for the turn (its short side across, so a quarter turn swaps the sides); a drag
+// is grown to the smallest size and held to the largest.
+export function freeRect(grid, def, start, end, rot = 0) {
+  const f = def.free, lo = f.min[0], hi = f.min[1], click = start[0] === end[0] && start[1] === end[1];
+  const dx = Math.max(-(f.max - 1), Math.min(f.max - 1, end[0] - start[0])), dz = Math.max(-(f.max - 1), Math.min(f.max - 1, end[1] - start[1]));
+  const roadAt = (x, z) => inBounds(x, z) && grid.road[tileIndex(x, z)] !== 0;
+  const sx = dx !== 0 ? Math.sign(dx) : roadAt(start[0] + 1, start[1]) && !roadAt(start[0] - 1, start[1]) ? -1 : 1;
+  const sz = dz !== 0 ? Math.sign(dz) : roadAt(start[0], start[1] + 1) && !roadAt(start[0], start[1] - 1) ? -1 : 1;
+  let w = Math.abs(dx) + 1, d = Math.abs(dz) + 1;
+  if (click) { w = rot % 2 ? hi : lo; d = rot % 2 ? lo : hi; }
+  else { w = Math.max(w, lo); d = Math.max(d, lo); if (Math.max(w, d) < hi) { if (w >= d) w = hi; else d = hi; } }
+  return { gx: sx > 0 ? start[0] : start[0] - w + 1, gz: sz > 0 ? start[1] : start[1] - d + 1, fw: w, fd: d };
 }
 
 export { GRID_N };

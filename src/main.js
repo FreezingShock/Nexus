@@ -1,5 +1,4 @@
 // Wires sim, render and UI. The only file that knows all three.
-import { getLayout } from './world/layout.js';
 import { createSim } from './sim/sim.js';
 import { loadGame, writeSave, clearSave, exportText, importText, restoreBackup, backupInfo } from './sim/save.js';
 import { createScene } from './render/scene.js';
@@ -11,13 +10,13 @@ import { $, fmtAgo } from './ui/format.js';
 
 const AUTOSAVE_MS = 45000;
 const params = new URLSearchParams(location.search);
-const layout = getLayout();
 const app = $('app');
 
 // ---- load ----
 const loaded = loadGame();
 const state = loaded.state;
-const sim = createSim({ state, layout });
+const sim = createSim({ state });
+const layout = sim.layout;
 const awayOverride = Number(params.get('away')); // ?away=<seconds> forces an offline return for testing
 if (Number.isFinite(awayOverride) && awayOverride > 0) sim.catchUp(Date.now() - awayOverride * 1000);
 else sim.catchUp(loaded.savedAt);
@@ -71,6 +70,7 @@ const actions = {
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   },
   importPick() { $('importfile').click(); },
+  previewPostcard() { ui.previewPostcard(); },
   // Start over moves the town into the backup slot first, so Settings can restore it.
   reset() { saveBlocked = true; clearSave(); location.reload(); },
   restore() {
@@ -109,6 +109,9 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 // ---- ui ----
 const ui = createUi({ sim, scene, actions });
 if (state.offline) ui.showPostcard();
+// Renewal rolls new land. The ground, the scenery and the picture of the map are built once per page, so the page
+// reloads on the saved town, a moment after the Renewal message has shown.
+sim.subscribe((e) => { if (e.type === 'renewed') setTimeout(() => { save(); location.reload(); }, 2200); });
 
 if (params.has('debug')) window.__nexus = { sim, scene, ui, layout };
 

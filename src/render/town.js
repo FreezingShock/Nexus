@@ -6,6 +6,7 @@ import { makeParts, worldMatrix, addToBatch } from './buildings.js';
 import { describe } from '../world/models.js';
 import { Batch, disposeAll } from './geom.js';
 import { lineMat } from './materials.js';
+import { nightWall } from './models/materials.js';
 
 const HULL = new THREE.MeshBasicMaterial({ color: 0x6DB6EC, side: THREE.BackSide });
 const proxyMat = new THREE.MeshBasicMaterial();
@@ -18,7 +19,7 @@ export function mergeBuildings(parent, items, night) {
 }
 
 // A click target for the whole building (tower and roof included), a box around its parts.
-function proxyFor(parts, world) {
+export function proxyFor(parts, world) {
   const bb = new THREE.Box3(), tmp = new THREE.Box3();
   for (const p of parts) { p.geo.computeBoundingBox(); tmp.copy(p.geo.boundingBox).applyMatrix4(p.local); bb.union(tmp); }
   const size = bb.getSize(new THREE.Vector3()), c = bb.getCenter(new THREE.Vector3());
@@ -28,13 +29,34 @@ function proxyFor(parts, world) {
   return proxy;
 }
 
+// The selection outline: a back-face copy of every part, grown a little, so the silhouette follows the camera.
+// Shared with grown lots (render/systems/lots.js), which draw their own outline in their own group.
+const HULL_GROW = 0.14;
+export function addHull(group, parts) {
+  const sz = new THREE.Vector3(), c = new THREE.Vector3(), t = HULL_GROW;
+  for (const p of parts) {
+    p.geo.computeBoundingBox();
+    const bb = p.geo.boundingBox; bb.getSize(sz); bb.getCenter(c);
+    const sx = (sz.x + 2 * t) / Math.max(sz.x, 0.05), sy = (sz.y + 2 * t) / Math.max(sz.y, 0.05), sz2 = (sz.z + 2 * t) / Math.max(sz.z, 0.05);
+    const adj = new THREE.Matrix4().compose(new THREE.Vector3(c.x * (1 - sx), c.y * (1 - sy), c.z * (1 - sz2)), new THREE.Quaternion(), new THREE.Vector3(sx, sy, sz2));
+    const h = new THREE.Mesh(p.geo, HULL);
+    h.matrixAutoUpdate = false;
+    h.matrix.multiplyMatrices(p.local, adj);
+    group.add(h);
+  }
+}
+export function placeHull(group, b, sx, sy, sz) {
+  group.position.set(b.x, b.y ?? 0.1, b.z); group.rotation.set(0, b.rotY, 0); group.scale.set(sx, sy, sz);
+}
+
 // hooks.burst(x, z, radius, count): a dust puff when a building levels up (the puffs system).
 export function createTown(root, hooks = {}) {
   const group = new THREE.Group(); root.add(group);
   const selGroup = new THREE.Group(); root.add(selGroup);
   const entries = new Map();
   let built = [], removed = new Set(), night = false, popping = null, selected = null;
-  let placedSig = '', wantPop = new Set();
+  let placedSig = '', wantPop = new Set(), wantSettle = new Set();
+  let lifeRev = 0, lifeList = [], lifeSeen = -1; // for render/systems/life-*.js: what is standing, and a counter that moves when it changes
 
   // desc -> entry. `base` is the level the building starts at before any upgrade.
   function addEntry(desc, base) {
@@ -50,9 +72,10 @@ export function createTown(root, hooks = {}) {
   }
 
   function applyNight() {
-    for (const m of built) if (m.isMesh && m.userData.day.userData.night) m.material = night ? m.userData.day.userData.night : m.userData.day;
+    for (const m of built) if (m.isMesh && nightWall(m.userData.day)) m.material = night ? nightWall(m.userData.day) : m.userData.day;
   }
   function rebuild(excludeId) {
+    lifeRev++;
     disposeAll(built, group);
     const items = [];
     for (const e of entries.values()) if (!removed.has(e.b.id) && e.b.id !== excludeId) items.push(e);
@@ -61,26 +84,14 @@ export function createTown(root, hooks = {}) {
   }
 
   function clearHull() { selGroup.clear(); } // hull meshes share the parts' geometry: nothing to dispose
-  // Back-face copy of every part, grown a little: the silhouette outline follows the camera.
   function setHull(id) {
     clearHull(); selected = id;
     if (!id || !entries.has(id)) { selected = null; return; }
-    const e = entries.get(id), sz = new THREE.Vector3(), c = new THREE.Vector3(), t = 0.14;
+    const e = entries.get(id);
     placeSel(e.b, 1, 1, 1);
-    for (const p of e.parts) {
-      p.geo.computeBoundingBox();
-      const bb = p.geo.boundingBox; bb.getSize(sz); bb.getCenter(c);
-      const sx = (sz.x + 2 * t) / Math.max(sz.x, 0.05), sy = (sz.y + 2 * t) / Math.max(sz.y, 0.05), sz2 = (sz.z + 2 * t) / Math.max(sz.z, 0.05);
-      const adj = new THREE.Matrix4().compose(new THREE.Vector3(c.x * (1 - sx), c.y * (1 - sy), c.z * (1 - sz2)), new THREE.Quaternion(), new THREE.Vector3(sx, sy, sz2));
-      const h = new THREE.Mesh(p.geo, HULL);
-      h.matrixAutoUpdate = false;
-      h.matrix.multiplyMatrices(p.local, adj);
-      selGroup.add(h);
-    }
+    addHull(selGroup, e.parts);
   }
-  function placeSel(b, sx, sy, sz) {
-    selGroup.position.set(b.x, b.y ?? 0.1, b.z); selGroup.rotation.set(0, b.rotY, 0); selGroup.scale.set(sx, sy, sz);
-  }
+  function placeSel(b, sx, sy, sz) { placeHull(selGroup, b, sx, sy, sz); }
 
   function endPop() {
     if (!popping) return;
@@ -98,7 +109,7 @@ export function createTown(root, hooks = {}) {
     const g = new THREE.Group();
     g.position.set(e.b.x, e.b.y ?? 0.1, e.b.z); g.rotation.y = e.b.rotY;
     for (const p of e.parts) {
-      const mat = p.body ? [p.facadeMat, p.facadeMat, p.mat, p.mat, p.facadeMat, p.facadeMat].map((m) => (night && m.userData.night ? m.userData.night : m)) : p.mat;
+      const mat = p.body ? [p.facadeMat, p.facadeMat, p.mat, p.mat, p.facadeMat, p.facadeMat].map((m) => (night && nightWall(m) ? nightWall(m) : m)) : p.mat;
       const m = new THREE.Mesh(p.geo, mat);
       m.matrixAutoUpdate = false; m.matrix.copy(p.local); m.castShadow = m.receiveShadow = true;
       g.add(m);
@@ -129,7 +140,26 @@ export function createTown(root, hooks = {}) {
         for (const r of placed) if (!entries.has(r.id)) { const d = describe(r, 1); if (d) addEntry(d, 1); }
         dirty = true;
       }
+      // A repaint changes a record's palette or roof in place: describe it again and rebuild that building.
+      for (const r of placed) {
+        const e = entries.get(r.id);
+        if (!e) continue;
+        const sig = (r.pal || '') + '|' + (r.roof || '') + '|' + (r.trim || '');
+        if (e.paint === undefined) e.paint = sig; // first sight: already drawn with this paint
+        if (e.paint === sig) continue;
+        e.paint = sig;
+        const d = describe(r, e.level);
+        if (!d) continue;
+        e.desc = e.b = d;
+        e.parts = makeParts(d);
+        e.proxy.geometry.dispose();
+        e.proxy = proxyFor(e.parts, e.world);
+        if (selected === r.id) setHull(r.id);
+        if (hooks.burst) hooks.burst(d.x, d.z, 2.4, 10);
+        dirty = true;
+      }
       let popId = null;
+      for (const id of wantSettle) if (entries.has(id)) { wantSettle.delete(id); if (!removed.has(id)) popId = id; } // a freshly placed building settles with the upgrade squash
       for (const e of entries.values()) {
         const lv = (s.levels && s.levels[e.b.id]) ?? e.base;
         if (lv === e.level) continue;
@@ -142,6 +172,8 @@ export function createTown(root, hooks = {}) {
     setNight(on) { if (on === night) return; night = on; applyNight(); },
     select: setHull,
     pop(id) { wantPop.add(id); setTimeout(() => wantPop.delete(id), 1500); },
+    // Asks for the squash on a building that may not be drawn yet (a placement event arrives before the next frame's setState).
+    settle(id) { wantSettle.add(id); setTimeout(() => wantSettle.delete(id), 1500); },
     update(dt) {
       if (!popping) return;
       popping.t += dt;
@@ -162,5 +194,12 @@ export function createTown(root, hooks = {}) {
     },
     pick(raycaster) { const h = this.probe(raycaster); return h ? h.id : null; },
     hideSelection(v) { selGroup.visible = !v; },
+    // The placed buildings now standing ({ b, parts, world } each; parts.sites says where life can happen) and a counter
+    // that changes whenever the set or a building's look does. The list is rebuilt only when the counter moved.
+    lifeRev: () => lifeRev,
+    lifeEntries() {
+      if (lifeSeen !== lifeRev) { lifeSeen = lifeRev; lifeList = [...entries.values()].filter((e) => !removed.has(e.b.id)); }
+      return lifeList;
+    },
   };
 }

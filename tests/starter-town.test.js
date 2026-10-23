@@ -114,7 +114,7 @@ test('building prices count only the player\'s own buildings', () => {
   const sim = mk();
   const cottage = modelById('cottage');
   assert.equal(sim.placeCost(cottage, 1, 1), buildCost(areaCost(cottage, 1, 1), 0));
-  sim.dispatch({ type: 'place', model: 'cottage', gx: 40, gz: 20, fw: 1, fd: 1, rot: 0 });
+  sim.dispatch({ type: 'place', model: 'cottage', gx: 56, gz: 36, fw: 1, fd: 1, rot: 0 });
   assert.equal(mine(sim).length, 1);
   assert.equal(sim.placeCost(cottage, 1, 1), buildCost(areaCost(cottage, 1, 1), 1));
 });
@@ -130,7 +130,7 @@ test('the starter homes and shops feed traffic demand from the first tick', () =
 test('a save from before the reset becomes the starter town, keeps settings, and its old town is in the backup', () => {
   const storage = fakeStorage();
   const old = mk();
-  old.dispatch({ type: 'place', model: 'tower', gx: 40, gz: 20, fw: 2, fd: 2, rot: 0 });
+  old.dispatch({ type: 'place', model: 'tower', gx: 56, gz: 36, fw: 2, fd: 2, rot: 0 });
   const oldState = JSON.parse(JSON.stringify(old.state));
   oldState.coins = 5e6; oldState.speed = 2;
   storage.setItem(SAVE_KEY, JSON.stringify({ v: 2, savedAt: 1000, state: oldState }));

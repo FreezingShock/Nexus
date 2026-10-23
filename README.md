@@ -7,7 +7,7 @@ A cozy, offline city builder with idle progression. Static site: Three.js (vendo
 Browsers block ES module imports from `file://`, so serve the folder:
 
 ```
-python3 -m http.server 8000     # or: npm start
+python3 scripts/serve.py 8000     # or: npm start (no-cache static server)
 ```
 
 Then open http://localhost:8000/. Any static server works.

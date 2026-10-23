@@ -17,7 +17,23 @@ Then run `npm run registry`. Saves carry the new fields with no change to `save.
 
 ## Changing saved fields that already shipped
 
-Add a migration to `migrations` in `src/sim/save.js`, bump `SAVE_VERSION`, and add a test for the old shape. Current version: 4. `migrations[i]` turns a version `i+1` state into a version `i+2` state. They run in order, one per version, and each sees the output of the one before. Never edit a migration that has shipped. A failing migration never throws to the player: the save is refused with a reason, and the backup is still there.
+Add a migration to `migrations` in `src/sim/save.js`, bump `SAVE_VERSION`, and add a test for the old shape. Current version: 8. (`terrainSeed` is read as 0 when missing, so it needed no version: see [TERRAIN.md](TERRAIN.md).) `migrations[i]` turns a version `i+1` state into a version `i+2` state. They run in order, one per version, and each sees the output of the one before. Never edit a migration that has shipped. A failing migration never throws to the player: the save is refused with a reason, and the backup is still there.
+
+### Calendar days (version 8)
+
+`state.days` counts calendar days elapsed. An older town gets `clockS / 720` (its old twelve-minute day). `state.offline` also carries `days`, `festivals` and `markets` for the postcard.
+
+### Population (version 7)
+
+Version 7 adds `state.pop` (people, a float; -1 means "not started") and `state.popHist` (up to 41 `[people, capacity]` samples, 15 sim seconds apart, for the Population panel's graph). An older town starts at 60% of its homes' capacity on first load. See [POPULATION.md](POPULATION.md).
+
+### Milestone stages (version 6)
+
+Version 6 replaces the flat list `state.milestones` (ids of paid milestones) with `state.ach` (`{ done, best, counts }`, rules in [MILESTONES.md](MILESTONES.md)). The step (`addAchievements` in `save.js`) maps each old id to the stage it matches (`LEGACY_MILESTONES` in `src/sim/achievements.js`) and marks that stage paid, so nothing pays twice. `best` starts empty and fills on the first tick; stages the town has already outgrown pay out then, in one bundled postcard. A Renewal keeps `ach`.
+
+### Bigger grid (version 5)
+
+Version 5 grows the grid from 64 to 96 tiles a side. It adds 16 tiles on every side, so the middle of the map and every tile's place in the world stay the same. The step (`regrid` in `save.js`) moves the tile keys to the wider grid: `roads` (keyed by tile index), `zones` and `dmap` (one character per tile, now 9216 long), `lots` (`[tile, level, seed]`), and the `gx`/`gz` of each `placed` record (plus 16). Trees, districts, the town and the settings hold world positions or no tiles, so they are untouched. The step's numbers are fixed (64, 96, 16) because it describes version 4. A reset step (version 3) builds its town on today's grid, so a state that already has the wider zone paint is left alone.
 
 ### Town name and badge (version 4)
 
@@ -73,3 +89,5 @@ The closed form is tested against a numeric integral of the rate curve (`tests/o
 ## Tests
 
 `tests/save.test.js`, `tests/persist.test.js` (slots, corrupt data, migrations, import, restore, whole-town round trip), `tests/offline.test.js` and `tests/catchup.test.js` (the closed form and clock changes).
+
+Decorations add `decor`, `nextDecor` and `decorUnlocks`. All three default to empty when missing, so older saves need no migration and no version bump.

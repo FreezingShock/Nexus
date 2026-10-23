@@ -4,17 +4,26 @@
 import bulldozeSweep from './bulldoze-sweep.js';
 import cameraModes from './camera-modes.js';
 import commute from './commute.js';
+import date from './date.js';
+import decor from './decor.js';
 import districts from './districts.js';
+import feedback from './feedback.js';
 import frameStats from './frame-stats.js';
 import happiness from './happiness.js';
+import menu from './menu.js';
+import milestones from './milestones.js';
 import notes from './notes.js';
 import onboarding from './onboarding.js';
+import paintTown from './paint-town.js';
+import photo from './photo.js';
 import placement from './placement.js';
+import population from './population.js';
 import progress from './progress.js';
 import roadTool from './road-tool.js';
 import services from './services.js';
 import shortcutSheet from './shortcut-sheet.js';
 import sound from './sound.js';
+import toolbarFold from './toolbar-fold.js';
 import tooltips from './tooltips.js';
 import zoning from './zoning.js';
 
@@ -22,17 +31,26 @@ export const uiModules = [
   bulldozeSweep,
   cameraModes,
   commute,
+  date,
+  decor,
   districts,
+  feedback,
   frameStats,
   happiness,
+  menu,
+  milestones,
   notes,
   onboarding,
+  paintTown,
+  photo,
   placement,
+  population,
   progress,
   roadTool,
   services,
   shortcutSheet,
   sound,
+  toolbarFold,
   tooltips,
   zoning,
 ];

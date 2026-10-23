@@ -3,7 +3,7 @@
 // Every helper takes a position whose y is the BOTTOM of the part. Colors come from one small palette (C) plus
 // the district palette (k.P), and ride on vertex colors so plain parts share a single material.
 import * as THREE from '../../../vendor/three/three.module.min.js';
-import { PAL, AWNINGS } from '../../world/palettes.js';
+import { PAL, ROOFS, TRIMS, AWNINGS } from '../../world/palettes.js';
 import { LANG } from '../../world/models.js';
 import { toon } from '../materials.js';
 import { scaleUV, splitGroups, xf } from '../geom.js';
@@ -79,10 +79,16 @@ const dome = (r) => new THREE.SphereGeometry(r, 10, 5, 0, Math.PI * 2, 0, Math.P
 
 // Starts a model: description in, helper object out. `k.parts` is what the renderer merges.
 export function createKit(d) {
-  const P = PAL[d.pal], h = d.floors * FH, parts = [];
+  const P = { ...PAL[d.pal], wallHex: parseInt(PAL[d.pal].wall.slice(1), 16) }, h = d.floors * FH, parts = [];
+  if (d.roof) P.roof = ROOFS[d.roof].hex;     // a repaint wins over the scheme's own roof and trim
+  if (d.trim) P.accent = TRIMS[d.trim].hex;
   const bx = Math.max(1, Math.round(d.w / BAY)), bz = Math.max(1, Math.round(d.d / BAY));
+  const bayXs = [];   // x of each oriel, so trim can leave its column alone
+  // Where the town can show life, in the building's own frame (see render/life). Recorded as the builder places things,
+  // so a chimney, door or awning that moves in a builder moves its smoke, its visitors and its flutter with it.
+  const sites = { bodies: [], chimneys: [], doors: [], awnings: [], stacks: [], fronts: [], tables: [], swings: [], farm: null };
   const k = {
-    d, P, w: d.w, dep: d.d, floors: d.floors, h, level: d.level, t: d.t, parts, bx, bz,
+    d, P, w: d.w, dep: d.d, floors: d.floors, h, level: d.level, t: d.t, parts, bx, bz, sites,
     top: PLINTH + h,           // y of the wall top
     roof: { kind: 'flat', rise: 0, along: 'z', y: PLINTH + h },   // filled in by a roof helper; decorations read it
     doorX: d.dx ?? (d.t[4] - 0.5) * d.w * 0.3,
@@ -107,7 +113,8 @@ export function createKit(d) {
       const hh = floors * FH, geo = new THREE.BoxGeometry(w, hh, dd);
       const nx = Math.max(1, Math.round(w / BAY)), nz = Math.max(1, Math.round(dd / BAY));
       scaleUV(geo, 0, 8, nz, floors); scaleUV(geo, 16, 8, nx, floors);
-      parts.push({ geo, splits: splitGroups(geo), mat: toon(roofColor), color: new THREE.Color(roofColor), facadeMat: wallStyle(d.pal, style), local: xf(x, y0 + hh / 2, z), edge: true, body: true });
+      parts.push({ geo, splits: splitGroups(geo), mat: toon(roofColor), color: new THREE.Color(roofColor), facadeMat: wallStyle(d.pal, style, d.trim), local: xf(x, y0 + hh / 2, z), edge: true, body: true });
+      sites.bodies.push({ x, z, y0, w, d: dd, floors, style });
       return geo;
     },
     plinth(w = d.w, dd = d.d, x = 0, z = 0) {
@@ -116,11 +123,12 @@ export function createKit(d) {
     },
 
     // ---- openings and street level ----
-    door(x = k.doorX, z = d.d / 2, color = P.accent, w = 0.75, hh = 1.05) { k.box(w, hh, 0.14, x, PLINTH, z + 0.05, color); return x; },
-    awning(x, z, w, color, y = PLINTH + 1.45) { k.box(w, 0.1, 0.8, x, y, z + 0.4, color, { rx: 0.28 }); },
+    door(x = k.doorX, z = d.d / 2, color = P.accent, w = 0.75, hh = 1.05) { k.box(w, hh, 0.14, x, PLINTH, z + 0.05, color); sites.doors.push([x, z + 0.12]); return x; },
+    awning(x, z, w, color, y = PLINTH + 1.45) { k.box(w, 0.1, 0.8, x, y, z + 0.4, color, { rx: 0.28 }); sites.awnings.push({ x, y: y - 0.15, z: z + 0.78, w, color }); },
     // a shopfront band: big glass under an awning on the ground floor
     shopfront(w, z, color, x = 0) {
       k.box(w - 0.5, 0.85, 0.1, x, PLINTH + 0.1, z + 0.04, C.glass, { edge: false });
+      sites.fronts.push({ x, y: PLINTH + 0.52, z: z + 0.1, w: w - 0.6, h: 0.7 });
       k.awning(x, z, w - 0.3, color, PLINTH + 1.05);
     },
 
@@ -157,6 +165,42 @@ export function createKit(d) {
       const r = k.roof, y = r.kind === 'flat' ? r.y : k.top + rise * 0.4, topY = (r.kind === 'flat' ? r.y : k.top + rise) + 0.55;
       k.box(0.4, topY - y, 0.4, x, y, z, color);
       k.box(0.52, 0.08, 0.52, x, topY, z, C.stone, { edge: false });
+      sites.chimneys.push([x, topY + 0.1, z]);
+    },
+    // an oriel bay: a window box that juts out of the front wall, with glass on its face and a small cap.
+    // Plain parts only (no texture), so it costs no extra material.
+    bay(floor, x, w = 1.0, color = C.cream) {
+      // box() centres on x and z and puts y at the bottom. The body sinks 0.03 into the wall so it never shows a gap.
+      const depth = 0.35, y = k.floorY(floor) + 0.15, hh = 0.7, zc = d.d / 2 + depth / 2 - 0.03, front = zc + depth / 2;
+      bayXs.push(x);
+      k.box(w, hh, depth, x, y, zc, color);
+      k.box(w * 0.68, hh * 0.62, 0.04, x, y + hh * 0.19, front, C.glass, { edge: false });
+      k.box(w + 0.12, 0.1, depth + 0.1, x, y + hh, zc, P.roof, { edge: false });
+    },
+    // ---- trim: one of three details per building, picked by its traits (t[9]), so neighbours never match ----
+    //   0 corbels: small brackets under the eave, one per bay (none in an oriel's column)
+    //   1 string courses: two or three thin bands across the front wall
+    //   2 roof dressing: a ridge cap on pitched roofs, a coping on flat ones
+    // The band colour comes from t[10]; t[11] adds a third course. Each style stays under about 90 triangles.
+    trim(units) {
+      const style = Math.floor(d.t[9] * 3), accent = [C.stone, C.cream, P.accent][Math.floor(d.t[10] * 3)], z = d.d / 2, r = k.roof;
+      if (style === 0) {
+        for (let i = 0; i < bx; i++) {
+          const x = k.bayX(i);
+          if (bayXs.some((ox) => Math.abs(ox - x) < 0.9)) continue;
+          k.box(0.16, 0.24, 0.22, x, k.top - 0.46, z + 0.11, accent);
+        }
+      } else if (style === 1) {
+        const n = d.t[11] < 0.5 ? 2 : 3, lines = new Set();
+        for (let i = 1; i <= n; i++) lines.add(Math.max(1, Math.round((i * k.floors) / (n + 1))));
+        for (const f of lines) k.box(d.w + 0.06, 0.07, 0.06, 0, k.floorY(f), z + 0.03, accent);
+      } else if (r.kind === 'flat') {
+        k.box(d.w + 0.16, 0.1, d.d + 0.16, 0, r.y, 0, accent);
+      } else if ((r.kind === 'gable' || r.kind === 'hip') && !units) {
+        const len = r.kind === 'hip' ? Math.max(0.3, r.len - r.span) : r.len + 0.2, y = r.y + r.rise - 0.02;
+        if (r.along === 'z') k.box(0.14, 0.1, len, 0, y, 0, C.slate);
+        else k.box(len, 0.1, 0.14, 0, y, 0, C.slate);
+      }
     },
     balcony(floor, x, w = 1.1) {
       k.box(w, 0.08, 0.5, x, k.floorY(floor), d.d / 2 + 0.25, C.stone, { edge: false });
@@ -222,21 +266,37 @@ export function createKit(d) {
   return k;
 }
 
+// Called once the builder is done, when the roof is known: the roof edge a cat can sit on, as [x, y, z] or null.
+// Only low buildings get one, so the cat can be seen from the usual camera.
+export function finishSites(k) {
+  const r = k.roof, s = k.sites;
+  s.perch = null;
+  if (!r || k.floors > 3) return s;
+  if (r.kind === 'flat') s.perch = [k.w * 0.28, r.y, k.dep / 2 - 0.2];
+  else if (r.kind === 'gable' && r.along === 'z') s.perch = [0, r.y + r.rise, k.dep * 0.18];
+  else if (r.kind === 'gable') s.perch = [k.w * 0.25, r.y + r.rise, 0];
+  else s.perch = [k.w * 0.26, r.y + 0.14, k.dep / 2 - 0.12];
+  return s;
+}
+
 // Upgrade details shared by every model, so a level means the same thing across the town.
 //   L2 tended    window boxes
 //   L3 settled   chimney on the roof, a cream cornice, a round gable window
 //   L4 charming  dormers on long-eave roofs, a front hedge, a lamp by the door
 //   L5 festive   bunting, a weathervane or flag
-// o.units: [{ x, rise }] for models made of side-by-side gables; o.skip: names of details a model handles itself.
+// o.units: [{ x, rise }] for models made of side-by-side gables; o.skip: names of details a model handles itself;
+// o.hearth: the chimney comes at every level.
 export function decorate(k, o = {}) {
   const L = k.level, r = k.roof, t = k.t, skip = o.skip || [], pitched = r.kind === 'gable' || r.kind === 'hip' || r.kind === 'mansard';
   const units = o.units || [{ x: 0, rise: r.rise }], on = (n) => !skip.includes(n);
+  if (on('trim')) k.trim(o.units);
   if (L >= 2 && on('boxes')) { k.windowBoxes(Math.min(1, k.floors - 1)); if (on('pots')) k.pots(); }
+  // o.hearth: a humble house has its chimney from the first level (so its smoke shows from the start); the rest earn it at L3.
+  if ((L >= 3 || o.hearth) && on('chimney')) {
+    if (o.units) units.forEach((u, i) => { if (units.length === 1 || i % 2 === (t[3] < 0.5 ? 0 : 1) % 2) k.chimneyAt(u.x + 0.35, -k.dep * 0.2, u.rise); });
+    else k.chimney(t[3] < 0.5 ? -1 : 1, -1);
+  }
   if (L >= 3) {
-    if (on('chimney')) {
-      if (o.units) units.forEach((u, i) => { if (i % 2 === (t[3] < 0.5 ? 0 : 1) % 2) k.chimneyAt(u.x + 0.35, -k.dep * 0.2, u.rise); });
-      else k.chimney(t[3] < 0.5 ? -1 : 1, -1);
-    }
     if (on('cornice')) k.cornice(L >= 5 ? C.gold : C.cream);
     if (on('gableWindow')) for (const u of units) k.gableWindow(u.x, u.rise);
   }

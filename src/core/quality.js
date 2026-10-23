@@ -12,7 +12,7 @@ export const OPTIONS = {
   shadows: { bool: true },
   shadowSize: { values: [1024, 2048, 4096] },           // sun shadow map, pixels per side
   pixelRatio: { values: [1, 1.25, 1.5, 2] },            // cap on the canvas pixel ratio (never above the screen's)
-  effects: { values: ['off', 'light', 'full'] },        // dust puffs and hearts
+  effects: { values: ['off', 'light', 'full'] },        // dust puffs, hearts and town life (smoke, washing, cats, residents at their doors)
   crowd: { values: ['light', 'normal', 'busy'] },       // cars and townsfolk on screen
   edges: { bool: true },                                // ink edges on vehicles
   stats: { bool: true },                                // frame and draw-call readout; not part of any preset

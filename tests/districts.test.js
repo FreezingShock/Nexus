@@ -6,7 +6,7 @@ import { wrap, unwrap } from '../src/sim/save.js';
 import { GRID_N, BASE, tileIndex } from '../src/world/grid.js';
 import {
   MAX_DISTRICTS, NAME_MAX, nameFor, cleanName, encodeDistricts, decodeDistricts, validDistrictString,
-  districtAnchors, lotsByDistrict, DISTRICT_COLORS,
+  districtAnchors, lotsByDistrict, DISTRICT_COLORS, lineTiles, discTiles, strokeTiles,
 } from '../src/world/districts.js';
 
 const mk = (state = freshState()) => { state.coins = 100; return createSim({ state }); };
@@ -168,4 +168,30 @@ test('anchors sit on a tile of their own district, away from water, and lots cou
   const counts = lotsByDistrict(sim.grid.district, lots);
   assert.equal(counts.get(1), 2);
   assert.equal(counts.get(2), 1);
+});
+
+test('a brush stroke leaves no gaps and lists each tile once', () => {
+  const line = lineTiles([2, 2], [9, 5]);
+  assert.deepEqual(line[0], [2, 2]);
+  assert.deepEqual(line[line.length - 1], [9, 5]);
+  for (let k = 1; k < line.length; k++) assert.ok(Math.abs(line[k][0] - line[k - 1][0]) <= 1 && Math.abs(line[k][1] - line[k - 1][1]) <= 1);
+  const stroke = strokeTiles([10, 10], [20, 10], 1);
+  assert.equal(new Set(stroke.map((t) => t.join(','))).size, stroke.length);
+  assert.ok(stroke.some((t) => t[0] === 15 && t[1] === 11));
+  assert.equal(discTiles([0, 0], 0).length, 1);
+  assert.ok(discTiles([0, 0], 2).every(([x, z]) => x >= 0 && z >= 0 && x < GRID_N && z < GRID_N));
+});
+
+test('paint and erase accept a list of tiles, as one undo step', () => {
+  const sim = mk();
+  sim.dispatch({ type: 'newDistrict' });
+  const slot = sim.state.districts[0].slot;
+  const land = [];
+  for (let x = 0; x < GRID_N && land.length < 5; x++) if (sim.grid.baseAt(x, 3) !== BASE.WATER) land.push([x, 3]);
+  sim.dispatch({ type: 'paintDistrict', slot, tiles: land });
+  for (const [x, z] of land) assert.equal(sim.grid.districtAt(x, z), slot);
+  sim.dispatch({ type: 'paintDistrict', slot, tiles: [[1.5, 2]] });
+  sim.dispatch({ type: 'eraseDistrict', tiles: land.slice(0, 2) });
+  assert.equal(sim.grid.districtAt(land[0][0], land[0][1]), 0);
+  assert.equal(sim.grid.districtAt(land[4][0], land[4][1]), slot);
 });

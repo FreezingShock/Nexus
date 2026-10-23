@@ -4,7 +4,7 @@ import { MODELS, describe, fitFootprint, footprintsOf, canonicalDims, pickModelF
 import { starterPlaced } from '../src/world/starter.js';
 import { buildParts, builderIds, trianglesOf } from '../src/render/models/builders.js';
 import { getLayout } from '../src/world/layout.js';
-import { createSim } from '../src/sim/sim.js';
+import { quietSim as createSim } from './support/quiet.js';
 import { sanitize } from '../src/sim/save.js';
 import { tileIndex, TILE } from '../src/world/grid.js';
 import * as THREE from '../vendor/three/three.module.min.js';
@@ -85,20 +85,20 @@ test('placing charges coins, fills the grid, pays income; bulldozing frees the t
   const sim = createSim({ layout });
   sim.state.coins = 1e6;
   const rate0 = sim.rate(), coins0 = sim.state.coins;
-  sim.dispatch({ type: 'place', model: 'shop-row', gx: 29, gz: 19, fw: 3, fd: 1, rot: 0 });
+  sim.dispatch({ type: 'place', model: 'shop-row', gx: 45, gz: 35, fw: 3, fd: 1, rot: 0 });
   assert.equal(mine(sim).length, 1);
   const r = mine(sim)[0];
   assert.ok(coins0 - sim.state.coins >= 600);
   assert.ok(sim.rate() > rate0);
   assert.ok(sim.alive(r.id) && sim.building(r.id).name === 'Shop row');
-  assert.ok(sim.grid.lot[tileIndex(30, 19)] >= 40000);
-  sim.dispatch({ type: 'place', model: 'cottage', gx: 30, gz: 19, fw: 1, fd: 1, rot: 0 });
+  assert.ok(sim.grid.lot[tileIndex(46, 35)] >= 40000);
+  sim.dispatch({ type: 'place', model: 'cottage', gx: 46, gz: 35, fw: 1, fd: 1, rot: 0 });
   assert.equal(mine(sim).length, 1);
   const before = sim.state.coins; sim.dispatch({ type: 'upgrade', id: r.id });
   assert.equal(sim.state.levels[r.id], 2); assert.ok(sim.state.coins < before);
   sim.dispatch({ type: 'bulldoze', id: r.id });
   assert.equal(mine(sim).length, 0);
-  assert.equal(sim.grid.lot[tileIndex(30, 19)], 0);
+  assert.equal(sim.grid.lot[tileIndex(46, 35)], 0);
   assert.equal(sim.rate(), rate0);
 });
 
@@ -106,26 +106,26 @@ test('placement refuses bad ground, bad sizes and empty pockets', () => {
   const sim = createSim({ layout });
   sim.state.coins = 1e6;
   for (const t of [
-    { model: 'cottage', gx: 32, gz: 32, fw: 1, fd: 1 },
-    { model: 'cottage', gx: 0, gz: 0, fw: 1, fd: 1 },
-    { model: 'town-hall', gx: 30, gz: 19, fw: 1, fd: 1 },
-    { model: 'nope', gx: 30, gz: 19, fw: 1, fd: 1 },
+    { model: 'cottage', gx: 48, gz: 48, fw: 1, fd: 1 },
+    { model: 'cottage', gx: 16, gz: 16, fw: 1, fd: 1 }, // the old edge of the map is steep ground
+    { model: 'town-hall', gx: 46, gz: 35, fw: 1, fd: 1 },
+    { model: 'nope', gx: 46, gz: 35, fw: 1, fd: 1 },
   ]) sim.dispatch({ type: 'place', rot: 0, ...t });
   assert.equal(mine(sim).length, 0);
   sim.state.coins = 1;
-  sim.dispatch({ type: 'place', model: 'cottage', gx: 30, gz: 19, fw: 1, fd: 1, rot: 0 });
+  sim.dispatch({ type: 'place', model: 'cottage', gx: 46, gz: 35, fw: 1, fd: 1, rot: 0 });
   assert.equal(mine(sim).length, 0);
-  assert.notEqual(sim.grid.road[tileIndex(32, 32)], 0); // the village's cross street is still a road
+  assert.notEqual(sim.grid.road[tileIndex(48, 48)], 0); // the village's cross street is still a road
 });
 
 test('placed buildings survive a save, and a tampered save is cleaned', () => {
   const sim = createSim({ layout });
   sim.state.coins = 1e6;
-  sim.dispatch({ type: 'place', model: 'mansard', gx: 36, gz: 20, fw: 2, fd: 2, rot: 1 });
+  sim.dispatch({ type: 'place', model: 'mansard', gx: 52, gz: 36, fw: 2, fd: 2, rot: 1 });
   const back = sanitize(JSON.parse(JSON.stringify(sim.state)));
   assert.deepEqual(back.placed, sim.state.placed);
   const bad = JSON.parse(JSON.stringify(sim.state));
-  bad.placed.push({ id: 'b1500', model: 'mansard', gx: 36, gz: 20, fw: 2, fd: 2, rot: 0 }, { id: 'x', model: 'cottage' }, { id: 'b1501', model: 'cottage', gx: 99, gz: 1, fw: 1, fd: 1 });
+  bad.placed.push({ id: 'b1500', model: 'mansard', gx: 52, gz: 36, fw: 2, fd: 2, rot: 0 }, { id: 'x', model: 'cottage' }, { id: 'b1501', model: 'cottage', gx: 99, gz: 1, fw: 1, fd: 1 });
   assert.equal(sanitize(bad).placed.length, sim.state.placed.length, 'the three bad records are dropped, the rest stay');
   const again = createSim({ layout, state: back });
   assert.ok(again.alive(back.placed[0].id));

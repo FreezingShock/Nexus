@@ -10,18 +10,31 @@
 <link rel="preload" href="vendor/fonts/capriola-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/ui.css">
+<link rel="stylesheet" href="css/postcard.css">
 <link rel="stylesheet" href="css/zoning.css">
 <link rel="stylesheet" href="css/placement.css">
 <link rel="stylesheet" href="css/roads.css">
 <link rel="stylesheet" href="css/progress.css">
+<link rel="stylesheet" href="css/milestones.css">
+<link rel="stylesheet" href="css/calendar.css">
 <link rel="stylesheet" href="css/services.css">
 <link rel="stylesheet" href="css/happiness.css">
+<link rel="stylesheet" href="css/population.css">
 <link rel="stylesheet" href="css/districts.css">
 <link rel="stylesheet" href="css/menus.css">
+<link rel="stylesheet" href="css/decor.css">
+<link rel="stylesheet" href="css/paint.css">
+<link rel="stylesheet" href="css/paint-town.css">
 <link rel="stylesheet" href="css/polish.css">
 <link rel="stylesheet" href="css/graphics.css">
 <link rel="stylesheet" href="css/sound.css">
+<link rel="stylesheet" href="css/settings.css">
 <link rel="stylesheet" href="css/hud.css">
+<link rel="stylesheet" href="css/topbar.css">
+<link rel="stylesheet" href="css/motion.css">
+<link rel="stylesheet" href="css/toolbar.css">
+<link rel="stylesheet" href="css/feedback.css">
+<link rel="stylesheet" href="css/photo.css">
 </head>
 <body>
 <div id="app">
@@ -40,53 +53,68 @@
       <div class="chip card plaque res" id="coinschip" tabindex="0" aria-describedby="coinspop"><span class="badge" style="background:#E6BC62"><svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="9" fill="#F3D58A" stroke="#2B2620" stroke-width="2"/><circle cx="13" cy="13" r="4.5" fill="none" stroke="#2B2620" stroke-width="1.8"/></svg></span><div class="cval"><b id="coins">0</b><small>Coins <i id="rate">+0/s</i></small></div><div class="pop card" id="coinspop" role="tooltip"></div></div>
       <div class="chip card plaque res" id="partschip" tabindex="0" aria-describedby="partspop"><span class="badge" style="background:#E3A08E"><svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="3" y="7" width="20" height="13" rx="2" fill="#C98A6E" stroke="#2B2620" stroke-width="2"/><path d="M3 13.5H23M11 7V13.5M17 13.5V20" stroke="#2B2620" stroke-width="1.6" fill="none"/></svg></span><div class="cval"><b id="parts">0</b><small>Parts <i id="prate">+0/s</i></small></div><div class="pop card" id="partspop" role="tooltip"></div></div>
       <div class="chip card plaque ren" id="renchip" tabindex="0" aria-describedby="renpop"><span class="badge" style="background:#BFD8C4"><svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><path d="M13 3L16 10L23 10.5L17.5 15L19.5 22L13 18L6.5 22L8.5 15L3 10.5L10 10Z" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.8" stroke-linejoin="round"/></svg></span><div class="cval"><b>Renewal <span id="renewal">0%</span></b><div class="meter" role="img" aria-label="Renewal progress"><i id="renewalbar" style="width:0"></i></div></div><div class="pop card" id="renpop" role="tooltip"></div></div>
+      <div class="hpwrap" id="hpwrap">
+        <div class="chip card plaque hp" id="hpchip" role="button" tabindex="0" aria-expanded="false" aria-controls="hp-panel" aria-describedby="hppop"><span class="badge" style="background:#CFE0E8"><svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="9.5" fill="#F7E3A6" stroke="#2B2620" stroke-width="2"/><circle cx="9.7" cy="11" r="1.3" fill="#2B2620"/><circle cx="16.3" cy="11" r="1.3" fill="#2B2620"/><path d="M8.6 15.2Q13 19.4 17.4 15.2" fill="none" stroke="#2B2620" stroke-width="1.9" stroke-linecap="round"/></svg></span><div class="cval"><b>Happiness <span id="hppct">—</span></b><div class="meter" role="img" aria-label="Average happiness"><i id="hpbar" style="width:0"></i></div></div><div class="pop card" id="hppop" role="tooltip"></div></div>
+        <div class="card hppanel" id="hp-panel" data-mo hidden></div>
+      </div>
       <section class="chip card plaque demand" id="demandw" aria-label="Zone demand" tabindex="0" aria-describedby="demandpop">
         <b class="dtitle">Demand</b>
         <div class="drows" id="demandrows"></div>
         <div class="pop card end" id="demandpop" role="tooltip"></div>
       </section>
     </div>
+    <div class="ctrlwrap" id="ctrlwrap">
     <div class="ctrl card">
       <button class="ib" id="pause" aria-pressed="false" aria-label="Pause"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="2" width="3.5" height="12" rx="1" fill="#2B2620"/><rect x="9.5" y="2" width="3.5" height="12" rx="1" fill="#2B2620"/></svg></button>
       <button class="ib" id="speed" aria-label="Game speed">1×</button>
+      <button class="ib" id="menubtn" aria-expanded="false" aria-controls="menu" aria-label="Menu"><svg width="22" height="22" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 5H16M2 9H16M2 13H16" stroke="#2B2620" stroke-width="2.4" stroke-linecap="round"/></svg></button>
+    </div>
+    <nav class="card menu" id="menu" data-mo hidden aria-label="Menu">
+      <h3 class="h-disp">Menu</h3>
+      <div class="menugrid" id="menugrid">
       <button class="ib" id="night" aria-pressed="false" aria-label="Toggle night"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M14 3A8 8 0 1 0 17 13A7 7 0 0 1 14 3Z" fill="#FBF6EA" stroke="#2B2620" stroke-width="2" stroke-linejoin="round"/></svg></button>
-      <button class="ib" id="settingsbtn" aria-label="Settings" aria-expanded="false"><svg width="20" height="20" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 5H16M2 9H16M2 13H16" stroke="#2B2620" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+      <button class="ib" id="settingsbtn" aria-label="Settings" aria-expanded="false"><svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="#2B2620" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="10" r="3.6"/><path d="M10 2.2v2.3M10 15.5v2.3M2.2 10h2.3M15.5 10h2.3M4.5 4.5l1.6 1.6M13.9 13.9l1.6 1.6M4.5 15.5l1.6-1.6M13.9 6.1l1.6-1.6"/></svg></button>
+      </div>
+    </nav>
     </div>
   </header>
-  <aside id="townpick" class="card townpick" hidden></aside>
+  <aside id="townpick" class="card townpick" data-mo hidden></aside>
   <div id="leftcol" class="leftcol"></div>
 
-  <aside id="inspect" class="card" hidden aria-live="polite"></aside>
-  <aside id="settings" class="card" hidden></aside>
-  <section id="fly" class="fly card" hidden></section>
-  <div id="toast" class="toast card" hidden></div>
+  <aside id="inspect" class="card" data-mo hidden aria-live="polite"></aside>
+  <aside id="settings" class="card" data-mo hidden></aside>
+  <section id="fly" class="fly card" data-mo="up" hidden></section>
+  <div id="toast" class="toast card" data-mo hidden></div>
 
   <div class="hint card">Drag to pan · Scroll to zoom · Q / E to rotate · Click a building</div>
 
-  <nav class="bar2 card" id="tools" aria-label="Tools">
-    <button class="tool" data-tool="roads" aria-pressed="false"><kbd>R</kbd><span class="ico" style="--c:#D8CDB4"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2B2620" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M8 3L5 21M16 3L19 21"/><path d="M12 5V8M12 11V14M12 17V20"/></svg></span><span class="t">Roads</span></button>
-    <button class="tool" data-tool="zones" aria-pressed="false"><kbd>Z</kbd><span class="ico" style="--c:#BFD8C4"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2B2620" stroke-width="1.7" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2" stroke-dasharray="3 2"/><rect x="8" y="8" width="8" height="8" fill="#BFD8C4"/></svg></span><span class="t">Zones</span></button>
-    <button class="tool" data-tool="build" aria-pressed="false"><kbd>B</kbd><span class="ico" style="--c:#E3A08E"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2B2620" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M3 11L12 4L21 11"/><rect x="5" y="11" width="14" height="9" fill="#FAF8F3"/></svg></span><span class="t">Buildings</span></button>
-    <button class="tool" data-tool="services" aria-pressed="false"><kbd>C</kbd><span class="ico" style="--c:#DCE8EC"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2B2620" stroke-width="1.7" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8V16M8 12H16" stroke-linecap="round"/></svg></span><span class="t">Services</span></button>
-    <button class="tool" data-tool="parks" aria-pressed="false"><kbd>P</kbd><span class="ico" style="--c:#A8C179"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2B2620" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="9" r="6" fill="#BFD8C4"/><path d="M12 15V21"/></svg></span><span class="t">Parks</span></button>
-    <button class="tool" data-tool="traffic" aria-pressed="false"><kbd>T</kbd><span class="ico" style="--c:#E6BC62"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2B2620" stroke-width="1.7" aria-hidden="true"><rect x="3" y="9" width="18" height="8" rx="3" fill="#DCE8EC"/><circle cx="8" cy="18" r="1.5"/><circle cx="16" cy="18" r="1.5"/></svg></span><span class="t">Traffic</span></button>
-    <button class="tool" data-tool="districts" aria-pressed="false"><kbd>N</kbd><span class="ico" style="--c:#C9DDB8"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2B2620" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M7 21V4"/><path d="M7 4H18L15.5 8L18 12H7" fill="#C96F4F"/></svg></span><span class="t">Districts</span></button>
-    <button class="tool" data-tool="bulldoze" aria-pressed="false"><kbd>X</kbd><span class="ico" style="--c:#E9C1B8"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2B2620" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M5 6H19L17 20H7Z"/><path d="M9 3H15M10 10V16M14 10V16"/></svg></span><span class="t">Bulldoze</span></button>
+  <button class="toolfold" id="toolfold" aria-expanded="true" aria-controls="tools" aria-label="Hide the toolbar" title="Hide the toolbar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2B2620" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5L12 15.5L18 9.5"/></svg></button>
+  <nav class="bar2 card off" id="tools" aria-label="Tools">
+    <button class="tool" style="--i:0" data-tool="roads" aria-pressed="false"><kbd>R</kbd><span class="ico" style="--c:#D8CDB4"><svg width="34" height="34" viewBox="0 0 32 32" fill="none" stroke="#2B2620" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H21L29 28H3Z" fill="#8A8173"/><path d="M16 7V10M16 14V18M16 22V26" stroke="#FAF8F3" stroke-width="2.4"/></svg></span><span class="t">Roads</span></button>
+    <button class="tool" style="--i:1" data-tool="zones" aria-pressed="false"><kbd>Z</kbd><span class="ico" style="--c:#BFD8C4"><svg width="34" height="34" viewBox="0 0 32 32" fill="none" stroke="#2B2620" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="25" height="25" rx="3" stroke-dasharray="3 2.4"/><rect x="7.5" y="7.5" width="7" height="7" rx="1" fill="#A8C179"/><rect x="17.5" y="7.5" width="7" height="7" rx="1" fill="#9CC3D5"/><rect x="7.5" y="17.5" width="7" height="7" rx="1" fill="#F2D27A"/><rect x="17.5" y="17.5" width="7" height="7" rx="1" fill="#E3A08E"/></svg></span><span class="t">Zones</span></button>
+    <button class="tool" style="--i:2" data-tool="build" aria-pressed="false"><kbd>B</kbd><span class="ico" style="--c:#E3A08E"><svg width="34" height="34" viewBox="0 0 32 32" fill="none" stroke="#2B2620" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="21" y="6" width="3.5" height="7" fill="#FAF8F3"/><rect x="6" y="14" width="20" height="14" fill="#FAF8F3"/><path d="M3.5 15.5L16 5L28.5 15.5Z" fill="#C96F4F"/><rect x="14" y="20" width="4.5" height="8" fill="#C96F4F"/><rect x="8.5" y="17.5" width="3.6" height="3.6" fill="#9CC3D5"/><rect x="20.5" y="17.5" width="3.6" height="3.6" fill="#9CC3D5"/></svg></span><span class="t">Buildings</span></button>
+    <button class="tool" style="--i:3" data-tool="services" aria-pressed="false"><kbd>C</kbd><span class="ico" style="--c:#DCE8EC"><svg width="34" height="34" viewBox="0 0 32 32" fill="none" stroke="#2B2620" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="9" width="22" height="19" rx="1.5" fill="#FAF8F3"/><path d="M3 9.5L16 3.5L29 9.5Z" fill="#9CC3D5"/><path d="M16 14V23M11.5 18.5H20.5" stroke="#C96F4F" stroke-width="3.2"/></svg></span><span class="t">Services</span></button>
+    <button class="tool" style="--i:4" data-tool="parks" aria-pressed="false"><kbd>P</kbd><span class="ico" style="--c:#A8C179"><svg width="34" height="34" viewBox="0 0 32 32" fill="none" stroke="#2B2620" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="14.4" y="18" width="3.2" height="10" fill="#9A6B45"/><circle cx="16" cy="12" r="8.5" fill="#8FB06A"/><path d="M11 10.5Q12.5 7.5 16 7" stroke="#C9DDB8" stroke-width="1.6"/><path d="M5 28.5H27"/></svg></span><span class="t">Parks</span></button>
+    <button class="tool" style="--i:5" data-tool="decor" aria-pressed="false"><kbd>Y</kbd><span class="ico" style="--c:#E8B9C5"><svg width="34" height="34" viewBox="0 0 32 32" fill="none" stroke="#2B2620" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 22V13M16 18C13 18 11.5 16 10.5 14.5"/><circle cx="16" cy="8" r="2" fill="#F2D27A"/><circle cx="16" cy="4.6" r="2.4" fill="#F4C8D2"/><circle cx="19.4" cy="8" r="2.4" fill="#F4C8D2"/><circle cx="12.6" cy="8" r="2.4" fill="#F4C8D2"/><circle cx="16" cy="11.4" r="2.4" fill="#F4C8D2"/><circle cx="16" cy="8" r="2" fill="#F2D27A"/><path d="M9.5 22H22.5L20.5 29H11.5Z" fill="#C96F4F"/></svg></span><span class="t">Decor</span></button>
+    <button class="tool" style="--i:6" data-tool="traffic" aria-pressed="false"><kbd>T</kbd><span class="ico" style="--c:#E6BC62"><svg width="34" height="34" viewBox="0 0 32 32" fill="none" stroke="#2B2620" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 23V18.5Q3.5 16.5 5.5 16.5H8.5L12 10H20.5L24 16.5H26.5Q28.5 16.5 28.5 18.5V23Z" fill="#C96F4F"/><path d="M12.8 15.6L14.7 11.8H17.2V15.6ZM18.8 15.6V11.8H20L22.2 15.6Z" fill="#DCE8EC" stroke-width="1.4"/><circle cx="10" cy="23.5" r="3.4" fill="#3B352D"/><circle cx="22" cy="23.5" r="3.4" fill="#3B352D"/><circle cx="10" cy="23.5" r="1" fill="#FAF8F3" stroke="none"/><circle cx="22" cy="23.5" r="1" fill="#FAF8F3" stroke="none"/></svg></span><span class="t">Traffic</span></button>
+    <button class="tool" style="--i:7" data-tool="districts" aria-pressed="false"><kbd>N</kbd><span class="ico" style="--c:#C9DDB8"><svg width="34" height="34" viewBox="0 0 32 32" fill="none" stroke="#2B2620" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 29Q10 22.5 16 25.5T28.5 29Z" fill="#A8C179"/><path d="M10 28V4.5"/><path d="M10 5.5H25L21 10.5L25 15.5H10Z" fill="#C96F4F"/></svg></span><span class="t">Districts</span></button>
+    <button class="tool" style="--i:8" data-tool="bulldoze" aria-pressed="false"><kbd>X</kbd><span class="ico" style="--c:#E9C1B8"><svg width="34" height="34" viewBox="0 0 32 32" fill="none" stroke="#2B2620" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="22" width="19" height="6.5" rx="3.2" fill="#3B352D"/><rect x="6" y="14" width="14" height="8" fill="#F2D27A"/><path d="M12 14V8.5H19L20.5 14Z" fill="#F2D27A"/><rect x="14" y="10" width="4" height="3" fill="#DCE8EC" stroke-width="1.2"/><path d="M20 18H24.5"/><path d="M24.5 8.5H28L27 25H24.5Z" fill="#8A8173"/></svg></span><span class="t">Bulldoze</span></button>
   </nav>
 
-  <div id="offline" class="modal" hidden>
+  <div id="offline" class="modal" data-mo="fade" hidden>
     <div class="mail" id="mail" data-state="closed">
-      <div class="envelope" id="envelope">
+      <div class="envelope" id="envelope" role="button" tabindex="0" aria-label="Open the envelope">
         <div class="env-body"></div>
-        <svg class="env-lines" viewBox="0 0 560 360" preserveAspectRatio="none" aria-hidden="true"><path d="M2 358L240 190M558 358L320 190" fill="none" stroke="#2B2620" stroke-width="3" stroke-linecap="round"/></svg>
         <svg class="env-flap" viewBox="0 0 560 194" preserveAspectRatio="none" aria-hidden="true"><path d="M2 12Q2 2 12 2H548Q558 2 558 12L284 190Q280 192 276 190Z" fill="#D7B77E" stroke="#2B2620" stroke-width="3" stroke-linejoin="round"/></svg>
         <div class="seal"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path d="M3 15L15 4L27 15" fill="#FBF6EA" stroke="#2B2620" stroke-width="2.2" stroke-linejoin="round"/><rect x="6" y="15" width="18" height="12" fill="#FBF6EA" stroke="#2B2620" stroke-width="2.2"/></svg></div>
+        <span class="tape env-tape" aria-hidden="true"></span>
         <div class="env-addr"><b>For the mayor</b><i></i><i></i><span>From your town, with love</span></div>
         <div class="stampw"><div class="stamp"><canvas id="stamp1" width="140" height="160"></canvas><span>NEXUS</span></div><span class="pm-host"></span></div>
-        <button class="btn primary openbtn" id="openmail" style="height:56px;font-size:18px">Open the postcard</button>
+        <button class="btn primary openbtn" id="openmail" style="height:56px;font-size:18px" tabindex="-1">Open the postcard</button>
       </div>
       <article class="postcard" id="postcard" aria-labelledby="pctitle">
-        <div class="pc-photo"><figure class="photo"><canvas id="snap" width="480" height="360" role="img" aria-label="Snapshot of your town"></canvas><figcaption id="photocap">Our town this evening</figcaption></figure></div>
+        <span class="tape sage pc-tape" aria-hidden="true"></span>
+        <div class="pc-photo"><figure class="photo"><span class="tape t1" aria-hidden="true"></span><span class="tape rose t2" aria-hidden="true"></span><canvas id="snap" width="480" height="360" role="img" aria-label="Snapshot of your town"></canvas><figcaption id="photocap">Our town this evening</figcaption></figure></div>
         <div class="pc-text">
           <div class="pc-head"><h2 class="h-disp" id="pctitle">Welcome<br>back</h2><div class="stampw"><div class="stamp"><canvas id="stamp2" width="140" height="160"></canvas><span>NEXUS</span></div><span class="pm-host"></span></div></div>
           <p class="pc-msg" id="pcmsg"></p>
@@ -98,7 +126,7 @@
             <div><span class="badge" style="background:#E3A08E"><svg width="24" height="24" viewBox="0 0 26 26" aria-hidden="true"><rect x="3" y="7" width="20" height="13" rx="2" fill="#C98A6E" stroke="#2B2620" stroke-width="2"/><path d="M3 13.5H23M11 7V13.5M17 13.5V20" stroke="#2B2620" stroke-width="1.6" fill="none"/></svg></span><span><b id="gain-parts">+0</b><small>Parts</small></span></div>
           </div>
           <p class="ps">P.S. Nothing broke and nothing was lost. Income eases off after 4 hours away, up to 24 hours.</p>
-          <button class="btn primary" id="collect" style="height:54px;font-size:18px">Collect and continue</button>
+          <button class="btn primary collect" id="collect"><span>Collect and continue</span><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11H17M12 5.5L17.5 11L12 16.5"/></svg></button>
         </div>
       </article>
     </div>

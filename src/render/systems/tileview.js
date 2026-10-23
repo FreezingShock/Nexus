@@ -7,8 +7,8 @@
 //   hover(tile | null, zone)          one-tile brush under the cursor
 //   clearPreview(), flash()           flash() glows the last preview as it commits
 import * as THREE from '../../../vendor/three/three.module.min.js';
-import { GRID_N, rectTiles, tileIndex, inBounds } from '../../world/grid.js';
-import { ZONE_DEFS, ROAD_REACH } from '../../sim/zones.js';
+import { GRID_N, GRID_HALF, TILE, rectTiles, tileIndex, inBounds } from '../../world/grid.js';
+import { ZONE_DEFS } from '../../sim/zones.js';
 import { groundPlaneGeometry } from '../ground.js';
 
 const AREA = GRID_N * GRID_N;
@@ -24,7 +24,7 @@ uniform sampler2D uTiles;
 uniform vec3 uZ1, uZ2, uZ3, uZ4;
 uniform float uGrid, uLots, uTime, uFlash, uNight;
 varying vec3 vW;
-const float N = 64.0;
+const float N = ${GRID_N}.0;
 vec4 tile(vec2 id){
   if (id.x < 0.0 || id.y < 0.0 || id.x >= N || id.y >= N) return vec4(0.0);
   return texture2D(uTiles, (id + 0.5) / N);
@@ -38,7 +38,7 @@ vec4 over(vec4 base, vec4 s){
   return vec4(c, a);
 }
 void main(){
-  vec2 t = (vW.xz + 97.5) / 3.0;
+  vec2 t = (vW.xz + ${(GRID_HALF * TILE + TILE / 2).toFixed(1)}) / ${TILE.toFixed(1)};
   vec2 id = floor(t), f = fract(t);
   if (id.x < 0.0 || id.y < 0.0 || id.x >= N || id.y >= N) discard;
   vec4 d = tile(id);
@@ -127,7 +127,7 @@ export default {
       for (let i = 0; i < AREA; i++) {
         const gx = i % GRID_N, gz = (i / GRID_N) | 0, zone = grid.zone[i];
         const open = grid.isOpen(gx, gz);
-        const access = (zone || open) && grid.roadWithin(gx, gz, ROAD_REACH);
+        const access = (zone || open) && grid.roadBeside(gx, gz);
         data[i * 4] = zone;
         data[i * 4 + 1] = (open || zone ? 1 : 0) | (access ? 2 : 0) | (grid.lot[i] ? 4 : 0);
       }

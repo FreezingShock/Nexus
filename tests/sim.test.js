@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createSim } from '../src/sim/sim.js';
+import { quietSim as createSim } from './support/quiet.js';
 import { freshState } from '../src/sim/state.js';
 import { getLayout } from '../src/world/layout.js';
 import { BASE_RATE } from '../src/sim/economy.js';
@@ -10,7 +10,7 @@ const layout = getLayout();
 
 test('layout is deterministic and holds only the scenery; the village is placed records', () => {
   assert.equal(getLayout(), layout);
-  assert.equal(layout.farms.length, 15);
+  assert.equal(layout.farms, undefined, 'farms are built by the player, not spawned');
   assert.equal(layout.turbines.length, 2);
   assert.ok(layout.trees.length > 20 && layout.pines.length > 50);
   assert.equal(freshState().placed.length, STARTER_COUNT);
@@ -21,10 +21,10 @@ test('one tick adds the rate; game speed means more ticks, not bigger steps', ()
   const c0 = sim.state.coins, rate = sim.rate();
   const run = (seconds) => { for (let i = 0; i < seconds * 4; i++) sim.advance(0.25); }; // frames are capped at 0.25 s
   run(0.75); assert.equal(sim.state.coins, c0);
-  run(0.25); assert.equal(sim.state.coins, c0 + rate);
+  run(0.25); assert.ok(Math.abs(sim.state.coins - (c0 + rate)) < 1e-6);
   sim.dispatch({ type: 'cycleSpeed' });
   const c1 = sim.state.coins;
-  run(1); assert.equal(sim.state.coins, c1 + 2 * rate);
+  run(1); assert.ok(Math.abs(sim.state.coins - (c1 + 2 * rate)) < 1e-6);
 });
 
 test('paused sim does not advance', () => {

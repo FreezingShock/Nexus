@@ -28,7 +28,7 @@ export default {
     let type = 'two', anchor = null, pivots = [], erase = null, hover = null, shift = false, flip = false, pointer = { x: 0, y: 0 };
     let lastKey = '', rev = 0, lastRoads = state.roads, previewLen = 0;
     const label = document.createElement('div');
-    label.id = 'roadlabel'; label.hidden = true; label.setAttribute('aria-hidden', 'true');
+    label.id = 'roadlabel'; label.dataset.mo = 'tag'; label.hidden = true; label.setAttribute('aria-hidden', 'true');
     $('app').appendChild(label);
 
     const drawing = () => tool() === 'roads', erasing = () => tool() === 'bulldoze';

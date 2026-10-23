@@ -9,4 +9,3 @@
 #placelabel.bad{background:#F6D9CF;padding-left:14px}
 #placelabel.poor b{color:var(--action)}
 #placelabel .coin{width:22px;height:22px;border-radius:50%;border:2.5px solid var(--ink);background:radial-gradient(circle at 50% 50%,var(--paper) 0 28%,var(--mustard) 30%);flex:0 0 auto}
-#placelabel[hidden]{display:none}

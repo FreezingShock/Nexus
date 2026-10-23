@@ -6,18 +6,22 @@ import { describe } from '../../world/models.js';
 import { tileCenter, TILE } from '../../world/grid.js';
 import { heightAt } from '../../world/terrain.js';
 import { makeParts, addToBatch } from '../buildings.js';
-import { Batch } from '../geom.js';
+import { Batch, allocInstanceColors } from '../geom.js';
 
 const MAX_BUILDINGS = 8;
+const MAX_TILES = 2048; // tint quads: a dragged farm can claim a few hundred tiles, a row a few dozen
 
 export default {
   id: 'placement-ghost',
   create({ THREE, world }) {
     const root = new THREE.Group(); root.visible = false; world.add(root);
-    const tiles = new THREE.Group(); root.add(tiles);
     const tileGeo = new THREE.PlaneGeometry(TILE - 0.12, TILE - 0.12).rotateX(-Math.PI / 2);
     const ok = new THREE.MeshBasicMaterial({ color: 0xA8C179, transparent: true, opacity: 0.55, depthWrite: false });
     const bad = new THREE.MeshBasicMaterial({ color: 0xD98C7A, transparent: true, opacity: 0.6, depthWrite: false });
+    // every tile tint is one instance of two meshes (green, rose), so a big farm is still two draw calls
+    const okTiles = allocInstanceColors(new THREE.InstancedMesh(tileGeo, ok, MAX_TILES)), badTiles = allocInstanceColors(new THREE.InstancedMesh(tileGeo, bad, MAX_TILES));
+    for (const m of [okTiles, badTiles]) { m.count = 0; m.frustumCulled = false; m.castShadow = m.receiveShadow = false; root.add(m); }
+    const mat = new THREE.Matrix4();
     const slots = []; // one per building shown: { group, made, key, base }
 
     function slotAt(i) {
@@ -45,16 +49,10 @@ export default {
       s.group.position.set(d.x, d.y, d.z); s.group.rotation.y = d.rotY; s.base = d.y;
       s.group.visible = true;
     }
-    function tileAt(i) {
-      while (tiles.children.length <= i) tiles.add(new THREE.Mesh(tileGeo, ok));
-      const m = tiles.children[i]; m.visible = true;
-      return m;
-    }
-
     return {
       // items: [{ rec: { id, model, gx, gz, fw, fd, rot }, blocked: [[gx, gz], ...], level }]
       showMany(items) {
-        let n = 0, t = 0;
+        let n = 0, nOk = 0, nBad = 0;
         for (const { rec, blocked = [], level = 1 } of items) {
           const d = describe(rec, level);
           if (!d) continue;
@@ -63,13 +61,15 @@ export default {
           // one quad per tile, so blocked tiles show exactly where the problem is
           const bad2 = new Set(blocked.map((b) => b[0] + ',' + b[1]));
           for (let gz = rec.gz; gz < rec.gz + d.fd; gz++) for (let gx = rec.gx; gx < rec.gx + d.fw; gx++) {
-            const [cx, cz] = tileCenter(gx, gz), m = tileAt(t++);
-            m.material = bad2.has(gx + ',' + gz) ? bad : ok;
-            m.position.set(cx, Math.max(0.05, heightAt(cx, cz)) + 0.06, cz);
+            const [cx, cz] = tileCenter(gx, gz), isBad = bad2.has(gx + ',' + gz);
+            if (nOk + nBad >= MAX_TILES) continue;
+            mat.makeTranslation(cx, Math.max(0.05, heightAt(cx, cz)) + 0.06, cz);
+            if (isBad) badTiles.setMatrixAt(nBad++, mat); else okTiles.setMatrixAt(nOk++, mat);
           }
         }
         for (let i = n; i < slots.length; i++) slots[i].group.visible = false;
-        for (let i = t; i < tiles.children.length; i++) tiles.children[i].visible = false;
+        okTiles.count = nOk; badTiles.count = nBad;
+        okTiles.instanceMatrix.needsUpdate = badTiles.instanceMatrix.needsUpdate = true;
         root.visible = true;
       },
       show(rec, blocked = [], level = 1) { this.showMany([{ rec, blocked, level }]); },

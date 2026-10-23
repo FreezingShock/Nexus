@@ -9,7 +9,7 @@ export default {
     const bubble = document.createElement('div');
     bubble.className = 'tipbubble';
     bubble.setAttribute('role', 'tooltip');
-    bubble.hidden = true;
+    bubble.dataset.mo = 'tag'; bubble.hidden = true;
     document.body.appendChild(bubble);
 
     let timer = 0, anchor = null;

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createSim } from '../src/sim/sim.js';
+import { quietSim as createSim } from './support/quiet.js';
 import { freshState } from '../src/sim/state.js';
 import { sanitize, unwrap, wrap } from '../src/sim/save.js';
 import { getLayout } from '../src/world/layout.js';
@@ -85,13 +85,13 @@ test('drawRoad charges once, writes state and the grid layer, and clears zone pa
   const seen = [];
   sim.subscribe((e) => seen.push(e.type));
   sim.dispatch({ type: 'drawRoad', roadType: 'two', path: stroke(5) });
-  assert.equal(state.coins, 900);
-  assert.equal(state.roads[key(free[0], free[1])].p, 20);
+  assert.equal(state.coins, 700);
+  assert.equal(state.roads[key(free[0], free[1])].p, 60);
   assert.ok(grid.road[key(free[0] + 4, free[1])] > 0);
   assert.equal(grid.zone[key(free[0] + 1, free[1])], 0);
   assert.ok(seen.includes('roadsChanged'));
   sim.dispatch({ type: 'drawRoad', roadType: 'two', path: stroke(5) }); // same again: nothing new, nothing charged
-  assert.equal(state.coins, 900);
+  assert.equal(state.coins, 700);
 });
 
 test('drawRoad refuses bad input: unaffordable, blocked, locked, disconnected', () => {
@@ -112,7 +112,7 @@ test('drawRoad refuses bad input: unaffordable, blocked, locked, disconnected', 
 
 test('one-way roads take their direction from the stroke', () => {
   const sim = createSim({ layout });
-  sim.state.coins = 1000; sim.state.parts = 150;
+  sim.state.coins = 1000; sim.state.parts = 450;
   sim.dispatch({ type: 'unlockRoad', roadType: 'one' });
   sim.dispatch({ type: 'drawRoad', roadType: 'one', path: [[free[0], free[1]], [free[0], free[1] + 1], [free[0] + 1, free[1] + 1]] });
   const r = sim.state.roads;
@@ -126,18 +126,18 @@ test('undo gives the coins back, bulldoze refunds half, starter streets refund n
   const { state } = sim;
   state.coins = 1000;
   sim.dispatch({ type: 'drawRoad', roadType: 'two', path: stroke(4) });
-  assert.equal(state.coins, 920);
+  assert.equal(state.coins, 760);
   sim.dispatch({ type: 'undoRoad' });
   assert.equal(state.coins, 1000);
   assert.equal(state.roads[key(free[0], free[1])], undefined);
   assert.equal(sim.grid.road[key(free[0], free[1])], 0);
   sim.dispatch({ type: 'drawRoad', roadType: 'two', path: stroke(4) });
   sim.dispatch({ type: 'bulldozeRoad', tiles: [[free[0], free[1]], [C, C]] });
-  assert.equal(state.coins, 920 + 10);
+  assert.equal(state.coins, 760 + 30);
   assert.equal(state.roads[key(C, C)], undefined);
   sim.dispatch({ type: 'undoRoad' }); // brings both tiles back and takes the refund again
   assert.ok(state.roads[key(C, C)] && state.roads[key(free[0], free[1])]);
-  assert.equal(state.coins, 920);
+  assert.equal(state.coins, 760);
   sim.dispatch({ type: 'undoRoad' });
   sim.dispatch({ type: 'undoRoad' }); // nothing left: no change
   assert.equal(state.coins, 1000);
@@ -148,13 +148,13 @@ test('bus avenue unlocks with Parts, once', () => {
   const { state } = sim;
   sim.dispatch({ type: 'unlockRoad', roadType: 'bus' });
   assert.deepEqual(state.roadUnlocks, []);
-  state.parts = 700; state.coins = 1000;
+  state.parts = 2100; state.coins = 1000;
   sim.dispatch({ type: 'unlockRoad', roadType: 'bus' });
   sim.dispatch({ type: 'unlockRoad', roadType: 'bus' });
   assert.deepEqual(state.roadUnlocks, ['bus']);
-  assert.equal(state.parts, 100);
+  assert.equal(state.parts, 300);
   sim.dispatch({ type: 'drawRoad', roadType: 'bus', path: stroke(2) });
-  assert.equal(state.coins, 880);
+  assert.equal(state.coins, 640);
 });
 
 test('roads survive save and load; bad road data is dropped; old saves get the starter streets', () => {

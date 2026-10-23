@@ -38,6 +38,10 @@ const ICON_SHAPES = {
   work: '<path d="M3 18V9l4-3 4 3 4-3 4 3v9z" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.8" stroke-linejoin="round"/><rect x="14" y="3" width="3" height="6" fill="#2B2620" opacity=".7"/>',
   landmark: '<rect x="7" y="4" width="8" height="14" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.8"/><path d="M6 4h10l-5-3z" fill="#E6BC62" stroke="#2B2620" stroke-width="1.5" stroke-linejoin="round"/>',
   service: '<rect x="3" y="3" width="16" height="16" rx="5" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.8"/><path d="M11 7v8M7 11h8" stroke="#B8472E" stroke-width="2.6" stroke-linecap="round"/>',
+  farm: '<rect x="3" y="12" width="16" height="7" fill="#E2C27A" stroke="#2B2620" stroke-width="1.8"/><path d="M7 12v7M11 12v7M15 12v7" stroke="#B0AA66" stroke-width="1.4"/><path d="M4 12V8l3-3 3 3v4z" fill="#B8472E" stroke="#2B2620" stroke-width="1.6" stroke-linejoin="round"/>',
+  greenery: '<circle cx="7" cy="12" r="4" fill="#7BA25C" stroke="#2B2620" stroke-width="1.6"/><circle cx="13" cy="9" r="4.5" fill="#8FB86C" stroke="#2B2620" stroke-width="1.6"/><path d="M4 18h14" stroke="#2B2620" stroke-width="1.8" stroke-linecap="round"/>',
+  street: '<path d="M11 19V8" stroke="#2B2620" stroke-width="2" stroke-linecap="round"/><rect x="7.5" y="2.5" width="7" height="7" rx="1.5" fill="#F2D27A" stroke="#2B2620" stroke-width="1.8"/><path d="M7 19h8" stroke="#2B2620" stroke-width="2" stroke-linecap="round"/>',
+  plaza: '<path d="M3 16h16l-2 3H5z" fill="#CFC7B6" stroke="#2B2620" stroke-width="1.8" stroke-linejoin="round"/><path d="M11 16V8M11 8c-3 0-4 3-5 5M11 8c3 0 4 3 5 5" fill="none" stroke="#2B2620" stroke-width="1.8" stroke-linecap="round"/><ellipse cx="11" cy="16" rx="7" ry="1.6" fill="#8FC4D8" stroke="#2B2620" stroke-width="1.4"/>',
   park: '<circle cx="11" cy="8" r="5" fill="#A8C179" stroke="#2B2620" stroke-width="1.8"/><path d="M11 13v6" stroke="#2B2620" stroke-width="2"/>',
 };
 export const categoryIcon = (id) => `<svg viewBox="0 0 22 22" aria-hidden="true">${ICON_SHAPES[id] || ICON_SHAPES.home}</svg>`;
@@ -106,6 +110,7 @@ const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 export function buildingEffect(def) {
   const [lo, hi] = def.floors;
   if (!hi) return '';
+  if (def.free) return `Drag it to any size · flat ground · earns ${+(income(1, 1) * def.perTile).toFixed(2)} coins/s per tile`; // fields repeat to fill the lot
   const floors = lo === hi ? plural(lo, 'floor') : `${lo} to ${hi} floors`;
   const earn = income(lo, 1) === income(hi, 1) ? `${income(lo, 1)}` : `${income(lo, 1)} to ${income(hi, 1)}`;
   return `${floors} · earns ${earn} coins/s`;
