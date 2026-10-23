@@ -41,24 +41,25 @@ function facadeCanvas(wall) {
   x.fillStyle = '#B9AD97'; x.fillRect(16, 48, 32, 4);
   return c;
 }
-function windowCanvas(glow) {
+function windowCanvas(glow, wall) {
   const c = document.createElement('canvas'); c.width = c.height = 64;
   const x = c.getContext('2d');
-  x.fillStyle = glow ? '#000' : '#6C7191'; x.fillRect(0, 0, 64, 64);
+  x.fillStyle = glow ? '#000' : wall; x.fillRect(0, 0, 64, 64);
   x.fillStyle = glow ? '#FFC15E' : '#FFD98A'; x.fillRect(18, 12, 28, 36);
   x.fillStyle = glow ? '#000' : 'rgba(70,52,40,.9)'; x.fillRect(31, 12, 2, 36); x.fillRect(18, 29, 28, 2);
   return c;
 }
 
-let night = null;
-export function nightFacade() {
-  if (!night) {
-    night = toonUncached(0xffffff, {
-      map: canvasTexture(windowCanvas(false)), emissive: 0xffffff,
-      emissiveMap: canvasTexture(windowCanvas(true)), emissiveIntensity: 0.85,
+const nights = {};
+// The wall keeps its palette colour at night; the dim light darkens it.
+export function nightFacade(wall) {
+  if (!nights[wall]) {
+    nights[wall] = toonUncached(0xffffff, {
+      map: canvasTexture(windowCanvas(false, wall)), emissive: 0xffffff,
+      emissiveMap: canvasTexture(windowCanvas(true, wall)), emissiveIntensity: 0.85,
     });
   }
-  return night;
+  return nights[wall];
 }
 
 const facades = {};
@@ -66,7 +67,7 @@ const facades = {};
 export function facade(pal) {
   if (!facades[pal]) {
     const m = toonUncached(0xffffff, { map: canvasTexture(facadeCanvas(PAL[pal].wall)) });
-    m.userData.night = nightFacade();
+    m.userData.night = nightFacade(PAL[pal].wall);
     facades[pal] = m;
   }
   return facades[pal];
