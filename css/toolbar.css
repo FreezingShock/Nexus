@@ -1,0 +1,21 @@
+/* Bottom toolbar: the whole bar folds away behind a chevron, and its tiles pop in one after another (--i is the tile's
+   index, set in index.html). The bar centres itself with `transform`, so sliding uses the separate `translate` property.
+   The .off state is also the starting state; src/ui/modules/toolbar-fold.js lifts it a moment after load. */
+#tools{--slide:calc(100% + 40px);transition:translate .38s cubic-bezier(.2,.8,.3,1),opacity .25s ease,visibility 0s}
+#tools.off{translate:0 var(--slide);opacity:0;visibility:hidden;pointer-events:none;transition-delay:.15s,.15s,.45s}
+.tool{transition:transform .12s,opacity .28s ease,translate .42s cubic-bezier(.3,1.5,.5,1),scale .42s cubic-bezier(.3,1.5,.5,1);transition-delay:0s,calc(var(--i,0)*50ms + 120ms),calc(var(--i,0)*50ms + 120ms),calc(var(--i,0)*50ms + 120ms)}
+#tools.off .tool{opacity:0;translate:0 26px;scale:.55;transition-delay:0s,calc((8 - var(--i,0))*14ms),calc((8 - var(--i,0))*14ms),calc((8 - var(--i,0))*14ms)}
+.tool:hover .ico svg{animation:tool-wobble .5s ease}
+.tool[aria-pressed="true"] .ico{background:#FFF6DC}
+@keyframes tool-wobble{20%{rotate:-9deg;scale:1.08}50%{rotate:7deg;scale:1.08}80%{rotate:-3deg}}
+
+/* The chevron is a small tab on the bar's top edge; once the bar is folded it sits at the bottom of the screen. */
+.toolfold{position:absolute;left:50%;bottom:calc(max(18px,env(safe-area-inset-bottom,0px)) + 112px);margin-left:-21px;width:42px;height:24px;padding:0;
+  display:grid;place-items:center;border:2.5px solid var(--ink);border-bottom:0;border-radius:12px 12px 0 0;background:var(--paper);
+  box-shadow:0 -2px 0 var(--ink-soft,rgba(43,38,32,.25));cursor:pointer;z-index:6;
+  transition:bottom .38s cubic-bezier(.2,.8,.3,1),translate .12s}
+.toolfold:hover{translate:0 -2px}
+.toolfold svg{transition:rotate .38s cubic-bezier(.2,.8,.3,1)}
+.toolfold[aria-expanded="false"]{bottom:0;border-bottom:0}
+.toolfold[aria-expanded="false"] svg{rotate:180deg}
+@media (max-width:900px){.toolfold{bottom:calc(max(18px,env(safe-area-inset-bottom,0px)) + 104px)}.toolfold[aria-expanded="false"]{bottom:0}}
