@@ -43,3 +43,7 @@ A chip in the bottom left (key U) opens a paper panel: people against places, a 
 - **On screen**: the cars are the residents whose drive window is open (about 1 in 10 residents at rush hour, none at night), and each car is a particular resident, so their model and colour never change. Walkers are likewise residents on their walk, with their own coat, trousers, skin, hair, size (children, elders) and pace; they step into a doorway when their window closes.
 - **Demand model**: the gravity and BPR model is unchanged, but trip totals now scale with `state.pop` and the routines (`carTripsPerPerson`, about 0.85 car trips per resident a day at defaults), not with the capacity of buildings. Only car trips are counted.
 - Not browser-run. Checked in node only: schedule shares and peaks, trips scaling with population.
+
+## Day-to-day variety
+
+Windows are seeded by person and by day (`dayUnit(i, day, salt)`, day from `dayIndexOf(state.days)`): drive and walk times slide up to `ROUTINE.dayShift` hours, `dayOff` of drivers stay home, walks are rolled fresh daily (half of walkers, `habit`, keep a favourite slot). Life movers follow the same idea in `src/render/life/rules.js`: tractors, forklifts and vans have per-yard hours that move each day and rest days, `dayBusy` scales door traffic per building, there is one tractor per farm and one forklift per yard, fewer of each than before, in more colours. Walkers step out of doors at staggered moments and each day's pace differs a little. Nothing is saved.

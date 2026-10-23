@@ -1,7 +1,7 @@
 // When and where the town shows life. Pure: no DOM, no THREE, no sim. Every answer is a function of a building's seed,
 // the clock and a few sim numbers, so nothing here is saved and the same house always keeps the same habits.
 // Used by the render systems named life-*.js. Notes and tunables are in docs/LIFE.md.
-import { unit } from '../../sim/schedule.js';
+import { dayUnit, unit } from '../../sim/schedule.js';
 
 // What a building is for, as far as its lights and visitors go. Parks have no kind (they are ground).
 export function kindOf(b) {
@@ -114,10 +114,23 @@ export function flowKind(kind, roll, hour) {
 // Smoke from workshop stacks: steady through the working day, banked overnight. Puffs per second per stack.
 const STACKS = [[0, 0.1], [5, 0.1], [6, 0.8], [21.5, 0.8], [22.5, 0.1], [24, 0.1]];
 export const stackRate = (hour) => 0.9 * curve(STACKS, hour);
-// A forklift works the yard through the working day.
-export const forkliftWorking = (hour) => hour >= 6 && hour < 21.5;
+// How busy a building is today against its usual self, 0.5 to 1.4, fixed for the day: some days the shop is quiet, some brisk.
+export const dayBusy = (seed, day) => 0.5 + 0.9 * dayUnit(seed, day, 600);
+// A forklift works the yard for a shift that starts and ends at a different time each day, and sits idle on one day in five.
+// Returns true while it is on shift.
+export function forkliftWorking(hour, seed = 0, day = 0) {
+  if (dayUnit(seed, day, 610) < 0.2) return false;
+  const from = 6 + 2.5 * dayUnit(seed, day, 611), to = 15.5 + 5.5 * dayUnit(seed, day, 612);
+  return hour >= from && hour < to;
+}
+// Shift workers' vests and coats: mostly hi-vis, but not all one colour.
+export const VESTS = [0xE6BC62, 0xE6BC62, 0xD98C7A, 0x8DBEDD, 0xBFD8C4, 0xFAF3E4];
 // Seconds between delivery vans at a workplace in the working day (Infinity at other hours), shorter in a fuller town.
-export const vanInterval = (hour, fill) => (hour >= 7 && hour < 19 ? 80 / (0.4 + Math.max(0, Math.min(1, fill))) : Infinity);
+export function vanInterval(hour, fill, seed = 0, day = 0) {
+  const busy = dayBusy(seed, day);
+  if (hour < 7 + 2 * dayUnit(seed, day, 620) || hour >= 15 + 4 * dayUnit(seed, day, 621) || busy < 0.6) return Infinity;
+  return 100 / ((0.4 + Math.max(0, Math.min(1, fill))) * busy);
+}
 // Customers at a cafe: busy at breakfast, lunch and mid-afternoon. Sitting-down arrivals per second.
 const CAFE = [[0, 0], [7.5, 0], [8.5, 0.6], [10, 0.35], [12, 0.9], [14, 0.4], [15.5, 0.7], [18, 0.4], [20.5, 0.15], [21.5, 0], [24, 0]];
 export const cafeRate = (hour) => curve(CAFE, hour) / 14;
@@ -128,8 +141,14 @@ const GROWTH = { spring: 0.4, summer: 1, autumn: 0.9, winter: 0 };
 export const growthTarget = (season) => GROWTH[season] ?? 0.5;
 // Crop colours by season: fresh, deep, golden.
 export const CROP_TINT = { spring: 0xA9D36F, summer: 0x7FB04F, autumn: 0xE0B14E, winter: 0xBFB48F };
-// A tractor works the fields on dry days from spring to autumn.
-export const tractorWorking = (season, hour, weatherKind) => season !== 'winter' && hour >= 7 && hour < 18 && weatherKind !== 'rain' && weatherKind !== 'snow';
+// A tractor works its farm's fields on dry days from spring to autumn, for hours of its own that move from day to day, and
+// stays in the barn on about a quarter of the days.
+export function tractorWorking(season, hour, weatherKind, seed = 0, day = 0) {
+  if (season === 'winter' || weatherKind === 'rain' || weatherKind === 'snow') return false;
+  if (dayUnit(seed, day, 630) < 0.25) return false;
+  const from = 7 + 2.5 * dayUnit(seed, day, 631), to = 14 + 4 * dayUnit(seed, day, 632);
+  return hour >= from && hour < to;
+}
 // Farm hands going out to a field or coming in again: events per second per farm.
 const HANDS = [[0, 0], [5.5, 0], [6.5, 0.6], [11, 0.4], [14, 0.4], [18, 0.5], [19.5, 0], [24, 0]];
 export const farmHandRate = (hour) => curve(HANDS, hour) / 25;

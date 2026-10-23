@@ -5,14 +5,14 @@ import * as THREE from '../../../../vendor/three/three.module.min.js';
 import { sheepGeometry, tractorGeometry, tuftGeometry } from '../figures.js';
 import { ZERO } from '../pools.js';
 import { toWorld } from '../routes.js';
-import { CROP_TINT, farmHandRate, growthTarget, kindOf, tractorWorking } from '../rules.js';
+import { CROP_TINT, dayBusy, farmHandRate, growthTarget, kindOf, tractorWorking } from '../rules.js';
 import { unit } from '../../../sim/schedule.js';
 import { COATS } from './homes.js';
 
 export const MAX_FARMS = 120, MAX_TUFTS = 4000, PER_FARM = 320, MAX_SHEEP = 300;
 const UP = new THREE.Vector3(0, 1, 0);
 const WOOL = [0xFAF3E4, 0xEFE6D2, 0xCFC6B8];
-const TRACTORS = [0xB8574A, 0x6D9A8C, 0xE6BC62];
+const TRACTORS = [0xB8574A, 0x6D9A8C, 0xE6BC62, 0x8DBEDD, 0xC8694F, 0x9DB37C, 0xA7856A];
 
 export function createFarms(pools) {
   const tufts = pools.make('tufts', tuftGeometry(), MAX_TUFTS, { cast: false });
@@ -54,8 +54,8 @@ export function createFarms(pools) {
           }
         }
         F.tN[f] = n;
-        F.hasTractor[f] = unit(seed, 161) < 0.75 && fm.lane.x1 - fm.lane.x0 > 2 ? 1 : 0;
-        F.tx[f] = fm.lane.x0 + 0.5; F.tdir[f] = 1; F.tpause[f] = 2 * unit(seed, 162); F.tshow[f] = 0;
+        F.hasTractor[f] = unit(seed, 161) < 0.6 && fm.lane.x1 - fm.lane.x0 > 2 ? 1 : 0;
+        F.tdir[f] = unit(seed, 166) < 0.5 ? 1 : -1; F.tx[f] = fm.lane.x0 + 0.5 + (fm.lane.x1 - fm.lane.x0 - 1) * unit(seed, 167); F.tpause[f] = 12 * unit(seed, 162); F.tshow[f] = 0;
         tractor.setColorAt(f, col.setHex(TRACTORS[Math.floor(unit(seed, 163) * TRACTORS.length)])); tractor.setMatrixAt(f, ZERO);
         // the gap between the house and the barn, where the sheep graze
         const hl = fm.house.x - fm.house.hw / 2, hr = fm.house.x + fm.house.hw / 2, bl = fm.barn.x - fm.barn.hw, br = fm.barn.x + fm.barn.hw;
@@ -79,7 +79,7 @@ export function createFarms(pools) {
     },
 
     frame(c) {
-      const { dt, hour, season, wk, effects } = c;
+      const { dt, hour, season, wk, effects, day } = c;
       if (!F.n) return;
       // crops grow towards the season's level, slowly enough to watch
       const target = growthTarget(season);
@@ -108,7 +108,7 @@ export function createFarms(pools) {
 
         // tractor
         if (F.hasTractor[f]) {
-          const want = effects >= 1 && tractorWorking(season, hour, wk) ? 1 : 0;
+          const want = effects >= 1 && tractorWorking(season, hour, wk, F.seed[f], day) ? 1 : 0;
           F.tshow[f] += (want - F.tshow[f]) * Math.min(1, dt * 1.5); if (Math.abs(F.tshow[f] - want) < 0.02) F.tshow[f] = want;
           const u = F.tshow[f], lane = F.lane[f];
           if (u > 0) {
@@ -140,7 +140,7 @@ export function createFarms(pools) {
         }
 
         // a farm hand walks out between the house and the barn to a field and back
-        const rate = effects > 0 ? farmHandRate(hour) * c.crowd * (effects < 1 ? 0.5 : 1) : 0;
+        const rate = effects > 0 ? farmHandRate(hour) * dayBusy(F.seed[f], day) * c.crowd * (effects < 1 ? 0.5 : 1) : 0;
         if (rate > 0 && F.beds[f].length && F.gap[f].x1 > F.gap[f].x0) {
           F.nextAt[f] -= dt;
           if (F.nextAt[f] <= 0) {

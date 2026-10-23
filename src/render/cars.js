@@ -42,7 +42,7 @@ export function buildCars(parent, grid, camera) {
   const fleet = new Fleet(7);
   const models = CAR_SPECS.map((s) => buildModel(parent, s, CAR_MAX));
   const bus = buildModel(parent, BUS_SPEC, BUS_MAX);
-  const persons = new Int32Array(CAR_MAX), seen = { hour: -1, n: -1, count: 0 };
+  const persons = new Int32Array(CAR_MAX), seen = { hour: -1, n: -1, day: -1, count: 0 };
   let crowd = 1; // graphics setting: scales the car target (CAR_MAX is the hard cap)
   const all = [...models, bus];
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
@@ -133,14 +133,14 @@ export function buildCars(parent, grid, camera) {
   return {
     // dt is already scaled by game speed; paused passes 0. grid.traffic is read only.
     // hour is the town clock (state.routineHour). The cars on screen are the residents whose drive window is open now.
-    update(dt, next, pop, live, hour, view = camera.view) {
+    update(dt, next, pop, live, hour, day = 0, view = camera.view) {
       if (next !== roads) { roads = next; tours = busTours(next); }
       const tr = grid.traffic || null;
       if (tr && roads) {
         // Who is out driving: worked out from the schedule when the clock or the headcount has moved, never saved.
         const people = pop >= 0 && hour >= 0 ? Math.floor(pop) : -1;
-        if (people >= 0 && (people !== seen.n || Math.abs(hour - seen.hour) > RECOUNT_H || hour < seen.hour)) {
-          seen.n = people; seen.hour = hour; seen.count = drivingNow(people, hour, persons);
+        if (people >= 0 && (people !== seen.n || day !== seen.day || Math.abs(hour - seen.hour) > RECOUNT_H || hour < seen.hour)) {
+          seen.n = people; seen.day = day; seen.hour = hour; seen.count = drivingNow(people, hour, persons, day);
         }
         const resident = people >= 0;
         fleet.step(dt, {
