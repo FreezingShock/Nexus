@@ -5,15 +5,14 @@ import * as THREE from '../../../../vendor/three/three.module.min.js';
 import { forkliftGeometry, vanGeometry } from '../figures.js';
 import { ZERO } from '../pools.js';
 import { doorRoute } from '../routes.js';
-import { flowKind, forkliftWorking, kindOf, vanInterval, visitRate } from '../rules.js';
+import { dayBusy, flowKind, forkliftWorking, kindOf, vanInterval, VESTS, visitRate } from '../rules.js';
 import { groundY } from '../../road-mesh.js';
 import { unit } from '../../../sim/schedule.js';
 
 export const MAX_YARDS = 300;
 const UP = new THREE.Vector3(0, 1, 0);
-const VANS = [0xE6BC62, 0xBFD8C4, 0xD98C7A, 0x8DBEDD, 0xFAF3E4];
-const LIFTS = [0xE6BC62, 0xD98C7A];
-const HI_VIS = 0xE6BC62;
+const VANS = [0xE6BC62, 0xBFD8C4, 0xD98C7A, 0x8DBEDD, 0xFAF3E4, 0xCBC3DC, 0xA7856A, 0x9DB37C];
+const LIFTS = [0xE6BC62, 0xD98C7A, 0x8DBEDD, 0xBFD8C4, 0xC8694F];
 
 export function createIndustry(pools) {
   const lift = pools.make('forklift', forkliftGeometry(), MAX_YARDS), van = pools.make('van', vanGeometry(), MAX_YARDS);
@@ -46,9 +45,9 @@ export function createIndustry(pools) {
         Y.x[y] = b.x; Y.y[y] = b.y; Y.z[y] = b.z; Y.rot[y] = b.rotY; Y.seed[y] = seed; Y.half[y] = body.w / 2; Y.front[y] = body.z + body.d / 2;
         Y.doors.push(sites.doors);
         Y.nextAt[y] = 1 + 10 * unit(seed, 150);
-        Y.hasLift[y] = unit(seed, 151) < 0.7 && body.w > 2 ? 1 : 0; Y.hasVan[y] = unit(seed, 152) < 0.8 ? 1 : 0;
-        Y.fx[y] = -Y.half[y] + 0.7; Y.fdir[y] = 1; Y.fpause[y] = 2 * unit(seed, 153); Y.fshow[y] = 0;
-        Y.vstate[y] = 0; Y.vnext[y] = 10 + 40 * unit(seed, 154);
+        Y.hasLift[y] = unit(seed, 151) < 0.45 && body.w > 2 ? 1 : 0; Y.hasVan[y] = unit(seed, 152) < 0.6 ? 1 : 0;
+        Y.fx[y] = -Y.half[y] + 0.7; Y.fdir[y] = 1; Y.fpause[y] = 8 * unit(seed, 153); Y.fshow[y] = 0;
+        Y.vstate[y] = 0; Y.vnext[y] = 10 + 90 * unit(seed, 154);
         lift.setColorAt(y, col.setHex(LIFTS[Math.floor(unit(seed, 155) * LIFTS.length)])); lift.setMatrixAt(y, ZERO);
         van.setColorAt(y, col.setHex(VANS[Math.floor(unit(seed, 156) * VANS.length)])); van.setMatrixAt(y, ZERO);
       }
@@ -57,7 +56,7 @@ export function createIndustry(pools) {
     },
 
     frame(c) {
-      const { dt, hour, fill, effects } = c;
+      const { dt, hour, fill, effects, day } = c;
       const crowdK = (0.35 + 1.1 * fill) * c.crowd * (effects < 1 ? 0.5 : 1);
       let dirty = false;
       for (let y = 0; y < Y.n; y++) {
@@ -65,21 +64,21 @@ export function createIndustry(pools) {
         const half = Y.half[y], front = Y.front[y];
 
         // workers at the door
-        const rate = effects > 0 ? visitRate('work', hour) * crowdK : 0;
+        const rate = effects > 0 ? visitRate('work', hour) * crowdK * dayBusy(Y.seed[y], day) : 0;
         if (rate > 0) {
           Y.nextAt[y] -= dt;
           if (Y.nextAt[y] <= 0) {
             G.x = Y.x[y]; G.z = Y.z[y]; G.rot = Y.rot[y]; G.half = half; G.front = front;
             const doors = Y.doors[y], door = doors[Math.floor(Math.random() * doors.length)];
             const r = doorRoute(G, door, flowKind('work', Math.random(), hour), Math.random);
-            pools.folk.spawn({ ...r, doorY: Y.y[y] + 0.25, color: HI_VIS });
+            pools.folk.spawn({ ...r, doorY: Y.y[y] + 0.25, color: VESTS[Math.floor(Math.random() * VESTS.length)] });
             Y.nextAt[y] = -Math.log(1 - Math.random()) / rate;
           }
         }
 
         // the forklift shuttles along the yard in front, pausing at each end, and rolls out of sight when the day is done
         if (Y.hasLift[y]) {
-          const want = effects >= 1 && forkliftWorking(hour) ? 1 : 0;
+          const want = effects >= 1 && forkliftWorking(hour, Y.seed[y], day) ? 1 : 0;
           Y.fshow[y] += (want - Y.fshow[y]) * Math.min(1, dt * 2); if (Math.abs(Y.fshow[y] - want) < 0.02) Y.fshow[y] = want;
           const u = Y.fshow[y];
           if (u > 0) {
@@ -101,7 +100,7 @@ export function createIndustry(pools) {
           if (st === 0) {
             Y.vnext[y] -= dt;
             if (Y.vnext[y] <= 0) {
-              const gap = vanInterval(hour, fill);
+              const gap = vanInterval(hour, fill, Y.seed[y], day);
               if (gap === Infinity) Y.vnext[y] = 30;
               else {
                 const doors = Y.doors[y], door = doors[Math.floor(Math.random() * doors.length)];

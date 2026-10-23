@@ -301,3 +301,26 @@ test('playgrounds and fire stations record their sites, and the civic director r
   assert.ok(people >= 3, 'people were out around the school and park');
   assert.equal(named('engine').count, 1);
 });
+
+test('tractors, forklifts and vans keep their own hours, rest on some days and differ from yard to yard', async () => {
+  const { tractorWorking, forkliftWorking, vanInterval, dayBusy } = await import('../src/render/life/rules.js');
+  const hours = [];
+  let idleT = 0, idleF = 0, vanOff = 0; const N = 400;
+  for (let s = 0; s < N; s++) {
+    for (let d = 0; d < 3; d++) {
+      let first = -1;
+      for (let h = 0; h < 24; h += 0.25) if (tractorWorking('summer', h, 'clear', s * 7 + 1, d)) { first = h; break; }
+      if (first < 0) idleT++; else hours.push(first);
+      assert.ok(!tractorWorking('summer', 3, 'clear', s, d) && !tractorWorking('summer', 22, 'clear', s, d), 'never at night');
+      assert.ok(!forkliftWorking(2, s, d));
+      if (!forkliftWorking(12, s, d)) idleF++;
+      if (vanInterval(12, 0.5, s, d) === Infinity) vanOff++;
+      assert.equal(vanInterval(3, 0.5, s, d), Infinity);
+      assert.ok(tractorWorking('winter', 10, 'clear', s, d) === false && tractorWorking('summer', 10, 'rain', s, d) === false);
+      const b = dayBusy(s, d); assert.ok(b >= 0.5 && b <= 1.4);
+    }
+  }
+  assert.ok(new Set(hours.map((h) => h * 4)).size >= 8, 'start times are spread over the morning');
+  assert.ok(idleT > 0.15 * N * 3 && idleT < 0.45 * N * 3, 'about a quarter of days a tractor rests');
+  assert.ok(idleF > 0 && vanOff > 0);
+});

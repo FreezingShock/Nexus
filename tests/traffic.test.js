@@ -230,6 +230,8 @@ test('visual smoke: cars, buses and townsfolk run on the warmed sim without erro
     cars.update(1 / 30, sim.state.roads, sim.state.pop, sim.state.popLive, 17.5);
     folk.update(1 / 30, sim.state.roads, sim.state.pop, sim.state.popLive, 17.5);
   }
+  // walkers step out of their doors at staggered moments, so give them a few seconds
+  for (let f = 0; f < 300; f++) folk.update(1 / 30, sim.state.roads, sim.state.pop, sim.state.popLive, 17.5);
   assert.ok(cars.carCount() <= Math.ceil(sim.state.pop * 0.25), 'cars are a small share of the residents');
   assert.ok(cars.busCount() <= 16);
   assert.ok(folk.count() <= 300);

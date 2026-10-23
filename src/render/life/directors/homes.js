@@ -4,7 +4,7 @@ import * as THREE from '../../../../vendor/three/three.module.min.js';
 import { catGeometry } from '../figures.js';
 import { ZERO } from '../pools.js';
 import { doorRoute } from '../routes.js';
-import { catOut, hasCat, hasWashingLine, homeOccupied, kindOf, outingKind, outingRate, washDay } from '../rules.js';
+import { catOut, hasCat, hasWashingLine, dayBusy, homeOccupied, kindOf, outingKind, outingRate, washDay } from '../rules.js';
 import { unit } from '../../../sim/schedule.js';
 import { LANG } from '../../../world/models.js';
 
@@ -28,7 +28,7 @@ export function createHomes(pools) {
     catShow: new Float32Array(MAX_HOMES), catDrawn: new Uint8Array(MAX_HOMES),
   };
   const cl = { lx: new Float32Array(pools.cloth.max), ly: new Float32Array(pools.cloth.max), lz: new Float32Array(pools.cloth.max), sx: new Float32Array(pools.cloth.max), ph: new Float32Array(pools.cloth.max) };
-  let catCount = 0, lastStep = -99, day = 0, lastHour = 0;
+  let catCount = 0, lastStep = -99, lastDay = -1;
 
   return {
     build(entries) {
@@ -72,11 +72,9 @@ export function createHomes(pools) {
     },
 
     frame(c) {
-      const { dt, hour, night, season, wk, fill, effects } = c;
-      if (hour < lastHour - 6) day++;
-      lastHour = hour;
-      if (Math.abs(hour - lastStep) > 0.1 || hour < lastStep) {
-        lastStep = hour;
+      const { dt, hour, night, season, wk, fill, effects, day } = c;
+      if (Math.abs(hour - lastStep) > 0.1 || hour < lastStep || day !== lastDay) {
+        lastStep = hour; lastDay = day;
         for (let h = 0; h < H.n; h++) H.washWant[h] = effects >= 1 && H.clothN[h] && homeOccupied(H.seed[h], fill) && washDay(H.seed[h], day, hour, season, wk) ? 1 : 0;
       }
       const rate = effects > 0 && night < 0.6 && c.rain <= 0.3 ? outingRate(hour) * (0.35 + 1.1 * fill) * c.crowd * (effects < 1 ? 0.5 : 1) : 0;
@@ -93,7 +91,7 @@ export function createHomes(pools) {
             G.x = H.x[h]; G.z = H.z[h]; G.rot = H.rot[h]; G.half = H.half[h]; G.front = H.front[h];
             const r = doorRoute(G, door, outingKind(Math.random(), hour), Math.random);
             pools.folk.spawn({ ...r, doorY: H.y[h] + 0.25, color: COATS[Math.floor(Math.random() * COATS.length)] });
-            H.nextAt[h] = -Math.log(1 - Math.random()) / rate;
+            H.nextAt[h] = -Math.log(1 - Math.random()) / (rate * dayBusy(H.seed[h], day));
           }
         }
 

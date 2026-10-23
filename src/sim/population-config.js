@@ -17,7 +17,10 @@ export const ROUTINE = {
   amFrom: 6.5, amTo: 9, pmFrom: 16, pmTo: 18.5, // the morning and evening rush, per person within these
   errandFrom: 9.5, errandTo: 15, errand2Share: 0.25,
   driveMin: 0.35, driveMax: 0.9, // hours a drive lasts
-  walkShare: 0.85,    // residents who take a walk on a given day
+  walkShare: 0.85,    // residents who take a walk on a given day (rolled fresh each day)
+  dayShift: 0.75,     // each day a person's windows slide by up to this many hours either way
+  dayOff: 0.14,       // share of drivers who stay home (or just run an errand) on a given day
+  habit: 0.5,         // share of walkers who keep the same walk slot every day
   walkMin: 0.3, walkMax: 0.9,
   walkSlots: [        // when a walk happens: weights sum to 1
     { weight: 0.25, from: 7, to: 9 },    // school run, dog, bread

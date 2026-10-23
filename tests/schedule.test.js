@@ -75,3 +75,31 @@ test('the fleet gives each car to a resident who is out driving, once, and keeps
   assert.equal(fleet.pickPerson({ persons, personN: 3 }), null, 'everyone out is already in a car');
   assert.equal(fleet.pickPerson({}), -1, 'bare scenarios still spawn');
 });
+
+test('a person leaves at different times on different days, and has days off', () => {
+  const N = 600;
+  let moved = 0, drivers = 0, offs = 0, walkMoved = 0, walkers = 0;
+  for (let i = 0; i < N; i++) {
+    const a = driveWindows(i, 3), b = driveWindows(i, 4);
+    assert.deepEqual(a, driveWindows(i, 3), 'same day, same answer');
+    if (driveWindows(i, 0).length || a.length || b.length) {
+      drivers++;
+      if (a.length && b.length && Math.abs(a[0][0] - b[0][0]) > 0.05) moved++;
+    }
+    let off = 0; for (let d = 0; d < 20; d++) if (!driveWindows(i, d).length && unit(i, 1) < 1 / 3) off++;
+    if (off) offs++;
+    const wa = walkWindow(i, 3), wb = walkWindow(i, 4);
+    if (wa && wb) { walkers++; if (Math.abs(wa[0] - wb[0]) > 0.05) walkMoved++; }
+  }
+  assert.ok(moved / drivers > 0.4, 'most drivers leave at a new time the next day');
+  assert.ok(offs > 20, 'drivers have days with no drive');
+  assert.ok(walkMoved / walkers > 0.5, 'walks move from day to day');
+});
+
+test('no two days look alike across the town, and nobody drives and walks at once on any day', () => {
+  const N = 1500, buf = new Int32Array(N);
+  const counts = new Set();
+  for (let d = 0; d < 8; d++) counts.add(drivingNow(N, 8, buf, d));
+  assert.ok(counts.size >= 6, 'the morning rush differs day to day');
+  for (let d = 0; d < 4; d++) for (let h = 6; h < 21; h += 1.5) for (let i = 0; i < 200; i++) assert.ok(!(isDriving(i, h, d) && isWalking(i, h, d)));
+});

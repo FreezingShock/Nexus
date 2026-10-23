@@ -5,7 +5,7 @@ import * as THREE from '../../../../vendor/three/three.module.min.js';
 import { bladeGeometry } from '../figures.js';
 import { ZERO } from '../pools.js';
 import { doorRoute, seatRoute } from '../routes.js';
-import { cafeRate, flowKind, kindOf, visitRate } from '../rules.js';
+import { cafeRate, dayBusy, flowKind, kindOf, visitRate } from '../rules.js';
 import { unit } from '../../../sim/schedule.js';
 import { COATS } from './homes.js';
 
@@ -68,7 +68,7 @@ export function createCommercial(pools) {
     },
 
     frame(c) {
-      const { dt, hour, fill, effects } = c;
+      const { dt, hour, fill, effects, day } = c;
       const wind = c.wk === 'leaves' ? 0.45 : c.wk === 'rain' ? 0.12 : 0.07;
       const crowdK = (0.35 + 1.1 * fill) * c.crowd * (effects < 1 ? 0.5 : 1);
       let clothDirty = false, signDirty = false;
@@ -98,7 +98,7 @@ export function createCommercial(pools) {
         // visitors
         if (effects <= 0) continue;
         G.x = S.x[s]; G.z = S.z[s]; G.rot = S.rot[s]; G.half = S.half[s]; G.front = S.front[s];
-        const kindName = S.kind[s] ? 'office' : 'shop', rate = visitRate(kindName, hour) * crowdK;
+        const kindName = S.kind[s] ? 'office' : 'shop', rate = visitRate(kindName, hour) * crowdK * dayBusy(S.seed[s], day);
         if (rate > 0) {
           S.nextAt[s] -= dt;
           if (S.nextAt[s] <= 0) {

@@ -3,7 +3,7 @@
 // junction. State machine: walk -> idle | enter -> inside -> exit -> walk.
 import * as THREE from '../../vendor/three/three.module.min.js';
 import { toon } from './materials.js';
-import { unit, walkingNow } from '../sim/schedule.js';
+import { dayUnit, unit, walkingNow } from '../sim/schedule.js';
 import { allocInstanceColors } from './geom.js';
 import { GRID_N, tileIndex } from '../world/grid.js';
 import { DIRS, connMask, dirsOfMask, opposite } from '../world/roadnet.js';
@@ -66,7 +66,7 @@ export function buildTownsfolk(parent, grid, camera) {
   parent.add(...parts);
 
   const people = [];
-  const out = new Int32Array(MAX), seen = { hour: -1, n: -1, count: 0 }, walking = new Set();
+  const out = new Int32Array(MAX), seen = { hour: -1, n: -1, day: -1, count: 0 }, walking = new Set();
   let roads = null, roadTiles = [], arrive = 0;
   const mtx = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), pos = new THREE.Vector3(), sc = new THREE.Vector3();
 
@@ -74,11 +74,11 @@ export function buildTownsfolk(parent, grid, camera) {
   const isRoad = (gx, gz) => gx >= 0 && gz >= 0 && gx < GRID_N && gz < GRID_N && !!roads[tileIndex(gx, gz)];
 
   // Dresses a slot as resident `id`: colours, size and pace all come from the hash of the index.
-  function dress(i, p, id) {
+  function dress(i, p, id, day = 0) {
     p.person = id;
     const kid = kidOf(id), elder = elderOf(id);
     p.size = kid ? 0.72 : elder ? 0.95 : 0.92 + 0.14 * unit(id, 33);
-    p.speed = (kid ? 1.15 : elder ? 1.0 : 1.35 + 0.4 * unit(id, 34)) * (SPEED / 1.6);
+    p.speed = (kid ? 1.15 : elder ? 1.0 : 1.35 + 0.4 * unit(id, 34)) * (SPEED / 1.6) * (0.88 + 0.24 * dayUnit(id, day, 38)); // a brisker or slower day
     p.lean = elder ? 0.12 : 0;
     const pick = (list, salt) => list[Math.floor(unit(id, salt) * list.length)];
     coat.setColorAt(i, col.setHex(pick(COATS, 32)));
@@ -128,13 +128,13 @@ export function buildTownsfolk(parent, grid, camera) {
   }
 
   // Slots follow the residents out walking: new walkers appear as their window opens, and leave (into a doorway) as it closes.
-  function sync(pop, hour) {
+  function sync(pop, hour, day) {
     const n = pop >= 0 && hour >= 0 ? Math.floor(pop) : -1;
     if (n < 0) return false;
-    if (n !== seen.n || Math.abs(hour - seen.hour) > RECOUNT_H || hour < seen.hour) {
-      seen.n = n; seen.hour = hour;
+    if (n !== seen.n || day !== seen.day || Math.abs(hour - seen.hour) > RECOUNT_H || hour < seen.hour) {
+      seen.n = n; seen.day = day; seen.hour = hour;
       const cap = Math.min(MAX, Math.floor(TARGET * crowd));
-      seen.count = walkingNow(n, hour, out.subarray(0, cap));
+      seen.count = walkingNow(n, hour, out.subarray(0, cap), day);
       walking.clear();
       for (let k = 0; k < seen.count; k++) walking.add(out[k]);
       for (const p of people) {
@@ -149,8 +149,9 @@ export function buildTownsfolk(parent, grid, camera) {
         if (i < 0 && people.length < MAX) { i = people.length; people.push({ alive: false, gx: 0, gz: 0, dir: 0, side: 1, u: 0, mode: 'walk', t: 0, person: -1, leave: false, size: 1, speed: SPEED, lean: 0 }); }
         if (i < 0) break;
         const p = people[i];
-        p.leave = false; p.alive = false; dress(i, p, id);
-        if (place(p)) { p.mode = 'exit'; p.t = ENTER_S; }
+        p.leave = false; p.alive = false; dress(i, p, id, day);
+        // they come out of their doors at staggered moments, not all together
+        if (place(p)) { p.mode = 'inside'; p.t = rng() * 9; }
         have.add(id);
       }
       for (const m of parts) if (m.instanceColor) m.instanceColor.needsUpdate = true;
@@ -160,13 +161,13 @@ export function buildTownsfolk(parent, grid, camera) {
 
   return {
     // hour is the town clock (state.routineHour). The walkers on screen are the residents whose walk window is open now.
-    update(dt, next, pop, live, hour) {
+    update(dt, next, pop, live, hour, day = 0) {
       arrive = live ? live.perS : 0;
       if (next !== roads) {
         roads = next;
         roadTiles = Object.keys(next).map(Number);
       }
-      if (!sync(pop, hour)) {
+      if (!sync(pop, hour, day)) {
         // no population or clock to follow (bare scenes): a few wanderers, as before
         const want = Math.min(TARGET * crowd, Math.round(roadTiles.length * PER_ROAD_TILE));
         while (people.length < want) people.push({ alive: false, gx: 0, gz: 0, dir: 0, side: 1, u: 0, mode: 'walk', t: 0, person: -1, leave: false, size: 1, speed: SPEED, lean: 0 });
