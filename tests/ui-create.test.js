@@ -77,3 +77,13 @@ test('the HUD fills its currency plaques and hover cards on the first frame', ()
   assert.match(elFor('coinspop').innerHTML, /in hand/);
   assert.match(elFor('renpop').innerHTML, /Renewal/);
 });
+
+test('the date panel paints when opened (K) and on later frames', () => {
+  const sim = createSim({ state: freshState(), layout: getLayout() });
+  const mod = uiModules.find((m) => m.id === 'date');
+  const ui = mod.create({ sim, send: (cmd) => sim.dispatch(cmd), scene: deep(), toast() {}, tool: () => null, quality: deep(), sound: deep() });
+  assert.doesNotThrow(() => ui.onKey({ key: 'k' }), 'opening paints the panel');
+  assert.doesNotThrow(() => ui.frame(), 'a frame with the panel open');
+  assert.equal(elFor('dpnum').textContent, String(sim.state.dayOfMonth));
+  assert.match(elFor('dyear').innerHTML, /Mar/);
+});

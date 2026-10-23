@@ -5,7 +5,7 @@ import { MONTH_NAMES, MONTH_SHORT, SEASONS, monthDaysOf, seasonOfMonth } from '.
 import { MARKET } from '../../core/holidays.js';
 import { iconFor } from '../holiday-icons.js';
 import { $ } from '../format.js';
-import { clockText, dateOf, inDaysText, longDate, monthCells, nextMonthSkip, seasonName, shortDate, todayLine, townDays, upcoming, yearLine } from '../date-text.js';
+import { clockText, dateOf, inDaysText, longDate, monthCells, nextMonthSkip, seasonName, shortDate, todayLine, townDays, upcoming, yearLine, yearRibbon } from '../date-text.js';
 
 const CLOSE_SVG = '<svg width="16" height="16" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2L12 12M12 2L2 12" stroke="#2B2620" stroke-width="2.2" stroke-linecap="round"/></svg>';
 const CAL_SVG = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2B2620" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" fill="#FBF6EA"/><path d="M3.5 10H20.5M8 3V7M16 3V7"/></svg>';
