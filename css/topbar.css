@@ -45,6 +45,7 @@
 #achvbtn{--tc:#F2C9BA}
 #goalsbtn{--tc:#D3E4C4}
 #keysbtn{--tc:#D2E3EE}
+#photobtn{--tc:#E8D9EC}
 #settingsbtn{--tc:#E4D5B2}
 @media (max-width:1479px){.ctrlwrap{margin-left:0}}
 @media (prefers-reduced-motion:reduce){.ctrl .ib,.menugrid .ib{transition:none}}

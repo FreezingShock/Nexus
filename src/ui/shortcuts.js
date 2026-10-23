@@ -42,6 +42,7 @@ export const SHORTCUT_GROUPS = [
     { keys: ['Shift'], text: 'Move faster', file: 'src/render/camera-math.js', needle: "has('shift')" },
     { keys: ['F'], text: 'Free fly: walk at ground level', file: 'src/ui/modules/camera-modes.js', needle: "k === 'f'" },
     { keys: ['H'], text: 'Home: the classic town view', file: 'src/ui/modules/camera-modes.js', needle: "k === 'h'" },
+    { keys: ['O'], text: 'Photo mode: filters, viewpoints, a slow cinematic camera and saving a picture', file: 'src/ui/modules/photo.js', needle: "k === 'o'" },
     { keys: ['Drag'], text: 'Pan the town' },
     { keys: ['Scroll'], text: 'Zoom in and out' },
   ] },
