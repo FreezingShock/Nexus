@@ -103,6 +103,7 @@
   </nav>
 
   <section id="title" class="title" data-mo="fade" aria-labelledby="tt-name">
+    <i class="tt-curtain" id="tt-curtain" aria-hidden="true"></i>
     <div class="tt-card card">
       <span class="tape tt-tape" aria-hidden="true"></span>
       <div class="tt-logo"><span class="tt-crest"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M3 15L15 4L27 15" fill="#97553E" stroke="#2B2620" stroke-width="2" stroke-linejoin="round"/><rect x="6" y="15" width="18" height="12" fill="#EAE1D5" stroke="#2B2620" stroke-width="2"/><rect x="13" y="19" width="4.5" height="8" fill="#B8472E" stroke="#2B2620" stroke-width="1.6"/></svg></span><h1 class="tt-name h-disp" id="tt-name">Nexus</h1></div>
@@ -113,16 +114,18 @@
         <button class="btn primary tt-play" id="tt-play" type="button" disabled><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M5 3L15 9L5 15Z" fill="currentColor"/></svg><span id="tt-playlabel">Waking the town</span></button>
         <div class="tt-warm" id="tt-warm" role="progressbar" aria-label="Getting the town ready" aria-valuemin="0" aria-valuemax="100"><i id="tt-warmbar"></i></div>
       </div>
-      <nav class="tt-list" aria-label="Options">
+      <div class="tt-body">
+      <nav class="tt-list" id="tt-list" aria-label="Options">
         <button class="tt-row" id="tt-howto" type="button" aria-expanded="false"><span class="tt-ico"><svg viewBox="0 0 28 28" fill="none" stroke="#2B2620" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="22" height="14" rx="2.5" fill="#F3E7D0"/><path d="M7 12h2M11 12h2M15 12h2M19 12h2M8 16.5h12"/></svg></span><span><b>How to play</b><small>your first five minutes</small></span></button>
         <button class="tt-row" id="tt-settings" type="button" aria-expanded="false" disabled><span class="tt-ico"><svg viewBox="0 0 28 28" fill="none" stroke="#2B2620" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="14" cy="14" r="4" fill="#F3E7D0"/><path d="M14 3v3M14 22v3M3 14h3M22 14h3M6.2 6.2l2.1 2.1M19.7 19.7l2.1 2.1M6.2 21.8l2.1-2.1M19.7 8.3l2.1-2.1"/></svg></span><span><b>Settings</b><small>graphics and sound</small></span></button>
         <button class="tt-row" id="tt-changes" type="button" aria-expanded="false"><span class="tt-ico"><svg viewBox="0 0 28 28" fill="none" stroke="#2B2620" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5h10l5 5V24.5H7Z" fill="#F3E7D0"/><path d="M17 3.5v5h5M11 14h7M11 18h7"/></svg></span><span><b>Changes</b><small>what is new in this version</small></span></button>
         <button class="tt-row" id="tt-credits" type="button" aria-expanded="false"><span class="tt-ico"><svg viewBox="0 0 28 28" fill="none" stroke="#2B2620" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 24C6 18 4 14 4 10.5A5.5 5.5 0 0 1 14 8a5.5 5.5 0 0 1 10 2.5C24 14 22 18 14 24Z" fill="#E3A08E"/></svg></span><span><b>Credits</b><small>who made this and with what</small></span></button>
         <button class="tt-row" id="tt-new" type="button" aria-expanded="false" disabled><span class="tt-ico"><svg viewBox="0 0 28 28" fill="none" stroke="#2B2620" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="14" cy="14" r="10" fill="#F3E7D0"/><path d="M14 9v10M9 14h10"/></svg></span><span><b>New town</b><small>start over, keeping a backup</small></span></button>
       </nav>
+      <aside class="tt-pane" id="tt-pane" data-mo="fade" hidden></aside>
+      </div>
       <footer class="tt-cardfoot"><span>Nexus, a cozy city builder</span><span class="tt-ver" id="tt-ver"></span></footer>
     </div>
-    <aside class="tt-pane card" id="tt-pane" data-mo="pop" hidden></aside>
     <p class="tt-credit">Made by <b>nate</b> <i>(FreezingShock)</i></p>
   </section>
 
@@ -168,6 +171,6 @@
   </div>
 </div>
 <input type="file" id="importfile" class="sr" accept="application/json,.json" tabindex="-1" aria-hidden="true">
-<script type="module" src="src/main.js"></script>
+<script type="module" src="src/main.js?v=0.9.0"></script>
 </body>
 </html>

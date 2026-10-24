@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createProgress, chase, atLeast, saveLine, WARM_STEPS, PLAY_STEPS, CREDITS } from '../src/core/boot.js';
+import { createProgress, chase, atLeast, saveLine, shotAt, TITLE_SHOTS, CURTAIN_SECS, WARM_STEPS, PLAY_STEPS, CREDITS } from '../src/core/boot.js';
 import { VERSION, CHANGES } from '../src/version.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -13,7 +13,8 @@ test('the version is written once and package.json agrees', () => {
   assert.match(VERSION, /^\d+\.\d+\.\d+$/);
   assert.equal(JSON.parse(read('package.json')).version, VERSION);
   assert.equal(CHANGES[0].v, VERSION);
-  assert.ok(!/0\.9\.0/.test(read('src/ui/title.js')) && !/0\.9\.0/.test(read('index.html')));
+  assert.ok(!/0\.9\.0/.test(read('src/ui/title.js')));
+  assert.ok(read('index.html').includes('src/main.js?v=' + VERSION), 'the script URL carries the version, so a stale main.js is never reused');
 });
 
 test('load steps have unique ids and positive weights', () => {
@@ -85,4 +86,35 @@ test('nothing is saved or advanced before Play, and the sim stays free of the DO
   assert.match(main, /sim\.catchUp\(loaded\.savedAt\)/);
   assert.ok(main.indexOf("const alpha = sim.advance(dt)") > main.indexOf("phase === 'play'"));
   assert.ok(!/title|document/.test(read('src/core/boot.js').replace(/\/\/.*$/gm, '')));
+});
+
+test('the title camera cuts between several shots, hidden by the curtain, and repeats', () => {
+  const total = TITLE_SHOTS.reduce((a, s) => a + s.secs, 0);
+  assert.ok(TITLE_SHOTS.length >= 4);
+  assert.ok(TITLE_SHOTS.some((s) => s.view === 'street' || s.view === 'low') && TITLE_SHOTS.some((s) => s.view === 'bird'));
+  const seen = new Set();
+  for (let t = 0; t < total * 2; t += 0.25) {
+    const a = shotAt(t);
+    assert.ok(a.curtain >= 0 && a.curtain <= 1 && a.local >= 0 && a.local < a.shot.secs);
+    seen.add(a.index);
+    // across every cut the curtain is (nearly) closed, so the jump is never seen
+    if (a.local < 0.01 && t > 0) assert.ok(a.curtain > 0.98, 'cut at ' + t);
+  }
+  assert.equal(seen.size, TITLE_SHOTS.length);
+  assert.equal(shotAt(total + 1).index, shotAt(1).index);
+  const mid = shotAt(TITLE_SHOTS[0].secs / 2);
+  assert.equal(mid.curtain, 0);
+  assert.ok(CURTAIN_SECS < Math.min(...TITLE_SHOTS.map((s) => s.secs)) / 2);
+});
+
+test('before Play every HUD piece is hidden, and the option panels open inside the card', () => {
+  const css = read('css/title.css'), html = read('index.html');
+  assert.match(css, /body\.booting #app>:not\(#stage\)[^{]*\.dlabel\{[^}]*visibility:hidden/);
+  assert.match(css, /\.tt-pane\{position:absolute;inset:0/);
+  const card = html.slice(html.indexOf('class="tt-card'), html.indexOf('</footer>', html.indexOf('tt-cardfoot')));
+  assert.ok(card.includes('id="tt-pane"') && card.includes('id="tt-list"'));
+  assert.match(html, /id="tt-pane" data-mo/);
+  const js = read('src/ui/title.js');
+  for (const name of ['howto', 'changes', 'credits', 'settings', 'new']) assert.ok(new RegExp('\\b' + name + ': \\(\\) =>').test(js), name);
+  assert.match(read('src/main.js'), /title\.failed\('Something went wrong/);
 });

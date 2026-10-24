@@ -1,3 +1,5 @@
+import { viewpointOf } from '../render/photo-math.js';
+
 // The front-of-game sequence, the parts that need no browser: the two lists of real load steps (the ones that run quietly
 // behind the title screen, and the ones the progress screen shows), the progress tracker they report to, the smoothing
 // of the bar, and the small texts. The DOM side is src/ui/title.js; the wiring is main.js.
@@ -72,3 +74,28 @@ export const CREDITS = [
   { head: 'Drawn with', lines: ['Three.js (MIT licence)', 'Fraunces and Capriola (SIL Open Font Licence)'] },
   { head: 'Promise', lines: ['Works offline. Nothing leaves your browser. No ads, no timers that punish you.'] },
 ];
+
+// The cuts behind the title screen: a few camera shots of the player's own town, each a slow move (the photo mode's
+// cinematic moves) from one of its viewpoints, with a paper curtain hiding the cut. `at` shifts the shot from the
+// centre of the town; `turn` is added to the camera's turn.
+export const TITLE_SHOTS = [
+  { view: 'postcard', move: 'orbit', speed: 0.55, secs: 12, at: [0, 0], turn: 0 },
+  { view: 'bird', move: 'drift', speed: 0.8, secs: 10, at: [4, -3], turn: 1.1 },
+  { view: 'low', move: 'orbit', speed: 0.5, secs: 10, at: [-6, 5], turn: 2.3 },
+  { view: 'street', move: 'drift', speed: 0.6, secs: 9, at: [3, 6], turn: 3.4 },
+  { view: 'elevation', move: 'rise', speed: 0.7, secs: 10, at: [0, 0], turn: 4.4 },
+];
+export const CURTAIN_SECS = 0.7; // the curtain takes this long to close, and the same to open
+
+// Which shot plays `t` seconds after the title appeared: { index, shot, view, local, curtain }. `local` is the time
+// into the shot, `curtain` 0..1 how closed the paper curtain is (1 across a cut). The list repeats for ever.
+export function shotAt(t, shots = TITLE_SHOTS) {
+  const total = shots.reduce((a, s) => a + s.secs, 0);
+  let r = ((t % total) + total) % total, index = 0;
+  while (r >= shots[index].secs) { r -= shots[index].secs; index++; }
+  const shot = shots[index], left = shot.secs - r;
+  // The first shot opens from nothing at the very start, the others fade in over the cut.
+  const open = t < CURTAIN_SECS && index === 0 ? 1 - r / CURTAIN_SECS : Math.max(0, 1 - r / CURTAIN_SECS);
+  const close = Math.max(0, 1 - left / CURTAIN_SECS);
+  return { index, shot, view: viewpointOf(shot.view), local: r, curtain: Math.min(1, Math.max(open, close)) };
+}
