@@ -1,7 +1,8 @@
 /* Front of the game: the title screen over the slowly turning town, then the progress screen. Cream paper, ink outlines,
    terracotta action; opens and closes through the shared data-mo motion. Reduced motion is handled in ui.css. */
-body.booting :is(.top,.leftcol,.hint,#tools,.toolfold,#toast){opacity:0!important;pointer-events:none!important}
-body.revealing :is(.top,.leftcol,.hint,#tools,.toolfold){transition:opacity .8s ease .15s}
+/* Until Play nothing of the game shows but the town itself: every HUD piece, map label and plaque stays out of sight. */
+body.booting #app>:not(#stage):not(#title):not(#boot):not(#offline):not(.fallback),body.booting .dlabel{opacity:0!important;visibility:hidden!important;pointer-events:none!important}
+body.revealing #app>:not(#stage):not(#title):not(#boot):not(#offline){transition:opacity .8s ease .15s}
 
 .title,.boot{position:absolute;inset:0;z-index:60}
 /* The town behind is dimmed, like a lamp turned low, so the paper cards read first. */
@@ -9,7 +10,7 @@ body.revealing :is(.top,.leftcol,.hint,#tools,.toolfold){transition:opacity .8s 
   background:linear-gradient(90deg,rgba(60,48,36,.5),rgba(60,48,36,.28) 55%,rgba(60,48,36,.18)),radial-gradient(ellipse at 55% 55%,transparent 45%,rgba(30,24,20,.4))}
 .title[hidden]{pointer-events:none}
 
-.tt-card{position:relative;width:min(390px,100%);display:flex;flex-direction:column;padding:34px 26px 18px 36px;text-align:left;animation:tt-in .9s cubic-bezier(.2,.8,.3,1) both;max-height:100%;overflow:auto}
+.tt-card{position:relative;width:min(390px,100%);display:flex;flex-direction:column;padding:34px 26px 18px 36px;text-align:left;animation:tt-in .9s cubic-bezier(.2,.8,.3,1) both;max-height:100%}
 /* notebook holes down the left edge */
 .tt-card::after{content:"";position:absolute;left:11px;top:22px;bottom:22px;width:6px;background:radial-gradient(circle,rgba(43,38,32,.35) 2.4px,transparent 3px) 0 0/6px 26px repeat-y;pointer-events:none}
 .tt-tape{position:absolute;left:50%;top:-12px;width:110px;height:26px;margin-left:-55px;transform:rotate(-1.5deg);z-index:2}
@@ -46,19 +47,28 @@ body.revealing :is(.top,.leftcol,.hint,#tools,.toolfold){transition:opacity .8s 
 .tt-cardfoot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:auto;padding-top:12px;border-top:1.5px dashed rgba(43,38,32,.25);font-size:12.5px;color:var(--ink-soft)}
 .tt-ver{padding:4px 10px;border:2px solid var(--ink);border-radius:10px;background:var(--paper-2);color:var(--ink);font-weight:800;letter-spacing:.04em;font-variant-numeric:tabular-nums}
 
-/* the option cards float in the middle of the screen, like the smaller cards beside the main one */
-.tt-pane{position:absolute;left:calc(max(20px,3vw) + 390px + 6vw);top:50%;translate:0 -50%;width:min(400px,calc(100vw - 48px));max-height:80vh;overflow:auto;padding:22px 24px 20px;text-align:left;rotate:1.2deg;--mo-y:0px;--mo-r:3deg;--mo-s:.92}
-.tt-pane[hidden]{translate:0 -50%}
-.tt-pane h3{font-size:24px;margin-bottom:10px;text-align:center}
+/* The option panels open inside the card, over the list, and fill the room the rows leave. */
+.tt-body{position:relative;flex:1;min-height:0;display:flex;flex-direction:column}
+.tt-list{flex:1;overflow:auto}
+.tt-pane{position:absolute;inset:0;z-index:2;overflow:auto;padding:4px 4px 8px;text-align:left;background:var(--paper);--mo-y:12px;--mo-r:0deg;--mo-s:1;--mo-in:.35s}
+.tt-back{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;margin-bottom:8px;border:2.5px solid var(--ink);border-radius:11px;background:var(--paper-2);font-weight:800;font-size:13.5px;box-shadow:0 3px 0 var(--ink)}
+.tt-pane h3{font-size:28px;margin:4px 0 8px}
 .tt-pane p{margin:0 0 10px;font-size:14px}
-.tt-pane dl{margin:0}
-.tt-pane dt{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--terra);margin-top:12px}
+.tt-pane dl{margin:0 0 6px;padding:10px 12px;border:1.5px dashed rgba(43,38,32,.3);border-radius:12px;background:rgba(243,231,208,.5)}
+.tt-pane dt{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--terra);margin-top:8px}
+.tt-pane dt:first-child{margin-top:0}
 .tt-pane dd{margin:2px 0 0;font-size:14.5px}
-.tt-chips{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
+.tt-pane kbd{display:inline-block;min-width:22px;padding:0 5px;border:1.5px solid var(--ink);border-radius:6px;background:var(--paper-2);font:700 12px var(--body);text-align:center;box-shadow:0 2px 0 var(--ink)}
+.tt-chips{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 4px}
 .tt-chip{height:36px;padding:0 13px;border-radius:11px;border:2.5px solid var(--ink);background:var(--paper-2);font-weight:800;font-size:13.5px;box-shadow:0 3px 0 var(--ink)}
 .tt-chip[aria-pressed="true"]{background:var(--sage)}
 .tt-pane .btn{height:42px;font-size:14px}
-.tt-row-btns{display:flex;gap:10px;margin-top:6px}
+.tt-row-btns{display:flex;gap:10px;margin-top:10px}
+.tt-pane ul{margin:2px 0 0;padding-left:18px;font-size:14.5px}
+.tt-pane li{margin:3px 0}
+
+/* paper curtain that hides the cut between camera shots */
+.tt-curtain{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,#E9D6B2,#CDBB96);opacity:0;pointer-events:none}
 
 .tt-credit{position:absolute;right:max(20px,3vw);bottom:16px;margin:0;padding:6px 14px;border:2px solid var(--ink);border-radius:12px;background:var(--paper);box-shadow:0 3px 0 var(--ink);font-size:13px}
 .tt-credit i{font-style:normal;color:var(--ink-soft)}
@@ -85,7 +95,5 @@ body.revealing :is(.top,.leftcol,.hint,#tools,.toolfold){transition:opacity .8s 
 
 @media (max-width:900px){
   .title{justify-content:center}
-  .tt-pane{left:50%;translate:-50% -50%;width:min(400px,calc(100vw - 40px))}
-  .tt-pane[hidden]{translate:-50% -50%}
   .tt-credit{left:50%;right:auto;translate:-50% 0;white-space:nowrap}
 }

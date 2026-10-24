@@ -7,13 +7,13 @@ import { loadGame, writeSave, clearSave, exportText, importText, restoreBackup, 
 import { createQualityStore, detectEnv } from './core/quality.js';
 import { createCalendarStore } from './core/calendar.js';
 import { createSoundStore } from './audio/mix.js';
-import { createProgress, chase, atLeast, WARM_STEPS, PLAY_STEPS, MIN_STEP_MS, REVEAL_HOLD_MS } from './core/boot.js';
-import { cinePose } from './render/photo-math.js';
+import { createProgress, chase, atLeast, shotAt, WARM_STEPS, PLAY_STEPS, MIN_STEP_MS, REVEAL_HOLD_MS } from './core/boot.js';
+import { cinePose, LOW_TILT } from './render/photo-math.js';
+import { ISO } from './render/camera-math.js';
 import { createTitle } from './ui/title.js';
 import { $, fmtAgo } from './ui/format.js';
 
 const AUTOSAVE_MS = 45000;
-const TITLE_SPIN = 0.5; // the slow orbit behind the title, as a multiple of the photo mode orbit
 const SKIP_KEY = 'nexus.skiptitle';
 const params = new URLSearchParams(location.search);
 const app = $('app');
@@ -110,7 +110,8 @@ async function warmUp() {
     sound = createSoundStore({ storage: browserStorage });
   });
   const v = scene.camera.view;
-  base = { tx: v.tx, tz: v.tz, az: v.az, elev: v.elev };
+  base = { tx: v.tx, tz: v.tz, az: v.az, elev: v.elev, zoom: v.tzoom };
+  scene.camera.setFloor(LOW_TILT); // the street-level shot goes lower than the game's own view allows
   requestAnimationFrame(frame);
   title.ready({ quality, sound });
   if (skipTitle) play();
@@ -118,6 +119,17 @@ async function warmUp() {
 
 // ---- play: the progress screen, then the town ----
 let bootP = null, shown = 0, base = null;
+let titleT = 0, shotIx = -1, shotBase = null;
+// A cut: the camera jumps to the next shot's viewpoint while the paper curtain covers the town.
+function cutTo(sh) {
+  shotIx = sh.index;
+  const cam = scene.camera, v = cam.view, vp = sh.view;
+  cam.setLens(vp.lens, vp.fov);
+  shotBase = { tx: base.tx + sh.shot.at[0], tz: base.tz + sh.shot.at[1], az: base.az + sh.shot.turn, elev: vp.elev };
+  v.tzoom = v.zoom = vp.zoom;
+  v.ttx = v.tx = shotBase.tx; v.ttz = v.tz = shotBase.tz;
+  v.taz = v.az = shotBase.az; v.telev = v.elev = Math.max(vp.elev, LOW_TILT);
+}
 async function play() {
   if (phase !== 'title') return;
   phase = 'boot';
@@ -155,7 +167,9 @@ async function play() {
 
 function open() {
   const v = scene.camera.view;
-  v.taz = v.az; v.ttx = base.tx; v.ttz = base.tz; v.telev = base.elev; // the turn settles where it is; the view comes back
+  scene.camera.setLens('ortho'); scene.camera.setFloor(ISO.elevMin); // the game's own view comes back, easing from where the shot stopped
+  v.taz = v.az; v.ttx = base.tx; v.ttz = base.tz; v.telev = base.elev; v.tzoom = base.zoom;
+  title.curtain(0);
   phase = 'play';
   last = performance.now();
   save(); // nothing yet: the first real save is the autosave. Guarded, so a hidden tab at this moment cannot lose the away time.
@@ -201,13 +215,17 @@ function frame(now) {
     ui.frame(dt, t, alpha);
     if (ui.postcard.isOpen()) { duskAcc += dt; if (duskAcc > 0.06) { duskAcc = 0; ui.postcard.frame(t); } }
   } else {
-    // Title and progress screens: the sim stands still, the town turns slowly and its life carries on.
-    const v = scene.camera.view, p = cinePose('orbit', t, base, TITLE_SPIN);
-    v.ttx = p.tx; v.ttz = p.tz; v.taz = p.az; v.telev = p.elev;
+    // Title and progress screens: the sim stands still while the camera cuts between slow shots of the town, whose life carries on.
+    titleT += dt;
+    const sh = shotAt(titleT);
+    if (sh.index !== shotIx) cutTo(sh);
+    const v = scene.camera.view, p = cinePose(sh.shot.move, sh.local, shotBase, sh.shot.speed);
+    v.ttx = p.tx; v.ttz = p.tz; v.taz = p.az; v.telev = Math.max(p.elev, LOW_TILT);
+    title.curtain(sh.curtain);
     scene.frame(dt, t, dt, state, null);
     if (phase === 'boot' && bootP) { shown = chase(shown, bootP.fraction(), dt); title.bootFrame(shown, bootP); }
   }
   requestAnimationFrame(frame);
 }
 
-warmUp().catch((err) => { console.error(err); });
+warmUp().catch((err) => { console.error(err); title.failed('Something went wrong while loading: ' + (err && err.message ? err.message : err)); });
