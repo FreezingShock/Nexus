@@ -27,6 +27,7 @@ export const CHANGELOG = [
       { k: 'better', t: 'Changes shows a "new since you last played" ribbon when the game has moved on.' },
       { k: 'new', t: 'A mayor profile: your name, a picture, a rank that climbs with your milestones, personal bests and a badge for every goal.' },
       { k: 'look', t: 'Two placeholder pass cards, the Lantern Pass and the Town Charter. Nothing is sold: the button only shows a friendly note.' },
+      { k: 'better', t: 'Finishing a road no longer starts a new one from its end: the road tool lets go, so your next click picks a fresh start.', pr: 101 },
     ],
   },
   {
