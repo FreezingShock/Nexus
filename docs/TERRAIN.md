@@ -58,7 +58,9 @@ The orbit camera's near plane used to sit at +1, 150 units from the target, so z
 
 ## Terrain tools (the player's edits)
 
-The Terrain tool (U) raises, lowers and flattens the land with a soft brush (S, M, L). The edits are height offsets at the
+The Terrain tool (U) raises, lowers, flattens and smooths the land with a soft brush (S, M, L). While it is in hand,
+contour lines (`render/systems/land-contours.js`, a shader on a ground-hugging plane) mark every 0.5 units of height (2 m),
+bolder every 2.5 (10 m). The edits are height offsets at the
 tile corners (`src/world/land.js`, the 97 x 97 lattice the tile overlays use), blended across each tile and added to the
 seeded land in `heightAt` (`baseHeightAt` is the land as made). So the grid, roads, buildings, trees, decor and overlays all
 read the edited ground with no change on their side.

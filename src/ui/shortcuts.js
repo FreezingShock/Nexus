@@ -13,7 +13,7 @@ export const TOOL_INFO = {
   bulldoze: ['Bulldoze', 'click a building to clear it'],
   districts: ['Districts', 'name a neighbourhood and paint it'],
   decor: ['Decor', 'benches, lamps, fountains and flowers'],
-  terrain: ['Terrain', 'raise, lower and flatten the land'],
+  terrain: ['Terrain', 'raise, lower, flatten and smooth the land'],
 };
 
 const toolRows = Object.entries(TOOL_KEYS).map(([k, tool]) => ({
@@ -39,7 +39,7 @@ export const SHORTCUT_GROUPS = [
     { keys: ['V'], text: 'Turn the building before you place it', file: 'src/ui/modules/placement.js', needle: "=== 'v'" },
   ] },
   { title: 'Shaping the land', rows: [
-    { keys: ['1–3'], text: 'Raise, Lower or Flatten', file: 'src/ui/modules/terrain.js', needle: "key: '3'" },
+    { keys: ['1–4'], text: 'Raise, Lower, Flatten or Smooth', file: 'src/ui/modules/terrain.js', needle: "key: '4'" },
     { keys: ['Drag'], text: 'Hold and drag the brush; Flatten levels to where you started' },
   ] },
   { title: 'Looking around', rows: [
