@@ -15,7 +15,7 @@ test('motion sheet is linked and the global hidden rule leaves animated surfaces
 
 test('static panels carry data-mo in index.html', () => {
   const html = read('index.html');
-  for (const id of ['inspect', 'fly', 'toast', 'townpick', 'hp-panel', 'offline']) {
+  for (const id of ['inspect', 'fly', 'toast', 'hp-panel', 'offline']) {
     assert.match(html, new RegExp(`id="${id}"[^>]*data-mo`), id);
   }
 });

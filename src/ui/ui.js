@@ -25,7 +25,7 @@ export function createUi({ sim, scene, actions }) {
     setTool: (t) => setTool(t),
   });
   const postcard = createPostcard({ sim, send, scene });
-  const mods = registryOf('ui modules', uiModules).list().map((d) => d.create({ sim, send, scene, toast: hud.toast, tool: () => tool, setTool: (t) => setTool(t), quality: actions.quality, sound: actions.sound, calendar: actions.calendar }) || {});
+  const mods = registryOf('ui modules', uiModules).list().map((d) => d.create({ sim, send, scene, toast: hud.toast, tool: () => tool, setTool: (t) => setTool(t), quality: actions.quality, sound: actions.sound, calendar: actions.calendar, profile: () => actions.profile }) || {});
 
   function select(id) {
     if (id && !sim.alive(id)) id = null; // only a standing building can be inspected
