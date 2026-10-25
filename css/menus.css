@@ -63,18 +63,14 @@
 .lchip i{display:block;width:22px;height:14px;border-radius:5px;border:2px solid var(--ink)}
 .btn[aria-pressed="true"]{background:#F9DFC9;box-shadow:0 4px 0 var(--action);border-color:var(--action)}
 
-/* Demand: a plaque in the top HUD row. A title, then three pills, R, C and I. Each pill fills left to right in its zone
-   colour with the letter and the percentage on top. Hover for the drivers. */
-/* Demand plaque: a badge, "Demand" and what the town wants most, then three little columns (R, C, I) that fill from
-   the bottom in the zone colour, with a small arrow over one the town really wants. */
-.chip.demand{display:flex;flex-direction:row;align-items:center;gap:10px;min-width:0;padding:8px 12px 8px 10px;pointer-events:auto}
-.chip.demand .cval{display:flex;flex-direction:column;justify-content:center;gap:2px;min-width:0}
-.chip.demand .cval small{margin:0;font-size:12px;line-height:1}
-.dwant{display:block;font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:16px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.drows{display:flex;gap:6px;flex:none;margin-left:auto;align-items:flex-end;height:54px}
-.dcol{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px}
-.dtrack{position:relative;display:block;width:14px;height:30px;border:2px solid var(--ink);border-radius:6px;background:var(--paper);overflow:hidden}
+/* Demand plaque: the chart badge, then three little columns (R, C, I) that fill from the bottom in the zone colour,
+   with a small arrow over one the town really wants. Each column keeps room above its track for the arrow, so the
+   arrow stays inside the plaque. Hover for the words and the drivers. */
+.chip.demand{display:flex;flex-direction:row;align-items:center;gap:14px;min-width:0;padding:8px 14px 8px 10px;pointer-events:auto}
+.drows{display:flex;gap:10px;flex:none;align-items:flex-end}
+.dcol{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding-top:9px}
+.dtrack{position:relative;display:block;width:16px;height:18px;border:2px solid var(--ink);border-radius:6px;background:var(--paper);overflow:hidden}
 .dtrack u{position:absolute;left:0;right:0;bottom:0;height:0;text-decoration:none;transition:height .6s ease}
 .dcol .dk{width:18px;height:18px;border-radius:50%;border:2px solid var(--ink);display:grid;place-items:center;box-sizing:border-box;font-family:var(--display);font-size:10.5px;font-weight:800;line-height:1}
-.dcol.hot::before{content:"";position:absolute;top:-9px;left:50%;margin-left:-5px;border:5px solid transparent;border-bottom:7px solid var(--action);border-top:0;animation:d-hop 1.6s ease-in-out infinite}
-@keyframes d-hop{50%{translate:0 -2px}}
+.dcol.hot::before{content:"";position:absolute;top:0;left:50%;margin-left:-5px;border:5px solid transparent;border-top:7px solid var(--action);border-bottom:0;animation:d-hop 1.6s ease-in-out infinite}
+@keyframes d-hop{50%{translate:0 1px}}
