@@ -2,7 +2,7 @@
 // cues, toasts get a gentle note, day and night get a bell and a change of soundscape, and the ambience follows the
 // camera. Reads the sim, the camera and the DOM; changes none of them. Nothing plays until the first click or key press.
 import { createEngine } from '../../audio/engine.js';
-import { layersFor, cueFor, countOf, transitionCue } from '../../audio/soundscape.js';
+import { layersFor, cueFor, countOf, transitionCue, clockCue } from '../../audio/soundscape.js';
 import { listenerOf, sourceGains } from '../../audio/attenuation.js';
 import { setCueSink } from '../../audio/cuehub.js';
 import { interactiveAnchor } from '../sound-targets.js';
@@ -73,7 +73,7 @@ export default {
     });
     menus.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['hidden'], attributeOldValue: true });
 
-    let lastNight = null, acc = 0;
+    let lastNight = null, lastHour = null, acc = 0;
 
     return {
       // Each sim event that has a cue. The mapping lives in audio/soundscape.js (cueFor and countOf).
@@ -92,11 +92,18 @@ export default {
           engine.setNight(night);
           if (cue) engine.cue(cue);
         }
+        const festival = !!st.holiday, market = !!st.market;
+        const bell = clockCue(lastHour, st.hour, { market, festival });
+        lastHour = st.hour;
+        if (bell) engine.cue(bell);
         acc += dt;
         if (acc < LEVEL_EVERY_S) return;
         acc = 0;
         // Season and weather come from the sim's calendar state (state.season, state.weather), read here, never written.
-        engine.setLevels(layersFor({ night, season: st.season, weather: st.weather }));
+        const pop = sim.population;
+        const people = pop && typeof pop.people === 'function' ? pop.people() : null;
+        engine.setLevels(layersFor({ night, season: st.season, weather: st.weather, market, festival, people }));
+        engine.setMoment({ hour: st.hour, night, season: st.season, weather: st.weather, festival });
         const cam = scene.camera;
         if (cam) engine.setSources(sourceGains(listenerOf({ mode: cam.mode, view: cam.view, free: cam.free })));
       },
