@@ -105,6 +105,7 @@ export function createHud({ sim, send, onSettings, calendar }) {
       const d = sim.display(alpha);
       $('coins').textContent = fmtCompact(d.coins);
       $('parts').textContent = fmtCompact(d.parts);
+      paintTown(); // the line under the name follows the population
       paintCards();
       return true;
     },
