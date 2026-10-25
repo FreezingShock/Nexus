@@ -9,7 +9,7 @@ import { SAVE_VERSION, migrations, sanitize, unwrap, wrap } from '../src/sim/sav
 import { createSim } from '../src/sim/sim.js';
 import { freshState } from '../src/sim/state.js';
 import { getLayout } from '../src/world/layout.js';
-import { coinsCard, demandCard, nextRoadUnlock, partsCard, sourceBars, townSnap } from '../src/ui/hud-detail.js';
+import { coinsCard, demandCard, demandWord, nextRoadUnlock, partsCard, sourceBars, townSnap, wantLine } from '../src/ui/hud-detail.js';
 import { badgeHtml, mayorHtml, moodWord, overviewHtml, plaqueLine, townBounds, townCounts, townHoverHtml, townMapSvg, townSize } from '../src/ui/town-view.js';
 import { createGrid } from '../src/world/grid.js';
 import { townIconSvg } from '../src/ui/town-icons.js';
@@ -168,13 +168,21 @@ test('the source bars are the biggest first, skip the tiny ones, mark upkeep and
   assert.equal(sourceBars({}), '');
 });
 
-test('the demand card gives full names, percentages and what drives each bar', () => {
+test('the demand card gives a word, a bar and a reason per zone, and the plaque line says what is wanted most', () => {
   const stats = { byZone: [0, 3, 2, 1, 0] };
-  const html = demandCard({ 1: 0.75, 2: 0.4, 3: 0.9 }, stats, [null, '#8FCB9B', '#EE9F8D', '#E2C07C']);
-  for (const name of ['Residential', 'Commercial', 'Industrial']) assert.match(html, new RegExp(name));
-  assert.match(html, /75%/);
-  assert.match(html, /3 home lots against 1 workshop lots/);
-  assert.match(html, /Strong: zone more of this/);
+  const html = demandCard({ 1: 0.75, 2: 0.4, 3: 0.2 }, stats, [null, '#8FCB9B', '#EE9F8D', '#E2C07C']);
+  for (const name of ['Homes', 'Shops', 'Workshops']) assert.match(html, new RegExp(name));
+  assert.match(html, /<em>Wanted<\/em>/);
+  assert.match(html, /<em>Some room<\/em>/);
+  assert.match(html, /<em>Plenty for now<\/em>/);
+  assert.match(html, /width:75%/);
+  assert.match(html, /3 job lots looking for workers, 3 home lots so far/);
+  assert.match(html, /3 home lots to supply, 1 workshop lot so far/);
+  assert.match(html, /grows zoned ground faster/);
+  assert.equal(wantLine([0, 0.75, 0.9, 0.4]), 'Wants shops');
+  assert.equal(wantLine([0, 0.5, 0.4, 0.4]), 'Steady');
+  assert.equal(wantLine([0, 0.2, 0.15, 0.3]), 'All settled');
+  assert.equal(demandWord(70), 'Wanted');
 });
 
 test('the town plaque line, sizes and mood words', () => {
@@ -232,10 +240,10 @@ test('the town map crops to what is built and draws roads, zones and buildings',
 test('the top row has every plaque and its hover card, Renewal is gone, and the stylesheet is linked', () => {
   const html = read('index.html');
   for (const id of ['townplaque', 'townname', 'townline', 'townbadge', 'townpop', 'coinschip', 'coinspop',
-    'partschip', 'partspop', 'hpchip', 'hppop', 'hp-panel', 'hppct', 'hpbar', 'demandw', 'demandrows', 'demandpop', 'coins', 'parts', 'rate', 'prate']) {
+    'partschip', 'partspop', 'hpchip', 'hppop', 'hp-panel', 'hpmood', 'hppips', 'hpface', 'demandw', 'demandrows', 'demandpop', 'coins', 'parts', 'rate', 'prate']) {
     assert.match(html, new RegExp('id="' + id + '"'), id);
   }
-  for (const id of ['renchip', 'renpop', 'renewalbar', 'townedit', 'townpick']) assert.doesNotMatch(html, new RegExp('id="' + id + '"'), id + ' is gone');
+  for (const id of ['renchip', 'renpop', 'renewalbar', 'townedit', 'townpick', 'hppct', 'hpbar']) assert.doesNotMatch(html, new RegExp('id="' + id + '"'), id + ' is gone');
   assert.match(html, /<link rel="stylesheet" href="css\/hud\.css">/);
   assert.match(html, /<link rel="stylesheet" href="css\/town-page\.css">/);
   assert.match(read('css/hud.css'), /\.pop\{/);

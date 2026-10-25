@@ -12,7 +12,9 @@ coloured bookmark tabs down its right edge. A paper rustle and a chime of its ow
   - `goals` (`modules/progress.js`): tabs Today (Charge, today's goals, almost there, Renewal) and Milestones
     (`milestone-list.js`). G opens Today, M opens Milestones.
   - `settings` (`panels.js`): tabs Sky, Graphics, Sound, Town. Restore, Start over and Import ask on the page.
-  - `shortcuts` (`modules/shortcut-sheet.js`, key ?) and `paint` (`modules/paint-town.js`).
+  - `shortcuts` (`modules/shortcut-sheet.js`, key / or ?) and `paint` (`modules/paint-town.js`).
+  - `mytown` (`modules/town-page.js`, words in `src/ui/town-view.js`): opened by clicking the town plaque. Tabs Overview
+    (map from above, stats, what is built), Name and badge (the only place to rename the town or change its badge) and Mayor.
   - Styles: `css/pages.css` (stage, boxes, columns, bands) plus each page's own file.
 - **Menu**: `modules/menu.js` dresses the top-bar buttons as rows like the title card (icon tile, name, live line, key).
   Time of day stays a one-click toggle; Photo mode is a live camera mode, so its panel only borrows the paper look.

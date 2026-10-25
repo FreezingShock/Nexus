@@ -131,8 +131,9 @@ test('the demand widget sits in the top HUD row, and the zoning module fills its
   const zoning = read('src/ui/modules/zoning.js');
   assert.match(zoning, /getElementById\('demandrows'\)/);
   assert.match(zoning, /\[1, 2, 3\]\.map/);
-  assert.match(zoning, /class="dpill"/);
-  assert.match(read('css/menus.css'), /\.dpill\{/);
+  assert.match(zoning, /class="dcol"/, 'three columns that fill from the bottom');
+  assert.match(read('css/menus.css'), /\.dtrack u\{[^}]*bottom:0/);
+  assert.match(chips, /id="dwant"/, 'one line says what the town wants most');
   assert.match(read('css/menus.css'), /\.chip\.demand/);
   assert.doesNotMatch(read('css/menus.css'), /\.demandw/);
 });

@@ -86,21 +86,30 @@ export function townSnap(sim) {
   };
 }
 
-// Demand: the full zone names, the percentage, and what drives each bar. stats are zoning.stats() (lot counts by zone).
-const NAMES = { 1: 'Residential', 2: 'Commercial', 3: 'Industrial' };
+// Demand: one row per zone with its letter tile, a plain word and a bar, and a short reason under it. stats are
+// zoning.stats() (lot counts by zone). Demand sets how fast zoned ground grows and levels up (src/sim/zones.js demandOf).
+const NAMES = { 1: 'Homes', 2: 'Shops', 3: 'Workshops' };
 const KEYS = { 1: 'R', 2: 'C', 3: 'I' };
+// The plaque's one line: what the town wants most, when it really wants something.
+export function wantLine(d) {
+  const top = [1, 2, 3].reduce((a, z) => (d[z] > d[a] ? z : a), 1);
+  if (d[top] >= 0.7) return 'Wants ' + NAMES[top].toLowerCase();
+  return [1, 2, 3].every((z) => d[z] <= 0.3) ? 'All settled' : 'Steady';
+}
+export const demandWord = (p) => (p >= 70 ? 'Wanted' : p > 30 ? 'Some room' : 'Plenty for now');
 export function demandCard(d, stats, paint) {
   const res = stats.byZone[1] || 0, com = stats.byZone[2] || 0, ind = stats.byZone[3] || 0;
+  const lots = (n, one, many) => n + ' ' + (n === 1 ? one : many);
   const why = {
-    1: `${com + ind} shop and workshop lots against ${res} home lots`,
-    2: `${res} home lots against ${com} shop lots`,
-    3: `${res} home lots against ${ind} workshop lots`,
+    1: `${lots(com + ind, 'job lot', 'job lots')} looking for workers, ${lots(res, 'home lot', 'home lots')} so far`,
+    2: `${lots(res, 'home lot', 'home lots')} to serve, ${lots(com, 'shop lot', 'shop lots')} so far`,
+    3: `${lots(res, 'home lot', 'home lots')} to supply, ${lots(ind, 'workshop lot', 'workshop lots')} so far`,
   };
-  const hint = (p) => (p >= 70 ? 'Strong: zone more of this.' : p <= 30 ? 'Plenty already.' : 'Steady.');
   const rows = [1, 2, 3].map((z) => {
-    const p = Math.round(d[z] * 100);
-    return `<div class="dr"><span class="dk" style="background:${paint[z]}">${KEYS[z]}</span>` +
-      `<div><b>${NAMES[z]} <em>${p}%</em></b><small>${why[z]}. ${hint(p)}</small></div></div>`;
+    const p = Math.round(d[z] * 100), word = demandWord(p);
+    return `<div class="dr${p >= 70 ? ' hot' : ''}"><span class="dk" style="background:${paint[z]}">${KEYS[z]}</span>` +
+      `<div><b>${NAMES[z]}<em>${word}</em></b><span class="dbar" role="img" aria-label="${NAMES[z]} demand ${p}%"><i style="width:${p}%;background:${paint[z]}"></i></span><small>${why[z]}</small></div></div>`;
   });
-  return head('Demand', 'How much each kind of building wants to be built here.') + rows.join('');
+  return head('Demand', 'What the town would like you to zone next.') + rows.join('') +
+    '<p class="pc-foot">Higher demand grows zoned ground faster and levels it up sooner. It never stops growth, only slows it.</p>';
 }
