@@ -17,6 +17,7 @@ import roads from './roads.js';
 import scaffold from './scaffold.js';
 import servicesOverlay from './services-overlay.js';
 import sky from './sky.js';
+import terraces from './terraces.js';
 import tileview from './tileview.js';
 import trees from './trees.js';
 import turbines from './turbines.js';
@@ -39,6 +40,7 @@ export const renderSystems = [
   scaffold,
   servicesOverlay,
   sky,
+  terraces,
   tileview,
   trees,
   turbines,

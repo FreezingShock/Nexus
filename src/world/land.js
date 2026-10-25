@@ -7,8 +7,8 @@
 //
 // The tools only reach the buildable ground: the mountain rim at the edge of the map, the tunnel mountain, the river and
 // its banks stay as the land made them (`editable`). Raised ground stops below the mountain line (LAND_TOP).
-import { GRID_N, GRID_HALF, TILE, MOUNTAIN_TOP } from './grid.js';
-import { baseHeightAt, riverX } from './terrain.js';
+import { GRID_N, GRID_HALF, TILE, MOUNTAIN_TOP, RIM } from './grid.js';
+import { baseHeightAt, riverX, terrainSeed } from './terrain.js';
 
 export const CN = GRID_N + 1;                      // corners a side
 export const C_EDGE = -GRID_HALF * TILE - TILE / 2; // world x (and z) of corner 0
@@ -29,7 +29,8 @@ export function editable(i, j, key = '') {
   const k = cornerIndex(i, j);
   if (!lockCache[k]) {
     const x = cornerWorld(i), z = cornerWorld(j);
-    const edge = i < 2 || j < 2 || i > CN - 3 || j > CN - 3;
+    const m = terrainSeed() ? RIM : 2; // seeded land: the rim rows (grid.js) stay mountain
+    const edge = i < m || j < m || i > CN - 1 - m || j > CN - 1 - m;
     const ok = !edge && Math.abs(x - riverX(z)) > 7.5 && x < 66 && baseHeightAt(x, z) < LAND_TOP;
     lockCache[k] = ok ? 1 : 2;
   }

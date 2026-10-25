@@ -6,7 +6,7 @@ import { createSim } from '../src/sim/sim.js';
 import { freshState } from '../src/sim/state.js';
 import { getLayout } from '../src/world/layout.js';
 import { heightAt, setTerrainSeed, terrainSeed, riverX, newSeed } from '../src/world/terrain.js';
-import { BASE, GRID_N, GRID_HALF, createGrid, tileCenter, tileIndex } from '../src/world/grid.js';
+import { BASE, CLIFF, GRID_N, GRID_HALF, createGrid, tileCenter, tileIndex } from '../src/world/grid.js';
 import { starterPlaced, starterStreetTiles, TUNNEL_GATE } from '../src/world/starter.js';
 import { roadBlock } from '../src/world/roadnet.js';
 import { lotTiles } from '../src/world/placement.js';
@@ -56,10 +56,10 @@ test('on every seed the centre is flat, the edge is mountains and the rest has r
   });
 });
 
-test('buildable means gentle: every buildable tile is within the slope rule, whatever its height', () => {
+test('buildable means no cliff: every buildable tile is within the cliff rule, whatever its height', () => {
   for (const s of SEEDS.slice(0, 12)) {
     const g = grid(s);
-    for (let i = 0; i < g.base.length; i++) if (g.base[i] === BASE.LAND) assert.ok(g.thi[i] - g.tlo[i] <= 0.9 + 1e-9 && g.thi[i] <= 26);
+    for (let i = 0; i < g.base.length; i++) if (g.base[i] === BASE.LAND) assert.ok(g.thi[i] - g.tlo[i] <= CLIFF + 1e-9 && g.thi[i] <= 26);
     let roadable = 0, plateau = 0;
     withSeed(s, () => {
       for (let gz = 0; gz < GRID_N; gz++) for (let gx = 0; gx < GRID_N; gx++) {

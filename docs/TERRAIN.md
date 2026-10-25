@@ -30,10 +30,15 @@ everything on the village side.
 
 ## What is buildable
 
-Decided by slope, never by height (grid.js `regen`): a tile is steep when its corners and middle differ by more than 0.9, or
-it is above `MOUNTAIN_TOP` (26). So a plateau top at height 6 is as buildable as the meadow. Water is below -0.15 or within
-5 units of the river line. Roads use the same slope idea (roadnet.js `tooSteep`: at most 0.5 across a tile), farms their
-flat rule, zones and districts the `LAND` base. Seed 0 keeps its old height cut-offs.
+Decided by slope, never by height (grid.js `regen`). Since the hills revamp (2026-10-25) a tile is steep (`BASE.STEEP`) only
+when it is a cliff, its corners and middle more than `CLIFF` (4.5) apart, or above `MOUNTAIN_TOP` (26), or on seeded land
+in the outer `RIM` (5) rows, the mountain rim. Everything gentler is a hillside and takes zones, buildings, parks and decor.
+Water is below -0.15 or within 5 units of the river line. Farms keep their flat rule. Roads still use their own slope rule
+(roadnet.js `tooSteep`) until roads learn to grade themselves.
+
+A lot on a hillside stands on a level pad at its highest corner (`standOn` in world/models.js). When the pad is more than
+`WALL_FROM` (0.45) above the lowest ground round the lot, `render/systems/terraces.js` draws a stone retaining wall from
+the pad down into the ground, capped with pale coping: four instanced draw calls for the whole town.
 
 ## Tests
 

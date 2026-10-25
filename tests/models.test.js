@@ -107,7 +107,7 @@ test('placement refuses bad ground, bad sizes and empty pockets', () => {
   sim.state.coins = 1e6;
   for (const t of [
     { model: 'cottage', gx: 48, gz: 48, fw: 1, fd: 1 },
-    { model: 'cottage', gx: 16, gz: 16, fw: 1, fd: 1 }, // the old edge of the map is steep ground
+    { model: 'cottage', gx: 69, gz: 14, fw: 1, fd: 1 }, // the tunnel mountain's face is a cliff
     { model: 'town-hall', gx: 46, gz: 35, fw: 1, fd: 1 },
     { model: 'nope', gx: 46, gz: 35, fw: 1, fd: 1 },
   ]) sim.dispatch({ type: 'place', rot: 0, ...t });
