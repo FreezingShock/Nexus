@@ -18,10 +18,16 @@ export function mergeBuildings(parent, items, night) {
   return batch.build(parent);
 }
 
-// A click target for the whole building (tower and roof included), a box around its parts.
-export function proxyFor(parts, world) {
+// The box around a building's parts, in its own frame. Also sizes the upgrade scaffolding (render/systems/scaffold.js).
+export function partsBox(parts) {
   const bb = new THREE.Box3(), tmp = new THREE.Box3();
   for (const p of parts) { p.geo.computeBoundingBox(); tmp.copy(p.geo.boundingBox).applyMatrix4(p.local); bb.union(tmp); }
+  return bb;
+}
+
+// A click target for the whole building (tower and roof included), a box around its parts.
+export function proxyFor(parts, world) {
+  const bb = partsBox(parts);
   const size = bb.getSize(new THREE.Vector3()), c = bb.getCenter(new THREE.Vector3());
   const proxy = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, size.z).translate(c.x, c.y, c.z), proxyMat);
   proxy.matrixAutoUpdate = false;
@@ -50,6 +56,8 @@ export function placeHull(group, b, sx, sy, sz) {
 }
 
 // hooks.burst(x, z, radius, count): a dust puff when a building levels up (the puffs system).
+// hooks.scaffold(world, box, onReveal): scaffolding round a building the player upgraded (the scaffold system). The old
+// look stays inside it until onReveal, then the new level pops in. A null answer means no scaffolding: pop at once.
 export function createTown(root, hooks = {}) {
   const group = new THREE.Group(); root.add(group);
   const selGroup = new THREE.Group(); root.add(selGroup);
@@ -66,10 +74,25 @@ export function createTown(root, hooks = {}) {
   function regenerate(e, level) {
     e.level = level;
     e.desc = e.b = { ...e.desc, level };
-    e.parts = makeParts(e.desc);
+    e.parts = e.next && e.next.level === level ? e.next.parts : makeParts(e.desc);
+    e.next = null;
     e.proxy.geometry.dispose();
     e.proxy = proxyFor(e.parts, e.world);
   }
+  // Scaffolding up round a building the player just upgraded: its new look waits for the reveal.
+  function raiseScaffold(e, level) {
+    if (!hooks.scaffold) return false;
+    const id = e.b.id, parts = makeParts({ ...e.desc, level });
+    const h = hooks.scaffold(e.world, partsBox(parts), () => {
+      if (entries.get(id) !== e) return;
+      e.scaf = null; e.reveal = true; // this level change pops instead of scaffolding again
+      wantPop.add(id); setTimeout(() => wantPop.delete(id), 1500); // the next setState swaps the look and pops it
+    });
+    if (!h) return false;
+    e.next = { level, parts }; e.scaf = h;
+    return true;
+  }
+  function dropScaffold(e) { if (e.scaf) { e.scaf.cancel(); e.scaf = null; } }
 
   function applyNight() {
     for (const m of built) if (m.isMesh && nightWall(m.userData.day)) m.material = night ? nightWall(m.userData.day) : m.userData.day;
@@ -127,6 +150,7 @@ export function createTown(root, hooks = {}) {
       const next = new Set(ids);
       if (next.size === removed.size && [...next].every((i) => removed.has(i))) return;
       removed = next; endPop(); rebuild();
+      for (const id of removed) { const e = entries.get(id); if (e) dropScaffold(e); }
       if (selected && removed.has(selected)) setHull(null);
     },
     // Syncs placed buildings and levels from the sim snapshot. Cheap when nothing changed.
@@ -136,7 +160,7 @@ export function createTown(root, hooks = {}) {
       if (sig !== placedSig) {
         placedSig = sig;
         const keep = new Set(placed.map((r) => r.id));
-        for (const [id, e] of entries) if (!keep.has(id)) { e.proxy.geometry.dispose(); entries.delete(id); if (selected === id) setHull(null); }
+        for (const [id, e] of entries) if (!keep.has(id)) { dropScaffold(e); e.proxy.geometry.dispose(); entries.delete(id); if (selected === id) setHull(null); }
         for (const r of placed) if (!entries.has(r.id)) { const d = describe(r, 1); if (d) addEntry(d, 1); }
         dirty = true;
       }
@@ -162,7 +186,9 @@ export function createTown(root, hooks = {}) {
       for (const id of wantSettle) if (entries.has(id)) { wantSettle.delete(id); if (!removed.has(id)) popId = id; } // a freshly placed building settles with the upgrade squash
       for (const e of entries.values()) {
         const lv = (s.levels && s.levels[e.b.id]) ?? e.base;
-        if (lv === e.level) continue;
+        if (lv === e.level || e.scaf) continue;
+        if (wantPop.has(e.b.id) && !e.reveal && !removed.has(e.b.id) && raiseScaffold(e, lv)) { wantPop.delete(e.b.id); continue; }
+        e.reveal = false;
         regenerate(e, lv);
         if (selected === e.b.id) setHull(e.b.id);
         if (wantPop.delete(e.b.id) && !removed.has(e.b.id)) popId = e.b.id; else dirty = true;
