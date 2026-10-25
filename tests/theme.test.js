@@ -1,7 +1,7 @@
 // Dark paper (src/core/theme.js): the mode store, auto following the computer, and the stylesheet wiring.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { THEME_KEY, MODES, resolve, readMode, createThemeStore, cleanMode } from '../src/core/theme.js';
 import { themeMarkup } from '../src/ui/theme-settings.js';
 
@@ -73,7 +73,7 @@ test('the page loads dark paper last and sets the theme before the first paint',
 
 test('words are written in --text, never straight in --ink, so dark paper can lift them', () => {
   const dir = new URL('../css/', import.meta.url);
-  for (const f of ['ui.css', 'hud.css', 'menus.css', 'title.css', 'notebook.css', 'pages.css', 'settings.css', 'topbar.css']) {
+  for (const f of readdirSync(dir).filter((n) => n.endsWith('.css'))) {
     const css = readFileSync(new URL(f, dir), 'utf8');
     assert.doesNotMatch(css, /(^|[;{\s])color:var\(--ink\)/, f);
   }

@@ -48,6 +48,8 @@ Layers stay separate: the sim never touches the DOM or Three.js, the UI sends co
 
 Avoid edits to `index.html`, `css/ui.css`, `src/main.js`, `src/sim/sim.js`, `src/sim/save.js`, `src/render/scene.js` and `src/ui/ui.js` unless the change cannot live in a system or module. When it cannot, keep the edit small and mention it in the PR. Put new CSS in your own file under `css/` and link it from `index.html` with one line. Do not reformat or reorder code you are not changing.
 
+Write words in `color:var(--text)`, not `var(--ink)` (outlines and hard shadows), and dashed stitching in `rgb(var(--line) / a)`, so dark paper (`css/theme-dark.css`) can lift them. If a new surface hard-codes a light background behind words, add a dark rule for it in `css/theme-dark.css`. `tests/theme.test.js` checks every stylesheet for `color:var(--ink)`.
+
 `index.html`, `docs/*.md`, `CONTRIBUTING.md` and `tests/*.test.js` use `merge=union` (see `.gitattributes`): when two threads add lines in the same place, git keeps both instead of stopping. Check the result: `npm test` includes a test that fails on leftover conflict markers and on a stylesheet link to a missing file. A test file that appends a new `test(...)` block next to someone else's is fine; do not reorder or rewrite existing tests.
 
 ## Budgets and project rules
