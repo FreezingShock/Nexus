@@ -1,7 +1,7 @@
-// Sounds for the title screen's pages. The game's sound engine only starts with the town (after Play), so the title
-// keeps this tiny one of its own: a paper rustle when a page turns, and a short chime that is different for each page.
-// Procedural Web Audio, no files. The AudioContext is made on the first page opened (a click, so browsers allow it) and
-// closed when the title goes. It follows the player's sound settings: muted is silent, the effects volume sets the level.
+// Sounds for the notebook pages, on the title screen and in the town. The game's sound engine only starts with the town
+// (after Play), so the pages keep this tiny one of their own: a paper rustle when a page turns, and a short chime that is
+// different for each page. Procedural Web Audio, no files. The AudioContext is made on the first page opened (a click, so
+// browsers allow it); the title's is closed when the title goes. It follows the player's sound settings: muted is silent, the effects volume sets the level.
 import { busGain } from './mix.js';
 
 // Each page's chime: notes in Hz with their start in seconds. Kept small and in one warm key (C major, pentatonic-ish).
@@ -13,6 +13,12 @@ export const PAGE_CHIMES = {
   profile: [[659.25, 0], [783.99, 0.1], [1046.5, 0.2]],             // a proud little fanfare
   pass: [[880, 0], [1108.73, 0.1], [1318.51, 0.2], [1760, 0.32]],   // a lantern lighting
   new: [[440, 0], [392, 0.12]],                                     // a gentle "are you sure?"
+  // the town's pages (src/ui/book.js)
+  goals: [[523.25, 0], [659.25, 0.1], [783.99, 0.2], [1046.5, 0.3]], // a pennant going up
+  milestones: [[659.25, 0], [830.61, 0.09], [987.77, 0.18]],          // a small medal ring
+  sky: [[880, 0], [783.99, 0.12], [1046.5, 0.24]],                     // a breeze changing
+  paint: [[587.33, 0], [698.46, 0.08], [880, 0.16]],                   // a brush stroke
+  shortcuts: [[987.77, 0], [987.77, 0.1]],                             // two key taps
 };
 export const CLOSE_CHIME = [[659.25, 0], [523.25, 0.08]];
 

@@ -23,12 +23,6 @@
 @keyframes pc-in{from{opacity:0;transform:translateY(-14px) rotate(-3deg)}}
 
 /* shortcut sheet: centred card */
-.shortcuts{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-.3deg);width:min(600px,calc(100% - 32px));max-height:calc(100% - 40px);display:flex;flex-direction:column;padding:0;z-index:12}
-.shortcuts .band{flex:0 0 auto;padding:16px 62px 14px 18px;background:var(--paper-3);background-image:var(--grain);border-bottom:2.5px solid var(--ink);border-radius:17px 21px 0 0}
-.shortcuts .band h2{font-size:25px}
-.shortcuts .pad{overflow:auto;padding:12px 18px 6px;display:grid;grid-template-columns:1fr 1fr;gap:4px 26px;align-content:start;min-height:0}
-.shortcuts .pad.foot{display:flex;justify-content:flex-end;grid-template-columns:none;border-top:1.5px dashed rgba(43,38,32,.25);padding:12px 18px 16px}
-.shortcuts .btn{height:42px;font-size:15px}
 .kgroup{break-inside:avoid}
 .kgroup h3{margin:10px 0 6px;font-family:var(--display);font-weight:800;font-size:17px;font-variation-settings:"SOFT" 100,"WONK" 1}
 .kgroup ul{list-style:none;margin:0;padding:0}
@@ -38,8 +32,7 @@
 .qmark{font-family:var(--display);font-weight:800;font-size:22px;line-height:1}
 
 @media (max-width:640px){
-  .shortcuts .pad{grid-template-columns:1fr}
-  .tipnote{width:calc(100% - 32px)}
+    .tipnote{width:calc(100% - 32px)}
 }
 @media (prefers-reduced-motion:reduce){
   .note{animation:none}

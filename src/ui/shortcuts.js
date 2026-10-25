@@ -47,11 +47,11 @@ export const SHORTCUT_GROUPS = [
     { keys: ['Scroll'], text: 'Zoom in and out' },
   ] },
   { title: 'Town', rows: [
-    { keys: ['G'], text: 'Town goals', file: 'src/ui/modules/progress.js', needle: "e.key === 'g'" },
+    { keys: ['G'], text: 'Goals: Charge, today\'s goals and Renewal', file: 'src/ui/modules/progress.js', needle: "e.key === 'g'" },
     { keys: ['K'], text: 'Calendar: the date, festivals and skipping days', file: 'src/ui/modules/date.js', needle: "toLowerCase() !== 'k'" },
-    { keys: ['M'], text: 'Milestones and achievements', file: 'src/ui/modules/milestones.js', needle: "e.key === 'm'" },
-    { keys: ['Esc'], text: 'Leave a tool, or close a card', file: 'src/ui/ui.js', needle: "e.key === 'Escape'" },
+    { keys: ['M'], text: 'Milestones: every goal, its stages and rewards', file: 'src/ui/modules/progress.js', needle: "e.key === 'm'" },
+    { keys: ['Esc'], text: 'Close a page, leave a tool, or close a card', file: 'src/ui/ui.js', needle: "e.key === 'Escape'" },
     { keys: ['Right click'], text: 'Leave a tool, or close a card' },
-    { keys: ['?'], text: 'Show or hide this sheet', file: 'src/ui/modules/shortcut-sheet.js', needle: "e.key === '?'" },
+    { keys: ['?'], text: 'Show or hide this page', file: 'src/ui/modules/shortcut-sheet.js', needle: "e.key === '?'" },
   ] },
 ];

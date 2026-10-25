@@ -1,0 +1,59 @@
+/* The notebook page (src/ui/notebook.js): a big sheet in the middle of the screen, over a soft scrim, that flips open
+   from its left spine. The title screen's pages and the town's pages (src/ui/book.js) are the same sheet. Each page's
+   own content is styled next to it: css/title.css for the title, css/pages.css for the town. */
+.nb-scrim{position:absolute;inset:0;z-index:3;background:rgba(43,38,32,.32);backdrop-filter:blur(2px)}
+.nb-sheet{position:absolute;z-index:4;left:50%;top:50%;width:min(940px,calc(100vw - 40px));height:min(720px,calc(100vh - 40px));margin:0;translate:-50% -50%;display:flex;flex-direction:column;padding:22px 26px 0 44px;transform-origin:0 50%}
+.nb-sheet.narrow{width:min(520px,calc(100vw - 40px));height:auto;padding-bottom:22px}
+/* notebook holes down the spine */
+.nb-sheet::after{content:"";position:absolute;left:14px;top:26px;bottom:26px;width:6px;background:radial-gradient(circle,rgba(43,38,32,.35) 2.4px,transparent 3px) 0 0/6px 26px repeat-y;pointer-events:none}
+/* translate centres the sheet, so the flip (css/motion.css) rides on rotate and scale only */
+.nb-sheet[hidden]{display:flex;translate:-50% -50%}
+.nb-tape{position:absolute;top:-12px;width:110px;height:26px;z-index:2}
+.nb-tape-l{left:12%;rotate:-4deg}
+.nb-tape-r{right:12%;rotate:3deg}
+.nb-head{display:flex;align-items:center;gap:16px;padding-bottom:14px;border-bottom:2px dashed rgba(43,38,32,.25)}
+.nb-head h2{font-size:34px}
+.nb-titles{min-width:0}
+.nb-sub{display:block;color:var(--ink-soft);font-size:14px;margin-top:2px}
+.nb-ico{flex:none;width:58px;height:58px;display:grid;place-items:center;border:2.5px solid var(--ink);border-radius:16px;background:var(--pg);box-shadow:0 4px 0 var(--ink);rotate:-4deg}
+.nb-sheet:not([hidden]) .nb-ico{animation:tt-stamp .5s cubic-bezier(.2,.8,.3,1.4) .25s both}
+@keyframes tt-stamp{from{scale:1.6;opacity:0;rotate:12deg}}
+.nb-ico svg{width:38px;height:38px}
+.nb-back{display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 10px 0 6px;border:2.5px solid var(--ink);border-radius:12px;background:var(--paper-2);font-weight:800;font-size:14px;box-shadow:0 3px 0 var(--ink)}
+.nb-back:hover{background:var(--paper-3)}
+.nb-back-ico svg{width:20px;height:20px;display:block}
+.nb-back kbd,.nb-sheet kbd{display:inline-block;min-width:22px;padding:0 5px;border:1.5px solid var(--ink);border-radius:6px;background:var(--paper);font:700 12px var(--body);text-align:center;box-shadow:0 2px 0 var(--ink);line-height:18px}
+.nb-body{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:16px 6px 24px 0}
+.nb-sheet.narrow .nb-body{padding-bottom:4px}
+.nb-body>*{animation:tt-rise .45s cubic-bezier(.2,.8,.3,1) both;animation-delay:calc(.2s + var(--i,0) * .05s)}
+@keyframes tt-rise{from{opacity:0;translate:0 10px}}
+.nb-body.nb-still>*{animation:none}
+
+/* Bookmark tabs: coloured paper tabs sticking out of the page's right edge, one per section. The chosen one stands out
+   further and joins the page. The sheet moves a little left to make room for them. */
+.nb-sheet.has-tabs{width:min(860px,calc(100vw - 190px));translate:calc(-50% - 60px) -50%}
+.nb-sheet.has-tabs[hidden]{translate:calc(-50% - 60px) -50%}
+.nb-tabs{position:absolute;left:calc(100% - 3px);top:96px;z-index:-1;display:flex;flex-direction:column;gap:10px}
+.nb-tab{display:flex;align-items:center;gap:8px;width:132px;height:50px;padding:0 12px 0 14px;border:2.5px solid var(--ink);border-left:0;border-radius:0 16px 16px 0;background:var(--tc);font-weight:800;font-size:14.5px;text-align:left;color:var(--ink);box-shadow:0 4px 0 var(--ink);translate:-14px 0;transition:translate .18s cubic-bezier(.2,.8,.3,1),filter .15s;filter:saturate(.75) brightness(.97)}
+.nb-tab:nth-child(odd){rotate:.6deg}.nb-tab:nth-child(even){rotate:-.5deg}
+.nb-tab:hover{translate:-6px 0;filter:none}
+.nb-tab[aria-selected="true"]{translate:0 0;filter:none;width:140px}
+.nb-tab:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+.nb-tab svg{flex:none;width:24px;height:24px;padding:3px;border-radius:8px;background:var(--paper);border:2px solid var(--ink)}
+.nb-sheet:not([hidden]) .nb-tab{animation:nb-tab-in .4s cubic-bezier(.2,.8,.3,1) both;animation-delay:calc(.3s + var(--i,0) * .06s)}
+@keyframes nb-tab-in{from{opacity:0;translate:-60px 0}}
+
+/* Shared pieces for page content */
+.nb-h3{font-size:22px;margin:18px 0 10px}
+.nb-promise{margin:18px 0 0;padding:10px 14px;border-radius:12px;background:rgba(168,193,121,.25);border:1.5px dashed var(--sage-d);font-size:14px}
+.nb-chips{display:flex;gap:8px;flex-wrap:wrap}
+.nb-chip{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 13px;border-radius:11px;border:2.5px solid var(--ink);background:var(--paper-2);font-weight:800;font-size:13.5px;box-shadow:0 3px 0 var(--ink);transition:translate .1s,box-shadow .1s}
+.nb-chip i{display:grid;place-items:center;width:20px;height:20px;border-radius:6px;border:1.5px solid var(--ink);background:var(--c)}
+.nb-chip i svg{width:14px;height:14px}
+.nb-chip[aria-pressed="true"]{background:var(--c,var(--sage));translate:0 2px;box-shadow:0 1px 0 var(--ink)}
+.nb-sheet p{font-size:14.5px}
+.nb-sheet .btn{height:44px;font-size:15px}
+.nb-btns{display:flex;gap:10px;margin-top:14px}
+.nb-btns .btn{flex:1}
+
+@media (prefers-reduced-motion:reduce){.nb-tab{transition:none}}

@@ -121,4 +121,3 @@ button:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
 #app{-webkit-touch-callout:none}
 .leftcol{position:absolute;top:calc(var(--hud-bottom,108px) + 12px);left:max(16px,env(safe-area-inset-left,0px));bottom:150px;width:var(--side);display:flex;flex-direction:column;gap:12px;min-height:0;pointer-events:none}
 .leftcol>*{flex:0 0 auto;pointer-events:auto}
-.leftcol>#goals{flex:0 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain}

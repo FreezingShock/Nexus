@@ -74,7 +74,8 @@ test('every id the title screen drives exists in index.html, and its surfaces us
   const html = read('index.html'), js = read('src/ui/title.js') + read('src/main.js');
   const ids = new Set([...js.matchAll(/\$\('([a-z0-9-]+)'\)/g)].map((m) => m[1]).filter((id) => /^(tt|bt)-/.test(id)));
   assert.ok(ids.size > 10);
-  for (const id of ids) assert.ok(html.includes('id="' + id + '"'), id);
+  const sheet = read('src/ui/notebook.js').replaceAll('${p}', 'tt'); // the shared sheet, inserted by title.js
+  for (const id of ids) assert.ok(html.includes('id="' + id + '"') || sheet.includes('id="' + id + '"'), id);
   assert.match(html, /<section id="title"[^>]*data-mo/);
   assert.match(html, /<section id="boot"[^>]*data-mo/);
   assert.match(html, /<body class="booting">/);
@@ -111,13 +112,16 @@ test('the title camera cuts between several shots, hidden by the curtain, and re
 test('before Play every HUD piece is hidden, and the pages open as a centred sheet that flips open', () => {
   const css = read('css/title.css'), html = read('index.html');
   assert.match(css, /body\.booting #app>:not\(#stage\)[^{]*\.dlabel\{[^}]*visibility:hidden/);
-  assert.match(html, /id="tt-sheet" data-mo="flip"/);
-  assert.match(html, /id="tt-scrim" data-mo/);
+  const nb = read('src/ui/notebook.js'), nbCss = read('css/notebook.css');
+  assert.match(nb, /id="\$\{p\}-sheet" data-mo="flip"/);
+  assert.match(nb, /id="\$\{p\}-scrim" data-mo/);
   assert.match(read('css/motion.css'), /\[data-mo="flip"\]\{[^}]*--mo-r:y /);
-  assert.match(css, /\.tt-sheet\{position:absolute;[^}]*left:50%;top:50%/);
-  assert.match(css, /\.tt-sheet\[hidden\]\{[^}]*translate:-50% -50%/, 'the closed sheet stays centred while it folds away');
-  const card = html.slice(html.indexOf('class="tt-card'), html.indexOf('</footer>', html.indexOf('tt-cardfoot')));
-  assert.ok(card.includes('id="tt-list"') && !card.includes('id="tt-sheet"'), 'the sheet is not inside the card');
+  assert.match(nbCss, /\.nb-sheet\{position:absolute;[^}]*left:50%;top:50%/);
+  assert.match(nbCss, /\.nb-sheet\[hidden\]\{[^}]*translate:-50% -50%/, 'the closed sheet stays centred while it folds away');
+  assert.match(html, /css\/notebook\.css/);
+  const js0 = read('src/ui/title.js');
+  assert.match(js0, /createNotebook\(/, 'the title uses the shared notebook sheet');
+  assert.match(js0, /\.tt-credit'\)\.insertAdjacentHTML\('beforebegin', notebookMarkup\('tt'\)\)/, 'the sheet sits beside the card, not inside it');
   const js = read('src/ui/title.js');
   for (const name of ['howto', 'changes', 'credits', 'settings', 'new']) assert.ok(new RegExp('\\b' + name + ': \\(\\) =>').test(js), name);
   assert.match(read('src/main.js'), /title\.failed\('Something went wrong/);

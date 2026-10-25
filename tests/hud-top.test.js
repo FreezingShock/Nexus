@@ -225,5 +225,5 @@ test('the control cluster keeps pause and speed and moves the other buttons into
   assert.match(html, /<link rel="stylesheet" href="css\/topbar\.css">/);
   const mod = read('src/ui/modules/menu.js');
   assert.match(mod, /order: 100/);
-  assert.match(mod, /achvbtn: 'Milestones'/);
+  assert.match(mod, /id: 'goalsbtn', label: 'Goals and milestones'/);
 });
