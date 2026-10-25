@@ -1,0 +1,120 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { createProgress, chase, atLeast, saveLine, shotAt, TITLE_SHOTS, CURTAIN_SECS, WARM_STEPS, PLAY_STEPS, CREDITS } from '../src/core/boot.js';
+import { VERSION, CHANGES } from '../src/version.js';
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const read = (f) => readFileSync(join(ROOT, f), 'utf8');
+
+test('the version is written once and package.json agrees', () => {
+  assert.match(VERSION, /^\d+\.\d+\.\d+$/);
+  assert.equal(JSON.parse(read('package.json')).version, VERSION);
+  assert.equal(CHANGES[0].v, VERSION);
+  assert.ok(!/0\.9\.0/.test(read('src/ui/title.js')));
+  assert.ok(read('index.html').includes('src/main.js?v=' + VERSION), 'the script URL carries the version, so a stale main.js is never reused');
+});
+
+test('load steps have unique ids and positive weights', () => {
+  for (const list of [WARM_STEPS, PLAY_STEPS]) {
+    assert.equal(new Set(list.map((s) => s.id)).size, list.length);
+    assert.ok(list.every((s) => s.weight > 0 && s.caption.length > 0));
+  }
+});
+
+test('progress only moves forward and ignores unknown or repeated steps', () => {
+  const p = createProgress(PLAY_STEPS);
+  assert.equal(p.fraction(), 0);
+  p.begin('away'); assert.equal(p.caption(), PLAY_STEPS[0].caption);
+  p.done('away'); p.done('away'); p.done('nope'); p.begin('nope');
+  const f = p.fraction();
+  assert.ok(f > 0 && f < 1);
+  p.begin('away'); assert.equal(p.fraction(), f);
+  for (const s of PLAY_STEPS) p.done(s.id);
+  assert.equal(p.fraction(), 1); assert.ok(p.isDone());
+  assert.equal(p.caption(), PLAY_STEPS.at(-1).caption);
+});
+
+test('progress tells its listeners, and an empty list is already done', () => {
+  const p = createProgress(WARM_STEPS); let n = 0;
+  p.subscribe(() => n++);
+  p.begin('fonts'); p.done('fonts');
+  assert.equal(n, 2);
+  assert.equal(createProgress([]).fraction(), 1);
+});
+
+test('the bar chases its target without overshooting or going back', () => {
+  let shown = 0;
+  for (let i = 0; i < 400; i++) { const next = chase(shown, 0.6, 1 / 60); assert.ok(next >= shown && next <= 0.6); shown = next; }
+  assert.equal(shown, 0.6);
+  assert.equal(chase(0.8, 0.5, 0.1), 0.5 > 0.8 ? 0.5 : 0.5); // a target below the bar pulls it no further than the target
+  assert.equal(chase(0.3, 0.9, 0), 0.3);
+});
+
+test('a step is held for at least its minimum time, and a failure passes through', async () => {
+  let t = 1000; const waits = [];
+  const wait = async (ms) => { waits.push(ms); t += ms; };
+  const r = await atLeast(400, async () => { t += 100; return 7; }, wait, () => t);
+  assert.equal(r, 7); assert.deepEqual(waits, [300]);
+  await atLeast(400, async () => { t += 900; }, wait, () => t);
+  assert.equal(waits.length, 1);
+  await assert.rejects(atLeast(400, async () => { throw new Error('x'); }, wait, () => t), /x/);
+});
+
+test('the line under Play fits the save', () => {
+  assert.match(saveLine('save', '3 h ago'), /3 h ago/);
+  assert.match(saveLine('new', ''), /village/);
+  assert.ok(CREDITS.some((c) => c.lines.join(' ').includes('FreezingShock')));
+});
+
+test('every id the title screen drives exists in index.html, and its surfaces use the shared motion', () => {
+  const html = read('index.html'), js = read('src/ui/title.js') + read('src/main.js');
+  const ids = new Set([...js.matchAll(/\$\('([a-z0-9-]+)'\)/g)].map((m) => m[1]).filter((id) => /^(tt|bt)-/.test(id)));
+  assert.ok(ids.size > 10);
+  for (const id of ids) assert.ok(html.includes('id="' + id + '"'), id);
+  assert.match(html, /<section id="title"[^>]*data-mo/);
+  assert.match(html, /<section id="boot"[^>]*data-mo/);
+  assert.match(html, /<body class="booting">/);
+  assert.match(html, /href="css\/title\.css"/);
+});
+
+test('nothing is saved or advanced before Play, and the sim stays free of the DOM', () => {
+  const main = read('src/main.js');
+  assert.match(main, /if \(saveBlocked \|\| phase !== 'play'\) return;/);
+  assert.match(main, /sim\.catchUp\(loaded\.savedAt\)/);
+  assert.ok(main.indexOf("const alpha = sim.advance(dt)") > main.indexOf("phase === 'play'"));
+  assert.ok(!/title|document/.test(read('src/core/boot.js').replace(/\/\/.*$/gm, '')));
+});
+
+test('the title camera cuts between several shots, hidden by the curtain, and repeats', () => {
+  const total = TITLE_SHOTS.reduce((a, s) => a + s.secs, 0);
+  assert.ok(TITLE_SHOTS.length >= 4);
+  assert.ok(TITLE_SHOTS.some((s) => s.view === 'street' || s.view === 'low') && TITLE_SHOTS.some((s) => s.view === 'bird'));
+  const seen = new Set();
+  for (let t = 0; t < total * 2; t += 0.25) {
+    const a = shotAt(t);
+    assert.ok(a.curtain >= 0 && a.curtain <= 1 && a.local >= 0 && a.local < a.shot.secs);
+    seen.add(a.index);
+    // across every cut the curtain is (nearly) closed, so the jump is never seen
+    if (a.local < 0.01 && t > 0) assert.ok(a.curtain > 0.98, 'cut at ' + t);
+  }
+  assert.equal(seen.size, TITLE_SHOTS.length);
+  assert.equal(shotAt(total + 1).index, shotAt(1).index);
+  const mid = shotAt(TITLE_SHOTS[0].secs / 2);
+  assert.equal(mid.curtain, 0);
+  assert.ok(CURTAIN_SECS < Math.min(...TITLE_SHOTS.map((s) => s.secs)) / 2);
+});
+
+test('before Play every HUD piece is hidden, and the option panels open inside the card', () => {
+  const css = read('css/title.css'), html = read('index.html');
+  assert.match(css, /body\.booting #app>:not\(#stage\)[^{]*\.dlabel\{[^}]*visibility:hidden/);
+  assert.match(css, /\.tt-pane\{position:absolute;inset:0/);
+  const card = html.slice(html.indexOf('class="tt-card'), html.indexOf('</footer>', html.indexOf('tt-cardfoot')));
+  assert.ok(card.includes('id="tt-pane"') && card.includes('id="tt-list"'));
+  assert.match(html, /id="tt-pane" data-mo/);
+  const js = read('src/ui/title.js');
+  for (const name of ['howto', 'changes', 'credits', 'settings', 'new']) assert.ok(new RegExp('\\b' + name + ': \\(\\) =>').test(js), name);
+  assert.match(read('src/main.js'), /title\.failed\('Something went wrong/);
+});

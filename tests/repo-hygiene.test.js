@@ -22,7 +22,7 @@ test('no conflict markers in tracked text files', () => {
 test('every stylesheet and script that index.html loads exists', () => {
   const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
   const refs = [...html.matchAll(/<link rel="stylesheet" href="([^"]+)"/g), ...html.matchAll(/<script[^>]* src="([^"]+)"/g)]
-    .map((m) => m[1]);
+    .map((m) => m[1].split('?')[0]);
   assert.ok(refs.length > 0);
   const missing = refs.filter((r) => !existsSync(join(ROOT, r)));
   assert.deepEqual(missing, []);

@@ -14,6 +14,10 @@ Then open http://localhost:8000/. Any static server works.
 
 Test URLs: `?away=24000` forces an offline return of that many seconds; `?debug` exposes `window.__nexus` (sim, scene, ui).
 
+## Deploying
+
+The live site is Cloudflare Pages on playnexus.dev, built from `main` with `node scripts/build-site.mjs` into `dist`. Settings and the headers file are explained in [docs/DEPLOY.md](docs/DEPLOY.md).
+
 ## Seeing the latest work (`integration`)
 
 Finished pull requests are merged automatically into the `integration` branch once tests pass. To view it, run the refresh script. It pulls `integration` and restarts the server on http://localhost:8000.
