@@ -22,6 +22,7 @@ import roadTool from './road-tool.js';
 import services from './services.js';
 import shortcutSheet from './shortcut-sheet.js';
 import sound from './sound.js';
+import terrain from './terrain.js';
 import toolbarFold from './toolbar-fold.js';
 import tooltips from './tooltips.js';
 import townPage from './town-page.js';
@@ -49,6 +50,7 @@ export const uiModules = [
   services,
   shortcutSheet,
   sound,
+  terrain,
   toolbarFold,
   tooltips,
   townPage,

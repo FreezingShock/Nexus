@@ -9,7 +9,8 @@
 import * as THREE from '../../../vendor/three/three.module.min.js';
 import { GRID_N, GRID_HALF, TILE, rectTiles, tileIndex, inBounds } from '../../world/grid.js';
 import { ZONE_DEFS } from '../../sim/zones.js';
-import { groundPlaneGeometry } from '../ground.js';
+import { groundPlaneGeometry, refreshGroundPlane } from '../ground.js';
+import { createLandWatch } from '../land-watch.js';
 
 const AREA = GRID_N * GRID_N;
 const col = (hex) => new THREE.Color(hex);
@@ -116,6 +117,7 @@ export default {
       extensions: { derivatives: true },
     });
     const mesh = new THREE.Mesh(groundPlaneGeometry(0.17), mat);
+    const land = createLandWatch();
     mesh.renderOrder = 2; mesh.frustumCulled = false;
     world.add(mesh);
 
@@ -171,6 +173,7 @@ export default {
       },
       frame(f) {
         const zoning = f.tool === 'zones';
+        if (land.poll()) refreshGroundPlane(mesh.geometry, 0.17); // the terrain tools moved the ground
         if (zoning !== showLots) { showLots = zoning; mat.uniforms.uLots.value = zoning ? 1 : 0; }
         const next = f.state.zoneRev + '|' + roadSum();
         if (next !== sig) { sig = next; writeBase(); writePreview(); }

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const read = (p) => readFileSync(new URL('../' + p, import.meta.url), 'utf8');
-const TOOLS = ['roads', 'zones', 'build', 'services', 'parks', 'decor', 'traffic', 'districts', 'bulldoze'];
+const TOOLS = ['roads', 'zones', 'build', 'services', 'parks', 'decor', 'terrain', 'traffic', 'districts', 'bulldoze'];
 
 test('every tool tile keeps its hooks, key hint, stagger index and an inline icon', () => {
   const html = read('index.html');

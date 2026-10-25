@@ -42,7 +42,8 @@ export default {
     const { grid, state, sim } = ctx;
     const zoneAt = (i) => grid.zone[i];
     decodeZones(state.zones, grid.zone);
-    for (let i = 0; i < AREA; i++) if (grid.zone[i] && (grid.base[i] !== BASE.LAND || grid.road[i])) grid.zone[i] = 0;
+    // Steep ground keeps its zones: the terrain tools may tilt a street of homes, and they ride along (systems/land.js).
+    for (let i = 0; i < AREA; i++) if (grid.zone[i] && ((grid.base[i] !== BASE.LAND && grid.base[i] !== BASE.STEEP) || grid.road[i])) grid.zone[i] = 0;
     state.lots = state.lots.filter(([i]) => grid.zone[i]);
     for (const [i] of state.lots) grid.lot[i] = i + 1;
     state.zones = encodeZones(grid.zone);

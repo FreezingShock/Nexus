@@ -9,6 +9,7 @@ import { DIRS, connMask, shapeOf } from '../../world/roadnet.js';
 import { hash } from '../../world/terrain.js';
 import { Acc, ASPHALT, emitTiles, groundY, roadMaterial, tileWorld } from '../road-mesh.js';
 import { allocInstanceColors } from '../geom.js';
+import { createLandWatch } from '../land-watch.js';
 
 const CHUNK = 24, PER_ROW = GRID_N / CHUNK;
 const TRAFFIC = [null, [0.616, 0.702, 0.486], [0.851, 0.706, 0.373], [0.722, 0.278, 0.18]]; // by class: free, busy, jammed
@@ -38,6 +39,7 @@ export default {
     const dirty = new Set();
     const puffQueue = [];
     let ghost = null;
+    const land = createLandWatch();
 
     // ---- chunks ----
     function dropChunk(id) {
@@ -209,6 +211,13 @@ export default {
       frame(f) {
         clock = f.t;
         if (f.state.roads !== roads) sync(f.state.roads);
+        // The terrain tools moved ground: redraw the road chunks on it (roads follow the land).
+        const moved = land.poll();
+        if (moved && roads) {
+          if (moved.all) for (const k of Object.keys(roads)) dirty.add(chunkOf(Number(k)));
+          else for (const i of moved.tiles) if (roads[i]) dirty.add(chunkOf(i));
+          rebuildDirty();
+        }
         const want = f.tool === 'traffic';
         if (want !== traffic) { traffic = want; for (const c of chunks.values()) tint(c); }
         if (traffic && grid.loadRev !== seenLoad) { seenLoad = grid.loadRev; for (const c of chunks.values()) tint(c); }

@@ -50,3 +50,26 @@ new village (Settings, Start over).
 ## Never seeing the edge
 
 The orbit camera's near plane used to sit at +1, 150 units from the target, so zoomed out or tilted low, ground behind the camera was clipped along a slanted line and the water plane and background showed through (a floating slab). The near plane is now -400. The water plane covers the whole far ground. The lowest tilt (`ISO.elevMin`) is 0.38, so the top of the view stays on land, and `tests/camera.test.js` checks that the four corner rays land within 460 units at the widest window, furthest zoom-out and furthest pan. Beyond about 340 units of depth the fog fades the land into haze, so the mountains seem to go on for ever.
+
+## Terrain tools (the player's edits)
+
+The Terrain tool (U) raises, lowers and flattens the land with a soft brush (S, M, L). The edits are height offsets at the
+tile corners (`src/world/land.js`, the 97 x 97 lattice the tile overlays use), blended across each tile and added to the
+seeded land in `heightAt` (`baseHeightAt` is the land as made). So the grid, roads, buildings, trees, decor and overlays all
+read the edited ground with no change on their side.
+
+- Saved in `state.land` as `[corner, hundredths]` pairs. A save without it has no edits, so old towns load as they were;
+  no save version bump. Renewal starts the new land with none.
+- Sim: `src/sim/systems/land.js`, command `terraform { tool, x, z, size, level, stroke }`. Each dab costs
+  `BALANCE.land.perEarth` coins per unit of ground moved. All dabs of one drag share one undo step, with the coins back.
+- Reach: corners within the grid (two tiles in from its edge), more than 7.5 units from the river line, west of the tunnel
+  mountain (x < 66), and whose land as made is below `LAND_TOP` (MOUNTAIN_TOP - 4). So the mountain rim stays fixed, but
+  steep hillsides below it can be reshaped. Raised ground stops at `LAND_TOP`; dug ground at -2, a pond (the water plane
+  shows through below -0.55). Ground under a road, zone or building is never dug below the water line.
+- Built things ride the ground: buildings, grown lots, roads, trees, decor and the tile overlays redraw when it moves.
+  Render code follows through `createLandWatch()` (`src/render/land-watch.js`), which reports the tiles and the box that
+  moved since it last looked. The fine ground mesh lifts only the vertices in that box (`reshape` in render/terrain.js).
+- Zones on ground that turned steep stay (zoning only drops zones on water or under roads at load), and so do decorations.
+
+Not browser-run: how the brush feels, how fast a big drag redraws on a slow machine, and the look of dug ponds are for nate
+to check on localhost.

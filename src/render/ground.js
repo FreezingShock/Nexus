@@ -32,3 +32,11 @@ export function groundPlaneGeometry(lift) {
   g.setIndex(idx);
   return g;
 }
+
+// Lifts a plane made by groundPlaneGeometry onto the ground as it is now (after the terrain tools moved it).
+export function refreshGroundPlane(geo, lift) {
+  const h = cornerHeights(), p = geo.attributes.position;
+  for (let k = 0; k < V * V; k++) p.array[k * 3 + 1] = h[k] + lift;
+  p.needsUpdate = true;
+  geo.computeBoundingSphere();
+}

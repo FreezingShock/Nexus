@@ -4,7 +4,8 @@
 // Hooks run again after Renewal (ctx.rebuild), so init subscribes only once.
 import { BALANCE } from '../balance.js';
 import { freshState } from '../state.js';
-import { setTerrainSeed } from '../../world/terrain.js';
+import { setTerrainSeed, setLandEdits } from '../../world/terrain.js';
+import { editsFromPairs } from '../../world/land.js';
 import { getLayout } from '../../world/layout.js';
 import { dayKey, goalDef, pendingPoints, pickGoal, pointsMult, rewardText, yesterdayKey } from '../progress.js';
 
@@ -134,6 +135,7 @@ export default {
       Object.assign(state, fresh, keep, { runEarned: 0, offline: null, log: [] });
       // Renewal rolls new land (freshState rolled the seed). The grid reads the terrain again, and the scenery with it.
       setTerrainSeed(state.terrainSeed);
+      setLandEdits(editsFromPairs(state.land)); // fresh land has no edits
       grid.regen();
       Object.assign(sim.layout, getLayout());
       grid.zone.fill(0); grid.road.fill(0); grid.lot.fill(0);

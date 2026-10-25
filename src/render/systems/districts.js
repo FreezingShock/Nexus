@@ -7,7 +7,8 @@
 import * as THREE from '../../../vendor/three/three.module.min.js';
 import { GRID_N, GRID_HALF, TILE, tileCenter } from '../../world/grid.js';
 import { DISTRICT_COLORS, FLAG_STYLES, MAX_DISTRICTS, districtAnchors, flagColor } from '../../world/districts.js';
-import { groundPlaneGeometry } from '../ground.js';
+import { groundPlaneGeometry, refreshGroundPlane } from '../ground.js';
+import { createLandWatch } from '../land-watch.js';
 import { toonUncached } from '../materials.js';
 import { heightAt } from '../../world/terrain.js';
 
@@ -108,6 +109,7 @@ export default {
       polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
     });
     const wash = new THREE.Mesh(groundPlaneGeometry(0.22), washMat);
+    const land = createLandWatch();
     wash.renderOrder = 2; wash.frustumCulled = false; wash.visible = false;
     world.add(wash);
 
@@ -199,6 +201,7 @@ export default {
     return {
       frame(f) {
         const state = f.state;
+        if (land.poll()) refreshGroundPlane(wash.geometry, 0.22); // the terrain tools moved the ground
         const sig = state.districts.map((d) => d.slot + ':' + d.pal + ':' + d.style + ':' + d.name.length).join(',');
         let tilesChanged = false;
         for (let i = 0; i < AREA; i++) if (grid.district[i] !== lastTiles[i]) { tilesChanged = true; break; }
