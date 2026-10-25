@@ -78,3 +78,10 @@ test('words are written in --text, never straight in --ink, so dark paper can li
     assert.doesNotMatch(css, /(^|[;{\s])color:var\(--ink\)/, f);
   }
 });
+
+test('bright tiles that carry words keep dark writing on dark paper', () => {
+  const css = readFileSync(new URL('../css/theme-dark.css', import.meta.url), 'utf8');
+  const block = css.slice(css.indexOf('bright stickers that carry words'));
+  for (const sel of ['.kgroup>h3', '.ctrl .ib', '.nb-chip[aria-pressed="true"]', '.cl-kind', '.ps-btn']) assert.ok(block.includes(sel), sel);
+  assert.match(block, /\)\{color:var\(--on-bright\)\}/);
+});
