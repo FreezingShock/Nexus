@@ -64,9 +64,10 @@ export function sanitizeLand(raw) { return pairsFromEdits(editsFromPairs(raw)); 
 // corner-height units, for the price.
 //   raise / lower: push the ground up or down, most in the middle of the brush.
 //   flatten: pull the ground toward `level` (the height where the stroke started).
-export const TOOLS = ['raise', 'lower', 'flatten'];
+//   smooth: pull each corner toward the average of the eight around it, rounding off ridges, ramps and terrace edges.
+export const TOOLS = ['raise', 'lower', 'flatten', 'smooth'];
 export const BRUSH = { small: 3, medium: 6, large: 10 };
-export const RATE = { raise: 0.6, lower: 0.6, flatten: 0.7 };
+export const RATE = { raise: 0.6, lower: 0.6, flatten: 0.7, smooth: 0.8 };
 
 export function brush(edits, { tool, x, z, r = BRUSH.medium, level = 0, strength = 1 }, h, locked, low = () => LAND_LOW) {
   const moved = [];
@@ -84,12 +85,21 @@ export function brush(edits, { tool, x, z, r = BRUSH.medium, level = 0, strength
     let to = now;
     if (tool === 'raise') to = now + w;
     else if (tool === 'lower') to = now - w;
-    else to = now + (level - now) * Math.min(1, w * 1.4);
+    else if (tool === 'flatten') to = now + (level - now) * Math.min(1, w * 1.4);
+    else {
+      let sum = 0, n = 0;
+      for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+        if ((!di && !dj) || i + di < 0 || j + dj < 0 || i + di >= CN || j + dj >= CN) continue;
+        sum += h(cornerWorld(i + di), cornerWorld(j + dj)); n++;
+      }
+      to = now + (sum / n - now) * Math.min(1, w);
+    }
     // Stay inside the band, but never yank ground that already lies outside it (a high plateau stays put under Lower).
     if (to > now) to = Math.max(now, Math.min(LAND_TOP, to));
     else to = Math.min(now, Math.max(low(i, j), to));
     want.push([cornerIndex(i, j), to - now]);
   }
+  // Applied after every corner is read, so Smooth sees the ground as it was before this dab.
   for (const [k, dh] of want) {
     const v = Math.round((edits[k] + dh) / STEP) * STEP;
     const change = Math.abs(v - edits[k]);
