@@ -174,3 +174,56 @@ test('roads survive save and load; bad road data is dropped; old saves get the s
 test('DIRS and opposite agree', () => {
   assert.deepEqual(DIRS.map((d) => d.join()), ['1,0', '0,1', '-1,0', '0,-1']);
 });
+
+test('roadRun follows a street between junctions; a junction is a run of one', async () => {
+  const { roadRun } = await import('../src/world/roadnet.js');
+  const roads = {};
+  const put = (x, z) => { roads[key(x, z)] = { t: 'two', p: 0 }; };
+  for (let x = 10; x <= 16; x++) put(x, 10);            // a street east-west
+  put(13, 11); put(13, 12); put(14, 12);                // a side street off its middle, with a corner
+  const k = (t) => t.join(',');
+  assert.deepEqual(roadRun(roads, [11, 10]).map(k), ['10,10', '11,10', '12,10']);
+  assert.deepEqual(roadRun(roads, [13, 10]).map(k), ['13,10'], 'the tee on its own');
+  assert.deepEqual(roadRun(roads, [13, 12]).map(k).sort(), ['13,11', '13,12', '14,12'], 'round the corner, up to the tee');
+  assert.deepEqual(roadRun(roads, [40, 40]), [], 'no road, no run');
+});
+
+test('replaceRoad retypes a street for the difference, flips a one-way, and undoes', async () => {
+  const { ROAD_TYPES } = await import('../src/sim/catalog.js');
+  const cost = (id) => ROAD_TYPES.find((r) => r.id === id).cost;
+  const sim = createSim({ layout });
+  const { state } = sim;
+  state.coins = 5000; state.parts = 5000;
+  sim.dispatch({ type: 'unlockRoad', roadType: 'one' });
+  sim.dispatch({ type: 'unlockRoad', roadType: 'bike' });
+  sim.dispatch({ type: 'drawRoad', roadType: 'two', path: stroke(4) });
+  const before = state.coins;
+  sim.dispatch({ type: 'replaceRoad', roadType: 'bike', path: stroke(4) });
+  assert.equal(state.coins, before - 4 * Math.max(0, cost('bike') - cost('two')));
+  assert.equal(state.roads[key(free[0] + 2, free[1])].t, 'bike');
+  sim.dispatch({ type: 'replaceRoad', roadType: 'one', path: stroke(4) });
+  assert.equal(state.roads[key(free[0], free[1])].d, 0, 'one-way heads east, the way the run was given');
+  const coins = state.coins;
+  sim.dispatch({ type: 'replaceRoad', roadType: 'one', path: [...stroke(4)].reverse() });
+  assert.equal(state.roads[key(free[0], free[1])].d, 2, 'given backwards, it flips west');
+  assert.equal(state.coins, coins, 'flipping is free');
+  sim.dispatch({ type: 'undoRoad' });
+  assert.equal(state.roads[key(free[0], free[1])].d, 0, 'undo flips it back');
+  // A run that steps off the road, or a locked type, changes nothing.
+  const snap = JSON.stringify(state.roads);
+  sim.dispatch({ type: 'replaceRoad', roadType: 'two', path: [...stroke(4), [free[0] + 4, free[1]]] });
+  sim.dispatch({ type: 'replaceRoad', roadType: 'free', path: stroke(4) });
+  assert.equal(JSON.stringify(state.roads), snap);
+});
+
+test('replaceRoad leaves the bridge and the tunnel road as they are', async () => {
+  const { starterProtected } = await import('../src/world/starter.js');
+  const sim = createSim({ layout });
+  const { state } = sim;
+  state.coins = 1e6;
+  const idx = [...starterProtected()][0], gx = idx % 96, gz = Math.floor(idx / 96);
+  const t = state.roads[idx].t;
+  sim.dispatch({ type: 'replaceRoad', roadType: 'bike', path: [[gx, gz]] });
+  assert.equal(state.roads[idx].t, t);
+  assert.equal(state.coins, 1e6);
+});

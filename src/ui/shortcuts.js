@@ -27,6 +27,7 @@ export const SHORTCUT_GROUPS = [
     { keys: ['Click'], text: 'Set the start, then click again to lay the road to the cursor' },
     { keys: ['Drag'], text: 'Press, drag and let go to lay a road in one go' },
     { keys: ['Tab'], text: 'Keep drawing: start the next road from the end of the last', file: 'src/ui/modules/road-tool.js', needle: "KEEP_KEY = 'Tab'" },
+    { keys: ['J'], text: 'Replace: click a street to change its type, or flip a one-way', file: 'src/ui/modules/road-tool.js', needle: "REPLACE_KEY = 'j'" },
     { keys: ['Space'], text: 'Add a pivot: bend the road at the cursor, then keep going', file: 'src/ui/modules/road-tool.js', needle: "const PIVOT_KEY = ' '" },
     { keys: ['L'], text: 'Flip the bend: the road picks the cleanest L by itself, L overrides it', file: 'src/ui/modules/road-tool.js', needle: "FLIP_KEY = 'l'" },
     { keys: ['Shift'], text: 'Hold for a straight line', file: 'src/ui/modules/road-tool.js', needle: "e.key === 'Shift'" },

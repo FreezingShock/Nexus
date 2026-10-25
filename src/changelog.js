@@ -32,6 +32,9 @@ export const CHANGELOG = [
       { k: 'new', t: 'A Keep drawing switch (Tab) in the road menu, for when you do want each road to carry on from the last.', pr: 102 },
       { k: 'better', t: 'With no start picked, the ends of your streets glow softly as good places to carry on from.', pr: 102 },
       { k: 'better', t: 'Ctrl+Z while a road start is waiting just drops the start, instead of undoing your last road.', pr: 102 },
+      { k: 'new', t: 'Replace in the road menu (J): click a street to change it to the chosen road type, paying only the difference.' },
+      { k: 'new', t: 'Replace a one-way street with one-way again to flip which way it runs, for free.' },
+      { k: 'better', t: 'The road cost label also shows the length in metres and how many junctions the new road makes.' },
     ],
   },
   {
