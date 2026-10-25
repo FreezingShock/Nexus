@@ -36,7 +36,10 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
   buildTerrain(world);
   buildStatic(world, layout);
   // Dust puffs come from the puffs system, which is created below: look it up when a building pops, not here.
-  const town = createTown(world, { burst: (x, z, r, n) => byId.get('puffs')?.burst(x, z, r, n) });
+  const town = createTown(world, {
+    burst: (x, z, r, n) => byId.get('puffs')?.burst(x, z, r, n),
+    scaffold: (m, box, onReveal) => byId.get('scaffold')?.raise(m, box, onReveal) ?? null,
+  });
   const sysDefs = registryOf('render systems', renderSystems).list();
   const mods = sysDefs.map((d) => d.create({ THREE, world, layout, grid, camera, scene, town, sys: (id) => byId.get(id) || null }) || {});
   const byId = new Map(sysDefs.map((d, i) => [d.id, mods[i]]));
