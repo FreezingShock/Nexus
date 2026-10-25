@@ -32,6 +32,7 @@ export const ROWS = [
   { id: 'changes', label: 'Changes', sub: 'every version, in colour', c: '#F2D27A' },
   { id: 'credits', label: 'Credits', sub: 'who made this and with what', c: '#F0C4B6' },
   { id: 'profile', label: 'Mayor profile', sub: 'your name, rank and badges', c: '#E9C1B8', gap: true, needsReady: true },
+  { id: 'pass', label: 'Passes', sub: 'Lantern Pass and Town Charter', c: '#F2D27A', tag: 'Soon' },
   { id: 'settings', label: 'Settings', sub: 'graphics and sound', c: '#DCE8EC', gap: true, needsReady: true },
   { id: 'new', label: 'New town', sub: 'start over, keeping a backup', c: '#E9DCC4', needsReady: true },
 ];
@@ -42,6 +43,7 @@ export const PAGES = {
   changes: { title: 'Changes', sub: 'Every version of Nexus, newest first', c: '#E6BC62' },
   credits: { title: 'Credits', sub: 'Who made Nexus, and with what', c: '#E3A08E' },
   profile: { title: 'Mayor profile', sub: 'Your name, rank, personal bests and badges', c: '#E3A08E' },
+  pass: { title: 'Passes', sub: 'A someday way to say thank you. Nothing is sold yet.', c: '#E6BC62' },
   settings: { title: 'Settings', sub: 'Changes save straight away', c: '#8FB8D6' },
   new: { title: 'Start a new town?', sub: 'Your current town is kept as a backup', c: '#C9A27A', narrow: true },
 };
@@ -54,6 +56,18 @@ export const HOWTO_STEPS = [
   { icon: 'away', head: 'Come back later', text: 'Coins and Parts keep arriving while you are away, and a postcard tells you what happened.' },
 ];
 const KEYS = [['R', 'Roads'], ['Z', 'Zones'], ['B', 'Buildings'], ['C', 'Services'], ['P', 'Parks'], ['Y', 'Decor'], ['N', 'Districts'], ['X', 'Bulldoze'], ['M', 'Milestones'], ['K', 'Calendar'], ['O', 'Photo mode'], ['F', 'Fly']];
+
+// The two pass cards: placeholders only. No price, no payment, no account, no network; the button shows a note.
+export const PASSES = [
+  { id: 'lantern', name: 'Lantern Pass', icon: 'pass', color: '#E6BC62', title: 'Evenings in Nexus', cta: 'Light the lantern',
+    blurb: 'For mayors who love the town after dark.',
+    perks: [['Evening palettes', 'for walls, roofs and street lamps'], ['Lantern festivals', 'with floating lights over the river'], ['Six night emblems', 'for your mayor picture'], ['Starry postcards', 'when you come back at night']],
+    note: 'The lanterns are still being folded. One day this may be a way to support Nexus. For now there is nothing to buy, and your town has everything it needs.' },
+  { id: 'charter', name: 'Town Charter', icon: 'charter', color: '#A8C179', title: 'A charter for your town', cta: 'Seal the charter',
+    blurb: 'For founders who want their town on paper.',
+    perks: [['A wax seal', 'on your mayor profile'], ['Founding day', 'celebrated every year in the calendar'], ['Gilded district flags', 'that catch the morning sun'], ['Your name', 'in the town hall foyer']],
+    note: 'The ink on the charter is still drying. Nothing is for sale. Go and enjoy your streets.' },
+];
 
 // The version badge colours, cycled down the changelog.
 const VERSION_COLORS = ['#B8472E', '#5F7A3E', '#C08A2E', '#35566A', '#97553E', '#7A5C86'];
@@ -73,7 +87,7 @@ export function createTitle({ onPlay, onNewTown }) {
   // ---- the rows
   list.innerHTML = ROWS.map((r) => `${r.gap ? '<hr class="tt-gap">' : ''}<button class="tt-row" id="tt-${r.id}" type="button" data-page="${r.id}" aria-haspopup="dialog"${r.needsReady ? ' disabled' : ''}>
       <span class="tt-ico" style="--c:${r.c}">${ICONS[r.id]}</span><span class="tt-rowtext"><b>${r.label}</b><small>${r.sub}</small></span>
-      </button>`).join('');
+      ${r.tag ? `<span class="tt-tag">${r.tag}</span>` : ''}</button>`).join('');
   const rowEl = (id) => $('tt-' + id);
   function markFresh() {
     if (!fresh.length || rowEl('changes').querySelector('.tt-badge')) return;
@@ -111,6 +125,17 @@ export function createTitle({ onPlay, onNewTown }) {
         <p class="tt-promise">Seasons, weather, saves and more wait in the town, under the menu.</p>`;
     },
     profile: () => profilePage(),
+    pass: () => `<div class="ps-grid">${PASSES.map((p, i) => `<article class="ps-card ps-${p.id}" style="--i:${i}">
+        <span class="ps-sky" aria-hidden="true"></span>
+        <header><span class="ps-chip">${ICONS[p.icon]}${p.name}</span><span class="ps-soon">coming someday</span></header>
+        <h3 class="h-disp">${p.title}</h3>
+        <p class="ps-blurb">${p.blurb}</p>
+        <ul>${p.perks.map(([b, rest]) => `<li><i aria-hidden="true">✓</i><span><b>${b}</b> ${rest}</span></li>`).join('')}</ul>
+        <div class="ps-price"><b>Not yet</b><small>nothing to buy, nothing to sign up for</small></div>
+        <button class="ps-btn" type="button" data-act="pass" data-v="${p.id}">${p.cta}</button>
+      </article>`).join('')}</div>
+      <aside class="ps-note" id="ps-note" data-mo="pop" hidden></aside>
+      <p class="tt-promise">These cards are placeholders. Nothing is sold, nothing is charged and nothing leaves your browser.</p>`,
     new: () => `<p>You begin again with the small starter village. Your current town moves to the backup slot, and Settings in the town can bring it back.</p>
         <div class="tt-row-btns"><button class="btn" type="button" data-act="cancel">Keep my town</button><button class="btn primary" type="button" data-act="new">Start fresh</button></div>`,
   };
@@ -213,6 +238,15 @@ export function createTitle({ onPlay, onNewTown }) {
     if (!b) return;
     if (b.dataset.act === 'cancel') return show(null);
     if (b.dataset.act === 'new') { b.disabled = true; onNewTown(); return; }
+    if (b.dataset.act === 'pass') {
+      const p = PASSES.find((x) => x.id === b.dataset.v), note = $('ps-note');
+      note.innerHTML = `<span class="ps-note-ico">${ICONS[p.icon]}</span><span><b class="h-disp">Not quite yet!</b>${p.note}</span><button class="tt-chip" type="button" data-act="pass-ok">Back to my town</button>`;
+      note.style.setProperty('--pc', p.color);
+      note.hidden = false;
+      sounds.open('pass');
+      return;
+    }
+    if (b.dataset.act === 'pass-ok') { $('ps-note').hidden = true; return; }
     const group = b.parentElement.dataset.k;
     if (group === 'filter') { filter = b.dataset.v; for (const c of b.parentElement.children) c.setAttribute('aria-pressed', String(c === b)); $('cl-list').innerHTML = changeList(); return; }
     if (group === 'emblem' || group === 'color') { stores.profile.set(group, b.dataset.v); const top = body.scrollTop; body.innerHTML = pages.profile(); body.scrollTop = top; return; }
