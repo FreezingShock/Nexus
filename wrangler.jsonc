@@ -1,0 +1,10 @@
+{
+  // Cloudflare Workers static assets: no worker script, just the files in dist/ (built by scripts/build-site.mjs).
+  // `npx wrangler deploy` reads this. See docs/DEPLOY.md.
+  "name": "nexus",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page"
+  }
+}

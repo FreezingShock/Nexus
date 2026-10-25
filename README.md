@@ -16,7 +16,7 @@ Test URLs: `?away=24000` forces an offline return of that many seconds; `?debug`
 
 ## Deploying
 
-The live site is Cloudflare Pages on playnexus.dev, built from `main` with `node scripts/build-site.mjs` into `dist`. Settings and the headers file are explained in [docs/DEPLOY.md](docs/DEPLOY.md).
+The live site is on Cloudflare at playnexus.dev, built from `main` with `node scripts/build-site.mjs` into `dist` and published with `npx wrangler deploy`. Settings and the headers file are explained in [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## Seeing the latest work (`integration`)
 
