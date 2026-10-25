@@ -37,6 +37,7 @@ export const CHANGELOG = [
       { k: 'better', t: 'Ctrl+Z while a road start is waiting just drops the start, instead of undoing your last road.', pr: 102 },
       { k: 'new', t: 'Replace in the road menu (J): click a street to change it to the chosen road type, paying only the difference.', pr: 103 },
       { k: 'better', t: 'The road cost label also shows the length in metres and how many junctions the new road makes.', pr: 103 },
+      { k: 'fix', t: 'Roads can pass the end of a side street or touch a street mid-way: that makes a junction now, not "Too close to another street".' },
     ],
   },
   {
