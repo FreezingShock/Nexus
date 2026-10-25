@@ -4,10 +4,11 @@
 import * as THREE from '../../vendor/three/three.module.min.js';
 import { makeParts, worldMatrix, addToBatch } from './buildings.js';
 import { describe } from '../world/models.js';
-import { Batch, disposeAll } from './geom.js';
+import { Batch } from './geom.js';
 import { lineMat } from './materials.js';
 import { nightWall } from './models/materials.js';
 import { createLandWatch } from './land-watch.js';
+import { createBuildingBatch } from './building-batch.js';
 import { GRID_N } from '../world/grid.js';
 
 const HULL = new THREE.MeshBasicMaterial({ color: 0x6DB6EC, side: THREE.BackSide });
@@ -67,10 +68,11 @@ function touches(r, tiles) {
 // hooks.scaffold(world, box, onReveal): scaffolding round a building the player upgraded (the scaffold system). The old
 // look stays inside it until onReveal, then the new level pops in. A null answer means no scaffolding: pop at once.
 export function createTown(root, hooks = {}) {
-  const group = new THREE.Group(); root.add(group);
+  // Placed buildings and grown lots share these meshes (render/building-batch.js); the lots system registers its own source.
+  const buildings = createBuildingBatch(root);
   const selGroup = new THREE.Group(); root.add(selGroup);
   const entries = new Map();
-  let built = [], removed = new Set(), night = false, popping = null, selected = null;
+  let removed = new Set(), night = false, popping = null, selected = null;
   let placedSig = '', wantPop = new Set(), wantSettle = new Set();
   const land = createLandWatch();
   let lifeRev = 0, lifeList = [], lifeSeen = -1; // for render/systems/life-*.js: what is standing, and a counter that moves when it changes
@@ -103,21 +105,21 @@ export function createTown(root, hooks = {}) {
   }
   function dropScaffold(e) { if (e.scaf) { e.scaf.cancel(); e.scaf = null; } }
 
-  function applyNight() {
-    for (const m of built) if (m.isMesh && nightWall(m.userData.day)) m.material = night ? nightWall(m.userData.day) : m.userData.day;
-  }
+  let excluded = null; // a building popping on its own (startPop) stays out of the merged meshes
+  buildings.source('town', () => {
+    // Each building is baked into world-space arrays once (and again only when its parts change), so a rebuild is a copy.
+    const out = [];
+    for (const e of entries.values()) {
+      if (removed.has(e.b.id) || e.b.id === excluded) continue;
+      if (!e.baked) { const one = new Batch(); addToBatch(one, e.parts, e.world, false); e.baked = one.bake(); }
+      out.push(e.baked);
+    }
+    return out;
+  });
   function rebuild(excludeId) {
     lifeRev++;
-    disposeAll(built, group);
-    // Each building is baked into world-space arrays once (and again only when its parts change), so a rebuild is a copy.
-    const batch = new Batch();
-    for (const e of entries.values()) {
-      if (removed.has(e.b.id) || e.b.id === excludeId) continue;
-      if (!e.baked) { const one = new Batch(); addToBatch(one, e.parts, e.world, false); e.baked = one.bake(); }
-      batch.addBaked(e.baked);
-    }
-    built = batch.build(group);
-    applyNight();
+    excluded = excludeId ?? null;
+    buildings.rebuild();
   }
 
   function clearHull() { selGroup.clear(); } // hull meshes share the parts' geometry: nothing to dispose
@@ -221,7 +223,7 @@ export function createTown(root, hooks = {}) {
       }
       if (popId) startPop(popId); else if (dirty) { endPop(); rebuild(); }
     },
-    setNight(on) { if (on === night) return; night = on; applyNight(); },
+    setNight(on) { if (on === night) return; night = on; buildings.setNight(on); },
     select: setHull,
     pop(id) { wantPop.add(id); setTimeout(() => wantPop.delete(id), 1500); },
     // Asks for the squash on a building that may not be drawn yet (a placement event arrives before the next frame's setState).
@@ -245,6 +247,7 @@ export function createTown(root, hooks = {}) {
       return null;
     },
     pick(raycaster) { const h = this.probe(raycaster); return h ? h.id : null; },
+    buildings, // the shared building meshes, for render/systems/lots.js
     hideSelection(v) { selGroup.visible = !v; },
     // The placed buildings now standing ({ b, parts, world } each; parts.sites says where life can happen) and a counter
     // that changes whenever the set or a building's look does. The list is rebuilt only when the counter moved.
