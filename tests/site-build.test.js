@@ -19,7 +19,7 @@ test('site build keeps everything the pages load and leaves out tests and toolin
     for (const f of ['index.html', 'kit.html', '404.html', '_headers', 'src/main.js', 'vendor/three/three.module.min.js']) {
       assert.ok(existsSync(join(out, f)), `${f} is in the build`);
     }
-    for (const f of ['tests', 'scripts', 'docs', 'package.json', '.git', '.github']) {
+    for (const f of ['tests', 'scripts', 'docs', 'package.json', 'wrangler.jsonc', '.git', '.github']) {
       assert.ok(!existsSync(join(out, f)), `${f} is not in the build`);
     }
     for (const page of ['index.html', 'kit.html']) {
