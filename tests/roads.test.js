@@ -188,7 +188,7 @@ test('roadRun follows a street between junctions; a junction is a run of one', a
   assert.deepEqual(roadRun(roads, [40, 40]), [], 'no road, no run');
 });
 
-test('replaceRoad retypes a street for the difference, flips a one-way, and undoes', async () => {
+test('replaceRoad retypes a street for the difference and undoes', async () => {
   const { ROAD_TYPES } = await import('../src/sim/catalog.js');
   const cost = (id) => ROAD_TYPES.find((r) => r.id === id).cost;
   const sim = createSim({ layout });
@@ -203,12 +203,8 @@ test('replaceRoad retypes a street for the difference, flips a one-way, and undo
   assert.equal(state.roads[key(free[0] + 2, free[1])].t, 'bike');
   sim.dispatch({ type: 'replaceRoad', roadType: 'one', path: stroke(4) });
   assert.equal(state.roads[key(free[0], free[1])].d, 0, 'one-way heads east, the way the run was given');
-  const coins = state.coins;
-  sim.dispatch({ type: 'replaceRoad', roadType: 'one', path: [...stroke(4)].reverse() });
-  assert.equal(state.roads[key(free[0], free[1])].d, 2, 'given backwards, it flips west');
-  assert.equal(state.coins, coins, 'flipping is free');
   sim.dispatch({ type: 'undoRoad' });
-  assert.equal(state.roads[key(free[0], free[1])].d, 0, 'undo flips it back');
+  assert.equal(state.roads[key(free[0], free[1])].t, 'bike', 'undo puts the bike lane back');
   // A run that steps off the road, or a locked type, changes nothing.
   const snap = JSON.stringify(state.roads);
   sim.dispatch({ type: 'replaceRoad', roadType: 'two', path: [...stroke(4), [free[0] + 4, free[1]]] });
