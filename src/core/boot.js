@@ -71,9 +71,30 @@ export function saveLine(source, savedAgo) {
 
 export const CREDITS = [
   { head: 'Made by', lines: ['nate (FreezingShock)'] },
-  { head: 'Drawn with', lines: ['Three.js (MIT licence)', 'Fraunces and Capriola (SIL Open Font Licence)'] },
+  { head: 'Drawn with', lines: ['Three.js (MIT licence)', 'Every building, tree and townsperson is made from code, no image files.'] },
+  { head: 'Lettering', lines: ['Fraunces and Capriola (SIL Open Font Licence)'] },
+  { head: 'Sound', lines: ['Every chime, bird and bell is made live in your browser with Web Audio.'] },
   { head: 'Promise', lines: ['Works offline. Nothing leaves your browser. No ads, no timers that punish you.'] },
 ];
+
+// The little tip at the foot of the title card: one a day, the same all day.
+export const TIPS = [
+  'Right-click cancels any tool.',
+  'Press F to fly low through your streets.',
+  'Parks and services make people happy, and happy towns earn more.',
+  'Your town keeps earning while you are away, up to a whole day.',
+  'Press O for photo mode and save a picture of your town.',
+  'Name your neighbourhoods with Districts on N.',
+  'Click any building to upgrade it.',
+  'Press K to open the calendar and skip to a holiday.',
+  'Milestones on M give generous rewards as your town grows.',
+  'Paint walls and roofs any colour you like.',
+];
+export function tipOfTheDay(date, tips = TIPS) {
+  const start = Date.UTC(date.getFullYear(), 0, 0);
+  const day = Math.floor((Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - start) / 86400000);
+  return tips[((day % tips.length) + tips.length) % tips.length];
+}
 
 // The cuts behind the title screen: a few camera shots of the player's own town, each a slow move (the photo mode's
 // cinematic moves) from one of its viewpoints, with a paper curtain hiding the cut. `at` shifts the shot from the

@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createProgress, chase, atLeast, saveLine, shotAt, TITLE_SHOTS, CURTAIN_SECS, WARM_STEPS, PLAY_STEPS, CREDITS } from '../src/core/boot.js';
-import { VERSION, CHANGES } from '../src/version.js';
+import { createProgress, chase, atLeast, saveLine, shotAt, TITLE_SHOTS, CURTAIN_SECS, WARM_STEPS, PLAY_STEPS, CREDITS, TIPS, tipOfTheDay } from '../src/core/boot.js';
+import { VERSION } from '../src/version.js';
+import { CHANGELOG } from '../src/changelog.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (f) => readFileSync(join(ROOT, f), 'utf8');
@@ -12,8 +13,8 @@ const read = (f) => readFileSync(join(ROOT, f), 'utf8');
 test('the version is written once and package.json agrees', () => {
   assert.match(VERSION, /^\d+\.\d+\.\d+$/);
   assert.equal(JSON.parse(read('package.json')).version, VERSION);
-  assert.equal(CHANGES[0].v, VERSION);
-  assert.ok(!/0\.9\.0/.test(read('src/ui/title.js')));
+  assert.equal(CHANGELOG[0].v, VERSION);
+  assert.ok(!read('src/ui/title.js').includes(VERSION), 'the title reads the version, it never writes it');
   assert.ok(read('index.html').includes('src/main.js?v=' + VERSION), 'the script URL carries the version, so a stale main.js is never reused');
 });
 
@@ -107,14 +108,24 @@ test('the title camera cuts between several shots, hidden by the curtain, and re
   assert.ok(CURTAIN_SECS < Math.min(...TITLE_SHOTS.map((s) => s.secs)) / 2);
 });
 
-test('before Play every HUD piece is hidden, and the option panels open inside the card', () => {
+test('before Play every HUD piece is hidden, and the pages open as a centred sheet that flips open', () => {
   const css = read('css/title.css'), html = read('index.html');
   assert.match(css, /body\.booting #app>:not\(#stage\)[^{]*\.dlabel\{[^}]*visibility:hidden/);
-  assert.match(css, /\.tt-pane\{position:absolute;inset:0/);
+  assert.match(html, /id="tt-sheet" data-mo="flip"/);
+  assert.match(html, /id="tt-scrim" data-mo/);
+  assert.match(read('css/motion.css'), /\[data-mo="flip"\]\{[^}]*--mo-r:y /);
+  assert.match(css, /\.tt-sheet\{position:absolute;[^}]*left:50%;top:50%/);
+  assert.match(css, /\.tt-sheet\[hidden\]\{[^}]*translate:-50% -50%/, 'the closed sheet stays centred while it folds away');
   const card = html.slice(html.indexOf('class="tt-card'), html.indexOf('</footer>', html.indexOf('tt-cardfoot')));
-  assert.ok(card.includes('id="tt-pane"') && card.includes('id="tt-list"'));
-  assert.match(html, /id="tt-pane" data-mo/);
+  assert.ok(card.includes('id="tt-list"') && !card.includes('id="tt-sheet"'), 'the sheet is not inside the card');
   const js = read('src/ui/title.js');
   for (const name of ['howto', 'changes', 'credits', 'settings', 'new']) assert.ok(new RegExp('\\b' + name + ': \\(\\) =>').test(js), name);
   assert.match(read('src/main.js'), /title\.failed\('Something went wrong/);
+});
+
+test('a tip a day, the same all day and cycling through every tip', () => {
+  assert.equal(tipOfTheDay(new Date(2026, 9, 25, 1)), tipOfTheDay(new Date(2026, 9, 25, 23)));
+  const seen = new Set();
+  for (let d = 0; d < TIPS.length; d++) seen.add(tipOfTheDay(new Date(2026, 0, 1 + d)));
+  assert.equal(seen.size, TIPS.length);
 });
