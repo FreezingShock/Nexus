@@ -46,7 +46,7 @@
 :root[data-theme="dark"] .pf-ladder li.now{background:var(--dk-sel)}
 :root[data-theme="dark"] :is(.opt,.tile).locked{background:color-mix(in oklab,var(--ink) 35%,var(--paper))}
 :root[data-theme="dark"] .tool[aria-pressed="true"] .ico{background:var(--dk-sticker)}
-:root[data-theme="dark"] :is(#roadlabel,#placelabel,#decorlabel).bad,
+:root[data-theme="dark"] :is(#roadlabel,#placelabel,#decorlabel,#landlabel).bad,
 :root[data-theme="dark"] .tile.short .price,
 :root[data-theme="dark"] .tile.erase .pic{background:var(--dk-bad)}
 :root[data-theme="dark"] .ztag.bad{background-color:var(--dk-bad);color:#F4BBA7}
@@ -99,3 +99,15 @@
 :root[data-theme="dark"] .cr-card:nth-child(3n){background:linear-gradient(160deg,color-mix(in oklab,#8FB8D6 18%,var(--paper)),var(--paper))}
 :root[data-theme="dark"] .pf-name::placeholder{color:rgb(243 234 215 / .4)}
 :root[data-theme="dark"] .tt-curtain{background:radial-gradient(ellipse at 50% 50%,#2B3638,#161D1E)}
+
+/* ---- bright stickers that carry words ----
+   A few small tiles keep their bright colours on dark paper (the speed button, a pressed chip, the Shortcuts group
+   labels, the changelog counts...). Cream writing would vanish on them, so they keep dark ink writing. Add a new one
+   here when a bright tile gets words; tests/theme.test.js checks the list is still here. */
+:root[data-theme="dark"]{--on-bright:#2B2620}
+:root[data-theme="dark"] :is(
+  .kgroup>h3, .ctrl .ib, .ib[aria-pressed="true"], .ib:active, .nb-chip[aria-pressed="true"],
+  .cl-counts i, .cl-fresh, .cl-kind, .tt-ver:hover, .ps-chip, .ps-btn, .ps-card li i,
+  .glist li.full .gl-check, .bt-steps li[data-s="done"], .pf-medal, .pf-ladder li.past span,
+  .ph-bar #ph-cine[aria-pressed="true"], .badge, .tool .ico, .mi-ico, .tt-ico, .nb-ico, .ag-gico
+){color:var(--on-bright)}
