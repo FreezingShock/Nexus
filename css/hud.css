@@ -20,7 +20,7 @@
 .chip .badge{width:40px;height:40px}
 .chip .badge svg{width:24px;height:24px}
 .chip.res{width:184px}
-.chip.demand{width:232px;height:var(--plaque-h)}
+.chip.demand{width:auto;flex:none;height:var(--plaque-h)}
 .hpwrap{position:relative;flex:0 1 230px;min-width:0}
 .chip.hp{width:100%;cursor:pointer}
 .chip .cval{min-width:0;flex:1 1 auto;display:block}
@@ -41,7 +41,6 @@
   .chips{flex-wrap:nowrap}
   .chip.res{flex-basis:184px;min-width:172px}
   .hpwrap{min-width:218px}
-  .chip.demand{flex-basis:232px;min-width:216px}
 }
 
 /* the town plaque: badge, name and a small line about the town. A click opens the My town page (town-page.css). */

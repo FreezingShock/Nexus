@@ -31,6 +31,7 @@ export const CHANGELOG = [
       { k: 'look', t: 'Contour lines trace the shape of the land while the Terrain tool is in hand.', pr: 123 },
       { k: 'better', t: 'Roads climb hills: only real cliffs say too steep. On a steep slope the road cuts into the hill or builds an embankment to keep a gentle climb, and the label shows the earthworks.' },
       { k: 'better', t: 'The "Tip 1 of 5" notes in the corner are gone, so nothing sits over the population counter any more.' },
+      { k: 'look', t: 'The Demand plaque is tidier: just the chart badge and the R, C and I columns, with the "wanted" arrows tucked inside it. Hover for the words.' },
     ],
   },
   {

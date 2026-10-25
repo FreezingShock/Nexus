@@ -133,7 +133,9 @@ test('the demand widget sits in the top HUD row, and the zoning module fills its
   assert.match(zoning, /\[1, 2, 3\]\.map/);
   assert.match(zoning, /class="dcol"/, 'three columns that fill from the bottom');
   assert.match(read('css/menus.css'), /\.dtrack u\{[^}]*bottom:0/);
-  assert.match(chips, /id="dwant"/, 'one line says what the town wants most');
+  const plaque = chips.slice(chips.indexOf('id="demandw"'), chips.indexOf('id="demandpop"'));
+  assert.doesNotMatch(plaque, /dwant|<small>Demand/, 'just the chart badge and the three columns, no title or word');
+  assert.match(read('css/menus.css'), /\.dcol\{[^}]*padding-top:9px/, 'room above each column keeps the arrow inside the plaque');
   assert.match(read('css/menus.css'), /\.chip\.demand/);
   assert.doesNotMatch(read('css/menus.css'), /\.demandw/);
 });
