@@ -37,6 +37,7 @@ export const CHANGELOG = [
       { k: 'better', t: 'Ctrl+Z while a road start is waiting just drops the start, instead of undoing your last road.', pr: 102 },
       { k: 'new', t: 'Replace in the road menu (J): click a street to change it to the chosen road type, paying only the difference.', pr: 103 },
       { k: 'better', t: 'The road cost label also shows the length in metres and how many junctions the new road makes.', pr: 103 },
+      { k: 'look', t: 'Upgrading a building puts up wooden scaffolding with a little pennant and puffs of work dust, then it comes down as the new level pops in.' },
       { k: 'look', t: 'A bigger Population counter: a "+1" and a little person hop off it each time someone moves in.', pr: 105 },
       { k: 'look', t: 'The Population panel has a ruled graph with a key, and its facts sit in small coloured tiles.', pr: 105 },
       { k: 'better', t: 'The corner hint is now one line, "/ for shortcuts". Press / or click it to see every key.', pr: 105 },

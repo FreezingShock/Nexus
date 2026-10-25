@@ -13,6 +13,7 @@ import lots from './lots.js';
 import placementGhost from './placement-ghost.js';
 import puffs from './puffs.js';
 import roads from './roads.js';
+import scaffold from './scaffold.js';
 import servicesOverlay from './services-overlay.js';
 import sky from './sky.js';
 import tileview from './tileview.js';
@@ -33,6 +34,7 @@ export const renderSystems = [
   placementGhost,
   puffs,
   roads,
+  scaffold,
   servicesOverlay,
   sky,
   tileview,
