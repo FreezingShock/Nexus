@@ -55,3 +55,10 @@
 .kfoot .btn{flex:none}
 
 @media (max-width:900px){.pg-cols,.pg-grid3,.pg-sky .gfx,.pg-gfx .gfx{grid-template-columns:1fr}.pg-gfx .gfx-switches{grid-template-columns:1fr}}
+
+/* Settings > Graphics: the Paper row (src/ui/theme-settings.js), each choice with a little swatch of its paper */
+.pg-paper{margin-bottom:14px}
+.pg-paper .gfx-opt{display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.pp-sw{flex:none;width:18px;height:18px;border:2px solid var(--ink);border-radius:50%;background:#FBF6EA}
+.pp-dark{background:#2B3638}
+.pp-auto{background:linear-gradient(135deg,#FBF6EA 50%,#2B3638 50%)}

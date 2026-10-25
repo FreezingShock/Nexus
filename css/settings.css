@@ -41,7 +41,7 @@
 /* segmented buttons and toggles inside settings */
 .nb-sheet .gfx-opt{box-shadow:0 2px 0 var(--ink);background:var(--paper)}
 /* chosen = the same strong look as a chosen tile: peach fill, terracotta outline and ring, dark text */
-.nb-sheet .gfx-opt[aria-pressed="true"]{background:#F9DFC9;color:var(--ink);border-color:var(--action);box-shadow:0 3px 0 var(--action),0 0 0 2px var(--action);transform:none}
+.nb-sheet .gfx-opt[aria-pressed="true"]{background:#F9DFC9;color:var(--text);border-color:var(--action);box-shadow:0 3px 0 var(--action),0 0 0 2px var(--action);transform:none}
 .nb-sheet .gfx-opt:disabled{opacity:.45}
 .nb-sheet .gfx-presets{grid-template-columns:repeat(4,1fr)}
 .nb-sheet .gfx-sw{background:var(--paper);box-shadow:0 2px 0 var(--ink)}

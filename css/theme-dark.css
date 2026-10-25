@@ -1,0 +1,101 @@
+/* Dark paper: the UI's evening look (Settings > Graphics, or the title's Settings page; src/core/theme.js sets
+   data-theme on <html>). Only the paper changes: the town, its sky and its night are drawn the same either way.
+   Slate paper, cream writing, mint actions. Outlines and hard shadows stay a deep ink, so every plaque still looks
+   hand-cut. Little coloured icon wells and art tiles keep their bright colours, like stickers on dark paper; surfaces
+   that carry words are tinted down so cream writing reads on them. Loaded last, so it wins ties. */
+:root[data-theme="dark"]{
+  --paper:#2B3638; --paper-2:#344143; --paper-3:#3F4E4F;
+  --ink:#0E1314; --ink-soft:#BDB6A5; --text:#F3EAD7; --line:243 234 215;
+  --terra:#D38B6C; --action:#79C9A2; --action-hi:#97DCB9; --action-ink:#0F2A22;
+  --sage-d:#A9CC86; --sky-ink:#A8CBE0; --sky-soft:#30464F; --haze:#1C2425;
+  /* tints for words: a pressed choice, a quiet note, a warning */
+  --dk-sel:color-mix(in oklab,var(--action) 24%,var(--paper));
+  --dk-note:color-mix(in oklab,#E6BC62 20%,var(--paper));
+  --dk-good:color-mix(in oklab,#A8C179 22%,var(--paper));
+  --dk-bad:color-mix(in oklab,#E3A08E 26%,var(--paper));
+  --dk-wash:rgb(243 234 215 / .07);
+  --dk-sticker:#F3EAD7;
+  color-scheme:dark;
+}
+
+/* Things that are paper objects in the world keep cream paper: the offline envelope and postcard. */
+:root[data-theme="dark"] .mail{
+  --paper:#FBF6EA; --paper-2:#F3E7D0; --paper-3:#E9D6B2;
+  --ink:#2B2620; --ink-soft:#5A4D3F; --text:#2B2620; --line:43 38 32;
+  --terra:#97553E; --action:#B8472E; --action-hi:#D2603F; --action-ink:#FFF8EE;
+  --sage-d:#5F7A3E; --sky-ink:#35566A; --sky-soft:#DCE8EC; --haze:#D7E2E4;
+  color:var(--text);
+}
+
+/* ---- shared pieces ---- */
+:root[data-theme="dark"] .btn.primary{text-shadow:0 1px 0 rgba(255,255,255,.25);background-image:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,0) 55%)}
+:root[data-theme="dark"] .btn.primary:disabled{background:#465354;color:#9AA4A1;text-shadow:none;box-shadow:0 4px 0 var(--ink)}
+:root[data-theme="dark"] .x svg path,
+:root[data-theme="dark"] .nb-back-ico svg path{stroke:var(--text)}
+:root[data-theme="dark"] .pg-band-ico,
+:root[data-theme="dark"] .nb-tab svg,
+:root[data-theme="dark"] .ht-ico,
+:root[data-theme="dark"] .near-ico,
+:root[data-theme="dark"] .stile[data-key="season"][data-value="auto"] .ico{background:var(--dk-sticker)}
+:root[data-theme="dark"] .meter{background:var(--paper-3)}
+:root[data-theme="dark"] :is(.opt,.tile,.btn,.st-card,.stile)[aria-pressed="true"],
+:root[data-theme="dark"] .nb-sheet .gfx-opt[aria-pressed="true"],
+:root[data-theme="dark"] .tool[aria-pressed="true"],
+:root[data-theme="dark"] .tp-ic[aria-pressed="true"],
+:root[data-theme="dark"] .pf-next,
+:root[data-theme="dark"] .pf-ladder li.now{background:var(--dk-sel)}
+:root[data-theme="dark"] :is(.opt,.tile).locked{background:color-mix(in oklab,var(--ink) 35%,var(--paper))}
+:root[data-theme="dark"] .tool[aria-pressed="true"] .ico{background:var(--dk-sticker)}
+:root[data-theme="dark"] :is(#roadlabel,#placelabel,#decorlabel).bad,
+:root[data-theme="dark"] .tile.short .price,
+:root[data-theme="dark"] .tile.erase .pic{background:var(--dk-bad)}
+:root[data-theme="dark"] .ztag.bad{background-color:var(--dk-bad);color:#F4BBA7}
+:root[data-theme="dark"] .gl-reward,
+:root[data-theme="dark"] .pt-go{background:var(--dk-note)}
+:root[data-theme="dark"] .ag.complete,
+:root[data-theme="dark"] .rc-rate{background:var(--dk-good)}
+:root[data-theme="dark"] :is(.dseg button,.dseg-erase)[aria-pressed="true"]{color:var(--action-ink)}
+:root[data-theme="dark"] .dname:focus,
+:root[data-theme="dark"] .pt-pic .pic-ph{background:var(--paper-3)}
+:root[data-theme="dark"] .pg-sky .sky-now{background:rgb(246 221 160 / .12);border-color:rgb(243 234 215 / .3)}
+:root[data-theme="dark"] .nb-promise{background:rgb(168 193 121 / .14)}
+
+/* ---- HUD and menus ---- */
+:root[data-theme="dark"] .chip.card{background-image:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,0) 60%),var(--grain);background-color:color-mix(in oklab,var(--tint,var(--paper)) 26%,var(--paper))}
+:root[data-theme="dark"] .brand.card{background-color:var(--paper-2)}
+:root[data-theme="dark"] .menugrid .mrow:hover,
+:root[data-theme="dark"] .menugrid .mrow:focus-visible{background:var(--dk-wash)}
+:root[data-theme="dark"] .townbadge,
+:root[data-theme="dark"] .tw-badge{box-shadow:0 2px 0 var(--ink),inset 0 0 0 4px rgba(255,255,255,.12)}
+:root[data-theme="dark"] .tw-mapwrap{box-shadow:inset 0 0 0 4px rgba(255,255,255,.05)}
+:root[data-theme="dark"] #hp-panel .hp-factors li{background:color-mix(in oklab,var(--c) 20%,var(--paper))}
+:root[data-theme="dark"] .datepanel .band[data-season],
+:root[data-theme="dark"] .dmo[data-season]{background-color:color-mix(in oklab,var(--sn,#DCE8EC) 24%,var(--paper))}
+:root[data-theme="dark"] :is(.datepanel .band,.dmo)[data-season="spring"]{--sn:#DCE8B8}
+:root[data-theme="dark"] :is(.datepanel .band,.dmo)[data-season="summer"]{--sn:#F3D894}
+:root[data-theme="dark"] :is(.datepanel .band,.dmo)[data-season="autumn"]{--sn:#EBBE98}
+:root[data-theme="dark"] :is(.datepanel .band,.dmo)[data-season="winter"]{--sn:#DCE8EC}
+
+/* ---- notebook pages ---- */
+:root[data-theme="dark"] .nb-sheet::after,
+:root[data-theme="dark"] .tt-card::after{background:radial-gradient(circle,rgba(0,0,0,.5) 2.4px,transparent 3px) 0 0/6px 26px repeat-y}
+:root[data-theme="dark"] .nb-tab{background:color-mix(in oklab,var(--tc) 34%,var(--paper))}
+:root[data-theme="dark"] .pg-band{background:color-mix(in oklab,var(--tc) 28%,var(--paper))}
+:root[data-theme="dark"] .nb-scrim{background:rgba(8,12,13,.5)}
+
+/* ---- title screen ---- */
+:root[data-theme="dark"] .tt-box{background:linear-gradient(160deg,var(--paper-3),var(--paper-2) 60%,var(--paper));box-shadow:inset 0 0 0 4px rgba(255,255,255,.05),0 3px 0 rgba(0,0,0,.3)}
+:root[data-theme="dark"] .tt-crest{background:radial-gradient(circle at 35% 30%,#FFF6DF,var(--mustard))}
+:root[data-theme="dark"] .tt-row:hover:not(:disabled),
+:root[data-theme="dark"] .tt-row:focus-visible,
+:root[data-theme="dark"] .cl-entry summary:hover{background-color:var(--dk-wash)}
+:root[data-theme="dark"] .tt-row[aria-expanded="true"]{background:rgb(168 193 121 / .2)}
+:root[data-theme="dark"] .tt-row.glow{background:rgb(121 201 162 / .18);box-shadow:inset 0 0 0 2px var(--action)}
+:root[data-theme="dark"] .tt-tip{background:rgb(143 184 214 / .12);border-color:rgb(168 203 224 / .35)}
+:root[data-theme="dark"] .ht-keys li,
+:root[data-theme="dark"] .pf-badge{background:var(--dk-wash)}
+:root[data-theme="dark"] .cr-card:nth-child(3n+1){background:linear-gradient(160deg,color-mix(in oklab,#E3A08E 18%,var(--paper)),var(--paper))}
+:root[data-theme="dark"] .cr-card:nth-child(3n+2){background:linear-gradient(160deg,color-mix(in oklab,#A8C179 18%,var(--paper)),var(--paper))}
+:root[data-theme="dark"] .cr-card:nth-child(3n){background:linear-gradient(160deg,color-mix(in oklab,#8FB8D6 18%,var(--paper)),var(--paper))}
+:root[data-theme="dark"] .pf-name::placeholder{color:rgb(243 234 215 / .4)}
+:root[data-theme="dark"] .tt-curtain{background:radial-gradient(ellipse at 50% 50%,#2B3638,#161D1E)}

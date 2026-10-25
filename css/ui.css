@@ -2,6 +2,9 @@
 :root{
   --paper:#FBF6EA; --paper-2:#F3E7D0; --paper-3:#E9D6B2;
   --ink:#2B2620; --ink-soft:#5A4D3F;
+  /* --text is what words are written in, --ink the outlines and hard shadows, --line (rgb) the dashed stitching.
+     They are one colour on cream paper and part ways on dark paper (css/theme-dark.css). */
+  --text:var(--ink); --line:43 38 32;
   --terra:#97553E; --action:#B8472E; --action-hi:#D2603F; --action-ink:#FFF8EE;
   --sage:#A8C179; --sage-d:#5F7A3E; --sky:#8FB8D6; --sky-soft:#DCE8EC; --sky-ink:#35566A;
   --mustard:#E6BC62; --coral:#E3A08E; --haze:#D7E2E4;
@@ -13,7 +16,7 @@
 }
 [hidden]:not([data-mo]){display:none!important}
 html,body{height:100%}
-body{margin:0;background:var(--haze);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.35;overflow:hidden;font-synthesis:none}
+body{margin:0;background:var(--haze);color:var(--text);font-family:var(--body);font-size:15px;line-height:1.35;overflow:hidden;font-synthesis:none}
 button{font:inherit;color:inherit;cursor:pointer}
 button:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
 #app{position:relative;height:100%;overflow:hidden}
@@ -22,7 +25,7 @@ button:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
 #stage canvas.drag{cursor:grabbing}
 
 .card{position:relative;background-color:var(--paper);background-image:var(--grain);border:2.5px solid var(--ink);border-radius:20px 24px 18px 22px;box-shadow:0 5px 0 var(--ink),0 16px 28px rgba(43,38,32,.22)}
-.card::before{content:"";position:absolute;inset:5px;border:1.5px dashed rgba(43,38,32,.3);border-radius:inherit;pointer-events:none}
+.card::before{content:"";position:absolute;inset:5px;border:1.5px dashed rgb(var(--line) / .3);border-radius:inherit;pointer-events:none}
 .h-disp{font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;margin:0;line-height:1.1}
 .sub{color:var(--ink-soft);font-size:14px;font-weight:600}
 
@@ -61,7 +64,7 @@ button:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
 .lvl i.on{background:var(--sage)}
 .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0 16px}
 .stat{padding:10px 10px 10px;border-radius:14px;background:var(--paper-2);border:2px solid var(--ink);font-size:13px;font-weight:700;color:var(--ink-soft)}
-.stat b{display:block;font-size:20px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;margin-top:2px}
+.stat b{display:block;font-size:20px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums;margin-top:2px}
 .stat.info{background:var(--sky-soft);color:var(--sky-ink)}
 
 /* flyout */
@@ -86,9 +89,9 @@ button:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
 .tool[aria-pressed="true"] .t{font-weight:800}
 /* The bottom-left key chip: one general line, "/ for shortcuts", that opens the shortcuts page. */
 .hint{position:absolute;left:var(--gutter);bottom:max(18px,env(safe-area-inset-bottom,0px));display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px 0 8px;border-radius:999px;font:700 13.5px var(--body);color:var(--ink-soft);cursor:pointer;transition:translate .12s}
-.hint:hover{translate:0 -2px;color:var(--ink)}
+.hint:hover{translate:0 -2px;color:var(--text)}
 .hint:active{translate:0 1px}
-.hint kbd{display:inline-grid;place-items:center;min-width:26px;height:24px;padding:0 6px;border:1.5px solid var(--ink);border-radius:7px;background:var(--paper-2);font:800 14px/1 var(--body);color:var(--ink);box-shadow:0 2px 0 var(--ink)}
+.hint kbd{display:inline-grid;place-items:center;min-width:26px;height:24px;padding:0 6px;border:1.5px solid var(--ink);border-radius:7px;background:var(--paper-2);font:800 14px/1 var(--body);color:var(--text);box-shadow:0 2px 0 var(--ink)}
 
 
 .toast{position:absolute;left:50%;top:calc(var(--hud-bottom,108px) + 12px);transform:translateX(-50%);padding:10px 20px;font-weight:800;font-size:15px}

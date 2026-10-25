@@ -20,20 +20,20 @@
 .envelope:hover .seal{transform:translate(-50%,-50%) rotate(-6deg) scale(1.07)}
 .mail[data-state="open"] .seal{opacity:0}
 .env-addr{position:absolute;left:8%;bottom:12%;width:44%;font-size:15px;color:var(--ink-soft)}
-.env-addr b{display:block;font:800 22px var(--display);font-variation-settings:"SOFT" 100,"WONK" 1;color:var(--ink);margin-bottom:4px}
+.env-addr b{display:block;font:800 22px var(--display);font-variation-settings:"SOFT" 100,"WONK" 1;color:var(--text);margin-bottom:4px}
 .env-addr i{display:block;height:2px;background:rgba(43,38,32,.35);margin:11px 0 9px}
 .env-addr span{font-size:13.5px}
 /* washi tape on the envelope's lower-left corner */
 .env-tape{position:absolute;left:-14px;bottom:18px;width:84px;height:24px;transform:rotate(-38deg);z-index:3}
 
-.tape{background:repeating-linear-gradient(90deg,rgba(230,188,98,.88) 0 9px,rgba(251,246,234,.7) 9px 14px);border:1.5px solid rgba(43,38,32,.28);box-shadow:0 2px 0 rgba(43,38,32,.18);clip-path:polygon(0 8%,4% 0,8% 8%,12% 0,16% 8%,20% 0,24% 8%,28% 0,32% 8%,36% 0,40% 8%,44% 0,48% 8%,52% 0,56% 8%,60% 0,64% 8%,68% 0,72% 8%,76% 0,80% 8%,84% 0,88% 8%,92% 0,96% 8%,100% 0,100% 100%,96% 92%,92% 100%,88% 92%,84% 100%,80% 92%,76% 100%,72% 92%,68% 100%,64% 92%,60% 100%,56% 92%,52% 100%,48% 92%,44% 100%,40% 92%,36% 100%,32% 92%,28% 100%,24% 92%,20% 100%,16% 92%,12% 100%,8% 92%,4% 100%,0 92%)}
+.tape{background:repeating-linear-gradient(90deg,rgba(230,188,98,.88) 0 9px,rgba(251,246,234,.7) 9px 14px);border:1.5px solid rgb(var(--line) / .28);box-shadow:0 2px 0 rgba(43,38,32,.18);clip-path:polygon(0 8%,4% 0,8% 8%,12% 0,16% 8%,20% 0,24% 8%,28% 0,32% 8%,36% 0,40% 8%,44% 0,48% 8%,52% 0,56% 8%,60% 0,64% 8%,68% 0,72% 8%,76% 0,80% 8%,84% 0,88% 8%,92% 0,96% 8%,100% 0,100% 100%,96% 92%,92% 100%,88% 92%,84% 100%,80% 92%,76% 100%,72% 92%,68% 100%,64% 92%,60% 100%,56% 92%,52% 100%,48% 92%,44% 100%,40% 92%,36% 100%,32% 92%,28% 100%,24% 92%,20% 100%,16% 92%,12% 100%,8% 92%,4% 100%,0 92%)}
 .tape.sage{background:repeating-linear-gradient(90deg,rgba(168,193,121,.9) 0 9px,rgba(251,246,234,.7) 9px 14px)}
 .tape.rose{background:repeating-linear-gradient(135deg,rgba(227,160,142,.9) 0 7px,rgba(251,246,234,.7) 7px 12px)}
 
 /* ---- stamp and postmark ---- */
 .stampw{position:absolute;right:6%;bottom:10%;z-index:3;transform:rotate(3deg);filter:drop-shadow(0 3px 0 rgba(43,38,32,.45))}
 .stamp{position:relative;width:112px;padding:9px;background:#FBF6EA;-webkit-mask:linear-gradient(#000 0 0) center/calc(100% - 16px) calc(100% - 16px) no-repeat,radial-gradient(circle at 8px 8px,#0000 5px,#000 5.5px) -8px -8px/16px 16px;mask:linear-gradient(#000 0 0) center/calc(100% - 16px) calc(100% - 16px) no-repeat,radial-gradient(circle at 8px 8px,#0000 5px,#000 5.5px) -8px -8px/16px 16px}
-.stamp canvas{display:block;width:100%;height:auto;border:1.5px solid rgba(43,38,32,.7);outline:3px solid #F3E7D0;outline-offset:-5px;aspect-ratio:7/8}
+.stamp canvas{display:block;width:100%;height:auto;border:1.5px solid rgb(var(--line) / .7);outline:3px solid #F3E7D0;outline-offset:-5px;aspect-ratio:7/8}
 .stamp span{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;letter-spacing:.12em;color:var(--ink-soft);margin-top:5px;padding:0 3px}
 .stamp span::after{content:"1";font:800 15px var(--display);letter-spacing:0;color:var(--action)}
 .pmark{position:absolute;width:96px;height:96px;left:-66px;bottom:-16px;transform:rotate(-14deg);opacity:.8;pointer-events:none;mix-blend-mode:multiply}
@@ -50,7 +50,7 @@
 
 /* ---- postcard ---- */
 .postcard{position:relative;width:100%;display:grid;grid-template-columns:1fr 1fr;background-color:#FBF6EA;background-image:var(--grain);border:2.5px solid var(--ink);border-radius:14px;box-shadow:0 8px 0 var(--ink),0 28px 48px rgba(0,0,0,.45);visibility:hidden;opacity:0;transform:translateY(70px) rotate(-3deg) scale(.88);transition:opacity .5s .6s,transform .7s .6s cubic-bezier(.2,.9,.3,1.15)}
-.postcard::before{content:"";position:absolute;inset:7px;border:1.5px dashed rgba(43,38,32,.28);border-radius:9px;pointer-events:none}
+.postcard::before{content:"";position:absolute;inset:7px;border:1.5px dashed rgb(var(--line) / .28);border-radius:9px;pointer-events:none}
 .mail[data-state="open"] .postcard{visibility:visible;opacity:1;transform:none}
 .pc-tape{position:absolute;right:-18px;top:14px;width:78px;height:24px;transform:rotate(38deg);z-index:4}
 .pc-photo{padding:30px 16px 26px 28px;display:flex;align-items:center}
@@ -59,13 +59,13 @@
 .photo .tape{position:absolute;width:70px;height:22px;z-index:2}
 .photo .tape.t1{left:-22px;top:-8px;transform:rotate(-34deg)}
 .photo .tape.t2{right:-22px;top:-8px;transform:rotate(34deg)}
-.photo canvas{display:block;width:100%;height:auto;aspect-ratio:4/3;background:var(--haze);border:1.5px solid rgba(43,38,32,.6);box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)}
+.photo canvas{display:block;width:100%;height:auto;aspect-ratio:4/3;background:var(--haze);border:1.5px solid rgb(var(--line) / .6);box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)}
 .photo figcaption{text-align:center;font:italic 700 18px var(--display);font-variation-settings:"SOFT" 100,"WONK" 1;margin-top:13px;color:var(--ink-soft);letter-spacing:.01em}
-.pc-text{padding:22px 24px 22px 22px;border-left:2px dashed rgba(43,38,32,.3);display:flex;flex-direction:column;gap:12px;position:relative}
+.pc-text{padding:22px 24px 22px 22px;border-left:2px dashed rgb(var(--line) / .3);display:flex;flex-direction:column;gap:12px;position:relative}
 .pc-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;min-height:128px}
 .pc-head h2{font-size:32px;margin:4px 0 0}
 .pc-head .stampw{position:relative;right:auto;bottom:auto;flex:0 0 auto;margin-right:4px}
-.pc-msg{margin:0;font-size:15.5px;line-height:1.55;background:repeating-linear-gradient(transparent 0 23px,rgba(43,38,32,.12) 23px 24px);color:var(--ink)}
+.pc-msg{margin:0;font-size:15.5px;line-height:1.55;background:repeating-linear-gradient(transparent 0 23px,rgba(43,38,32,.12) 23px 24px);color:var(--text)}
 .away{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;border-radius:14px;background:var(--paper-2);border:2.5px solid var(--ink);font-size:14px}
 .away b{font-size:19px;font-weight:400}
 .bars{display:flex;height:16px;border-radius:9px;overflow:hidden;border:2.5px solid var(--ink)}
@@ -77,4 +77,4 @@
 .gain small{font-size:13px;color:var(--ink-soft)}
 .gain .badge{width:40px;height:40px}
 .ps{margin:0;font-size:12.5px;color:var(--sky-ink)}
-@media (max-width:760px){.postcard{grid-template-columns:1fr}.pc-text{border-left:0;border-top:2px dashed rgba(43,38,32,.3)}.pc-photo{padding-bottom:6px}}
+@media (max-width:760px){.postcard{grid-template-columns:1fr}.pc-text{border-left:0;border-top:2px dashed rgb(var(--line) / .3)}.pc-photo{padding-bottom:6px}}
