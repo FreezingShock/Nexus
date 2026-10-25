@@ -4,6 +4,7 @@ import * as THREE from '../../../vendor/three/three.module.min.js';
 import { makeParts, worldMatrix } from '../buildings.js';
 import { toonVC, nightWall } from '../models/materials.js';
 import { Batch } from '../geom.js';
+import { createBuildingBatch } from '../building-batch.js';
 import { lineMat } from '../materials.js';
 import { addHull, placeHull, proxyFor, partsBox } from '../town.js';
 import { lotDescription, lotId, lotTileOf } from '../../world/lots.js';
@@ -16,13 +17,12 @@ const easeOutBack = (k) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.p
 
 export default {
   id: 'lots',
-  create({ world, grid, sys }) {
-    const group = new THREE.Group(); world.add(group);
+  create({ world, grid, sys, town }) {
+    const buildings = town?.buildings || createBuildingBatch(world); // own meshes only when run without a town
     const popRoot = new THREE.Group(); world.add(popRoot);
     const selGroup = new THREE.Group(); world.add(selGroup); // the selection outline, like town.js
     const cache = new Map();       // key -> { b, parts, world, edges, proxy }
     let current = new Map();       // tile -> key, as of the last state
-    let built = [];                // merged meshes now on screen
     let included = new Set();      // keys inside the merged meshes
     let pops = [];                 // { key, tile, group, t, grow }
     let selected = null;           // id of the lot with an outline
@@ -60,7 +60,7 @@ export default {
 
     // Same as buildings.js addToBatch (plain parts share the vertex-color material), with the ink edges cached. Each
     // building is baked into world-space arrays once, so a rebuild of the whole town is a copy, not a transform.
-    function addToBatch(batch, e) {
+    function bakedOf(e) {
       if (!e.baked) {
         const one = new Batch(), vc = toonVC();
         e.parts.forEach((p, k) => {
@@ -75,24 +75,23 @@ export default {
         });
         e.baked = one.bake();
       }
-      batch.addBaked(e.baked);
+      return e.baked;
     }
-    function applyNight() {
-      for (const mesh of built) if (mesh.isMesh && nightWall(mesh.userData.day)) mesh.material = night ? nightWall(mesh.userData.day) : mesh.userData.day;
-    }
+    // Grown lots draw into the same meshes as placed buildings (render/building-batch.js), as the 'lots' source.
+    let shownBaked = [];
+    buildings.source('lots', () => shownBaked);
     function rebuild() {
-      for (const o of built) { group.remove(o); o.geometry.dispose(); }
-      built = [];
-      const batch = new Batch(), keys = new Set();
+      const keys = new Set(), baked = [];
       const holding = new Set(pops.filter((p) => p.t < POP_S).map((p) => p.key));
       const shown = liveLots.map((l) => held.get(l[0])?.lot || l);
       for (const l of shown) {
         const e = entryFor(l);
         if (holding.has(e.key)) continue;
-        addToBatch(batch, e); keys.add(e.key);
+        baked.push(bakedOf(e)); keys.add(e.key);
       }
-      built = batch.build(group);
-      included = keys; applyNight();
+      shownBaked = baked;
+      buildings.rebuild();
+      included = keys;
       lifeList = shown.map(entryFor).filter((e) => keys.has(e.key)); lifeRev++;
       // settled pops are now inside the merged mesh: remove their stand-ins
       pops = pops.filter((p) => {
@@ -192,7 +191,7 @@ export default {
         if (selected) selGroup.scale.copy(lotPop ? lotPop.group.scale : UNIT); // the outline squashes with its building
         if (dirty && since > REBUILD_GAP_S) rebuild();
       },
-      setNight(on) { night = on; applyNight(); },
+      setNight(on) { night = on; buildings.setNight(on); },
       // Nearest grown lot under the ray as { id, d }, or null. Same shape as town.probe, so the scene can compare them.
       probe(raycaster) {
         const list = [];

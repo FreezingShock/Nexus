@@ -32,3 +32,17 @@ rebuild after a level-up or bulldoze is a copy, not a transform of every vertex.
 Measured in Node on the cloud desktop (2026-10-25, `--big`, 513 grown lots): the worst frame after a lot levels up
 went from about 440 to 1,800 ms to about 35 ms (p50). Placed-building rebuild in the starter town went from about 10 ms
 to about 1 ms.
+
+Placed buildings and grown lots share one set of merged meshes (`render/building-batch.js`): the town and the lots
+system each register a source of baked buildings, and either one's change re-merges both. They use the same wall and
+roof materials, so this draws each material once instead of once per owner, in both passes. In the `--big` stand-in it
+took the building calls from 27 (main) + 26 (shadow) to 18 + 17. The cost: a bulldoze or upgrade of a placed building
+now re-merges the grown lots too (about 20 to 30 ms in that town instead of about 1 ms), still a single frame.
+
+## Draw calls in the `--big` stand-in (with shadows)
+
+| step | calls |
+|---|---:|
+| start of the pass | ~154 |
+| one vehicle edge buffer, no trim shadows, 24-tile road chunks | ~131 |
+| shared building meshes | ~118 |
