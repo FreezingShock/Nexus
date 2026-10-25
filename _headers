@@ -1,9 +1,22 @@
-# Cloudflare Pages response headers (also fine for Netlify). Code is never fingerprinted, so it is left on the
-# host's default of revalidating on every load (a 304 when nothing changed). Only fonts are cached for a week.
+# Response headers for Cloudflare static assets (also fine for Netlify). Code is never fingerprinted, so the page, the
+# ES modules and the stylesheets say no-cache outright: the browser keeps a copy but asks every load (a 304 when nothing
+# changed), so a new index.html never runs beside an old module. Only fonts are cached for a week.
 /*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+/
+  Cache-Control: no-cache
+
+/index.html
+  Cache-Control: no-cache
+
+/src/*
+  Cache-Control: no-cache
+
+/css/*
+  Cache-Control: no-cache
 
 /vendor/fonts/*
   Cache-Control: public, max-age=604800
