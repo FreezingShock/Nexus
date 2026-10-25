@@ -58,6 +58,7 @@ export const CHANGELOG = [
       { k: 'better', t: 'Happiness shows a mood word and a face instead of a percentage, with four little steps for how cozy the town is.', pr: 109 },
       { k: 'new', t: 'The Happiness panel says how many homes are well served and what homes can reach on foot: services, parks, shops and landmarks.', pr: 109 },
       { k: 'look', t: 'Demand is three little columns that fill up, with one line saying what the town wants most and a tidier card.', pr: 109 },
+      { k: 'fix', t: 'Roads can pass the end of a side street or touch a street mid-way: that makes a junction now, not "Too close to another street".', pr: 108 },
     ],
   },
   {

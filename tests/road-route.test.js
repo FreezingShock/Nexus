@@ -83,6 +83,20 @@ test('streets touching side by side are still refused', () => {
   assert.ok(reasons(line([0, 11], [4, 11]), roads).includes('hug'));
 });
 
+test('passing the dead end of a side street makes a T, not a "too close" (nate, 2026-10-25)', () => {
+  // A street ending at x = 3 on row 12, and a stub coming down at x = 8 that stops on row 11, one tile above the route.
+  const roads = merge(row(12, 0, 3), col(8, 6, 11));
+  assert.deepEqual(reasons(line([3, 12], [10, 12]), roads), [], 'carrying on from the end, past the stub');
+  assert.deepEqual(reasons(line([4, 12], [10, 12]), roads), [], 'starting beside the end');
+  assert.deepEqual(reasons(line([0, 13], [6, 13]).concat([]), row(12, 3, 3)), [], 'a route may touch one tile of a street mid-way');
+});
+
+test('a short spur beside a street is refused only where it runs alongside', () => {
+  const roads = row(10, 0, 10);
+  assert.ok(reasons([[4, 11], [5, 11]], roads).includes('hug'), 'two tiles side by side with the street');
+  assert.deepEqual(reasons([[4, 11], [4, 12], [4, 13]], roads), [], 'one tile touching it is a T');
+});
+
 test('the auto-bend planner accepts a route one tile from a parallel street', () => {
   const roads = row(10, 0, 10);
   const r = chooseRoute({ points: [[0, 12], [6, 14]], roads, blockedBy: open });

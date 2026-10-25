@@ -22,7 +22,7 @@ A road is drawn as a chain of pivots: the committed start, any pivots added whil
 Every problem has a reason key in `BLOCK_TEXT`, shown on the reason chip and as the toast.
 - `revisit`: the route crosses itself.
 - `loop`: a route tile touches the route anywhere but its neighbors, or completes a 2 by 2 block of road.
-- `hug`: a new tile touches a street it does not join. Only the route's ends may touch the network, and a tile may touch the road it links to (a T or a crossing).
+- `hug`: the road would run side by side with a street: two new route tiles in a row both touch existing street on the same side. Touching a street at a single tile anywhere along the route is fine: it makes a T or a crossing, including passing the dead end of a side street.
 - `zigzag`: two turns with a single tile between them.
 - `long`: more than `MAX_STROKE` tiles.
 - Ground reasons from `roadBlock` (water, steep, farm, lot, park, building, bounds) are the same codes.
