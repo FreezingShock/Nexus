@@ -1,7 +1,7 @@
 // The Zones tool: pick a zone (or the eraser), drag a rectangle on the grid, release to paint.
 // Reads sim state, sends paintZone / clearZone, and drives the tileview render system for the grid and the preview.
 import { GRID_N, inBounds, worldToTile } from '../../world/grid.js';
-import { demandCard } from '../hud-detail.js';
+import { demandCard, demandWord, wantLine } from '../hud-detail.js';
 import { ZONE_DEFS } from '../../sim/zones.js';
 import { $, fmt } from '../format.js';
 import { zoneCard } from '../cards.js';
@@ -149,23 +149,25 @@ export default {
       },
     };
 
-    // The demand widget: one pill per zone, R, C and I, filled left to right in the zone colour, with the letter and the
-    // percentage on top. A hover card has the full names and what drives each one. The card text lives in hud-detail.js.
+    // The demand widget: three little columns, R, C and I, filled from the bottom in the zone colour, with the letter
+    // under each and a small arrow over a column the town really wants. The hover card (hud-detail.js) has the words.
     function paintDemand() {
       if (!demandEl) return;
       const d = sim.zoning.demand();
-      // Built once, then only the widths and numbers change, so a bar glides to its new length.
+      // Built once, then only the heights change, so a column glides to its new level.
       if (demandEl.children.length !== 3) {
         demandEl.innerHTML = [1, 2, 3].map((z) =>
-          `<div class="dpill" role="img"><u style="background:${ZONE_DEFS[z].paint}"></u>` +
-          `<span class="dk" style="background:${ZONE_DEFS[z].paint}">${ZONE_DEFS[z].name[0]}</span><em></em></div>`).join('');
+          `<div class="dcol" role="img"><span class="dtrack"><u style="background:${ZONE_DEFS[z].paint}"></u></span>` +
+          `<span class="dk" style="background:${ZONE_DEFS[z].paint}">${ZONE_DEFS[z].name[0]}</span></div>`).join('');
       }
       [1, 2, 3].forEach((z, i) => {
-        const pct = Math.round(d[z] * 100), pill = demandEl.children[i];
-        pill.setAttribute('aria-label', `${ZONE_DEFS[z].name} demand ${pct}%`);
-        pill.firstChild.style.width = pct + '%';
-        pill.lastChild.textContent = pct + '%';
+        const pct = Math.round(d[z] * 100), col = demandEl.children[i];
+        col.setAttribute('aria-label', `${ZONE_DEFS[z].name} demand: ${demandWord(pct)}`);
+        col.querySelector('u').style.height = pct + '%';
+        col.classList.toggle('hot', pct >= 70);
       });
+      const want = $('dwant');
+      if (want) { const t = wantLine(d); if (want.textContent !== t) want.textContent = t; }
       if (demandPop) {
         const card = demandCard(d, sim.zoning.stats(), [null, ZONE_DEFS[1].paint, ZONE_DEFS[2].paint, ZONE_DEFS[3].paint]);
         if (card !== lastCard) { lastCard = card; demandPop.innerHTML = card; }

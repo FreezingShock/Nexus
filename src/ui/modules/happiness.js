@@ -1,16 +1,12 @@
-// The Happiness plaque in the top bar. Hover shows how the city feels in a line; clicking it opens a digestible summary,
-// what helps, what pulls the streets down, and a few cozy tips. Each tip has a Show button that moves the camera to its
-// spot and sends a ripple there. Closes with a click on the plaque, Esc, a right-click, or a click anywhere else. Reads the sim; changes no state.
+// The Happiness plaque in the top bar: a face and a mood word, never a percentage. Hover shows how the town feels in a
+// line; clicking it opens a panel with how many homes are well served, what homes can reach on foot, and a few cozy
+// tips. Each tip has a Show button that moves the camera to its spot and sends a ripple there. Closes with a click on
+// the plaque, Esc, a right-click, or a click anywhere else. Reads the sim; changes no state.
 import { $ } from '../format.js';
 import { topRight } from '../slot.js';
 import { GRID_HALF, TILE } from '../../world/grid.js';
+import { faceSvg, hoverHtml, moodStep, panelHtml, pipsHtml } from '../happiness-view.js';
 
-const el = (tag, cls, text) => {
-  const n = document.createElement(tag);
-  if (cls) n.className = cls;
-  if (text != null) n.textContent = text;
-  return n;
-};
 const calmer = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 export default {
@@ -19,46 +15,22 @@ export default {
     const overlay = () => scene.sys('services-overlay');
     // The plaque, its hover card and the panel live in the top bar (index.html); this module fills them.
     const chip = $('hpchip'), panel = $('hp-panel'), pop = $('hppop'), wrap = $('hpwrap');
-    const pct = $('hppct'), fill = $('hpbar');
+    const mood = $('hpmood'), pips = $('hppips'), face = $('hpface');
     if (!chip || !panel) return {};
     let open = false, shown = '';
 
-    // The panel's content, drawn only when the advice changes (checked a few times a second).
+    // The panel's content (src/ui/happiness-view.js), drawn only when the advice changes (checked a few times a second).
+    let tips = [];
     function render(adv) {
       const key = JSON.stringify(adv);
       if (key === shown) return;
-      shown = key;
-      panel.replaceChildren();
-      panel.append(el('p', 'hp-level', adv.level.label), el('p', 'hp-summary', adv.summary));
-      section('Helping', adv.helping.length ? adv.helping : [{ text: 'Nothing yet. A clinic, a park or a shop lifts the homes around it.' }]);
-      section('Pulling down', adv.hurting.length ? adv.hurting : [{ text: adv.built ? 'Nothing is pulling the streets down.' : 'No homes yet.' }]);
-      const tips = el('section', 'hp-section');
-      tips.append(el('h4', null, 'Recommendations'));
-      if (!adv.tips.length) {
-        tips.append(el('p', 'hp-quiet', adv.built ? 'Every home is nicely covered. Enjoy the quiet.' : 'Tips appear once there are homes to look after.'));
-      } else {
-        const list = el('ol', 'hp-tips');
-        for (const t of adv.tips) {
-          const li = el('li');
-          const show = el('button', 'hp-show', 'Show');
-          show.type = 'button';
-          show.setAttribute('aria-label', 'Show ' + t.text);
-          show.addEventListener('click', () => showSpot(t));
-          li.append(el('span', null, t.text), show);
-          list.append(li);
-        }
-        tips.append(list);
-      }
-      panel.append(tips);
+      shown = key; tips = adv.tips;
+      panel.innerHTML = panelHtml(adv);
     }
-    function section(title, items) {
-      const s = el('section', 'hp-section');
-      s.append(el('h4', null, title));
-      const ul = el('ul', 'hp-list');
-      for (const it of items) ul.append(el('li', null, it.text));
-      s.append(ul);
-      panel.append(s);
-    }
+    panel.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-tip]');
+      if (b && tips[b.dataset.tip]) showSpot(tips[b.dataset.tip]);
+    });
 
     // Moves the camera to a tip's spot and sends a ripple there. The camera glides; with reduced motion it still moves, only the ripple is skipped.
     function showSpot(t) {
@@ -70,10 +42,7 @@ export default {
     // The hover card: the mood in a line, drawn while the pointer or focus is on the plaque.
     let hover = false, shownPop = '';
     function paintPop() {
-      const adv = sim.services.advice();
-      const html = adv.built
-        ? `<h3>${adv.level.label}</h3><p class="pc-lead">${adv.summary}</p><p class="pc-note">Click for what helps and what to try.</p>`
-        : '<h3>Happiness</h3><p class="pc-lead">It appears once there are homes. Shops, parks and clinics lift the homes around them.</p>';
+      const html = hoverHtml(sim.services.advice());
       if (html !== shownPop) { shownPop = html; pop.innerHTML = html; }
     }
     for (const t of ['pointerenter', 'focus']) chip.addEventListener(t, () => { hover = true; paintPop(); });
@@ -104,10 +73,13 @@ export default {
     // A click anywhere else closes it, so it never sits over the town.
     document.addEventListener('pointerdown', (e) => { if (open && !wrap.contains(e.target)) setOpen(false); });
 
+    // The plaque: a face and a mood word, and four pips for the step on the mood ladder. Never a percentage.
+    let lastStep = -1;
     const sync = () => {
-      const s = sim.services.summary(), p = Math.round(s.average * 100);
-      pct.textContent = s.built ? p + '%' : '—';
-      fill.style.width = s.built ? Math.max(4, p) + '%' : '0%';
+      const adv = sim.services.advice(), step = adv.built ? moodStep(adv.level.label) : 0;
+      const word = adv.built ? adv.level.label : 'Waiting for homes';
+      if (mood.textContent !== word) mood.textContent = word;
+      if (step !== lastStep) { lastStep = step; pips.innerHTML = pipsHtml(step); face.innerHTML = faceSvg(step); chip.dataset.step = String(step); }
     };
     sync();
     let acc = 0;

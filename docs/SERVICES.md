@@ -12,7 +12,7 @@ Services (clinic, school, fire station, police), parks (green, plaza, playground
 | Overlay | `src/render/systems/services-overlay.js` | One plane, one draw call: soft blue tint on covered tiles, warm haze on industry, stronger tint on the lot under the cursor, and a ripple that spreads after a placement. |
 | Hearts | `src/render/systems/happy-fx.js` | One Points object with a pool of 40 hearts and sparkles that rise from the homes a placement lifted. One draw call while anything is rising. |
 | Advice | `src/sim/happiness-advice.js` | Pure: the panel's level, what helps, what pulls down, and up to three tips with a spot. Words and thresholds in `ADVICE` in the config. |
-| Panel | `src/ui/modules/happiness.js` | The compact bar in the left column. Click it to open the panel. Show moves the camera to a tip and sends a ripple. Closes on a click, Esc or right-click. Styled in `css/happiness.css`. |
+| Panel | `src/ui/modules/happiness.js`, `src/ui/happiness-view.js` | The plaque in the top bar (face, mood word, four pips). Click it to open the panel. Show moves the camera to a tip and sends a ripple. Closes on a click, Esc or right-click. Styled in `css/happiness.css`. |
 | UI | `src/ui/modules/services.js` | Tooltips in the flyout, the coverage tint and haze while a tool is open, the celebration on placement, the Happiness card. |
 
 ## How the numbers work
@@ -28,12 +28,16 @@ Services (clinic, school, fire station, police), parks (green, plaza, playground
 
 ## The Happiness panel
 
-The bar in the left column shows the average. Clicking it opens the panel in place, so the Goals card below moves down rather than being covered. The panel holds:
+The plaque in the top bar shows a face, the level word and four pips for its step on the ladder. Never a percentage:
+happiness is about what each home can reach on foot. Clicking it opens the panel, which holds:
 
-- the level in cozy words (Cozy, Settled, Finding its feet, Just getting started), never a failure word;
-- what helps, counted per kind, with the homes each one reaches;
-- what pulls down: industry sites and homes with nothing nearby;
-- up to `ADVICE.tipsMax` tips. A tip needs at least `ADVICE.minHomes` homes in the same need, and points at their average spot. Show moves the camera there and sends a ripple.
+- the level in cozy words (Cozy, Settled, Finding its feet, Just getting started), never a failure word, and one sentence:
+  how many homes are well served (two or more kinds in reach) and how many have nothing nearby;
+- a strip of the homes: well served, one thing in reach, nothing yet (`advice.served`);
+- one row per kind (services, green space, shops, landmarks) with "X of Y homes" in reach (`advice.reached`), plus a dashed
+  row for workshops nearby (`advice.touched`) when there is industry;
+- up to `ADVICE.tipsMax` tips. A tip needs at least `ADVICE.minHomes` homes in the same need, and points at their average spot. Show moves the camera there and sends a ripple;
+- "How happiness works", folded: what lifts a home, that industry eases it but never below calm, and that roads do not change it.
 
 `sim.services.advice()` builds it from the homes and the per-kind coverage maps. It is cached until the placed list or zoning changes, so the panel's refresh costs almost nothing.
 
