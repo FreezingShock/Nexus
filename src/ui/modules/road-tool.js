@@ -24,7 +24,8 @@ export default {
   create({ sim, send, scene, toast, tool }) {
     const state = sim.state;
     const stage = scene.canvas.parentElement, canvas = scene.canvas;
-    // anchor: the last committed tile, where the next segment starts. pivots: corners added while drawing this segment.
+    // anchor: the start the player clicked for this road. pivots: corners added while drawing it. Laying a road clears
+    // both, so the next click picks a fresh start instead of chaining on from the end.
     let type = 'two', anchor = null, pivots = [], erase = null, hover = null, shift = false, flip = false, pointer = { x: 0, y: 0 };
     let lastKey = '', rev = 0, lastRoads = state.roads, previewLen = 0;
     const label = document.createElement('div');
@@ -135,7 +136,7 @@ export default {
     function cancel() { anchor = null; pivots = []; erase = null; refresh(true); }
 
     // ---- committing ----
-    // Commits one segment (one undo step). Returns false when the route is refused, true when the anchor may move.
+    // Commits one segment (one undo step). Returns false when the route is refused (the start stays), true when it is done.
     function commit(route) {
       const plan = evaluate(route);
       if (plan.problems.length) { toast(BLOCK_TEXT[plan.problems[0].reason]); return false; }
@@ -170,7 +171,7 @@ export default {
           anchor = t; pivots = []; refresh(true); return;
         }
         const route = routeFor([anchor, ...pivots, t]);
-        if (commit(route)) { anchor = route.path[route.path.length - 1]; pivots = []; }
+        if (commit(route)) { anchor = null; pivots = []; }
         refresh(true);
       } else if (erasing() && isRoad(t)) {
         claim(e); document.body.classList.add('no-select');
