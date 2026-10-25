@@ -73,6 +73,7 @@ export const CHANGELOG = [
       { k: 'new', t: 'The Happiness panel says how many homes are well served and what homes can reach on foot: services, parks, shops and landmarks.', pr: 109 },
       { k: 'look', t: 'Demand is three little columns that fill up, with one line saying what the town wants most and a tidier card.', pr: 109 },
       { k: 'fix', t: 'Roads can pass the end of a side street or touch a street mid-way: that makes a junction now, not "Too close to another street".', pr: 108 },
+      { k: 'better', t: 'Big towns no longer hitch when a building grows or levels up: the town redraws in a blink instead of up to a second.' },
       { k: 'fix', t: 'Drawing on hills lands where you point: roads, zones, buildings and decor no longer slip onto the tile behind a slope.' },
     ],
   },
