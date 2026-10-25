@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 // The static-hosting build (scripts/build-site.mjs, see docs/DEPLOY.md) copies the repo minus tests and tooling.
 // This checks that everything the page loads is still in the output, so a new top-level folder that the page
@@ -46,4 +47,27 @@ test('code is never reused from a stale cache, locally or on the live site', () 
     assert.match(headers, new RegExp('^' + path.replace(/[*/.]/g, '\\$&') + '\\n  Cache-Control: no-cache$', 'm'), path);
   }
   assert.match(headers, /^\/vendor\/fonts\/\*\n  Cache-Control: public, max-age=604800$/m, 'fonts may stay a week');
+});
+
+// The deploy build minifies src/ and css/ with esbuild (a dev dependency). Minified modules must still load and export the
+// same names, or the live site breaks while localhost (unminified) works.
+test('the minified build keeps every module loadable with the same exports', async (t) => {
+  try { await import('esbuild'); } catch { t.skip('esbuild is not installed (npm ci)'); return; }
+  const out = mkdtempSync(join(tmpdir(), 'nexus-site-'));
+  try {
+    execFileSync('node', [join(ROOT, 'scripts/build-site.mjs'), out], { stdio: 'pipe' });
+    const raw = readFileSync(join(ROOT, 'src/main.js'), 'utf8'), min = readFileSync(join(out, 'src/main.js'), 'utf8');
+    assert.ok(min.length < raw.length * 0.8, 'main.js is smaller');
+    assert.ok(!/^\s*\/\//m.test(readFileSync(join(out, 'src/render/geom.js'), 'utf8')), 'comments are gone');
+    assert.equal(readFileSync(join(out, 'vendor/three/three.module.min.js'), 'utf8').length,
+      readFileSync(join(ROOT, 'vendor/three/three.module.min.js'), 'utf8').length, 'vendor is copied as it is');
+    // Node-safe modules (no DOM at import time): the minified copy exports exactly what the source does.
+    writeFileSync(join(out, 'package.json'), '{"type":"module"}');
+    for (const f of ['src/sim/sim.js', 'src/sim/save.js', 'src/world/models.js', 'src/render/geom.js', 'src/changelog.js']) {
+      const a = await import(pathToFileURL(join(ROOT, f)).href), b = await import(pathToFileURL(join(out, f)).href);
+      assert.deepEqual(Object.keys(b).sort(), Object.keys(a).sort(), f);
+    }
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
 });
