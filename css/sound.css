@@ -13,3 +13,6 @@
 .snd-row input[type="range"]:disabled{opacity:.45}
 .snd-row input[type="range"]:disabled::-webkit-slider-thumb{background:var(--paper-3)}
 .snd-note{margin:0;font-size:13px}
+.snd-now{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px;color:var(--ink-soft)}
+.snd-now b{color:var(--ink);font-family:var(--display)}
+.snd-next{flex:none;min-height:34px;font-size:13px}

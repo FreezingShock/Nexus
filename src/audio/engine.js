@@ -2,17 +2,20 @@
 // audio files are fetched, so nothing leaves the page after load. Nothing is created until unlock() runs from a user
 // gesture (browsers block audio before one). Without Web Audio the engine does nothing, and the game carries on.
 import { BUSES, busGain } from './mix.js';
-import { LAYERS, LAYER_NAMES, moodFor } from './soundscape.js';
+import { LAYERS, LAYER_NAMES } from './soundscape.js';
+import { composeTune, gapAfter, hzOf, FIRST_TUNE_S, REGREET_S } from './composer.js';
+import { setNowPlaying, setMusicCommand } from './cuehub.js';
 
 const TICK_MS = 150;       // the scheduler wakes this often
 const LOOK_AHEAD = 0.35;   // seconds of music scheduled ahead of the clock
-const CHORD_S = 6.5;       // one chord every this many seconds
 const REVERB_S = 2.4;      // length of the generated room
-const PAD_LEVEL = 0.12;    // total loudness of a chord before the mood's padLevel
+const MUSIC_WET = 0.35;    // how much of the music goes to its room
+const MUSIC_TONE = 2600;   // the music's soft lowpass, so nothing in a tune is ever sharp
 // Cozy and low: each layer's trim sits well under 1, so the bed of sound stays under the music and the clicks.
-const TRIM = { murmur: 0.35, traffic: 0.3, water: 0.3, wind: 0.45, rain: 0.35, hush: 0.4, rustle: 0.2, birds: 0.7, owls: 0.8, crickets: 0.7, cicadas: 0.6 };
+const TRIM = { murmur: 0.35, traffic: 0.3, water: 0.3, wind: 0.45, rain: 0.35, hush: 0.4, rustle: 0.2, birds: 0.7, owls: 0.8, crickets: 0.7, cicadas: 0.6,
+  dogs: 0.7, cuckoo: 0.8, frogs: 0.7, thunder: 0.9, hearth: 0.5 };
 const WATER_CAP = 0.3;     // the river is never loud; distance decides how close it comes (attenuation.js)
-const MIN_GAP = { hover: 0.11, tick: 0.05, 'road-grow': 0.055, click: 0.04, select: 0.04, note: 2, arrive: 4, sparkle: 0.25 }; // seconds between repeats
+const MIN_GAP = { hover: 0.11, tick: 0.05, 'road-grow': 0.055, click: 0.04, select: 0.04, note: 2, arrive: 4, sparkle: 0.25, market: 8, festival: 8 }; // seconds between repeats
 const DRIFT_S = [6, 14];   // each layer wanders between these gaps, so the bed never settles into a loop
 const BIRD_PATTERNS = [[0, 0.09], [0, 0.09, 0.2], [0, 0.07, 0.14, 0.26], [0, 0.12]];
 
@@ -22,16 +25,21 @@ const pick = (xs) => xs[Math.floor(Math.random() * xs.length)];
 export function createEngine({ win = globalThis } = {}) {
   const AC = win.AudioContext || win.webkitAudioContext;
   const off = () => ({
-    unlock: () => false, apply() {}, setLevels() {}, setSources() {}, setNight() {}, cue() {}, setActive() {}, stop() {},
+    unlock: () => false, apply() {}, setLevels() {}, setSources() {}, setNight() {}, setMoment() {}, nextTune() {}, cue() {},
+    setActive() {}, stop() {}, get playing() { return null; },
     get ready() { return false; },
   });
   if (!AC) return off();
 
   let ctx = null, buses = null, reverb = null, noiseBuf = null, timer = null;
+  let musicIn = null, musicVerb = null;
   let settings = null, night = false, levels = {}, sources = { town: 1, river: 1 };
   const layerInput = {}, layerOut = {}, layerPlace = {}, drift = {};
   let nextDrift = 0;
-  let nextChord = 0, nextNote = 0, nextBird = 0, nextOwl = 0, nextLeaf = 0, chordIndex = 0;
+  let nextBird = 0, nextOwl = 0, nextLeaf = 0;
+  const nextAt = { dogs: 0, cuckoo: 0, frogs: 0, thunder: 0, hearth: 0 };
+  // The music: the tune playing (composer.js), when it began, the next event to schedule, and when the next tune starts.
+  let tune = null, tuneAt = 0, tuneIdx = 0, nextTuneAt = 0, moment = {}, momentNight = null;
   const lastCue = {};
 
   // ---- graph ----
@@ -47,6 +55,16 @@ export function createEngine({ win = globalThis } = {}) {
     reverb.buffer = room(c, REVERB_S);
     reverb.connect(buses.effects);
     noiseBuf = noise(c, 3);
+    // The music has a room of its own on the music bus, so the music slider moves its echo too.
+    musicIn = c.createGain();
+    const tone = c.createBiquadFilter();
+    tone.type = 'lowpass'; tone.frequency.value = MUSIC_TONE; tone.Q.value = 0.5;
+    musicIn.connect(tone); tone.connect(buses.music);
+    musicVerb = c.createConvolver();
+    musicVerb.buffer = room(c, REVERB_S + 0.8);
+    const wet = c.createGain();
+    wet.gain.value = MUSIC_WET;
+    tone.connect(wet); wet.connect(musicVerb); musicVerb.connect(buses.music);
     for (const name of LAYER_NAMES) buildLayer(name);
   }
 
@@ -72,7 +90,8 @@ export function createEngine({ win = globalThis } = {}) {
       case 'rustle': filtered(inp, 'bandpass', 3000, 1.2); break;
       case 'crickets': tone(inp, 4200, 0.035, { depth: 0.025, rate: 7.5 }); tone(inp, 4480, 0.02, { depth: 0.015, rate: 6.2 }); break;
       case 'cicadas': tone(inp, 5200, 0.02, { depth: 0.015, rate: 23 }); break;
-      default: break; // birds and owls are event-driven
+      case 'hearth': filtered(inp, 'lowpass', 240, 0.4, { depth: 60, rate: 0.3 }); break; // the fire's low breath; pops are scheduled
+      default: break; // birds, owls, dogs, cuckoo, frogs and thunder are event-driven
     }
   }
   function filtered(dest, type, freq, q, wob) {
@@ -222,6 +241,11 @@ export function createEngine({ win = globalThis } = {}) {
     sparkle: (t) => { blip(t, 2093, 0.14, 0.02, 'sine', 2349); blip(t + 0.07, 3135.96, 0.12, 0.014, 'sine'); },
     deny: (t) => blip(t, 220, 0.1, 0.03, 'sine', 180),
     dusk: (t) => bell(t, 329.63, 2.2, 0.16),
+    // A market morning: a handbell rung quickly in the square. A festival noon: a peal down the scale, twice.
+    market: (t) => { for (let i = 0; i < 8; i++) bell(t + i * 0.16, i % 2 ? 1174.66 : 1318.51, 0.5, 0.05, 0.4); },
+    festival: (t) => [1046.5, 987.77, 880, 783.99, 698.46, 659.25].forEach((f, i) => {
+      bell(t + i * 0.32, f, 2.2, 0.08); bell(t + 2.4 + i * 0.32, f, 2.2, 0.07);
+    }),
     dawn: (t) => { rooster(t); bell(t + 1.1, 659.25, 2.4, 0.14); },
   };
 
@@ -242,38 +266,160 @@ export function createEngine({ win = globalThis } = {}) {
     blip(t + 0.9, 360, 1.0, 0.04, 'sine', 340, d);
   }
   function leaf(t) { noiseBurst(t, 'bandpass', rand(3500, 5000), 0.03, 0.05, dest('rustle')); }
-
-  // ---- music ----
-  function scheduleChord(t) {
-    const mood = moodFor(night);
-    const chord = mood.chords[chordIndex++ % mood.chords.length];
-    const lp = ctx.createBiquadFilter();
-    lp.type = 'lowpass'; lp.frequency.value = 1100;
-    lp.connect(buses.music);
-    const peak = (PAD_LEVEL * mood.padLevel) / chord.length;
-    for (const f of chord) {
-      for (const [type, mul] of [['sine', 1], ['triangle', 1.004]]) {
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = type; o.frequency.value = f * mul;
-        g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(peak * (type === 'sine' ? 1 : 0.4), t + 1.8);
-        g.gain.setValueAtTime(peak * (type === 'sine' ? 1 : 0.4), t + CHORD_S);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + CHORD_S + 2.5);
-        o.connect(g); g.connect(lp);
-        o.start(t); o.stop(t + CHORD_S + 2.6);
-      }
+  // A dog a few gardens away: one to three short barks, each its own pitch drop.
+  function bark(t) {
+    const d = dest('dogs'), pitch = rand(0.8, 1.25), n = 1 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < n; i++) {
+      const at = t + i * rand(0.2, 0.3), c = ctx, o = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(520 * pitch, at);
+      o.frequency.exponentialRampToValueAtTime(300 * pitch, at + 0.09);
+      f.type = 'bandpass'; f.frequency.value = 1100 * pitch; f.Q.value = 1.6;
+      env(g, at, 0.05, 0.008, 0.1);
+      o.connect(f); f.connect(g); g.connect(d);
+      o.start(at); o.stop(at + 0.15);
+      noiseBurst(at, 'bandpass', 1500, 0.05, 0.015, d);
     }
   }
-  function scheduleNote(t) {
-    const mood = moodFor(night);
-    if (Math.random() > mood.noteChance) return;
-    const c = ctx, o = c.createOscillator(), g = c.createGain(), w = c.createGain();
-    o.type = 'sine';
-    o.frequency.value = pick(mood.scale);
-    env(g, t, 0.07, 0.01, night ? 2.8 : 2.0);
-    o.connect(g); g.connect(buses.music);
-    w.gain.value = 0.5; g.connect(w); w.connect(reverb);
-    o.start(t); o.stop(t + 3.2);
+  // A cuckoo in the trees: its two falling notes, two to four times.
+  function cuckoo(t) {
+    const d = dest('cuckoo'), f = rand(640, 760), n = 2 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < n; i++) {
+      blip(t + i * 0.8, f, 0.2, 0.03, 'sine', f * 0.98, d);
+      blip(t + i * 0.8 + 0.27, f * 0.8, 0.3, 0.026, 'sine', f * 0.79, d);
+    }
+  }
+  // Frogs by the water: a quick train of low pulses, now and then answered by a second frog.
+  function croak(t) {
+    const d = dest('frogs');
+    const voice = (at, f, k) => {
+      for (let i = 0; i < k; i++) {
+        const c = ctx, o = c.createOscillator(), bp = c.createBiquadFilter(), g = c.createGain(), s = at + i * 0.055;
+        o.type = 'square'; o.frequency.value = f;
+        bp.type = 'bandpass'; bp.frequency.value = f * 2.4; bp.Q.value = 2;
+        env(g, s, 0.03, 0.004, 0.035);
+        o.connect(bp); bp.connect(g); g.connect(d);
+        o.start(s); o.stop(s + 0.06);
+      }
+    };
+    voice(t, rand(170, 300), 2 + Math.floor(Math.random() * 4));
+    if (Math.random() < 0.35) voice(t + rand(0.4, 0.9), rand(260, 380), 2 + Math.floor(Math.random() * 2));
+  }
+  // Thunder far off: a slow, low roll, sometimes with a crack in front of it.
+  function thunder(t) {
+    const d = dest('thunder'), c = ctx, src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+    const len = rand(3, 5.5);
+    src.buffer = noiseBuf; src.loop = true;
+    f.type = 'lowpass'; f.Q.value = 0.7;
+    f.frequency.setValueAtTime(320, t);
+    f.frequency.exponentialRampToValueAtTime(55, t + len);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.16, t + rand(0.2, 0.6));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    src.connect(f); f.connect(g); g.connect(d);
+    src.start(t, Math.random() * 2); src.stop(t + len + 0.1);
+    if (Math.random() < 0.3) noiseBurst(t, 'lowpass', 1200, 0.35, 0.05, d);
+  }
+  // A fire in a hearth: tiny sparks over the low breath built in buildLayer.
+  function crackle(t) { noiseBurst(t, 'highpass', rand(1800, 4200), rand(0.006, 0.02), rand(0.01, 0.045), dest('hearth')); }
+  // How often each scheduled creature sounds at full level, in seconds (a quieter level spaces them out).
+  const EVERY = {
+    dogs: [[20, 55], bark], cuckoo: [[25, 60], cuckoo], frogs: [[1.2, 4.5], croak], thunder: [[30, 80], thunder],
+    hearth: [[0.08, 0.7], crackle],
+  };
+
+  // ---- music ----
+  // Each instrument plays one note: (t, hz, dur in seconds, peak). They all go into musicIn and the music's own room.
+  function partials(t, hz, dur, peak, parts, tau, type = 'sine', release = 0.15) {
+    const c = ctx;
+    for (const [ratio, amt, decayMul = 1] of parts) {
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = type; o.frequency.value = hz * ratio;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak * amt), t + 0.006);
+      g.gain.setTargetAtTime(0.0001, t + 0.006, tau * decayMul / 3);
+      g.gain.setTargetAtTime(0.0001, t + dur, release);
+      o.connect(g); g.connect(musicIn);
+      o.start(t); o.stop(t + Math.min(dur + release * 6, tau * decayMul + 0.2) + 0.05);
+    }
+  }
+  const VOICES = {
+    // A soft felt piano: a few partials that fade faster as they go up, and low notes that ring longer.
+    piano: (t, hz, dur, peak) => partials(t, hz, dur, peak, [[1, 1], [2, 0.35, 0.7], [3, 0.12, 0.5], [4.01, 0.05, 0.4]],
+      Math.min(3, Math.max(0.7, 2.4 * Math.sqrt(262 / hz))), 'sine', 0.25),
+    // A plucked harp or kalimba: bright for a moment, then a short warm tail.
+    harp: (t, hz, dur, peak) => partials(t, hz, dur, peak, [[1, 1], [2, 0.3, 0.5], [3, 0.08, 0.3]], 0.9, 'triangle', 0.3),
+    // A music box: a glassy bell, high and sparse, with a lot of room around it.
+    musicbox: (t, hz, dur, peak) => partials(t, hz, Math.max(dur, 0.8), peak, [[1, 1], [3.01, 0.22, 0.5], [5.43, 0.06, 0.3]], 1.6, 'sine', 0.6),
+    // A wooden flute: a gentle swell, a little vibrato once the note settles, and a breath of noise.
+    flute: (t, hz, dur, peak) => {
+      const c = ctx, o = c.createOscillator(), g = c.createGain(), vib = c.createOscillator(), vd = c.createGain();
+      o.type = 'sine'; o.frequency.value = hz;
+      vib.frequency.value = 5; vd.gain.setValueAtTime(0, t); vd.gain.linearRampToValueAtTime(hz * 0.004, t + 0.35);
+      vib.connect(vd); vd.connect(o.frequency);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(peak, t + 0.09);
+      g.gain.setValueAtTime(peak, t + Math.max(0.1, dur - 0.05));
+      g.gain.setTargetAtTime(0.0001, t + Math.max(0.1, dur - 0.05), 0.12);
+      o.connect(g); g.connect(musicIn);
+      o.start(t); vib.start(t); o.stop(t + dur + 0.8); vib.stop(t + dur + 0.8);
+      noiseBurst(t, 'bandpass', Math.min(6000, hz * 2), Math.min(0.12, dur), peak * 0.08, musicIn);
+    },
+    // A pad: a slow-swelling chord tone, sine and triangle a hair apart.
+    pad: (t, hz, dur, peak) => {
+      const c = ctx;
+      for (const [type, mul, amt] of [['sine', 1, 1], ['triangle', 1.004, 0.35]]) {
+        const o = c.createOscillator(), g = c.createGain();
+        o.type = type; o.frequency.value = hz * mul;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(peak * amt, t + Math.min(1.5, dur * 0.4));
+        g.gain.setValueAtTime(peak * amt, t + dur);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 2);
+        o.connect(g); g.connect(musicIn);
+        o.start(t); o.stop(t + dur + 2.1);
+      }
+    },
+    // A round upright bass: one plucked triangle with a short glow.
+    bass: (t, hz, dur, peak) => partials(t, hz, dur, peak, [[1, 1], [2, 0.18, 0.5]], 1.4, 'triangle', 0.2),
+  };
+  const PEAK = { piano: 0.075, harp: 0.045, musicbox: 0.05, flute: 0.05, pad: 0.03, bass: 0.07 };
+
+  function playEvent(ev, t, spb, level) {
+    const play = VOICES[ev.voice];
+    if (!play) return;
+    const each = (PEAK[ev.voice] * ev.vel * level) / Math.sqrt(ev.midi.length);
+    for (const m of ev.midi) play(t, hzOf(m), ev.dur * spb, each);
+  }
+
+  function beginTune(t) {
+    tune = composeTune(Math.floor(Math.random() * 2 ** 31), moment);
+    tuneAt = t + 0.1; tuneIdx = 0;
+    setNowPlaying(tune.title);
+  }
+  function endTune(t, gap = gapAfter()) {
+    tune = null;
+    nextTuneAt = t + gap;
+    setNowPlaying(null);
+  }
+  function music(t) {
+    if (!tune) {
+      if (t >= nextTuneAt) beginTune(t);
+      if (!tune) return;
+    }
+    const spb = 60 / tune.bpm;
+    while (tuneIdx < tune.events.length && tuneAt + tune.events[tuneIdx].at * spb <= t + LOOK_AHEAD) {
+      const ev = tune.events[tuneIdx++];
+      playEvent(ev, Math.max(t, tuneAt + ev.at * spb), spb, tune.level);
+    }
+    if (t >= tuneAt + tune.beats * spb) endTune(t);
+  }
+  // Skips to a fresh tune: the playing one fades out quickly and the next begins a moment later.
+  function skipTune() {
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    musicIn.gain.setTargetAtTime(0, t, 0.25);
+    musicIn.gain.setTargetAtTime(1, t + 1.4, 0.05);
+    endTune(t, 1.6);
   }
 
   // ---- scheduler ----
@@ -288,19 +434,21 @@ export function createEngine({ win = globalThis } = {}) {
     if (levels.birds > 0.05 && t >= nextBird) { chirp(t); nextBird = t + rand(4, 9) / Math.max(0.35, levels.birds); }
     if (levels.owls > 0.05 && t >= nextOwl) { hoot(t); nextOwl = t + rand(30, 60); }
     if (levels.rustle > 0.05 && t >= nextLeaf) { leaf(t); nextLeaf = t + rand(0.4, 1.6); }
-    while (t + LOOK_AHEAD >= nextChord) { scheduleChord(nextChord); nextChord += CHORD_S; }
-    while (t + LOOK_AHEAD >= nextNote) {
-      scheduleNote(nextNote);
-      const m = moodFor(night);
-      nextNote += rand(m.noteEvery[0], m.noteEvery[1]);
+    for (const [name, [[lo, hi], play]] of Object.entries(EVERY)) {
+      const lv = (levels[name] || 0) * (layerPlace[name] === 'sky' ? 1 : (sources[layerPlace[name]] ?? 1));
+      if (lv > 0.05 && t >= nextAt[name]) { play(t); nextAt[name] = t + rand(lo, hi) / Math.max(0.35, lv); }
+      else if (lv <= 0.05 && t >= nextAt[name]) nextAt[name] = t + rand(lo, hi) * 0.5; // first call comes a little after it starts
     }
+    music(t);
   }
 
   // Starts the scheduler once. A second unlock only resumes the context, so the music clock is never reset under playing chords.
   function start() {
     if (timer) return;
     const t = ctx.currentTime;
-    nextChord = t + 0.2; nextNote = t + 1.5; nextBird = t + 0.4; nextOwl = t + 8; nextLeaf = t + 0.5; nextDrift = t;
+    nextBird = t + 0.4; nextOwl = t + 8; nextLeaf = t + 0.5; nextDrift = t;
+    nextTuneAt = t + FIRST_TUNE_S;
+    setMusicCommand((cmd) => { if (cmd === 'next') skipTune(); });
     timer = setInterval(tick, TICK_MS);
   }
 
@@ -329,6 +477,18 @@ export function createEngine({ win = globalThis } = {}) {
     setLevels(l) { levels = { ...l }; refreshLayers(); },
     setSources(g) { sources = { ...sources, ...g }; refreshLayers(); },
     setNight(on) { night = !!on; },
+    // What the next tune is written for: { hour, night, season, weather, festival }. When day turns to night (or back)
+    // during a gap, the next tune comes sooner, to greet the change.
+    setMoment(m) {
+      moment = { ...m };
+      const n = !!m.night;
+      if (ctx && !tune && momentNight !== null && n !== momentNight) {
+        nextTuneAt = Math.min(nextTuneAt, ctx.currentTime + REGREET_S);
+      }
+      momentNight = n;
+    },
+    nextTune() { skipTune(); },
+    get playing() { return tune ? tune.title : null; },
     // Plays a named cue. Repeats come no faster than MIN_GAP allows, so fast hover, drag or a long road stays clean.
     cue(name, opts = {}) {
       if (!ctx || ctx.state !== 'running' || !CUES[name]) return;

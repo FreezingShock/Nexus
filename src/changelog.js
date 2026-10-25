@@ -16,6 +16,18 @@ export const KINDS = {
 
 export const CHANGELOG = [
   {
+    v: '0.11.0', date: '2026-10-25', name: 'Tunes on the breeze',
+    blurb: 'Little tunes now drift over the town, and the streets, gardens and river have more to say.',
+    items: [
+      { k: 'sound', t: 'New music: gentle tunes written on the spot for piano, harp, music box, flute and bass, with quiet stretches of town sound in between.' },
+      { k: 'sound', t: 'Each tune fits its moment: bright mornings, busy days, golden dusks and hushed nights, coloured by the season, slowed by rain and quickened on festival days.' },
+      { k: 'sound', t: 'The town has more voices: dogs in the gardens, a cuckoo in spring, frogs by the river on warm nights, far-off thunder in the rain and a crackling hearth on winter nights.' },
+      { k: 'sound', t: 'A handbell rings in the square on market mornings, and a peal of bells greets festival noons.' },
+      { k: 'sound', t: 'A little hamlet hums softly and a busy town hums fuller, and market days liven the streets.' },
+      { k: 'new', t: 'Settings, Sound shows the name of the tune playing, with a Next tune button.' },
+    ],
+  },
+  {
     v: '0.10.0', date: '2026-10-25', name: 'The welcome mat',
     blurb: 'The front door of Nexus got warmer, brighter and friendlier, with a proper welcome for brand-new mayors.',
     items: [
