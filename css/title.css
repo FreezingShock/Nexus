@@ -68,43 +68,8 @@ body.revealing #app>:not(#stage):not(#title):not(#boot):not(#offline){transition
 .tt-ver{padding:4px 10px;border:2px solid var(--ink);border-radius:10px;background:var(--paper-2);color:var(--ink);font-weight:800;letter-spacing:.04em;font-variant-numeric:tabular-nums;font-size:12.5px;box-shadow:0 2px 0 var(--ink)}
 .tt-ver:hover{background:var(--mustard)}
 
-/* ---- the pages: a big notebook sheet in the middle, over a soft scrim. It flips open from its left spine. ---- */
+/* The pages themselves are the shared notebook sheet (css/notebook.css). What follows is each page's own content. */
 .title{perspective:1800px}
-.tt-scrim{position:absolute;inset:0;z-index:3;background:rgba(43,38,32,.32);backdrop-filter:blur(2px)}
-.tt-sheet{position:absolute;z-index:4;left:50%;top:50%;width:min(940px,calc(100vw - 40px));height:min(720px,calc(100vh - 40px));margin:0;translate:-50% -50%;display:flex;flex-direction:column;padding:22px 26px 0 44px;transform-origin:0 50%}
-.tt-sheet.narrow{width:min(520px,calc(100vw - 40px));height:auto;padding-bottom:22px}
-.tt-sheet::after{content:"";position:absolute;left:14px;top:26px;bottom:26px;width:6px;background:radial-gradient(circle,rgba(43,38,32,.35) 2.4px,transparent 3px) 0 0/6px 26px repeat-y;pointer-events:none}
-/* translate centres the sheet, so the flip (css/motion.css) rides on rotate and scale only */
-.tt-sheet[hidden]{display:flex;translate:-50% -50%}
-.tt-tape-l{left:12%;margin-left:0;rotate:-4deg}
-.tt-tape-r{left:auto;right:12%;margin-left:0;rotate:3deg}
-.tt-sheet-head{display:flex;align-items:center;gap:16px;padding-bottom:14px;border-bottom:2px dashed rgba(43,38,32,.25)}
-.tt-sheet-head h2{font-size:34px}
-.tt-sheet-sub{display:block;color:var(--ink-soft);font-size:14px;margin-top:2px}
-.tt-sheet-ico{flex:none;width:58px;height:58px;display:grid;place-items:center;border:2.5px solid var(--ink);border-radius:16px;background:var(--pg);box-shadow:0 4px 0 var(--ink);rotate:-4deg}
-.tt-sheet:not([hidden]) .tt-sheet-ico{animation:tt-stamp .5s cubic-bezier(.2,.8,.3,1.4) .25s both}
-@keyframes tt-stamp{from{scale:1.6;opacity:0;rotate:12deg}}
-.tt-sheet-ico svg{width:38px;height:38px}
-.tt-back{display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 10px 0 6px;border:2.5px solid var(--ink);border-radius:12px;background:var(--paper-2);font-weight:800;font-size:14px;box-shadow:0 3px 0 var(--ink)}
-.tt-back:hover{background:var(--paper-3)}
-.tt-back-ico svg{width:20px;height:20px;display:block}
-.tt-back kbd,.tt-sheet kbd{display:inline-block;min-width:22px;padding:0 5px;border:1.5px solid var(--ink);border-radius:6px;background:var(--paper);font:700 12px var(--body);text-align:center;box-shadow:0 2px 0 var(--ink);line-height:18px}
-.tt-sheet-body{flex:1;min-height:0;overflow:auto;padding:16px 6px 24px 0}
-.tt-sheet.narrow .tt-sheet-body{padding-bottom:4px}
-.tt-sheet-body>*{animation:tt-rise .45s cubic-bezier(.2,.8,.3,1) both;animation-delay:calc(.2s + var(--i,0) * .05s)}
-@keyframes tt-rise{from{opacity:0;translate:0 10px}}
-.tt-h3{font-size:22px;margin:18px 0 10px}
-.tt-promise{margin:18px 0 0;padding:10px 14px;border-radius:12px;background:rgba(168,193,121,.25);border:1.5px dashed var(--sage-d);font-size:14px}
-.tt-chips{display:flex;gap:8px;flex-wrap:wrap}
-.tt-chip{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 13px;border-radius:11px;border:2.5px solid var(--ink);background:var(--paper-2);font-weight:800;font-size:13.5px;box-shadow:0 3px 0 var(--ink);transition:translate .1s,box-shadow .1s}
-.tt-chip i{display:grid;place-items:center;width:20px;height:20px;border-radius:6px;border:1.5px solid var(--ink);background:var(--c)}
-.tt-chip i svg{width:14px;height:14px}
-.tt-chip[aria-pressed="true"]{background:var(--c,var(--sage));translate:0 2px;box-shadow:0 1px 0 var(--ink)}
-.tt-sheet p{font-size:14.5px}
-.tt-sheet .btn{height:44px;font-size:15px}
-.tt-row-btns{display:flex;gap:10px;margin-top:14px}
-.tt-row-btns .btn{flex:1}
-
 /* How to play */
 .ht-steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
 .ht-step{position:relative;padding:16px 14px 14px;border:2px solid var(--ink);border-radius:16px;background:var(--paper);box-shadow:0 3px 0 rgba(43,38,32,.3);animation:tt-rise .45s cubic-bezier(.2,.8,.3,1) both;animation-delay:calc(.25s + var(--i) * .07s)}
@@ -259,7 +224,7 @@ body.revealing #app>:not(#stage):not(#title):not(#boot):not(#offline){transition
 .ps-note-ico svg{width:30px;height:30px}
 .ps-note>span:nth-child(2){flex:1;min-width:200px}
 .ps-note b{display:block;font-size:19px;margin-bottom:2px}
-.ps-note .tt-chip{margin-left:auto}
+.ps-note .nb-chip{margin-left:auto}
 
 /* paper curtain that hides the cut between camera shots */
 .tt-curtain{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,#E9D6B2,#CDBB96);opacity:0;pointer-events:none}

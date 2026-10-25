@@ -1,12 +1,14 @@
 // The title screen and the progress screen (markup is in index.html, styles in css/title.css). This file only drives
 // them: main.js feeds it the load progress and the town's snapshot, and is told when Play or New town is chosen.
 // The left card holds Play and the menu rows; a row opens its page as a big notebook sheet in the middle of the screen,
-// which flips open from its spine (data-mo="flip" in css/motion.css) with a paper rustle and the page's own chime.
+// which flips open from its spine with a paper rustle and the page's own chime. The sheet is the shared one in
+// src/ui/notebook.js, the same the town's pages use.
 import { $, fmt } from './format.js';
 import { VERSION } from '../version.js';
 import { CHANGELOG, KINDS, newSince, kindCounts } from '../changelog.js';
 import { CREDITS, saveLine, tipOfTheDay } from '../core/boot.js';
 import { createPageSounds } from '../audio/page-sounds.js';
+import { createNotebook, notebookMarkup } from './notebook.js';
 import { ICONS, KIND_ICONS, STEP_ICONS, EMBLEM_ICONS, GROUP_ICONS } from './title-icons.js';
 import { RANKS, EMBLEMS, COLORS, rankFor, initials, playTime, NAME_MAX } from '../core/profile.js';
 import { GOALS, GROUPS, STAGES, standing, summary, nearest, fmtTarget } from '../sim/achievements.js';
@@ -74,15 +76,15 @@ const VERSION_COLORS = ['#B8472E', '#5F7A3E', '#C08A2E', '#35566A', '#97553E', '
 
 export function createTitle({ onPlay, onNewTown }) {
   const title = $('title'), boot = $('boot'), play = $('tt-play'), list = $('tt-list');
-  const sheet = $('tt-sheet'), scrim = $('tt-scrim'), body = $('tt-sheet-body');
-  let ready = false, open = null, stores = null, isNew = false, filter = 'all', town = null;
+  title.querySelector('.tt-credit').insertAdjacentHTML('beforebegin', notebookMarkup('tt'));
+  const body = $('tt-sheet-body');
+  let ready = false, stores = null, isNew = false, filter = 'all', town = null;
   const seen = readSeen();
   let fresh = newSince(seen);
   const sounds = createPageSounds({ getSettings: () => (stores ? stores.sound.get() : null) });
 
   $('tt-ver').textContent = 'v' + VERSION;
   $('tt-tip').innerHTML = '<b>Tip</b> ' + esc(tipOfTheDay(new Date()));
-  $('tt-back').querySelector('.tt-back-ico').innerHTML = ICONS.back;
 
   // ---- the rows
   list.innerHTML = ROWS.map((r) => `${r.gap ? '<hr class="tt-gap">' : ''}<button class="tt-row" id="tt-${r.id}" type="button" data-page="${r.id}" aria-haspopup="dialog"${r.needsReady ? ' disabled' : ''}>
@@ -99,30 +101,30 @@ export function createTitle({ onPlay, onNewTown }) {
   const pages = {
     howto: () => `<ol class="ht-steps">${HOWTO_STEPS.map((s, i) => `<li class="ht-step" style="--i:${i}">
         <span class="ht-n">${i + 1}</span><span class="ht-ico">${STEP_ICONS[s.icon]}</span><b class="h-disp">${s.head}</b><p>${s.text}</p></li>`).join('')}</ol>
-      <h3 class="tt-h3 h-disp">Handy keys</h3>
+      <h3 class="nb-h3 h-disp">Handy keys</h3>
       <ul class="ht-keys">${KEYS.map(([key, name]) => `<li>${k(key)}<span>${name}</span></li>`).join('')}</ul>
-      <p class="tt-promise">Nothing here ever punishes you. Your town saves itself every 45 seconds. Take your time.</p>`,
+      <p class="nb-promise">Nothing here ever punishes you. Your town saves itself every 45 seconds. Take your time.</p>`,
     changes: () => {
       const total = CHANGELOG.reduce((n, e) => n + e.items.length, 0);
       const chips = [['all', 'Everything', '#FBF6EA'], ...Object.entries(KINDS).map(([id, kd]) => [id, kd.label, kd.color])];
       return `<div class="cl-top">
           <p class="cl-stats"><b>${CHANGELOG.length}</b> versions · <b>${total}</b> changes since ${fmtDate(CHANGELOG.at(-1).date)}</p>
-          <div class="tt-chips cl-filter" data-k="filter">${chips.map(([id, label, c]) => `<button class="tt-chip" type="button" data-v="${id}" style="--c:${c}" aria-pressed="${filter === id}">${id === 'all' ? '' : `<i>${KIND_ICONS[id]}</i>`}${label}</button>`).join('')}</div>
+          <div class="nb-chips cl-filter" data-k="filter">${chips.map(([id, label, c]) => `<button class="nb-chip" type="button" data-v="${id}" style="--c:${c}" aria-pressed="${filter === id}">${id === 'all' ? '' : `<i>${KIND_ICONS[id]}</i>`}${label}</button>`).join('')}</div>
         </div>
         <ol class="cl-list" id="cl-list">${changeList()}</ol>`;
     },
     credits: () => `<div class="cr-grid">${CREDITS.map((c, i) => `<section class="cr-card" style="--i:${i}"><h3 class="tt-eyebrow">${esc(c.head)}</h3>${c.lines.map((l) => `<p>${esc(l)}</p>`).join('')}</section>`).join('')}</div>
-      <p class="tt-promise">Thank you for playing. Every town is a little different, and yours is the only one like it.</p>`,
+      <p class="nb-promise">Thank you for playing. Every town is a little different, and yours is the only one like it.</p>`,
     settings: () => {
       const q = stores.quality.get(), s = stores.sound.get();
-      return `<h3 class="tt-h3 h-disp">Graphics</h3>
+      return `<h3 class="nb-h3 h-disp">Graphics</h3>
         <div class="st-cards" data-k="preset">${PRESETS.map((p) => `<button class="st-card" type="button" data-v="${p.id}" aria-pressed="${q.preset === p.id}"><b>${p.name}</b><small>${p.text}</small></button>`).join('')}</div>
-        <h3 class="tt-h3 h-disp">Sound</h3>
+        <h3 class="nb-h3 h-disp">Sound</h3>
         <div class="st-row"><span><b>Sound</b><small>Music and the sounds of the town start once you press Play.</small></span>
-          <div class="tt-chips" data-k="sound"><button class="tt-chip" type="button" data-v="on" aria-pressed="${!s.muted}">On</button><button class="tt-chip" type="button" data-v="off" aria-pressed="${s.muted}">Muted</button></div></div>
+          <div class="nb-chips" data-k="sound"><button class="nb-chip" type="button" data-v="on" aria-pressed="${!s.muted}">On</button><button class="nb-chip" type="button" data-v="off" aria-pressed="${s.muted}">Muted</button></div></div>
         <label class="st-row"><span><b>Volume</b><small>Everything at once. The rest wait in the town, under the menu.</small></span>
           <input type="range" min="0" max="100" step="5" value="${Math.round(s.master * 100)}" data-k="master" aria-label="Volume"></label>
-        <p class="tt-promise">Seasons, weather, saves and more wait in the town, under the menu.</p>`;
+        <p class="nb-promise">Seasons, weather, saves and more wait in the town, under the menu.</p>`;
     },
     profile: () => profilePage(),
     pass: () => `<div class="ps-grid">${PASSES.map((p, i) => `<article class="ps-card ps-${p.id}" style="--i:${i}">
@@ -135,9 +137,9 @@ export function createTitle({ onPlay, onNewTown }) {
         <button class="ps-btn" type="button" data-act="pass" data-v="${p.id}">${p.cta}</button>
       </article>`).join('')}</div>
       <aside class="ps-note" id="ps-note" data-mo="pop" hidden></aside>
-      <p class="tt-promise">These cards are placeholders. Nothing is sold, nothing is charged and nothing leaves your browser.</p>`,
+      <p class="nb-promise">These cards are placeholders. Nothing is sold, nothing is charged and nothing leaves your browser.</p>`,
     new: () => `<p>You begin again with the small starter village. Your current town moves to the backup slot, and Settings in the town can bring it back.</p>
-        <div class="tt-row-btns"><button class="btn" type="button" data-act="cancel">Keep my town</button><button class="btn primary" type="button" data-act="new">Start fresh</button></div>`,
+        <div class="nb-btns"><button class="btn" type="button" data-act="cancel">Keep my town</button><button class="btn primary" type="button" data-act="new">Start fresh</button></div>`,
   };
 
   function changeList() {
@@ -203,36 +205,23 @@ export function createTitle({ onPlay, onNewTown }) {
         ${s.complete ? '' : `<span class="pf-bar"><i style="width:${Math.round(s.frac * 100)}%"></i></span>`}</span></li>`;
   }
 
-  function show(name) {
-    if (open === name) name = null;
-    const was = open;
-    open = name;
-    for (const r of ROWS) rowEl(r.id).setAttribute('aria-expanded', String(r.id === name));
-    if (!name) {
-      sheet.hidden = true; scrim.hidden = true;
-      if (was) { sounds.close(); rowEl(was).focus({ preventScroll: true }); }
-      return; // the old page stays while it folds away
-    }
-    const p = PAGES[name];
-    sheet.style.setProperty('--pg', p.c);
-    sheet.classList.toggle('narrow', !!p.narrow);
-    sheet.dataset.page = name;
-    $('tt-sheet-ico').innerHTML = ICONS[name];
-    $('tt-sheet-title').textContent = p.title;
-    $('tt-sheet-sub').textContent = p.sub;
-    body.innerHTML = pages[name]();
-    body.scrollTop = 0;
-    if (name === 'changes') { writeSeen(VERSION); const bd = rowEl('changes').querySelector('.tt-badge'); if (bd) bd.remove(); }
-    scrim.hidden = false; sheet.hidden = false;
-    sounds.open(name);
-    $('tt-back').focus({ preventScroll: true });
-  }
+  const book = createNotebook({
+    get: $, prefix: 'tt', sounds,
+    pages: Object.fromEntries(ROWS.map((r) => [r.id, { ...PAGES[r.id], icon: ICONS[r.id], render: () => pages[r.id]() }])),
+    onShow(name) {
+      for (const r of ROWS) rowEl(r.id).setAttribute('aria-expanded', String(r.id === name));
+      if (name === 'changes') { writeSeen(VERSION); const bd = rowEl('changes').querySelector('.tt-badge'); if (bd) bd.remove(); }
+    },
+    onHide(was) {
+      for (const r of ROWS) rowEl(r.id).setAttribute('aria-expanded', 'false');
+      rowEl(was).focus({ preventScroll: true });
+    },
+  });
+  const show = (name) => book.show(name);
 
   list.addEventListener('click', (e) => { const b = e.target.closest('.tt-row'); if (b && !b.disabled) show(b.dataset.page); });
   list.addEventListener('pointerover', (e) => { const b = e.target.closest('.tt-row'); if (b && !b.disabled && !b.contains(e.relatedTarget)) sounds.hover(); });
   $('tt-ver').addEventListener('click', () => show('changes'));
-  $('tt-back').addEventListener('click', () => show(null));
-  scrim.addEventListener('click', () => show(null));
   body.addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (!b) return;
@@ -240,7 +229,7 @@ export function createTitle({ onPlay, onNewTown }) {
     if (b.dataset.act === 'new') { b.disabled = true; onNewTown(); return; }
     if (b.dataset.act === 'pass') {
       const p = PASSES.find((x) => x.id === b.dataset.v), note = $('ps-note');
-      note.innerHTML = `<span class="ps-note-ico">${ICONS[p.icon]}</span><span><b class="h-disp">Not quite yet!</b>${p.note}</span><button class="tt-chip" type="button" data-act="pass-ok">Back to my town</button>`;
+      note.innerHTML = `<span class="ps-note-ico">${ICONS[p.icon]}</span><span><b class="h-disp">Not quite yet!</b>${p.note}</span><button class="nb-chip" type="button" data-act="pass-ok">Back to my town</button>`;
       note.style.setProperty('--pc', p.color);
       note.hidden = false;
       sounds.open('pass');
@@ -249,10 +238,10 @@ export function createTitle({ onPlay, onNewTown }) {
     if (b.dataset.act === 'pass-ok') { $('ps-note').hidden = true; return; }
     const group = b.parentElement.dataset.k;
     if (group === 'filter') { filter = b.dataset.v; for (const c of b.parentElement.children) c.setAttribute('aria-pressed', String(c === b)); $('cl-list').innerHTML = changeList(); return; }
-    if (group === 'emblem' || group === 'color') { stores.profile.set(group, b.dataset.v); const top = body.scrollTop; body.innerHTML = pages.profile(); body.scrollTop = top; return; }
+    if (group === 'emblem' || group === 'color') { stores.profile.set(group, b.dataset.v); book.refresh(); return; }
     if (group === 'preset') stores.quality.choose(b.dataset.v);
     if (group === 'sound') stores.sound.set('muted', b.dataset.v === 'off');
-    if (group) { const top = body.scrollTop; body.innerHTML = pages.settings(); body.scrollTop = top; }
+    if (group) book.refresh();
   });
   body.addEventListener('input', (e) => {
     if (e.target.id !== 'pf-name') return;
@@ -263,7 +252,7 @@ export function createTitle({ onPlay, onNewTown }) {
     if (init) init.textContent = initials(p.name) || 'AB';
   });
   body.addEventListener('change', (e) => { if (e.target.dataset.k === 'master') stores.sound.set('master', Number(e.target.value) / 100); });
-  title.addEventListener('keydown', (e) => { if (e.key === 'Escape' && open) { e.preventDefault(); show(null); } });
+  title.addEventListener('keydown', (e) => { if (e.key === 'Escape' && book.isOpen()) { e.preventDefault(); book.close(); } });
 
   play.addEventListener('click', () => { if (ready) { writeSeen(VERSION); onPlay(); } });
 
@@ -303,10 +292,10 @@ export function createTitle({ onPlay, onNewTown }) {
       play.disabled = false; $('tt-playlabel').textContent = isNew ? 'Start my town' : 'Play';
       $('tt-warm').classList.add('ready');
       for (const r of ROWS) if (r.needsReady) rowEl(r.id).disabled = false;
-      if (!open) play.focus({ preventScroll: true });
+      if (!book.isOpen()) play.focus({ preventScroll: true });
     },
     failed(message) { $('tt-playlabel').textContent = 'Cannot start'; $('tt-save').textContent = message; $('tt-warm').classList.add('ready'); },
-    hideTitle() { if (open) show(null); title.hidden = true; setTimeout(() => sounds.dispose(), 1500); },
+    hideTitle() { book.close(); title.hidden = true; setTimeout(() => sounds.dispose(), 1500); },
     // 0..1: how much of the paper curtain covers the town (it hides the cuts between camera shots).
     curtain(v) { $('tt-curtain').style.opacity = String(v); },
     showBoot(steps) {

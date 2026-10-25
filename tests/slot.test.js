@@ -52,20 +52,20 @@ test('a hand-off marks the incoming surface for a moment so the two never sit on
 test('every top-right surface claims the slot before it opens and registers how to close', () => {
   assert.match(read('src/ui/modules/menu.js'), /topRight\.claim\('menu'\)/);
   assert.match(read('src/ui/modules/menu.js'), /topRight\.register\('menu'/);
-  assert.match(read('src/ui/modules/milestones.js'), /topRight\.claim\('milestones'\)/);
-  assert.match(read('src/ui/modules/milestones.js'), /topRight\.register\('milestones'/);
+  assert.match(read('src/ui/book.js'), /topRight\.claim\('book'\)/, 'a page closes whatever was open in the corner');
+  assert.match(read('src/ui/book.js'), /topRight\.register\('book'/);
   assert.match(read('src/ui/modules/happiness.js'), /topRight\.claim\('happiness'\)/);
   const panels = read('src/ui/panels.js');
   assert.equal((panels.match(/topRight\.claim\('inspect'\)/g) || []).length, 2, 'building card and tree card');
-  assert.equal((panels.match(/topRight\.claim\('settings'\)/g) || []).length, 2, 'Settings and its questions');
+  assert.match(panels, /book\.register\('settings'/, 'Settings is a page');
   const ui = read('src/ui/ui.js');
   assert.match(ui, /topRight\.register\('inspect'/);
-  assert.match(ui, /topRight\.register\('settings'/);
 });
 
-test('the menu tiles lay out an icon, a name and a line of state, and the hand-off delay is in motion.css', () => {
+test('the menu rows lay out an icon, a name and a line of state, and the hand-off delay is in motion.css', () => {
   const css = read('css/topbar.css');
-  assert.match(css, /\.menugrid\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\);grid-auto-rows:66px/);
+  assert.match(css, /\.menugrid\{display:flex;flex-direction:column\}/);
+  assert.match(css, /\.mi-ico\{/);
   assert.match(css, /\.menugrid \.goalsib \.chg\{position:static/);
   assert.match(read('css/motion.css'), /\.mo-late:not\(\[hidden\]\)\{transition-delay/);
   assert.match(read('src/ui/hud.js'), /dataset\.sub = LOCK_SUB\[lock\]/);

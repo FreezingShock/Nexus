@@ -12,7 +12,7 @@ Until Play the body has `booting`, which hides every HUD piece and map label, an
 
 The left card holds Play, a snapshot of the town (residents, coins, date; `title.townInfo`, called from main.js after the warm-up), the menu `ROWS`, a tip of the day (`TIPS` in src/core/boot.js) and the version chip (which opens Changes). A brand-new player (no save) gets "Hello, new mayor", a Start my town button and a glowing How to play row.
 
-Each row opens its page in `#tt-sheet`, a big notebook sheet centred over the town with a scrim behind. It flips open from its left spine (`data-mo="flip"` in css/motion.css; `#title` sets the perspective), with a paper rustle and the page's own chime (`PAGE_CHIMES`). A page is a `PAGES` header (title, line, accent colour) plus a builder in `pages` in src/ui/title.js. Esc, Back or the scrim closes it.
+Each row opens its page in `#tt-sheet`, a big notebook sheet centred over the town with a scrim behind. It flips open from its left spine (`data-mo="flip"` in css/motion.css; `#title` sets the perspective), with a paper rustle and the page's own chime (`PAGE_CHIMES`). A page is a `PAGES` header (title, line, accent colour) plus a builder in `pages` in src/ui/title.js. Esc, Back or the scrim closes it. The sheet is the shared notebook page the town uses too (src/ui/notebook.js, docs/PAGES.md).
 
 ## Changelog
 

@@ -7,7 +7,7 @@ A panel on the right of the screen (tile in the top bar menu, key **M**) lists e
 - **Catalogue**: `src/sim/achievements.js`. Each goal has a group, a metric, up to five targets (stages Bronze, Silver, Gold, Laurel, Crown), an optional weight `w` and optional road unlocks. Targets, reward tables and weights are all in this file.
 - **Metrics**: `src/sim/achievement-metrics.js`. One pure reader per metric (population, happiness, farms, districts, seasons and so on). Counters the state already keeps (coins earned, placed, painted, road tiles, upgrades, boosts, Renewals, points) are read directly.
 - **System**: `src/sim/systems/achievements.js`. Reads every metric after each command and on every third tick, raises `best`, pays each newly reached stage once and emits `milestone` events (postcard notes). Never loops over time: seasons come from the game clock in closed form, and a welcome-back leaves rewards to the next tick.
-- **Panel**: `src/ui/modules/milestones.js` and `css/milestones.css`. Tabs by group, an "Almost there" list on All, expandable goals that list every stage.
+- **Page**: the Milestones tab of the Goals and milestones page (`src/ui/modules/progress.js`, key M; the list is `src/ui/milestone-list.js` and `css/milestones.css`). Group chips, an "Almost there" list on All, expandable goal cards that list every stage. See [PAGES.md](PAGES.md).
 
 ## Rewards
 

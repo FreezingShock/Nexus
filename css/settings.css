@@ -1,22 +1,5 @@
-/* Settings card: coloured tabs (same tints as the menu tiles), picture tiles for season and weather, cream toggles.
-   Loaded after graphics.css and sound.css so it restyles their sections inside #settings. */
-#settings .stabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:12px 14px 0;background:var(--paper)}
-.stab{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px 6px;border-radius:12px 12px 0 0;border:2.5px solid var(--ink);border-bottom:0;background:var(--tc);font-weight:800;font-size:12.5px;line-height:1.1;opacity:.72;transform:translateY(3px);transition:opacity .12s,transform .12s}
-.stab svg{width:22px;height:22px}
-.stab:hover{opacity:1}
-.stab[aria-selected="true"]{opacity:1;transform:none;padding-bottom:9px}
-.stab:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
-#settings .pad{border-top:2.5px solid var(--ink)}
-/* The card itself does not scroll (its dashed paper frame, .card::before, would scroll away with the content and cut
-   through it); the body under the tabs scrolls instead. */
-#settings{overflow:hidden;display:flex;flex-direction:column}
-#settings>.band,#settings>.stabs{flex:0 0 auto}
-#settings>.pad{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;box-sizing:border-box}
-.spane{display:flex;flex-direction:column;gap:12px;min-width:0;box-sizing:border-box;padding:12px;border-radius:14px;background:color-mix(in srgb,var(--tc) 38%,var(--paper))}
-.spane *{box-sizing:border-box;min-width:0}
-.spane>*,#atmos,#gfx,#snd{max-width:100%;min-width:0}
-.spane[hidden]{display:none}
-#settings .gfx,#settings .snd{border:0!important;outline:0;padding:0;margin:0}
+/* The Settings page's contents: picture tiles for season and weather, cream toggles and the save boxes. Its bookmark
+   tabs are the notebook's (css/notebook.css). Loaded after graphics.css and sound.css so it restyles their sections. */
 .sgroup{display:flex;flex-direction:column;gap:8px;padding:10px 12px 12px;border-radius:14px;border:2px solid var(--ink);background:var(--paper);box-shadow:0 3px 0 var(--ink)}
 .sky-now{font-style:italic}
 
@@ -56,20 +39,20 @@
 .stile[data-key="weather"][data-value="auto"] .art,.stile[data-key="timeLock"][data-value="auto"] .art{background:var(--paper-3)}
 
 /* segmented buttons and toggles inside settings */
-#settings .gfx-opt{box-shadow:0 2px 0 var(--ink);background:var(--paper)}
+.nb-sheet .gfx-opt{box-shadow:0 2px 0 var(--ink);background:var(--paper)}
 /* chosen = the same strong look as a chosen tile: peach fill, terracotta outline and ring, dark text */
-#settings .gfx-opt[aria-pressed="true"]{background:#F9DFC9;color:var(--ink);border-color:var(--action);box-shadow:0 3px 0 var(--action),0 0 0 2px var(--action);transform:none}
-#settings .gfx-opt:disabled{opacity:.45}
-#settings .gfx-presets{grid-template-columns:repeat(4,1fr)}
-#settings .gfx-sw{background:var(--paper);box-shadow:0 2px 0 var(--ink)}
-#settings .gfx-sw[aria-checked="true"] i{background:var(--sage)}
+.nb-sheet .gfx-opt[aria-pressed="true"]{background:#F9DFC9;color:var(--ink);border-color:var(--action);box-shadow:0 3px 0 var(--action),0 0 0 2px var(--action);transform:none}
+.nb-sheet .gfx-opt:disabled{opacity:.45}
+.nb-sheet .gfx-presets{grid-template-columns:repeat(4,1fr)}
+.nb-sheet .gfx-sw{background:var(--paper);box-shadow:0 2px 0 var(--ink)}
+.nb-sheet .gfx-sw[aria-checked="true"] i{background:var(--sage)}
 .snd-row input[type="range"]::-webkit-slider-thumb{background:var(--paper)}
 .snd-row input[type="range"]::-moz-range-thumb{background:var(--paper)}
 .snd-row input[type="range"]::-webkit-slider-runnable-track{background:linear-gradient(90deg,var(--action) var(--fill,0%),var(--paper) 0)}
-#settings .gfx-switches{gap:8px}
-#settings .gfx-row{gap:8px;padding:10px 12px 12px;border-radius:14px;border:2px solid var(--ink);background:var(--paper);box-shadow:0 3px 0 var(--ink)}
-#settings .gfx-row .gfx-opt:not([aria-pressed="true"]){background:var(--paper-2)}
-#settings .gfx-presets{padding:2px}
+.nb-sheet .gfx-switches{gap:8px}
+.nb-sheet .gfx-row{gap:8px;padding:10px 12px 12px;border-radius:14px;border:2px solid var(--ink);background:var(--paper);box-shadow:0 3px 0 var(--ink)}
+.nb-sheet .gfx-row .gfx-opt:not([aria-pressed="true"]){background:var(--paper-2)}
+.nb-sheet .gfx-presets{padding:2px}
 
 /* town and saves */
 .sbox{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:14px;border:2.5px solid var(--ink);background:var(--paper);box-shadow:0 3px 0 var(--ink)}
@@ -77,5 +60,5 @@
 .sbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .sbox .btn{margin:0;width:100%}
 .sdanger{border-style:dashed;box-shadow:none;background:color-mix(in srgb,var(--coral) 22%,var(--paper))}
-@media (prefers-reduced-motion:reduce){.stab,.stile{transition:none}}
+@media (prefers-reduced-motion:reduce){.stile{transition:none}}
 .snd-row input[type="range"]::-moz-range-progress{height:6px;border-radius:6px;background:var(--action)}

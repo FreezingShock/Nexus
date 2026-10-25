@@ -17,10 +17,11 @@ test('season and weather are picture tiles that keep their storage keys and valu
   assert.match(html, /data-key="seasonLength"/);
 });
 
-test('the Settings card has four tabs, keeps motion and the top-right slot', () => {
+test('Settings is a notebook page with four bookmark tabs and every save action', () => {
   const js = readFileSync(new URL('../src/ui/panels.js', import.meta.url), 'utf8');
   for (const id of ['sky', 'gfx', 'snd', 'town']) assert.match(js, new RegExp(`id: '${id}'`));
-  for (const id of ['atmos', 'gfx', 'snd', 'exp', 'imp', 'rest', 'pcv', 'rst']) assert.match(js, new RegExp(`id="${id}"`));
-  assert.equal((js.match(/topRight\.claim\('settings'\)/g) || []).length, 2);
-  assert.match(readFileSync(new URL('../index.html', import.meta.url), 'utf8'), /id="settings" class="card" data-mo hidden/);
+  for (const id of ['atmos', 'gfx', 'snd']) assert.match(js, new RegExp(`id="${id}"`));
+  for (const act of ['exp', 'imp', 'rest', 'pcv', 'rst', 'yes', 'no']) assert.match(js, new RegExp(`data-act="${act}"|act === '${act}'`), act);
+  assert.match(js, /book\.register\('settings', \{[^]*tabs: TABS/);
+  assert.doesNotMatch(readFileSync(new URL('../index.html', import.meta.url), 'utf8'), /id="settings"/, 'the old side card is gone');
 });

@@ -1,45 +1,43 @@
-/* Milestones and achievements: a paper card on the right with a tab row and a scrolling list of goals. */
-:root{--achv-w:392px}
-.achvib{position:relative}
-.achvib .dot{position:absolute;top:5px;right:5px;width:12px;height:12px;border-radius:50%;background:var(--action);border:2px solid var(--ink)}
+/* The Milestones tab of the Goals page (src/ui/milestone-list.js): the stages summary, group chips, the "almost there"
+   rows and every goal as a card with its medal, bar, stage pips and an unfolding list of stages. */
+.ms-top{display:flex;flex-direction:column;gap:14px;margin-bottom:6px}
+.ms-sum{display:grid;grid-template-columns:auto 1fr;align-items:center;column-gap:12px;row-gap:8px;padding:14px 18px;border:2.5px solid var(--ink);border-radius:16px;background:color-mix(in srgb,var(--coral) 30%,var(--paper));box-shadow:0 3px 0 var(--ink)}
+.ms-sum>b{font-size:44px;line-height:1}
+.ms-sum>span{font-weight:800;font-size:16px}
+.ms-sum small{display:block;font-weight:700;font-size:13px;color:var(--ink-soft)}
+.ms-bar{grid-column:1/-1}
+.ms-bar i{background:var(--mustard)}
+.ms-chips .nb-chip{height:34px;padding:0 11px 0 6px}
 
-#achv{position:absolute;top:calc(var(--hud-bottom,108px) + 12px);right:max(16px,env(safe-area-inset-right,0px));bottom:150px;width:var(--achv-w);max-width:calc(100% - 32px);display:flex;flex-direction:column;padding:0;z-index:7}
-#achv .band{flex:0 0 auto;padding:16px 62px 14px 18px;background:var(--paper-3);background-image:var(--grain);border-bottom:2.5px solid var(--ink);border-radius:17px 21px 0 0}
-#achv .band h2{font-size:25px}
-#achv .band .sub{margin:2px 0 8px;font-size:13.5px}
-#achv .meter.wide{width:100%;height:12px;margin-top:0}
-#achv .meter.wide i{transition:width .4s}
-.achtabs{flex:0 0 auto;display:flex;flex-wrap:wrap;gap:6px;padding:10px 14px;border-bottom:2px dashed rgba(43,38,32,.25)}
-.achtab{height:30px;padding:0 11px;border:2px solid var(--ink);border-radius:15px;background:var(--paper);font-size:13px;font-weight:800;box-shadow:0 2px 0 var(--ink);transition:transform .08s,box-shadow .08s}
-.achtab:active{transform:translateY(2px);box-shadow:0 0 0 var(--ink)}
-.achtab[aria-selected="true"]{background:var(--action);color:var(--action-ink);text-shadow:0 1px 0 rgba(43,38,32,.35)}
-.achbody{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;padding:6px 14px 16px}
-.agroup{padding-top:10px}
-.agroup h3{margin:0 0 2px;font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:18px}
-.agroup h3 small{font-family:var(--body);font-weight:700;font-size:12.5px;color:var(--ink-soft)}
-.agroup>.sub{margin:0 0 8px;font-size:13px}
-.aglist{list-style:none;margin:0 0 4px;padding:0;display:flex;flex-direction:column;gap:9px}
+.agroup{padding-top:16px}
+.agroup h3{display:flex;align-items:center;gap:8px;margin:0 0 2px;font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:21px}
+.agroup h3 small{font-family:var(--body);font-weight:700;font-size:13px;color:var(--ink-soft)}
+.ag-gico{display:grid;place-items:center;width:34px;height:34px;border:2px solid var(--ink);border-radius:10px;background:var(--gc,var(--paper-2));rotate:-4deg}
+.ag-gico svg{width:24px;height:24px}
+.agroup>.sub{margin:0 0 10px;font-size:13.5px;color:var(--ink-soft)}
+.aglist{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
 
-.ag{padding:8px 11px 10px;border:2px solid var(--ink);border-radius:13px;background:var(--paper-2);display:flex;flex-direction:column;gap:6px}
+.ag{padding:10px 13px 12px;border:2px solid var(--ink);border-radius:14px;background:var(--paper);box-shadow:0 3px 0 rgba(43,38,32,.3);display:flex;flex-direction:column;gap:7px}
 .ag.complete{background:#F4E7BD}
-.ag-head{display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:10px;width:100%;padding:0;border:0;background:none;text-align:left;color:inherit}
+.ag-head{display:grid;grid-template-columns:38px 1fr auto;align-items:center;gap:10px;width:100%;padding:0;border:0;background:none;text-align:left;color:inherit}
 .ag-head:focus-visible{outline:3px solid var(--sky);outline-offset:3px;border-radius:8px}
-.ag-medal{width:34px;height:34px}
+.ag-medal{width:36px;height:36px}
 .ag-medal .disc{fill:var(--mc,var(--paper))}
 .ag:not(.started) .ag-medal{opacity:.6}
 .ag:not(.started) .ag-medal .disc{stroke-dasharray:3 3}
 .ag:not(.started) .ag-medal .spark{display:none}
 .ag-main{display:flex;flex-direction:column;min-width:0}
-.ag-name{font-size:15px;font-weight:800;line-height:1.2}
+.ag-name{font-size:15.5px;font-weight:800;line-height:1.2}
 .ag-prog{font-size:12.5px;font-weight:700;color:var(--ink-soft);font-variant-numeric:tabular-nums}
 .ag-pips{display:flex;gap:3px}
 .ag-pips i,.ag-stages .pip{display:block;width:11px;height:11px;border-radius:50%;border:2px solid var(--ink);background:var(--paper);box-sizing:border-box}
 .ag-pips i.on,.ag-stages .done .pip{background:var(--pc)}
-.ag-next{margin:0;font-size:13px;font-weight:600;color:var(--ink-soft);line-height:1.3}
+.ag .meter.wide{height:10px}
+.ag-next{margin:0;font-size:13px!important;font-weight:600;color:var(--ink-soft);line-height:1.3}
 .ag.complete .meter i{background:var(--mustard)}
-.ag-more{padding-top:4px;border-top:1.5px dashed rgba(43,38,32,.25)}
-.ag-more .sub{margin:4px 0 6px;font-size:13px}
-.ag-stages{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+.ag-more{padding-top:6px;border-top:1.5px dashed rgba(43,38,32,.25)}
+.ag-more .sub{margin:2px 0 8px;font-size:13px}
+.ag-stages{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 .ag-stages li{display:grid;grid-template-columns:14px auto 1fr;column-gap:8px;align-items:center;font-size:13.5px;font-weight:600}
 .ag-stages .st-name{font-weight:800}
 .ag-stages .st-target{color:var(--ink-soft)}
@@ -48,17 +46,16 @@
 .ag-stages .done .st-reward::after{content:" · paid"}
 .ag-stages .next .st-name{color:var(--action)}
 
-.near{display:grid;grid-template-columns:1fr 90px;grid-template-rows:auto auto;align-items:center;gap:2px 10px;padding:8px 11px;border:2px solid var(--ink);border-radius:13px;background:var(--paper-2);cursor:pointer}
-.near b{font-size:14.5px}
-.near .meter.wide{grid-row:1 / 3;grid-column:2}
-.near small{color:var(--ink-soft);font-size:12.5px;font-weight:700}
+/* "almost there": a row per goal, its group icon, the next target and a bar. Click to open it among the milestones. */
+.nearlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+.near{display:grid;grid-template-columns:38px 1fr 110px;grid-template-rows:auto auto;align-items:center;column-gap:10px;row-gap:2px;padding:8px 12px;border:2px solid var(--ink);border-radius:13px;background:color-mix(in srgb,var(--gc) 40%,var(--paper));cursor:pointer;transition:translate .15s}
+.near:hover{translate:3px 0}
+.near-ico{grid-row:1/3;display:grid;place-items:center;width:36px;height:36px;border:2px solid var(--ink);border-radius:10px;background:var(--paper)}
+.near-ico svg{width:24px;height:24px}
+.near-text{grid-row:1/3;min-width:0}
+.near-text b{display:block;font-size:14.5px}
+.near-text small{color:var(--ink-soft);font-size:12.5px;font-weight:700}
+.near .meter.wide{height:10px}
+.near-n{color:var(--ink-soft);font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
 .near:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
-
-/* the card shares the right edge: Inspect, Settings and the flyout step aside while it is open */
-#app.achv-open #inspect,#app.achv-open #settings{right:calc(max(16px,env(safe-area-inset-right,0px)) + var(--achv-w) + 16px)}
-#app.achv-open .fly{right:calc(var(--gutter) + var(--achv-w) + 16px)}
-@media (max-width:900px){
-  #achv{top:auto;bottom:140px;left:var(--gutter);right:var(--gutter);width:auto;max-width:none;max-height:55%}
-  #app.achv-open #inspect,#app.achv-open #settings{right:var(--gutter)}
-  #app.achv-open .fly{right:var(--gutter)}
-}
+@media (max-width:900px){.aglist{grid-template-columns:1fr}}

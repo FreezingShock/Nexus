@@ -4,6 +4,8 @@
 // steers the camera, the sky hour and the canvas. Filters are CSS filter strings (render/photo-math.js), used on the live
 // canvas and again when the picture is drawn out, so no extra render passes. Not browser-run at the time of writing.
 import { $ } from '../format.js';
+import { book } from '../book.js';
+import { PAGE_ICONS } from '../page-icons.js';
 import { ISO, clamp } from '../../render/camera-math.js';
 import {
   FILTERS, VIEWPOINTS, FRAMES, CINEMATICS, LOW_TILT, cleanPhoto, filterCss, viewpointOf, cinePose, cineHour,
@@ -51,7 +53,7 @@ export default {
     const panel = document.createElement('aside');
     panel.id = 'photo'; panel.className = 'photoui card ph-panel'; panel.dataset.mo = 'pop'; panel.hidden = true;
     panel.setAttribute('aria-label', 'Photo settings');
-    panel.innerHTML = `<div class="band"><h2 class="h-disp">Photo mode</h2><div class="sub">O or Done to leave, Enter to take a photo</div></div>
+    panel.innerHTML = `<span class="tape ph-tape" aria-hidden="true"></span><header class="ph-head"><span class="nb-ico" style="--pg:#E8D9EC">${PAGE_ICONS.photo}</span><span><h2 class="h-disp">Photo mode</h2><small>O or Done to leave, Enter to take a photo</small></span></header>
       <div class="pad">
         <section class="ph-sec"><h3 class="h-disp">Viewpoint</h3><div class="ph-seg" id="ph-views">${chips(VIEWPOINTS, 'view', st.viewpoint)}</div>
           ${slider('ph-fov', 'Lens', 20, 80, 1)}${slider('ph-zoom', 'Zoom', 0.55, 3, 0.01)}${slider('ph-tilt', 'Tilt', 5, 140, 1)}${slider('ph-turn', 'Turn', 0, 360, 1)}</section>
@@ -125,6 +127,7 @@ export default {
     // ---- enter, leave
     function enter() {
       if (on) return;
+      book.close(); // a page would sit over the picture
       if (tool()) setTool(null);
       on = true;
       saved = { tx: view.ttx, tz: view.ttz, az: view.taz, elev: view.telev, zoom: view.tzoom, lens: view.lens, fov: view.fov };

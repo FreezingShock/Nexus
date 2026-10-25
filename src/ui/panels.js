@@ -1,23 +1,26 @@
-// Inspect card, tool flyouts and the settings card. They read sim data and send commands.
+// Inspect card, tool flyouts and the Settings page. They read sim data and send commands.
 import { MAX_LEVEL, income, nextLevelGain, trafficOf } from '../sim/economy.js';
 import { PAL } from '../world/palettes.js';
 import { costOf, isOpen, partsOf, tableOf } from '../world/paint.js';
 import { speciesOf } from '../world/trees.js';
 import { $, fmt, fmtAgo } from './format.js';
 import { topRight } from './slot.js';
+import { book } from './book.js';
+import { PAGE_ICONS } from './page-icons.js';
 import { mountGraphics } from './graphics.js';
 import { mountAtmos } from './atmos.js';
 import { mountSound } from './sound-settings.js';
 
 const CLOSE_SVG = '<svg width="16" height="16" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2L12 12M12 2L2 12" stroke="#2B2620" stroke-width="2.2" stroke-linecap="round"/></svg>';
 
-// The Settings groups, each with the tile colour of its menu cousin (css/topbar.css).
+// The Settings page's bookmark tabs, each with the tint of its menu cousin (css/topbar.css).
 const TABS = [
-  { id: 'sky', label: 'Sky', color: '#F6DDA0', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="#2B2620" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="10" r="3.2"/><path d="M9 3.5v1.4M2.5 10h1.4M4.4 5.4l1 1M13.6 5.4l-1 1M8 20h9.5a3.2 3.2 0 0 0 .3-6.4 4.6 4.6 0 0 0-8.4.8A3 3 0 0 0 8 20z"/></svg>' },
-  { id: 'gfx', label: 'Graphics', color: '#D3E4C4', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="#2B2620" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>' },
-  { id: 'snd', label: 'Sound', color: '#F2C9BA', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="#2B2620" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5zM15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>' },
-  { id: 'town', label: 'Town', color: '#D2E3EE', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="#2B2620" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 11L12 4l8.5 7M6 9.5V20h12V9.5M10 20v-5h4v5"/></svg>' },
+  { id: 'sky', label: 'Sky', color: '#F6DDA0', icon: PAGE_ICONS.sky, line: 'Season, weather and the time of day.' },
+  { id: 'gfx', label: 'Graphics', color: '#D3E4C4', icon: PAGE_ICONS.gfx, line: 'How the town is drawn. Changes show straight away.' },
+  { id: 'snd', label: 'Sound', color: '#F2C9BA', icon: PAGE_ICONS.snd, line: 'Music, the bustle of the streets and the little clicks.' },
+  { id: 'town', label: 'Town', color: '#D2E3EE', icon: PAGE_ICONS.town, line: 'Saves, copies and a fresh start.' },
 ];
+const tabHead = (t) => `<header class="pg-band" style="--tc:${t.color}"><span class="pg-band-ico">${t.icon}</span><span><b class="h-disp">${t.label}</b><small>${t.line}</small></span></header>`;
 
 export function createPanels({ sim, send, toast, onClose, setTool }) {
   const s = sim.state;
@@ -113,80 +116,76 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
     } else f.hidden = true;
   }
 
-  // ---- settings ----
-  // Autosave status, export, import, restore and start over. Destructive steps ask first, inline.
-  let settingsTab = 'sky'; // the group shown, remembered while the page is open
-  let shown = null; // the actions the card was opened with, so "Not now" can return to it
-  function showSettings(actions) {
-    shown = actions;
-    const box = $('settings');
-    topRight.claim('settings');
-    box.hidden = false;
+  // ---- settings: a notebook page with bookmark tabs for Graphics, Sound and Town ----
+  // Town holds the autosave status, export, import, restore and start over. Destructive steps ask first, on the page.
+  let actions = null; // what main.js lends the page: stores and save actions
+  let asking = null; // a question on the page: { tab, title, text, ok, onOk, danger }
+  const townTab = () => {
     const back = actions.backup();
-    const tab = TABS.some((t) => t.id === settingsTab) ? settingsTab : TABS[0].id;
-    const tabs = TABS.map((t) => `<button class="stab" role="tab" id="st-${t.id}" data-tab="${t.id}" aria-selected="${String(t.id === tab)}" aria-controls="sp-${t.id}" style="--tc:${t.color}">${t.icon}<span>${t.label}</span></button>`).join('');
-    const pane = (id, inner) => `<div class="spane" role="tabpanel" id="sp-${id}" aria-labelledby="st-${id}" style="--tc:${TABS.find((t) => t.id === id).color}"${id === tab ? '' : ' hidden'}>${inner}</div>`;
-    box.innerHTML = `<button class="x" id="sx" aria-label="Close">${CLOSE_SVG}</button>
-    <div class="band"><h2 class="h-disp">Settings</h2><div class="sub">Your town is saved in this browser</div></div>
-    <div class="stabs" role="tablist" aria-label="Settings groups">${tabs}</div>
-    <div class="pad">
-    ${pane('sky', '<div id="atmos"></div>')}
-    ${pane('gfx', '<div id="gfx"></div>')}
-    ${pane('snd', '<div id="snd"></div>')}
-    ${pane('town', `<section class="sbox"><h3 class="h-disp">Your town</h3>
-      <p class="sub">${actions.status()}</p>
-      <p class="sub">${sim.state.terrainSeed ? 'Land seed ' + sim.state.terrainSeed + '. Start over or Renewal rolls a new valley.' : 'This town keeps its original land. Start over or Renewal rolls a new valley.'}</p>
-      <button class="btn" id="pcv">Preview the offline postcard</button></section>
-      <section class="sbox"><h3 class="h-disp">Keep a copy</h3>
-      <p class="sub">Export a copy to keep it safe or move it to another device.</p>
-      <div class="sbtns"><button class="btn" id="exp">Export save</button><button class="btn" id="imp">Import save</button></div>
-      ${back ? `<button class="btn" id="rest">Restore the town from ${fmtAgo(back.savedAt)}</button>` : ''}</section>
-      <section class="sbox sdanger"><h3 class="h-disp">Fresh start</h3>
-      <p class="sub">The current town moves to the backup slot first.</p>
-      <button class="btn danger" id="rst">Start over</button></section>`)}
-    </div>`;
-    const pick = (id) => {
-      settingsTab = id;
-      for (const b of box.querySelectorAll('.stab')) b.setAttribute('aria-selected', String(b.dataset.tab === id));
-      for (const t of TABS) box.querySelector('#sp-' + t.id).hidden = t.id !== id;
-    };
-    box.querySelector('.stabs').onclick = (e) => { const b = e.target.closest('.stab'); if (b) pick(b.dataset.tab); };
-    box.querySelector('.stabs').onkeydown = (e) => {
-      const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
-      if (!d) return;
-      const i = TABS.findIndex((t) => t.id === settingsTab), n = TABS[(i + d + TABS.length) % TABS.length].id;
-      pick(n); box.querySelector('#st-' + n).focus();
-    };
-    $('pcv').onclick = actions.previewPostcard;
-    $('sx').onclick = hideSettings;
-    if (actions.calendar) mountAtmos($('atmos'), actions.calendar, sim);
-    if (actions.quality) mountGraphics($('gfx'), actions.quality);
-    if (actions.sound) mountSound($('snd'), actions.sound);
-    $('exp').onclick = actions.exportSave;
-    $('imp').onclick = actions.importPick;
-    if (back) $('rest').onclick = () => askConfirm({
-      title: 'Go back to the backup?', ok: 'Restore it', onOk: actions.restore,
-      text: 'The town from ' + fmtAgo(back.savedAt) + ' comes back. The town you have now moves to the backup slot.',
-    });
-    $('rst').onclick = () => askConfirm({
-      title: 'Start over?', ok: 'Start over', onOk: actions.reset, danger: true,
-      text: 'This clears the town from this browser. The current town moves to the backup slot, so you can still restore it from here.',
-    });
+    return `<div class="pg-grid3">
+      <section class="pg-box"><h3 class="h-disp">Your town</h3>
+        <p>${actions.status()}</p>
+        <p class="pg-soft">${sim.state.terrainSeed ? 'Land seed ' + sim.state.terrainSeed + '. Start over or Renewal rolls a new valley.' : 'This town keeps its original land. Start over or Renewal rolls a new valley.'}</p>
+        <button class="btn" type="button" data-act="pcv">Preview the offline postcard</button></section>
+      <section class="pg-box"><h3 class="h-disp">Keep a copy</h3>
+        <p>Export a copy to keep it safe or move it to another computer.</p>
+        <div class="nb-btns"><button class="btn" type="button" data-act="exp">Export save</button><button class="btn" type="button" data-act="imp">Import save</button></div>
+        ${back ? `<button class="btn" type="button" data-act="rest">Restore the town from ${fmtAgo(back.savedAt)}</button>` : '<p class="pg-soft">No backup yet. Starting over or importing makes one.</p>'}</section>
+      <section class="pg-box pg-danger"><h3 class="h-disp">Fresh start</h3>
+        <p>Begin again with the small starter village. The current town moves to the backup slot first.</p>
+        <button class="btn danger" type="button" data-act="rst">Start over</button></section>
+    </div>
+    <p class="nb-promise">Your town saves itself in this browser every 45 seconds. Nothing leaves your computer unless you export it.</p>`;
+  };
+  const askHtml = (q) => `<section class="pg-ask${q.danger ? ' danger' : ''}"><h3 class="h-disp">${q.title}</h3><p>${q.text}</p>
+    <div class="nb-btns"><button class="btn" type="button" data-act="no">Not now</button><button class="btn ${q.danger ? 'danger' : 'primary'}" type="button" data-act="yes">${q.ok}</button></div></section>`;
+  book.register('settings', {
+    title: 'Settings', sub: 'Changes save straight away', c: '#8FB8D6', icon: PAGE_ICONS.settings, tabs: TABS,
+    render({ tab }) {
+      if (asking && asking.tab !== tab) asking = null;
+      const t = TABS.find((x) => x.id === tab);
+      if (asking) return askHtml(asking);
+      if (!actions) return tabHead(t);
+      return tabHead(t) + (tab === 'sky' ? '<div id="atmos" class="pg-sky"></div>' : tab === 'gfx' ? '<div id="gfx" class="pg-gfx"></div>' : tab === 'snd' ? '<div id="snd" class="pg-snd"></div>' : townTab());
+    },
+    opened({ tab }) {
+      if (asking || !actions) return;
+      if (tab === 'sky' && actions.calendar) mountAtmos($('atmos'), actions.calendar, sim);
+      if (tab === 'gfx' && actions.quality) mountGraphics($('gfx'), actions.quality);
+      if (tab === 'snd' && actions.sound) mountSound($('snd'), actions.sound);
+    },
+    closed() { asking = null; $('settingsbtn').setAttribute('aria-expanded', 'false'); },
+    click(e) {
+      const b = e.target.closest('[data-act]');
+      if (!b) return;
+      const act = b.dataset.act;
+      if (act === 'yes') return asking.onOk();
+      if (act === 'no') { asking = null; return book.refresh(); }
+      if (act === 'pcv') return actions.previewPostcard();
+      if (act === 'exp') return actions.exportSave();
+      if (act === 'imp') return actions.importPick();
+      if (act === 'rest') {
+        const back = actions.backup();
+        if (back) askConfirm({ title: 'Go back to the backup?', ok: 'Restore it', onOk: actions.restore,
+          text: 'The town from ' + fmtAgo(back.savedAt) + ' comes back. The town you have now moves to the backup slot.' });
+      }
+      if (act === 'rst') askConfirm({ title: 'Start over?', ok: 'Start over', onOk: actions.reset, danger: true,
+        text: 'This clears the town from this browser. The current town moves to the backup slot, so you can still restore it from here.' });
+    },
+  });
+  function showSettings(a) {
+    actions = a;
+    if (book.current() !== 'settings') book.open('settings'); else book.refresh();
+    $('settingsbtn').setAttribute('aria-expanded', 'true');
   }
-  // Replaces the settings body with a question and two choices. Used by import and the destructive steps above.
-  function askConfirm({ title, text, ok, onOk, danger = false }) {
-    const box = $('settings');
-    topRight.claim('settings');
-    box.hidden = false;
-    box.innerHTML = `<button class="x" id="sx" aria-label="Close">${CLOSE_SVG}</button>
-    <div class="band"><h2 class="h-disp">${title}</h2></div>
-    <div class="pad"><p class="sub">${text}</p>
-    <button class="btn ${danger ? 'danger' : 'primary'}" id="cy">${ok}</button><button class="btn" id="cn">Not now</button></div>`;
-    $('sx').onclick = hideSettings;
-    $('cn').onclick = () => showSettings(shown);
-    $('cy').onclick = onOk;
+  // Asks a question on the Settings page, on its Town tab, with two choices. Used by import and the destructive steps.
+  function askConfirm(q) {
+    if (book.current() !== 'settings') book.open('settings');
+    book.pickTab('town');
+    asking = { ...q, tab: 'town' };
+    book.refresh();
   }
-  function hideSettings() { $('settings').hidden = true; $('settingsbtn').setAttribute('aria-expanded', 'false'); }
+  function hideSettings() { if (book.current() === 'settings') book.close(); }
 
-  return { ui, showInspect, showTree, hideInspect, refreshInspect, setFly, showSettings, askConfirm, hideSettings, settingsOpen: () => !$('settings').hidden };
+  return { ui, showInspect, showTree, hideInspect, refreshInspect, setFly, showSettings, askConfirm, hideSettings, settingsOpen: () => book.current() === 'settings' };
 }
