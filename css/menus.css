@@ -25,11 +25,11 @@
 .tile.locked:hover{transform:none}
 .tile .pic{display:block;height:72px;border-radius:9px;border:2px solid var(--ink);overflow:hidden;background:#F6EEDB}
 .tile .pic img,.tile .pic svg{display:block;width:100%;height:100%;object-fit:cover}
-.tile .pic-ph{display:block;width:100%;height:100%;border-radius:6px;border:2px dashed rgba(43,38,32,.25)}
+.tile .pic-ph{display:block;width:100%;height:100%;border-radius:6px;border:2px dashed rgb(var(--line) / .25)}
 .tile.locked .pic{filter:grayscale(.6);opacity:.8}
-.tile .name{font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:14px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+.tile .name{font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:14px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
 .tile .row{display:flex;align-items:center;justify-content:space-between;gap:4px;min-height:20px}
-.price{font-size:11.5px;font-weight:800;line-height:1;padding:3px 6px;border-radius:7px;border:1.5px solid var(--ink);background:var(--paper-2);color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.price{font-size:11.5px;font-weight:800;line-height:1;padding:3px 6px;border-radius:7px;border:1.5px solid var(--ink);background:var(--paper-2);color:var(--text);white-space:nowrap;font-variant-numeric:tabular-nums;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .tile.short .price{background:#F6DDD0;color:var(--action);border-color:var(--action)}
 .price.unlock{background:var(--paper);color:var(--action);border-color:var(--action)}
 
@@ -44,7 +44,7 @@
 .zone-strip .tile .pic{height:64px}
 .zone-strip .tile.eraser .pic{background:none}
 
-.mkey{display:inline-grid;place-items:center;min-width:22px;height:20px;padding:0 5px;border-radius:6px;border:2px solid var(--ink);background:var(--paper-2);box-shadow:0 2px 0 var(--ink);font:800 11.5px/1 var(--body);color:var(--ink);flex:0 0 auto}
+.mkey{display:inline-grid;place-items:center;min-width:22px;height:20px;padding:0 5px;border-radius:6px;border:2px solid var(--ink);background:var(--paper-2);box-shadow:0 2px 0 var(--ink);font:800 11.5px/1 var(--body);color:var(--text);flex:0 0 auto}
 
 /* the footer: size, turn, what the selected model is, and its price */
 .pfoot{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;padding-top:8px;border-top:2px dashed var(--paper-3);min-width:0}
@@ -52,29 +52,25 @@
 .pfoot .psize.hint{font-size:12px;opacity:.75;letter-spacing:.02em;white-space:nowrap}
 .pfoot .tog{height:32px;padding:0 10px;font-size:13px;border-radius:10px;flex:0 0 auto}
 .pdetail{flex:1 1 auto;min-width:0;font-size:12.5px;font-weight:700;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pprice{flex:0 0 auto;font-size:14px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pprice{flex:0 0 auto;font-size:14px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums;white-space:nowrap}
 
 /* Bulldoze: one hint chip above the toolbar, no menu */
 .fly.bdchip{left:50%;right:auto;transform:translateX(-50%);width:max-content;max-width:calc(100vw - 32px);padding:7px 16px;border-radius:999px;bottom:var(--fly-b);max-height:none;overflow:visible}
-.bdtext{display:block;font-size:14px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bdtext{display:block;font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* Traffic legend */
 .lchip{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 8px;border-radius:12px;border:2px solid var(--ink);background:var(--paper);font-size:14px;font-weight:800;box-shadow:0 2px 0 var(--ink)}
 .lchip i{display:block;width:22px;height:14px;border-radius:5px;border:2px solid var(--ink)}
 .btn[aria-pressed="true"]{background:#F9DFC9;box-shadow:0 4px 0 var(--action);border-color:var(--action)}
 
-/* Demand: a plaque in the top HUD row. A title, then three pills, R, C and I. Each pill fills left to right in its zone
-   colour with the letter and the percentage on top. Hover for the drivers. */
-/* Demand plaque: a badge, "Demand" and what the town wants most, then three little columns (R, C, I) that fill from
-   the bottom in the zone colour, with a small arrow over one the town really wants. */
-.chip.demand{display:flex;flex-direction:row;align-items:center;gap:10px;min-width:0;padding:8px 12px 8px 10px;pointer-events:auto}
-.chip.demand .cval{display:flex;flex-direction:column;justify-content:center;gap:2px;min-width:0}
-.chip.demand .cval small{margin:0;font-size:12px;line-height:1}
-.dwant{display:block;font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:16px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.drows{display:flex;gap:6px;flex:none;margin-left:auto;align-items:flex-end;height:54px}
-.dcol{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px}
-.dtrack{position:relative;display:block;width:14px;height:30px;border:2px solid var(--ink);border-radius:6px;background:var(--paper);overflow:hidden}
+/* Demand plaque: the chart badge, then three little columns (R, C, I) that fill from the bottom in the zone colour,
+   with a small arrow over one the town really wants. Each column keeps room above its track for the arrow, so the
+   arrow stays inside the plaque. Hover for the words and the drivers. */
+.chip.demand{display:flex;flex-direction:row;align-items:center;gap:14px;min-width:0;padding:8px 14px 8px 10px;pointer-events:auto}
+.drows{display:flex;gap:10px;flex:none;align-items:flex-end}
+.dcol{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding-top:9px}
+.dtrack{position:relative;display:block;width:16px;height:18px;border:2px solid var(--ink);border-radius:6px;background:var(--paper);overflow:hidden}
 .dtrack u{position:absolute;left:0;right:0;bottom:0;height:0;text-decoration:none;transition:height .6s ease}
 .dcol .dk{width:18px;height:18px;border-radius:50%;border:2px solid var(--ink);display:grid;place-items:center;box-sizing:border-box;font-family:var(--display);font-size:10.5px;font-weight:800;line-height:1}
-.dcol.hot::before{content:"";position:absolute;top:-9px;left:50%;margin-left:-5px;border:5px solid transparent;border-bottom:7px solid var(--action);border-top:0;animation:d-hop 1.6s ease-in-out infinite}
-@keyframes d-hop{50%{translate:0 -2px}}
+.dcol.hot::before{content:"";position:absolute;top:0;left:50%;margin-left:-5px;border:5px solid transparent;border-top:7px solid var(--action);border-bottom:0;animation:d-hop 1.6s ease-in-out infinite}
+@keyframes d-hop{50%{translate:0 1px}}

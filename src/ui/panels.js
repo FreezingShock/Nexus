@@ -10,13 +10,14 @@ import { PAGE_ICONS } from './page-icons.js';
 import { mountGraphics } from './graphics.js';
 import { mountAtmos } from './atmos.js';
 import { mountSound } from './sound-settings.js';
+import { mountTheme } from './theme-settings.js';
 
 const CLOSE_SVG = '<svg width="16" height="16" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2L12 12M12 2L2 12" stroke="#2B2620" stroke-width="2.2" stroke-linecap="round"/></svg>';
 
 // The Settings page's bookmark tabs, each with the tint of its menu cousin (css/topbar.css).
 const TABS = [
   { id: 'sky', label: 'Sky', color: '#F6DDA0', icon: PAGE_ICONS.sky, line: 'Season, weather and the time of day.' },
-  { id: 'gfx', label: 'Graphics', color: '#D3E4C4', icon: PAGE_ICONS.gfx, line: 'How the town is drawn. Changes show straight away.' },
+  { id: 'gfx', label: 'Graphics', color: '#D3E4C4', icon: PAGE_ICONS.gfx, line: 'Light or dark paper, and how the town is drawn.' },
   { id: 'snd', label: 'Sound', color: '#F2C9BA', icon: PAGE_ICONS.snd, line: 'Music, the bustle of the streets and the little clicks.' },
   { id: 'town', label: 'Town', color: '#D2E3EE', icon: PAGE_ICONS.town, line: 'Saves, copies and a fresh start.' },
 ];
@@ -146,11 +147,12 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
       const t = TABS.find((x) => x.id === tab);
       if (asking) return askHtml(asking);
       if (!actions) return tabHead(t);
-      return tabHead(t) + (tab === 'sky' ? '<div id="atmos" class="pg-sky"></div>' : tab === 'gfx' ? '<div id="gfx" class="pg-gfx"></div>' : tab === 'snd' ? '<div id="snd" class="pg-snd"></div>' : townTab());
+      return tabHead(t) + (tab === 'sky' ? '<div id="atmos" class="pg-sky"></div>' : tab === 'gfx' ? '<div id="paper"></div><div id="gfx" class="pg-gfx"></div>' : tab === 'snd' ? '<div id="snd" class="pg-snd"></div>' : townTab());
     },
     opened({ tab }) {
       if (asking || !actions) return;
       if (tab === 'sky' && actions.calendar) mountAtmos($('atmos'), actions.calendar, sim);
+      if (tab === 'gfx' && actions.theme) mountTheme($('paper'), actions.theme);
       if (tab === 'gfx' && actions.quality) mountGraphics($('gfx'), actions.quality);
       if (tab === 'snd' && actions.sound) mountSound($('snd'), actions.sound);
     },

@@ -86,7 +86,6 @@ export function createHud({ sim, send, onSettings, calendar }) {
     const lock = calendar ? calendar.get().timeLock : 'auto';
     $('night').setAttribute('aria-pressed', String(lock !== 'auto'));
     $('night').setAttribute('aria-label', LOCK_TEXT[lock]);
-    $('night').dataset.label = 'Time of day'; // the menu tile's name, and under it the state
     $('night').dataset.sub = LOCK_SUB[lock];
     $('rate').textContent = fmtRateCompact(sim.rate());
     $('prate').textContent = fmtRateCompact(sim.partsRate());

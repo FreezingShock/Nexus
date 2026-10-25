@@ -1,6 +1,7 @@
 // The simulation: plain data in, plain data out. No DOM, no THREE.
 import { getLayout } from '../world/layout.js';
-import { setTerrainSeed } from '../world/terrain.js';
+import { setTerrainSeed, setLandEdits } from '../world/terrain.js';
+import { editsFromPairs } from '../world/land.js';
 import { registryOf } from '../core/registry.js';
 import { createGrid } from '../world/grid.js';
 import { systems as systemDefs } from './systems/index.js';
@@ -13,6 +14,7 @@ import { passedBetween, refreshCalendar, settleSkip } from './systems/calendar.j
 export function createSim({ state = freshState(), layout, now = () => Date.now() } = {}) {
   // The land comes first: the grid, the scenery and every height query read it.
   setTerrainSeed(state.terrainSeed);
+  setLandEdits(editsFromPairs(state.land)); // and the player's terrain edits on top (systems/land.js)
   layout = layout || getLayout();
   const listeners = new Set();
   let acc = 0;

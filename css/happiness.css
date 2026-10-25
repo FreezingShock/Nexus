@@ -7,7 +7,7 @@
 #hp-panel .hp-level{margin:0;font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:23px;line-height:1.1;color:var(--sky-ink)}
 #hp-panel .hp-pips{margin-top:6px}
 #hp-panel .hp-pips i{max-width:34px;height:9px}
-#hp-panel .hp-summary{margin:10px 0 0;font-size:14px;line-height:1.35;color:var(--ink);font-weight:600}
+#hp-panel .hp-summary{margin:10px 0 0;font-size:14px;line-height:1.35;color:var(--text);font-weight:600}
 #hp-panel .hp-homes{display:flex;height:14px;margin:10px 0 4px;border:2px solid var(--ink);border-radius:8px;overflow:hidden;background:var(--paper)}
 #hp-panel .hp-homes i{display:block;height:100%;transition:width .5s ease}
 #hp-panel .hp-homes .w,#hp-panel .hp-key .w::before{background:var(--sage)}
@@ -31,11 +31,11 @@
 #hp-panel .hp-bar i{display:block;height:100%;background:var(--sage)}
 #hp-panel li.drag .hp-bar i{background:#E3A08E}
 #hp-panel .hp-tips{margin:0;padding:0;list-style:none;font-size:13.5px;line-height:1.3}
-#hp-panel .hp-tips li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1.5px dashed rgba(43,38,32,.2)}
+#hp-panel .hp-tips li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1.5px dashed rgb(var(--line) / .2)}
 #hp-panel .hp-tips li:last-child{border-bottom:0}
 #hp-panel .hp-quiet{margin:0;font-size:14px;color:var(--ink-soft)}
 #hp-panel .hp-show{flex:0 0 auto;height:32px;padding:0 12px;border-radius:11px;border:2px solid var(--ink);background:var(--paper-2);font-weight:800;font-size:13px;box-shadow:0 2px 0 var(--ink)}
 #hp-panel .hp-show:active{transform:translateY(2px);box-shadow:0 0 0 var(--ink)}
-#hp-panel .hp-how{margin-top:12px;padding:8px 12px;border:1.5px dashed rgba(43,38,32,.35);border-radius:12px;background:var(--paper-2)}
+#hp-panel .hp-how{margin-top:12px;padding:8px 12px;border:1.5px dashed rgb(var(--line) / .35);border-radius:12px;background:var(--paper-2)}
 #hp-panel .hp-how summary{cursor:pointer;font-size:13px;font-weight:800}
 #hp-panel .hp-how p{margin:6px 0 0;font-size:13px;line-height:1.4;color:var(--ink-soft);font-weight:600}

@@ -28,9 +28,16 @@ export class Acc {
   constructor() { this.pos = []; this.nor = []; this.col = []; this.idx = []; this.lines = []; this.n = 0; this.asphalt = new Map(); this._tag = null; }
 
   // Flat polygon facing up (y fixed). Points are [x, z]; winding is fixed up here so callers need not care.
+  // On a tile whose ground folds (world/terrain.js: four triangles round the centre), the polygon is cut along the folds
+  // first, so every piece lies on one flat triangle of ground and never dips under it.
   poly(y, pts, col) {
+    for (const piece of alongFolds(pts)) this._poly(y, piece, col);
+  }
+  _poly(y, pts, col) {
+    if (pts.length < 3) return;
     let area = 0;
     for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length]; area += a[0] * b[1] - b[0] * a[1]; }
+    if (Math.abs(area) < 1e-9) return;
     const p = area > 0 ? pts.slice().reverse() : pts;
     const base = this.n;
     for (const [x, z] of p) { this.pos.push(x, y + groundY(x, z), z); this.nor.push(0, 1, 0); this.col.push(col[0], col[1], col[2]); this.n++; }
@@ -50,7 +57,14 @@ export class Acc {
     else this.idx.push(base, base + 2, base + 1, base, base + 3, base + 2);
   }
 
-  line(x0, y, z0, x1, z1) { this.lines.push(x0, y + groundY(x0, z0), z0, x1, y + groundY(x1, z1), z1); }
+  // An ink line on the ground, broken where it crosses a fold of the tile's ground so it lies on it all the way.
+  line(x0, y, z0, x1, z1) {
+    const pts = [[x0, z0], ...lineFolds(x0, z0, x1, z1), [x1, z1]];
+    for (let k = 0; k + 1 < pts.length; k++) {
+      const [ax, az] = pts[k], [bx, bz] = pts[k + 1];
+      this.lines.push(ax, y + groundY(ax, az), az, bx, y + groundY(bx, bz), bz);
+    }
+  }
 
   // Flat rectangle: center, half length along `angle` (radians in the x-z plane), half width across.
   rect(y, cx, cz, hl, hw, angle, col) {
@@ -88,6 +102,47 @@ export class Acc {
     g.setAttribute('position', new THREE.Float32BufferAttribute(this.lines, 3));
     return new THREE.LineSegments(g, lineMat);
   }
+}
+
+// ---- the folds of the ground ----
+// Each tile's ground is four flat triangles meeting at its centre; the folds between them are the tile's two diagonals.
+// A tile whose corners lie in one plane has no fold to follow, and its pieces are left whole.
+const tileCentre = (v) => Math.round(v / TILE) * TILE;
+function folded(cx, cz) {
+  const a = heightAt(cx - H, cz - H), b = heightAt(cx + H, cz - H), c = heightAt(cx - H, cz + H), d = heightAt(cx + H, cz + H);
+  return Math.abs(a + d - b - c) > 1e-4;
+}
+// Splits a convex polygon by the line s(p) = 0 into the parts on each side.
+function cut(pts, s) {
+  const pos = [], neg = [];
+  for (let i = 0; i < pts.length; i++) {
+    const p = pts[i], q = pts[(i + 1) % pts.length], sp = s(p), sq = s(q);
+    if (sp >= 0) pos.push(p); if (sp <= 0) neg.push(p);
+    if ((sp > 0 && sq < 0) || (sp < 0 && sq > 0)) {
+      const t = sp / (sp - sq), m = [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t];
+      pos.push(m); neg.push(m);
+    }
+  }
+  return [pos, neg].filter((x) => x.length >= 3);
+}
+export function alongFolds(pts) {
+  let cx = 0, cz = 0;
+  for (const [x, z] of pts) { cx += x; cz += z; }
+  cx = tileCentre(cx / pts.length); cz = tileCentre(cz / pts.length);
+  if (!folded(cx, cz)) return [pts];
+  const d1 = ([x, z]) => (x - cx) - (z - cz), d2 = ([x, z]) => (x - cx) + (z - cz);
+  return cut(pts, d1).flatMap((p) => cut(p, d2));
+}
+// Where the segment crosses the folds of its tile, in order from (x0, z0).
+function lineFolds(x0, z0, x1, z1) {
+  const cx = tileCentre((x0 + x1) / 2), cz = tileCentre((z0 + z1) / 2);
+  if (!folded(cx, cz)) return [];
+  const out = [];
+  for (const s of [([x, z]) => (x - cx) - (z - cz), ([x, z]) => (x - cx) + (z - cz)]) {
+    const a = s([x0, z0]), b = s([x1, z1]);
+    if ((a > 0 && b < 0) || (a < 0 && b > 0)) { const t = a / (a - b); out.push([t, x0 + (x1 - x0) * t, z0 + (z1 - z0) * t]); }
+  }
+  return out.sort((p, q) => p[0] - q[0]).map(([, x, z]) => [x, z]);
 }
 
 const unit = (d) => DIRS[d];

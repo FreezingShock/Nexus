@@ -12,7 +12,6 @@ import frameStats from './frame-stats.js';
 import happiness from './happiness.js';
 import menu from './menu.js';
 import notes from './notes.js';
-import onboarding from './onboarding.js';
 import paintTown from './paint-town.js';
 import photo from './photo.js';
 import placement from './placement.js';
@@ -22,6 +21,7 @@ import roadTool from './road-tool.js';
 import services from './services.js';
 import shortcutSheet from './shortcut-sheet.js';
 import sound from './sound.js';
+import terrain from './terrain.js';
 import toolbarFold from './toolbar-fold.js';
 import tooltips from './tooltips.js';
 import townPage from './town-page.js';
@@ -39,7 +39,6 @@ export const uiModules = [
   happiness,
   menu,
   notes,
-  onboarding,
   paintTown,
   photo,
   placement,
@@ -49,6 +48,7 @@ export const uiModules = [
   services,
   shortcutSheet,
   sound,
+  terrain,
   toolbarFold,
   tooltips,
   townPage,

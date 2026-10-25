@@ -4,6 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createEngine } from '../src/audio/engine.js';
 import { DEFAULTS } from '../src/audio/mix.js';
+import { nowPlaying, musicCommand } from '../src/audio/cuehub.js';
 
 class Node {
   constructor() { this.connections = []; }
@@ -35,7 +36,7 @@ function engineWith(stub) {
 }
 
 const CUE_NAMES = ['hover', 'select', 'open', 'close', 'tool', 'place', 'road', 'undo', 'zone', 'erase', 'bulldoze',
-  'upgrade', 'goal', 'renew', 'charge', 'postcard', 'deny', 'dusk', 'dawn', 'click', 'tick', 'note', 'road-grow', 'road', 'zone'];
+  'upgrade', 'goal', 'renew', 'charge', 'postcard', 'deny', 'dusk', 'dawn', 'market', 'festival', 'click', 'tick', 'note', 'road-grow', 'road', 'zone'];
 
 test('unlock builds the graph once, and every cue plays without throwing', () => {
   const stub = stubContext();
@@ -107,5 +108,29 @@ test('the scheduler plays chords, chirps, hoots and leaves once the clock moves 
   engine.setNight(true);
   stub.ctx.currentTime = 20;
   await new Promise((r) => setTimeout(r, 220));
+  engine.stop();
+});
+
+test('a tune starts a few seconds after unlock, plays its instruments, and Next tune moves on', async () => {
+  const stub = stubContext();
+  const engine = engineWith(stub);
+  engine.unlock();
+  engine.setMoment({ hour: 12, night: false, season: 'summer', weather: 'clear' });
+  engine.setLevels({ dogs: 1, cuckoo: 1, frogs: 1, thunder: 1, hearth: 1 });
+  assert.equal(engine.playing, null, 'quiet at first');
+  stub.ctx.currentTime = 30;
+  await new Promise((r) => setTimeout(r, 220));
+  assert.ok(engine.playing, 'a tune is playing');
+  assert.equal(nowPlaying(), engine.playing, 'Settings hears the title');
+  const before = stub.calls.oscillators;
+  stub.ctx.currentTime = 34;
+  await new Promise((r) => setTimeout(r, 220));
+  assert.ok(stub.calls.oscillators > before, 'notes were scheduled');
+  musicCommand('next');
+  assert.equal(engine.playing, null, 'the old tune is let go');
+  stub.ctx.currentTime = 37;
+  await new Promise((r) => setTimeout(r, 220));
+  assert.ok(engine.playing, 'and a new one begins');
+  engine.setMoment({ hour: 0, night: true, season: 'winter', weather: 'snow' });
   engine.stop();
 });

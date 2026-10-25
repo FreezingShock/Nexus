@@ -5,8 +5,8 @@ import assert from 'node:assert/strict';
 import { createSim } from '../src/sim/sim.js';
 import { freshState } from '../src/sim/state.js';
 import { getLayout } from '../src/world/layout.js';
-import { heightAt, setTerrainSeed, terrainSeed, riverX, newSeed } from '../src/world/terrain.js';
-import { BASE, GRID_N, GRID_HALF, createGrid, tileCenter, tileIndex } from '../src/world/grid.js';
+import { heightAt, baseHeightAt, setTerrainSeed, terrainSeed, riverX, newSeed } from '../src/world/terrain.js';
+import { BASE, CLIFF, GRID_N, GRID_HALF, createGrid, tileCenter, tileIndex } from '../src/world/grid.js';
 import { starterPlaced, starterStreetTiles, TUNNEL_GATE } from '../src/world/starter.js';
 import { roadBlock } from '../src/world/roadnet.js';
 import { lotTiles } from '../src/world/placement.js';
@@ -16,12 +16,13 @@ const SEEDS = Array.from({ length: 48 }, (_, i) => 1 + i * 40503 + (i % 7) * 977
 const withSeed = (seed, fn) => { setTerrainSeed(seed); try { return fn(); } finally { setTerrainSeed(0); } };
 const grid = (seed) => withSeed(seed, () => { const g = createGrid(getLayout()); return g; });
 
+// The land's shape (baseHeightAt). heightAt is the drawn mesh over it, the same at every tile corner.
 test('seed 0 is the original land, to the last digit', () => {
   setTerrainSeed(0);
   const want = { '0,0': 0, '30,10': 0, '-60,40': 4.6799, '80,5': 29.9739, '100,-100': 16.1186, '52,0': -0.9394, '120,20': 28.1475 };
   for (const [k, v] of Object.entries(want)) {
     const [x, z] = k.split(',').map(Number);
-    assert.ok(Math.abs(heightAt(x, z) - v) < 1e-4, k + ' ' + heightAt(x, z));
+    assert.ok(Math.abs(baseHeightAt(x, z) - v) < 1e-4, k + ' ' + baseHeightAt(x, z));
   }
 });
 
@@ -56,10 +57,10 @@ test('on every seed the centre is flat, the edge is mountains and the rest has r
   });
 });
 
-test('buildable means gentle: every buildable tile is within the slope rule, whatever its height', () => {
+test('buildable means no cliff: every buildable tile is within the cliff rule, whatever its height', () => {
   for (const s of SEEDS.slice(0, 12)) {
     const g = grid(s);
-    for (let i = 0; i < g.base.length; i++) if (g.base[i] === BASE.LAND) assert.ok(g.thi[i] - g.tlo[i] <= 0.9 + 1e-9 && g.thi[i] <= 26);
+    for (let i = 0; i < g.base.length; i++) if (g.base[i] === BASE.LAND) assert.ok(g.thi[i] - g.tlo[i] <= CLIFF + 1e-9 && g.thi[i] <= 26);
     let roadable = 0, plateau = 0;
     withSeed(s, () => {
       for (let gz = 0; gz < GRID_N; gz++) for (let gx = 0; gx < GRID_N; gx++) {

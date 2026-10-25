@@ -1,10 +1,9 @@
 /* The top bar's colour and its menu. Each plaque has its own tint so a glance finds it: gold Coins, terracotta Parts,
-   sage Renewal, sky Happiness, warm paper Demand. Time stays on the bar (pause, speed); the other buttons live in a
+   sky Happiness, warm paper Demand. Time stays on the bar (pause, speed); the other buttons live in a
    hamburger menu as big labelled tiles. Loaded after hud.css. */
 .chip.card{background-image:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,0) 60%),var(--grain);background-color:var(--tint,var(--paper))}
 #coinschip{--tint:#F8E2A6}
 #partschip{--tint:#F2C9BA}
-#renchip{--tint:#D3E4C4}
 #hpchip{--tint:#D2E3EE}
 #demandw{--tint:#F5E9CF}
 .brand.card{background-color:#F1E6C8}
@@ -30,15 +29,14 @@
 .menu::after{content:"";position:absolute;left:11px;top:20px;bottom:20px;width:6px;background:radial-gradient(circle,rgba(43,38,32,.35) 2.4px,transparent 3px) 0 0/6px 26px repeat-y;pointer-events:none}
 .menu h3{margin:0 0 8px 8px;font-size:22px}
 .menugrid{display:flex;flex-direction:column}
-.mgap{border:0;border-top:1.5px dashed rgba(43,38,32,.28);margin:5px 8px}
-.menugrid .mrow{position:relative;width:100%;height:auto;display:flex;align-items:center;gap:12px;padding:7px 8px;border:0;border-radius:12px;background:none;box-shadow:none;text-align:left;color:var(--ink);transition:background .15s,translate .15s}
+.mgap{border:0;border-top:1.5px dashed rgb(var(--line) / .28);margin:5px 8px}
+.menugrid .mrow{position:relative;width:100%;height:auto;display:flex;align-items:center;gap:12px;padding:7px 8px;border:0;border-radius:12px;background:none;box-shadow:none;text-align:left;color:var(--text);transition:background .15s,translate .15s}
 .menugrid .mrow:hover,.menugrid .mrow:focus-visible{background:rgba(233,214,178,.55);translate:4px 0;box-shadow:none;transform:none}
 .menugrid .mrow:active{transform:none;box-shadow:none}
 .menugrid .mrow[aria-expanded="true"]{background:rgba(168,193,121,.4);box-shadow:none}
 .mi-ico{flex:none;width:42px;height:42px;display:grid;place-items:center;border:2px solid var(--ink);border-radius:12px;background:var(--c,var(--paper-2));box-shadow:0 3px 0 var(--ink);transition:rotate .2s,translate .2s}
 .mrow:hover .mi-ico{rotate:-6deg;translate:0 -2px}
 .mi-ico svg{width:28px;height:28px;display:block}
-.mi-ico .qmark{font-size:22px}
 .mi-text{flex:1;min-width:0;display:flex;flex-direction:column}
 .mi-text b{font-family:var(--display);font-variation-settings:"SOFT" 100,"WONK" 1;font-weight:800;font-size:17px;line-height:1.15}
 .mi-sub{color:var(--ink-soft);font-size:12.5px;font-weight:700;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -46,7 +44,7 @@
 .mrow kbd{flex:none;display:inline-grid;place-items:center;min-width:24px;height:22px;padding:0 6px;border:1.5px solid var(--ink);border-radius:6px;background:var(--paper);font:800 12px/1 var(--body);box-shadow:0 2px 0 var(--ink)}
 .menugrid .goalsib .chg{position:static;display:block;margin-top:5px;width:100%;height:8px;box-sizing:border-box}
 .menugrid .mrow .dot{top:6px;left:42px;right:auto}
-/* Time of day shows its state on the tile: sun by day, moon when locked to night */
+/* Time of day shows its state on the tile: a cool tint while the sky is locked */
 #night[aria-pressed="true"] .mi-ico{--c:#C9D3E8}
 @media (max-width:1479px){.ctrlwrap{margin-left:0}}
 @media (prefers-reduced-motion:reduce){.ctrl .ib,.menugrid .mrow,.mi-ico{transition:none}}

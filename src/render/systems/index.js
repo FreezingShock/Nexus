@@ -6,6 +6,8 @@ import decor from './decor.js';
 import districts from './districts.js';
 import gridOverlay from './grid-overlay.js';
 import happyFx from './happy-fx.js';
+import landBrush from './land-brush.js';
+import landContours from './land-contours.js';
 import lifeSmoke from './life-smoke.js';
 import lifeTown from './life-town.js';
 import lifeWindows from './life-windows.js';
@@ -13,8 +15,10 @@ import lots from './lots.js';
 import placementGhost from './placement-ghost.js';
 import puffs from './puffs.js';
 import roads from './roads.js';
+import scaffold from './scaffold.js';
 import servicesOverlay from './services-overlay.js';
 import sky from './sky.js';
+import terraces from './terraces.js';
 import tileview from './tileview.js';
 import trees from './trees.js';
 import turbines from './turbines.js';
@@ -26,6 +30,8 @@ export const renderSystems = [
   districts,
   gridOverlay,
   happyFx,
+  landBrush,
+  landContours,
   lifeSmoke,
   lifeTown,
   lifeWindows,
@@ -33,8 +39,10 @@ export const renderSystems = [
   placementGhost,
   puffs,
   roads,
+  scaffold,
   servicesOverlay,
   sky,
+  terraces,
   tileview,
   trees,
   turbines,

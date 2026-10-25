@@ -50,8 +50,12 @@
 .kgroup>h3{display:inline-block;align-self:flex-start;padding:2px 12px;border-radius:10px;background:var(--gc);border:2px solid var(--ink);font-size:18px;rotate:-1deg}
 .kgroup ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 .kgroup li{display:flex;align-items:center;gap:10px;font-size:14.5px;font-weight:600;line-height:1.3}
-.kfoot{display:flex;align-items:center;gap:14px}
-.kfoot .nb-promise{flex:1;margin:0}
-.kfoot .btn{flex:none}
 
 @media (max-width:900px){.pg-cols,.pg-grid3,.pg-sky .gfx,.pg-gfx .gfx{grid-template-columns:1fr}.pg-gfx .gfx-switches{grid-template-columns:1fr}}
+
+/* Settings > Graphics: the Paper row (src/ui/theme-settings.js), each choice with a little swatch of its paper */
+.pg-paper{margin-bottom:14px}
+.pg-paper .gfx-opt{display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.pp-sw{flex:none;width:18px;height:18px;border:2px solid var(--ink);border-radius:50%;background:#FBF6EA}
+.pp-dark{background:#2B3638}
+.pp-auto{background:linear-gradient(135deg,#FBF6EA 50%,#2B3638 50%)}

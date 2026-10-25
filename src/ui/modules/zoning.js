@@ -1,7 +1,7 @@
 // The Zones tool: pick a zone (or the eraser), drag a rectangle on the grid, release to paint.
 // Reads sim state, sends paintZone / clearZone, and drives the tileview render system for the grid and the preview.
 import { GRID_N, inBounds, worldToTile } from '../../world/grid.js';
-import { demandCard, demandWord, wantLine } from '../hud-detail.js';
+import { demandCard, demandWord } from '../hud-detail.js';
 import { ZONE_DEFS } from '../../sim/zones.js';
 import { $, fmt } from '../format.js';
 import { zoneCard } from '../cards.js';
@@ -150,7 +150,8 @@ export default {
     };
 
     // The demand widget: three little columns, R, C and I, filled from the bottom in the zone colour, with the letter
-    // under each and a small arrow over a column the town really wants. The hover card (hud-detail.js) has the words.
+    // under each and a small arrow over a column the town really wants, kept inside the plaque. The hover card
+    // (hud-detail.js) has the words.
     function paintDemand() {
       if (!demandEl) return;
       const d = sim.zoning.demand();
@@ -166,8 +167,6 @@ export default {
         col.querySelector('u').style.height = pct + '%';
         col.classList.toggle('hot', pct >= 70);
       });
-      const want = $('dwant');
-      if (want) { const t = wantLine(d); if (want.textContent !== t) want.textContent = t; }
       if (demandPop) {
         const card = demandCard(d, sim.zoning.stats(), [null, ZONE_DEFS[1].paint, ZONE_DEFS[2].paint, ZONE_DEFS[3].paint]);
         if (card !== lastCard) { lastCard = card; demandPop.innerHTML = card; }

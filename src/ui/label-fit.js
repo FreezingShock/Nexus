@@ -16,6 +16,6 @@ export function isBlocked(label, obstacles, pad = 4) {
 // flyouts, the toolbar, the offline envelope and postcard, the notes, tips and the labels of other tools.
 export const OBSTACLES = [
   '.top > *', '.leftcol > *', '#inspect', '#settings', '#fly', '#tools', '#demandw', '#hp-panel', '#menu',
-  '.envelope', '.postcard', '.openbtn', '.notes', '.tipbubble', '.tipnote', '.shortcuts',
+  '.envelope', '.postcard', '.openbtn', '.notes', '.tipbubble', '.shortcuts',
   '.gfx-stats', '#placelabel', '#roadlabel', '.ztag',
 ];

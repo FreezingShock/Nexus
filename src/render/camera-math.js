@@ -118,3 +118,30 @@ export function isoTargetFrom(pos, yaw, pitch) {
 
 // Wheel zoom for the orbit view: each notch multiplies the zoom and the result is clamped.
 export function zoomStep(zoom, factor) { return clamp(zoom * factor, 0.55, 3); }
+
+// Where a ray first meets the land: `h(x, z)` is the ground height. The tools used to cut the ray at y = 0, so on a hill
+// the cursor landed on the tile behind the one under the pointer (further away the higher the ground). This walks the
+// ray down from above the tallest land with steps that shrink as it nears the ground, then halves the last step until
+// the hit is within a hair. Ground below `floor` counts as `floor` (the water). Falls back to y = floor when nothing is hit.
+export const RAY_TOP = 160;
+export function rayGround(o, d, h, floor = 0) {
+  if (d.y > -1e-6) return null; // level or looking up: never meets the ground
+  const g = (x, z) => Math.max(floor, h(x, z));
+  let t = o.y > RAY_TOP ? (RAY_TOP - o.y) / d.y : 0;
+  const tEnd = (floor - 1 - o.y) / d.y; // past here the ray is under any ground
+  const gap = (s) => o.y + d.y * s - g(o.x + d.x * s, o.z + d.z * s);
+  let prev = t;
+  for (let n = 0; n < 600 && t < tEnd; n++) {
+    const a = gap(t);
+    if (a <= 0) {
+      let lo = prev, hi = t;
+      for (let k = 0; k < 24; k++) { const m = (lo + hi) / 2; if (gap(m) > 0) lo = m; else hi = m; }
+      t = hi;
+      return { x: o.x + d.x * t, y: o.y + d.y * t, z: o.z + d.z * t };
+    }
+    prev = t;
+    t += Math.max(0.4, a * 0.4);
+  }
+  const k = (floor - o.y) / d.y;
+  return k < 0 ? null : { x: o.x + d.x * k, y: floor, z: o.z + d.z * k };
+}

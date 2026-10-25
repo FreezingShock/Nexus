@@ -10,7 +10,8 @@
 //   ripple(gx, gz, tiles)         a soft ring spreads out from the tile centre (gx, gz, may be fractional) to `tiles` tiles away
 import * as THREE from '../../../vendor/three/three.module.min.js';
 import { GRID_N, GRID_HALF, TILE, tileIndex, inBounds } from '../../world/grid.js';
-import { groundPlaneGeometry } from '../ground.js';
+import { groundPlaneGeometry, refreshGroundPlane } from '../ground.js';
+import { createLandWatch } from '../land-watch.js';
 
 const AREA = GRID_N * GRID_N;
 const RIPPLE_S = 1.1;      // seconds for a ripple to spread and fade
@@ -76,6 +77,7 @@ export default {
       polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3,
     });
     const mesh = new THREE.Mesh(groundPlaneGeometry(0.2), mat);
+    const land = createLandWatch();
     mesh.renderOrder = 3; mesh.frustumCulled = false; mesh.visible = false;
     world.add(mesh);
     let prev = [];           // indices written last time, so a clear only touches those
@@ -113,6 +115,7 @@ export default {
       },
       // Per frame: moves the ripple outward. Idle (no ripple) it does nothing.
       frame(f) {
+        if (land.poll()) refreshGroundPlane(mesh.geometry, 0.2); // the terrain tools moved the ground
         if (rip >= 1) return;
         rip = Math.min(1, rip + f.dt / RIPPLE_S);
         const ease = 1 - (1 - rip) * (1 - rip);

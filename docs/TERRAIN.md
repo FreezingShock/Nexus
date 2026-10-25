@@ -30,10 +30,20 @@ everything on the village side.
 
 ## What is buildable
 
-Decided by slope, never by height (grid.js `regen`): a tile is steep when its corners and middle differ by more than 0.9, or
-it is above `MOUNTAIN_TOP` (26). So a plateau top at height 6 is as buildable as the meadow. Water is below -0.15 or within
-5 units of the river line. Roads use the same slope idea (roadnet.js `tooSteep`: at most 0.5 across a tile), farms their
-flat rule, zones and districts the `LAND` base. Seed 0 keeps its old height cut-offs.
+Decided by slope, never by height (grid.js `regen`). Since the hills revamp (2026-10-25) a tile is steep (`BASE.STEEP`) only
+when it is a cliff, its corners and middle more than `CLIFF` (4.5) apart, or above `MOUNTAIN_TOP` (26), or on seeded land
+in the outer `RIM` (5) rows, the mountain rim. Everything gentler is a hillside and takes zones, buildings, parks and decor.
+Water is below -0.15 or within 5 units of the river line. Farms keep their flat rule. Roads refuse only cliffs too.
+
+A road on a hillside grades itself (`src/world/grade.js`): `profile` keeps the road's height within `GRADE` (0.75, 3 m) of
+the tile before and after, meeting existing streets at their height; tiles that had to change, or tilt more than `TILT`
+(0.5) across, get their four corners set to the mean height of the road tiles round each corner, so the road is level
+across and ramps along, and the land beside it slopes away as a cut or an embankment. The earth moved is priced like the
+terrain tools and added to the road (the label shows "earthworks"); undoing the road puts the hill back.
+
+A lot on a hillside stands on a level pad at its highest corner (`standOn` in world/models.js). When the pad is more than
+`WALL_FROM` (0.45) above the lowest ground round the lot, `render/systems/terraces.js` draws a stone retaining wall from
+the pad down into the ground, capped with pale coping: four instanced draw calls for the whole town.
 
 ## Tests
 
@@ -45,8 +55,41 @@ new village (Settings, Start over).
 
 ## Far ground
 
-`render/terrain.js` builds the fine map (2.5 units a vertex) and a coarse ring round it out to 480 units (10 units a vertex), the same `heightAt`. Both have a wall under their seams so no crack shows sky. About 63k triangles in all; one more draw call.
+`render/terrain.js` builds the fine map out to 187.5 units and a coarse ring round it out to 487.5 units (12.5 units a vertex, its cells meeting the fine edge). Both have a wall under their seams so no crack shows sky. One more draw call.
+
+## One surface (heightAt is the mesh)
+
+The land's shape is `baseHeightAt` (plus the player's edits), but what everything stands on is `heightAt`: the town's tile lattice (3 units, corners from -145.5) carried out to `FAN_HALF` = 187.5, each tile cut into four flat triangles that meet at its centre, the centre being the mean of the four corners. The shape is sampled at the corners only (cached per seed; the edits are added at their corners), so heightAt agrees with the old height at every tile corner and is cheaper than before. Past the lattice the raw height is used.
+
+The fine ground mesh is that surface triangle for triangle, so nothing laid on heightAt can poke through or float: the tile overlays (`render/ground.js`, four triangles a tile too), roads, lamps, lots, terraces, cars and people. Roads go one step further (`render/road-mesh.js`): on a tile whose corners are not in one plane, every road piece and ink line is cut along the tile's diagonals, so each piece lies on one flat triangle at its lift above the ground. A graded road tile (level across, a ramp along) is one plane and is not cut. `tests/ground-surface.test.js` checks the mesh, the overlays and a road on a hillside, before and after grading.
+
+Before this the fine mesh was a jittered 2.5-unit grid that did not line up with tiles, so on hills and in cuts the grass came up through roads, overlays hung over the ground and terrace walls stopped short of it.
 
 ## Never seeing the edge
 
 The orbit camera's near plane used to sit at +1, 150 units from the target, so zoomed out or tilted low, ground behind the camera was clipped along a slanted line and the water plane and background showed through (a floating slab). The near plane is now -400. The water plane covers the whole far ground. The lowest tilt (`ISO.elevMin`) is 0.38, so the top of the view stays on land, and `tests/camera.test.js` checks that the four corner rays land within 460 units at the widest window, furthest zoom-out and furthest pan. Beyond about 340 units of depth the fog fades the land into haze, so the mountains seem to go on for ever.
+
+## Terrain tools (the player's edits)
+
+The Terrain tool (U) raises, lowers, flattens and smooths the land with a soft brush (S, M, L). While it is in hand,
+contour lines (`render/systems/land-contours.js`, a shader on a ground-hugging plane) mark every 0.5 units of height (2 m),
+bolder every 2.5 (10 m). The edits are height offsets at the
+tile corners (`src/world/land.js`, the 97 x 97 lattice the tile overlays use), blended across each tile and added to the
+seeded land in `heightAt` (`baseHeightAt` is the land as made). So the grid, roads, buildings, trees, decor and overlays all
+read the edited ground with no change on their side.
+
+- Saved in `state.land` as `[corner, hundredths]` pairs. A save without it has no edits, so old towns load as they were;
+  no save version bump. Renewal starts the new land with none.
+- Sim: `src/sim/systems/land.js`, command `terraform { tool, x, z, size, level, stroke }`. Each dab costs
+  `BALANCE.land.perEarth` coins per unit of ground moved. All dabs of one drag share one undo step, with the coins back.
+- Reach: corners within the grid (two tiles in from its edge), more than 7.5 units from the river line, west of the tunnel
+  mountain (x < 66), and whose land as made is below `LAND_TOP` (MOUNTAIN_TOP - 4). So the mountain rim stays fixed, but
+  steep hillsides below it can be reshaped. Raised ground stops at `LAND_TOP`; dug ground at -2, a pond (the water plane
+  shows through below -0.55). Ground under a road, zone or building is never dug below the water line.
+- Built things ride the ground: buildings, grown lots, roads, trees, decor and the tile overlays redraw when it moves.
+  Render code follows through `createLandWatch()` (`src/render/land-watch.js`), which reports the tiles and the box that
+  moved since it last looked. The fine ground mesh lifts only the vertices in that box (`reshape` in render/terrain.js).
+- Zones on ground that turned steep stay (zoning only drops zones on water or under roads at load), and so do decorations.
+
+Not browser-run: how the brush feels, how fast a big drag redraws on a slow machine, and the look of dug ponds are for nate
+to check on localhost.

@@ -37,8 +37,10 @@ test('the starter village is plain ground: no town pads, and the grid leaves its
   for (const [gx, gz] of starterStreetTiles()) assert.ok([BASE.LAND, BASE.WATER].includes(g.baseAt(gx, gz)), `${gx},${gz}`);
   assert.equal(g.baseAt(TUNNEL_GATE.gx, TUNNEL_GATE.gz), BASE.LAND, 'the tunnel gate is level ground');
   for (const r of starterPlaced()) for (const [x, z] of lotTiles(r.gx, r.gz, r.fw, r.fd)) assert.equal(g.baseAt(x, z), BASE.LAND);
-  // hills at the edge of the old map are not buildable, river is water
-  assert.equal(g.baseAt(16, 16), BASE.STEEP);
+  // hills at the edge of the old map are buildable hillside now, cliffs are not; river is water
+  assert.equal(g.baseAt(16, 16), BASE.LAND);
+  assert.ok(g.thi[tileIndex(16, 16)] - g.tlo[tileIndex(16, 16)] > 0.9, 'a real hillside');
+  assert.equal(g.baseAt(69, 14), BASE.STEEP, 'the tunnel mountain is a cliff');
   assert.equal(g.baseAt(worldToTile(52, 0)[0], GRID_HALF), BASE.WATER);
   // there is real open land to zone
   let open = 0;

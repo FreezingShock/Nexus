@@ -4,9 +4,12 @@
 import * as THREE from '../../vendor/three/three.module.min.js';
 import { makeParts, worldMatrix, addToBatch } from './buildings.js';
 import { describe } from '../world/models.js';
-import { Batch, disposeAll } from './geom.js';
+import { Batch } from './geom.js';
 import { lineMat } from './materials.js';
 import { nightWall } from './models/materials.js';
+import { createLandWatch } from './land-watch.js';
+import { createBuildingBatch } from './building-batch.js';
+import { GRID_N } from '../world/grid.js';
 
 const HULL = new THREE.MeshBasicMaterial({ color: 0x6DB6EC, side: THREE.BackSide });
 const proxyMat = new THREE.MeshBasicMaterial();
@@ -18,10 +21,16 @@ export function mergeBuildings(parent, items, night) {
   return batch.build(parent);
 }
 
-// A click target for the whole building (tower and roof included), a box around its parts.
-export function proxyFor(parts, world) {
+// The box around a building's parts, in its own frame. Also sizes the upgrade scaffolding (render/systems/scaffold.js).
+export function partsBox(parts) {
   const bb = new THREE.Box3(), tmp = new THREE.Box3();
   for (const p of parts) { p.geo.computeBoundingBox(); tmp.copy(p.geo.boundingBox).applyMatrix4(p.local); bb.union(tmp); }
+  return bb;
+}
+
+// A click target for the whole building (tower and roof included), a box around its parts.
+export function proxyFor(parts, world) {
+  const bb = partsBox(parts);
   const size = bb.getSize(new THREE.Vector3()), c = bb.getCenter(new THREE.Vector3());
   const proxy = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, size.z).translate(c.x, c.y, c.z), proxyMat);
   proxy.matrixAutoUpdate = false;
@@ -49,13 +58,23 @@ export function placeHull(group, b, sx, sy, sz) {
   group.position.set(b.x, b.y ?? 0.1, b.z); group.rotation.set(0, b.rotY, 0); group.scale.set(sx, sy, sz);
 }
 
+// Does a placed record's footprint cover any of these tile indexes?
+function touches(r, tiles) {
+  for (let z = r.gz; z < r.gz + r.fd; z++) for (let x = r.gx; x < r.gx + r.fw; x++) if (tiles.has(z * GRID_N + x)) return true;
+  return false;
+}
+
 // hooks.burst(x, z, radius, count): a dust puff when a building levels up (the puffs system).
+// hooks.scaffold(world, box, onReveal): scaffolding round a building the player upgraded (the scaffold system). The old
+// look stays inside it until onReveal, then the new level pops in. A null answer means no scaffolding: pop at once.
 export function createTown(root, hooks = {}) {
-  const group = new THREE.Group(); root.add(group);
+  // Placed buildings and grown lots share these meshes (render/building-batch.js); the lots system registers its own source.
+  const buildings = createBuildingBatch(root);
   const selGroup = new THREE.Group(); root.add(selGroup);
   const entries = new Map();
-  let built = [], removed = new Set(), night = false, popping = null, selected = null;
+  let removed = new Set(), night = false, popping = null, selected = null;
   let placedSig = '', wantPop = new Set(), wantSettle = new Set();
+  const land = createLandWatch();
   let lifeRev = 0, lifeList = [], lifeSeen = -1; // for render/systems/life-*.js: what is standing, and a counter that moves when it changes
 
   // desc -> entry. `base` is the level the building starts at before any upgrade.
@@ -66,21 +85,41 @@ export function createTown(root, hooks = {}) {
   function regenerate(e, level) {
     e.level = level;
     e.desc = e.b = { ...e.desc, level };
-    e.parts = makeParts(e.desc);
+    e.parts = e.next && e.next.level === level ? e.next.parts : makeParts(e.desc);
+    e.next = null; e.baked = null;
     e.proxy.geometry.dispose();
     e.proxy = proxyFor(e.parts, e.world);
   }
-
-  function applyNight() {
-    for (const m of built) if (m.isMesh && nightWall(m.userData.day)) m.material = night ? nightWall(m.userData.day) : m.userData.day;
+  // Scaffolding up round a building the player just upgraded: its new look waits for the reveal.
+  function raiseScaffold(e, level) {
+    if (!hooks.scaffold) return false;
+    const id = e.b.id, parts = makeParts({ ...e.desc, level });
+    const h = hooks.scaffold(e.world, partsBox(parts), () => {
+      if (entries.get(id) !== e) return;
+      e.scaf = null; e.reveal = true; // this level change pops instead of scaffolding again
+      wantPop.add(id); setTimeout(() => wantPop.delete(id), 1500); // the next setState swaps the look and pops it
+    });
+    if (!h) return false;
+    e.next = { level, parts }; e.scaf = h;
+    return true;
   }
+  function dropScaffold(e) { if (e.scaf) { e.scaf.cancel(); e.scaf = null; } }
+
+  let excluded = null; // a building popping on its own (startPop) stays out of the merged meshes
+  buildings.source('town', () => {
+    // Each building is baked into world-space arrays once (and again only when its parts change), so a rebuild is a copy.
+    const out = [];
+    for (const e of entries.values()) {
+      if (removed.has(e.b.id) || e.b.id === excluded) continue;
+      if (!e.baked) { const one = new Batch(); addToBatch(one, e.parts, e.world, false); e.baked = one.bake(); }
+      out.push(e.baked);
+    }
+    return out;
+  });
   function rebuild(excludeId) {
     lifeRev++;
-    disposeAll(built, group);
-    const items = [];
-    for (const e of entries.values()) if (!removed.has(e.b.id) && e.b.id !== excludeId) items.push(e);
-    built = mergeBuildings(group, items, false);
-    applyNight();
+    excluded = excludeId ?? null;
+    buildings.rebuild();
   }
 
   function clearHull() { selGroup.clear(); } // hull meshes share the parts' geometry: nothing to dispose
@@ -127,6 +166,7 @@ export function createTown(root, hooks = {}) {
       const next = new Set(ids);
       if (next.size === removed.size && [...next].every((i) => removed.has(i))) return;
       removed = next; endPop(); rebuild();
+      for (const id of removed) { const e = entries.get(id); if (e) dropScaffold(e); }
       if (selected && removed.has(selected)) setHull(null);
     },
     // Syncs placed buildings and levels from the sim snapshot. Cheap when nothing changed.
@@ -136,7 +176,7 @@ export function createTown(root, hooks = {}) {
       if (sig !== placedSig) {
         placedSig = sig;
         const keep = new Set(placed.map((r) => r.id));
-        for (const [id, e] of entries) if (!keep.has(id)) { e.proxy.geometry.dispose(); entries.delete(id); if (selected === id) setHull(null); }
+        for (const [id, e] of entries) if (!keep.has(id)) { dropScaffold(e); e.proxy.geometry.dispose(); entries.delete(id); if (selected === id) setHull(null); }
         for (const r of placed) if (!entries.has(r.id)) { const d = describe(r, 1); if (d) addEntry(d, 1); }
         dirty = true;
       }
@@ -151,25 +191,39 @@ export function createTown(root, hooks = {}) {
         const d = describe(r, e.level);
         if (!d) continue;
         e.desc = e.b = d;
-        e.parts = makeParts(d);
+        e.parts = makeParts(d); e.baked = null;
         e.proxy.geometry.dispose();
         e.proxy = proxyFor(e.parts, e.world);
         if (selected === r.id) setHull(r.id);
         if (hooks.burst) hooks.burst(d.x, d.z, 2.4, 10);
         dirty = true;
       }
+      // The terrain tools moved ground under buildings: they stand at their new height.
+      const moved = land.poll();
+      if (moved) for (const r of placed) {
+        const e = entries.get(r.id);
+        if (!e || !(moved.all || touches(r, moved.tiles))) continue;
+        const d = describe(r, e.level);
+        if (!d) continue;
+        e.desc = e.b = d; e.world = worldMatrix(d);
+        e.proxy.geometry.dispose(); e.proxy = proxyFor(e.parts, e.world);
+        if (selected === r.id) setHull(r.id);
+        dirty = true;
+      }
       let popId = null;
       for (const id of wantSettle) if (entries.has(id)) { wantSettle.delete(id); if (!removed.has(id)) popId = id; } // a freshly placed building settles with the upgrade squash
       for (const e of entries.values()) {
         const lv = (s.levels && s.levels[e.b.id]) ?? e.base;
-        if (lv === e.level) continue;
+        if (lv === e.level || e.scaf) continue;
+        if (wantPop.has(e.b.id) && !e.reveal && !removed.has(e.b.id) && raiseScaffold(e, lv)) { wantPop.delete(e.b.id); continue; }
+        e.reveal = false;
         regenerate(e, lv);
         if (selected === e.b.id) setHull(e.b.id);
         if (wantPop.delete(e.b.id) && !removed.has(e.b.id)) popId = e.b.id; else dirty = true;
       }
       if (popId) startPop(popId); else if (dirty) { endPop(); rebuild(); }
     },
-    setNight(on) { if (on === night) return; night = on; applyNight(); },
+    setNight(on) { if (on === night) return; night = on; buildings.setNight(on); },
     select: setHull,
     pop(id) { wantPop.add(id); setTimeout(() => wantPop.delete(id), 1500); },
     // Asks for the squash on a building that may not be drawn yet (a placement event arrives before the next frame's setState).
@@ -193,6 +247,7 @@ export function createTown(root, hooks = {}) {
       return null;
     },
     pick(raycaster) { const h = this.probe(raycaster); return h ? h.id : null; },
+    buildings, // the shared building meshes, for render/systems/lots.js
     hideSelection(v) { selGroup.visible = !v; },
     // The placed buildings now standing ({ b, parts, world } each; parts.sites says where life can happen) and a counter
     // that changes whenever the set or a building's look does. The list is rebuilt only when the counter moved.

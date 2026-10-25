@@ -1,7 +1,8 @@
 // The render side. Reads sim snapshots, never writes them. Owns the renderer, scene and camera.
 import * as THREE from '../../vendor/three/three.module.min.js';
 import { createCamera } from './camera.js';
-import { ISO, orbitPose } from './camera-math.js';
+import { ISO, orbitPose, rayGround } from './camera-math.js';
+import { heightAt } from '../world/terrain.js';
 import { createLighting } from './night.js';
 import { buildTerrain } from './terrain.js';
 import { buildStatic } from './props.js';
@@ -32,10 +33,13 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
   const world = new THREE.Group(); scene.add(world);
   const camera = createCamera();
 
-  buildTerrain(world);
+  const ground = buildTerrain(world);
   buildStatic(world, layout);
   // Dust puffs come from the puffs system, which is created below: look it up when a building pops, not here.
-  const town = createTown(world, { burst: (x, z, r, n) => byId.get('puffs')?.burst(x, z, r, n) });
+  const town = createTown(world, {
+    burst: (x, z, r, n) => byId.get('puffs')?.burst(x, z, r, n),
+    scaffold: (m, box, onReveal) => byId.get('scaffold')?.raise(m, box, onReveal) ?? null,
+  });
   const sysDefs = registryOf('render systems', renderSystems).list();
   const mods = sysDefs.map((d) => d.create({ THREE, world, layout, grid, camera, scene, town, sys: (id) => byId.get(id) || null }) || {});
   const byId = new Map(sysDefs.map((d, i) => [d.id, mods[i]]));
@@ -99,6 +103,7 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
       const look = sky.update(dt, targets);
       applySeason(look);
       const f = { dt, t, simDt, state: s, tool, sky: look };
+      ground.follow(); // the terrain tools: lift the ground mesh where it moved
       for (const m of mods) if (m.frame) m.frame(f);
       const night = lighting.update(dt, look);
       const on = night > 0.5;
@@ -116,17 +121,13 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
     grab: (cb) => { grabCb = cb; },
     // The object a render system returned from create(), for UI modules that drive it (e.g. zoning's brush).
     sys: (id) => byId.get(id) || null,
-    // World point under a screen position on the ground plane (y = 0), or null. Shared by every drawing tool.
+    // World point on the land under a screen position (hills included), or null. Shared by every drawing tool.
     ground(clientX, clientY) {
       const r = canvas.getBoundingClientRect();
       if (!r.width || !r.height) return null;
       ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
       ray.setFromCamera(ndc, camera.cam);
-      const o = ray.ray.origin, d = ray.ray.direction;
-      if (Math.abs(d.y) < 1e-6) return null;
-      const k = -o.y / d.y;
-      if (k < 0) return null; // the ray points away from the ground
-      return { x: o.x + d.x * k, z: o.z + d.z * k };
+      return rayGround(ray.ray.origin, ray.ray.direction, heightAt);
     },
     // The building under a screen position (its id), or null. Used by the bulldoze sweep.
     pickAt(clientX, clientY) {

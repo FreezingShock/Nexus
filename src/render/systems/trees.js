@@ -5,6 +5,7 @@
 // API for render code (scene.sys('trees')): pick(raycaster) -> { id, d } for the nearest tree under the ray, or null.
 import * as THREE from '../../../vendor/three/three.module.min.js';
 import { heightAt } from '../../world/terrain.js';
+import { createLandWatch } from '../land-watch.js';
 import { PINE_COLORS, TREE_COLORS } from '../../world/palettes.js';
 import { MAX_PER_KIND } from '../../world/trees.js';
 import { toon, toonUncached, hullInk } from '../materials.js';
@@ -33,6 +34,7 @@ export default {
     can.castShadow = trunk.castShadow = cone.castShadow = true;
     world.add(can, canHull, trunk, cone, coneHull);
 
+    const land = createLandWatch();
     let shownList = null, shownState = null; // what the meshes were last built from
     let canIds = [], coneIds = [];           // instance index -> tree id, for picking
 
@@ -75,6 +77,7 @@ export default {
     return {
       frame(f) {
         const { state } = f;
+        if (land.poll() && state.trees && state.trees === shownList) { rebuild(state.trees); return; } // trees ride the moved ground
         if (!state.trees || state.trees === shownList) return;
         if (state === shownState && shownList) puffGone(shownList, state.trees);
         rebuild(state.trees);

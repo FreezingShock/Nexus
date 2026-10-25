@@ -3,8 +3,9 @@
 // The left card holds Play and the menu rows; a row opens its page as a big notebook sheet in the middle of the screen,
 // which flips open from its spine with a paper rustle and the page's own chime. The sheet is the shared one in
 // src/ui/notebook.js, the same the town's pages use.
+import { MODES, MODE_LABEL } from '../core/theme.js';
 import { $, fmt } from './format.js';
-import { VERSION } from '../version.js';
+import { AUTHOR, AUTHOR_HANDLE, VERSION } from '../version.js';
 import { CHANGELOG, KINDS, newSince, kindCounts } from '../changelog.js';
 import { CREDITS, saveLine, tipOfTheDay } from '../core/boot.js';
 import { createPageSounds } from '../audio/page-sounds.js';
@@ -35,7 +36,7 @@ export const ROWS = [
   { id: 'credits', label: 'Credits', sub: 'who made this and with what', c: '#F0C4B6' },
   { id: 'profile', label: 'Mayor profile', sub: 'your name, rank and badges', c: '#E9C1B8', gap: true, needsReady: true },
   { id: 'pass', label: 'Passes', sub: 'Lantern Pass and Town Charter', c: '#F2D27A', tag: 'Soon' },
-  { id: 'settings', label: 'Settings', sub: 'graphics and sound', c: '#DCE8EC', gap: true, needsReady: true },
+  { id: 'settings', label: 'Settings', sub: 'paper, graphics and sound', c: '#DCE8EC', gap: true, needsReady: true },
   { id: 'new', label: 'New town', sub: 'start over, keeping a backup', c: '#E9DCC4', needsReady: true },
 ];
 
@@ -84,6 +85,8 @@ export function createTitle({ onPlay, onNewTown }) {
   const sounds = createPageSounds({ getSettings: () => (stores ? stores.sound.get() : null) });
 
   $('tt-ver').textContent = 'v' + VERSION;
+  $('tt-made').textContent = 'Made with care by ' + AUTHOR;
+  $('tt-credit').innerHTML = `Made by <b>${esc(AUTHOR)}</b> <i>(${esc(AUTHOR_HANDLE)})</i>`;
   $('tt-tip').innerHTML = '<b>Tip</b> ' + esc(tipOfTheDay(new Date()));
 
   // ---- the rows
@@ -116,8 +119,11 @@ export function createTitle({ onPlay, onNewTown }) {
     credits: () => `<div class="cr-grid">${CREDITS.map((c, i) => `<section class="cr-card" style="--i:${i}"><h3 class="tt-eyebrow">${esc(c.head)}</h3>${c.lines.map((l) => `<p>${esc(l)}</p>`).join('')}</section>`).join('')}</div>
       <p class="nb-promise">Thank you for playing. Every town is a little different, and yours is the only one like it.</p>`,
     settings: () => {
-      const q = stores.quality.get(), s = stores.sound.get();
-      return `<h3 class="nb-h3 h-disp">Graphics</h3>
+      const q = stores.quality.get(), s = stores.sound.get(), t = stores.theme ? stores.theme.get() : null;
+      const paper = t ? `<h3 class="nb-h3 h-disp">Paper</h3>
+        <div class="st-row"><span><b>Light or dark</b><small>Cream paper by day, slate paper for the evening. The town looks the same either way.</small></span>
+          <div class="nb-chips" data-k="theme">${MODES.map((m) => `<button class="nb-chip" type="button" data-v="${m}" aria-pressed="${t.mode === m}">${MODE_LABEL[m]}</button>`).join('')}</div></div>` : '';
+      return `${paper}<h3 class="nb-h3 h-disp">Graphics</h3>
         <div class="st-cards" data-k="preset">${PRESETS.map((p) => `<button class="st-card" type="button" data-v="${p.id}" aria-pressed="${q.preset === p.id}"><b>${p.name}</b><small>${p.text}</small></button>`).join('')}</div>
         <h3 class="nb-h3 h-disp">Sound</h3>
         <div class="st-row"><span><b>Sound</b><small>Music and the sounds of the town start once you press Play.</small></span>
@@ -241,6 +247,7 @@ export function createTitle({ onPlay, onNewTown }) {
     if (group === 'emblem' || group === 'color') { stores.profile.set(group, b.dataset.v); book.refresh(); return; }
     if (group === 'preset') stores.quality.choose(b.dataset.v);
     if (group === 'sound') stores.sound.set('muted', b.dataset.v === 'off');
+    if (group === 'theme' && stores.theme) stores.theme.set(b.dataset.v);
     if (group) book.refresh();
   });
   body.addEventListener('input', (e) => {

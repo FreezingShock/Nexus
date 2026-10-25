@@ -1,14 +1,40 @@
 // Ground: jittered fractal-noise hills, sage palette by patch, river water plane.
 import * as THREE from '../../vendor/three/three.module.min.js';
-import { fbm, hash, heightAt } from '../world/terrain.js';
+import { fbm, hash, heightAt, FAN_HALF } from '../world/terrain.js';
 import { toonUncached } from './materials.js';
 import { patchSeason } from './season.js';
+import { createLandWatch } from './land-watch.js';
 
-const S = 380, N = 150;
+// The fine ground is the tile lattice of world/terrain.js heightAt, 3 units a cell, out to FAN_HALF: every cell four
+// triangles round its centre. The mesh is that surface exactly, so roads and lots laid on heightAt meet it cleanly.
+const S = FAN_HALF * 2, N = Math.round(S / 3);
 const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
-export const OUT_HALF = 480, OUT_STEP = S / 2 / 19; // the far ground: coarse, round the fine map, out past where the fog hides it
+export const OUT_HALF = 487.5, OUT_STEP = 12.5;   // the far ground: coarse, round the fine map, out past where the fog hides it (cells meet the fine edge)
 const SKIRT = 8;                              // a wall under every seam, so a crack between the fine and coarse ground shows no sky
+
+// The painted colour of triangle `i` (its first vertex index) of position attribute q, written into col.
+const sage = new THREE.Color(0x9DB874), olive = new THREE.Color(0x748A55), bed = new THREE.Color(0x6F7F5C), lawn = new THREE.Color(0xA9C47F);
+const meadow = new THREE.Color(0xB7CB82), deep = new THREE.Color(0x83A367), flower = new THREE.Color(0xD9C07A), c = new THREE.Color();
+const stone = new THREE.Color(0xA89C86), snow = new THREE.Color(0xEFE8D8);
+function paintTri(q, col, i) {
+  const cy = (q.getY(i) + q.getY(i + 1) + q.getY(i + 2)) / 3, cx = (q.getX(i) + q.getX(i + 1) + q.getX(i + 2)) / 3, cz = (q.getZ(i) + q.getZ(i + 1) + q.getZ(i + 2)) / 3;
+  const m = fbm(cx * 0.05 + 11, cz * 0.05 + 4), hv = hash(i, 5);
+  const ax = q.getX(i + 1) - q.getX(i), ay = q.getY(i + 1) - q.getY(i), az = q.getZ(i + 1) - q.getZ(i);
+  const bx = q.getX(i + 2) - q.getX(i), by = q.getY(i + 2) - q.getY(i), bz = q.getZ(i + 2) - q.getZ(i);
+  const nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx; // face normal
+  const up = Math.abs(ny) / (Math.hypot(nx, ny, nz) || 1);                      // 1 flat, 0 a wall
+  c.copy(sage).lerp(m > 0.5 ? meadow : deep, Math.min(1, Math.abs(m - 0.5) * 2.4));
+  c.lerp(olive, smooth(0.8, 5, cy));
+  // Cliffs and the high mountains show warm stone; the very top is pale, like an old painting of snow.
+  c.lerp(stone, smooth(0.82, 0.6, up) * 0.85 + smooth(14, 26, cy) * 0.5);
+  c.lerp(snow, smooth(30, 40, cy) * 0.8);
+  if (cy < -0.2) c.copy(bed);
+  c.multiplyScalar(0.94 + hv * 0.12);
+  if (hv > 0.985 && cy > -0.2) c.lerp(flower, 0.5);
+  if (Math.max(Math.abs(cx), Math.abs(cz)) < 32) c.lerp(lawn, 0.5);
+  for (let k = 0; k < 3; k++) { col[(i + k) * 3] = c.r; col[(i + k) * 3 + 1] = c.g; col[(i + k) * 3 + 2] = c.b; }
+}
 
 // Triangles (flat array of x, y, z) as a coloured toon mesh.
 function paintedMesh(pos) {
@@ -16,32 +42,39 @@ function paintedMesh(pos) {
   g2.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   g2.computeVertexNormals();
   const q = g2.attributes.position, col = new Float32Array(q.count * 3);
-  const sage = new THREE.Color(0x9DB874), olive = new THREE.Color(0x748A55), bed = new THREE.Color(0x6F7F5C), lawn = new THREE.Color(0xA9C47F);
-  const meadow = new THREE.Color(0xB7CB82), deep = new THREE.Color(0x83A367), flower = new THREE.Color(0xD9C07A), c = new THREE.Color();
-  const stone = new THREE.Color(0xA89C86), snow = new THREE.Color(0xEFE8D8);
-  for (let i = 0; i < q.count; i += 3) {
-    const cy = (q.getY(i) + q.getY(i + 1) + q.getY(i + 2)) / 3, cx = (q.getX(i) + q.getX(i + 1) + q.getX(i + 2)) / 3, cz = (q.getZ(i) + q.getZ(i + 1) + q.getZ(i + 2)) / 3;
-    const m = fbm(cx * 0.05 + 11, cz * 0.05 + 4), hv = hash(i, 5);
-    const ax = q.getX(i + 1) - q.getX(i), ay = q.getY(i + 1) - q.getY(i), az = q.getZ(i + 1) - q.getZ(i);
-    const bx = q.getX(i + 2) - q.getX(i), by = q.getY(i + 2) - q.getY(i), bz = q.getZ(i + 2) - q.getZ(i);
-    const nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx; // face normal
-    const up = Math.abs(ny) / (Math.hypot(nx, ny, nz) || 1);                      // 1 flat, 0 a wall
-    c.copy(sage).lerp(m > 0.5 ? meadow : deep, Math.min(1, Math.abs(m - 0.5) * 2.4));
-    c.lerp(olive, smooth(0.8, 5, cy));
-    // Cliffs and the high mountains show warm stone; the very top is pale, like an old painting of snow.
-    c.lerp(stone, smooth(0.82, 0.6, up) * 0.85 + smooth(14, 26, cy) * 0.5);
-    c.lerp(snow, smooth(30, 40, cy) * 0.8);
-    if (cy < -0.2) c.copy(bed);
-    c.multiplyScalar(0.94 + hv * 0.12);
-    if (hv > 0.985 && cy > -0.2) c.lerp(flower, 0.5);
-    if (Math.max(Math.abs(cx), Math.abs(cz)) < 32) c.lerp(lawn, 0.5);
-    for (let k = 0; k < 3; k++) { col[(i + k) * 3] = c.r; col[(i + k) * 3 + 1] = c.g; col[(i + k) * 3 + 2] = c.b; }
-  }
+  for (let i = 0; i < q.count; i += 3) paintTri(q, col, i);
   g2.setAttribute('color', new THREE.BufferAttribute(col, 3));
   const land = new THREE.Mesh(g2, patchSeason(toonUncached(0xffffff, { vertexColors: true }), { land: true }));
   land.material.side = THREE.DoubleSide; // the skirts are one-sided walls, lit from either face
   land.receiveShadow = true;
   return land;
+}
+
+// The terrain tools moved the ground inside box (world units): lift the fine map's vertices there onto the new ground,
+// then paint and light the triangles they belong to again. The jittered x and z stay; only heights change. The skirts
+// hang at the far edge of the map, where the tools never reach.
+function reshape(mesh, box) {
+  const g = mesh.geometry, q = g.attributes.position, col = g.attributes.color, nor = g.attributes.normal;
+  const pad = 3, x0 = box.x0 - pad, x1 = box.x1 + pad, z0 = box.z0 - pad, z1 = box.z1 + pad;
+  const a = q.array, n = q.count;
+  for (let t = 0; t < n; t += 3) {
+    let hit = false;
+    for (let k = t; k < t + 3; k++) {
+      const x = a[k * 3], z = a[k * 3 + 2];
+      if (x < x0 || x > x1 || z < z0 || z > z1) continue;
+      a[k * 3 + 1] = heightAt(x, z); hit = true;
+    }
+    if (!hit) continue;
+    paintTri(q, col.array, t);
+    const ax = a[t * 3 + 3] - a[t * 3], ay = a[t * 3 + 4] - a[t * 3 + 1], az = a[t * 3 + 5] - a[t * 3 + 2];
+    const bx = a[t * 3 + 6] - a[t * 3], by = a[t * 3 + 7] - a[t * 3 + 1], bz = a[t * 3 + 8] - a[t * 3 + 2];
+    let nx = az * by - ay * bz, ny = ax * bz - az * bx, nz = ay * bx - ax * by;
+    const l = Math.hypot(nx, ny, nz) || 1; nx /= l; ny /= l; nz /= l;
+    if (ny < 0) { nx = -nx; ny = -ny; nz = -nz; } // ground faces up, whichever way the triangle winds
+    for (let k = t; k < t + 3; k++) nor.setXYZ(k, nx, ny, nz);
+  }
+  q.needsUpdate = col.needsUpdate = nor.needsUpdate = true;
+  g.computeBoundingSphere();
 }
 
 // A wall hanging from a line of ground points, pushed onto `out`.
@@ -58,20 +91,15 @@ const edgePoints = (half, n) => {
 };
 
 export function buildTerrain(parent) {
-  const geo = new THREE.PlaneGeometry(S, S, N, N);
-  geo.rotateX(-Math.PI / 2);
-  const p = geo.attributes.position;
-  for (let i = 0; i < p.count; i++) {
-    let x = p.getX(i), z = p.getZ(i);
-    if (Math.abs(x) < S / 2 - 3 && Math.abs(z) < S / 2 - 3) { x += (hash(i, 7) - 0.5) * 1.9; z += (hash(i, 13) - 0.5) * 1.9; }
-    p.setX(i, x); p.setZ(i, z); p.setY(i, heightAt(x, z));
+  const inner = [], h = S / 2, st = S / N;
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const x0 = -h + i * st, z0 = -h + j * st, x1 = x0 + st, z1 = z0 + st, mx = x0 + st / 2, mz = z0 + st / 2;
+    const v = (x, z) => [x, heightAt(x, z), z], m = v(mx, mz), a = v(x0, z0), b = v(x1, z0), c = v(x0, z1), d = v(x1, z1);
+    inner.push(...a, ...m, ...b, ...b, ...m, ...d, ...d, ...m, ...c, ...c, ...m, ...a);
   }
-  const g2 = geo.toNonIndexed();
-  geo.dispose();
-  const inner = Array.from(g2.attributes.position.array);
-  g2.dispose();
   for (const line of edgePoints(S / 2, N)) skirt(inner, line);
-  parent.add(paintedMesh(new Float32Array(inner)));
+  const fine = paintedMesh(new Float32Array(inner));
+  parent.add(fine);
 
   // The far ground: every cell of a coarse grid that is not inside the fine map. It is the same land, so the mountains
   // simply go on past the edge of the map in every direction.
@@ -89,4 +117,12 @@ export function buildTerrain(parent) {
   const water = new THREE.Mesh(new THREE.PlaneGeometry(OUT_HALF * 2, OUT_HALF * 2), patchSeason(toonUncached(0x7FA3B8), { still: true }));
   water.rotation.x = -Math.PI / 2; water.position.y = -0.55;
   parent.add(water);
+  // The terrain tools: each frame, follow whatever ground moved since the last (the box of moved corners).
+  const land = createLandWatch();
+  return {
+    follow() {
+      const moved = land.poll();
+      if (moved) reshape(fine, moved.all ? { x0: -S / 2 + 8, z0: -S / 2 + 8, x1: S / 2 - 8, z1: S / 2 - 8 } : moved.box);
+    },
+  };
 }

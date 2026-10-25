@@ -1,7 +1,7 @@
 // Keyboard bindings shown on the shortcut sheet. Tool keys are the real bindings (ui.js reads TOOL_KEYS).
 // Other rows name the file that handles the key, and tests/polish.test.js checks that the key is still there,
 // so the sheet cannot drift from the game.
-export const TOOL_KEYS = { r: 'roads', z: 'zones', b: 'build', c: 'services', p: 'parks', t: 'traffic', x: 'bulldoze', n: 'districts', y: 'decor' };
+export const TOOL_KEYS = { r: 'roads', z: 'zones', b: 'build', c: 'services', p: 'parks', t: 'traffic', x: 'bulldoze', n: 'districts', y: 'decor', u: 'terrain' };
 
 export const TOOL_INFO = {
   roads: ['Roads', 'draw streets and lanes'],
@@ -13,6 +13,7 @@ export const TOOL_INFO = {
   bulldoze: ['Bulldoze', 'click a building to clear it'],
   districts: ['Districts', 'name a neighbourhood and paint it'],
   decor: ['Decor', 'benches, lamps, fountains and flowers'],
+  terrain: ['Terrain', 'raise, lower, flatten and smooth the land'],
 };
 
 const toolRows = Object.entries(TOOL_KEYS).map(([k, tool]) => ({
@@ -36,6 +37,10 @@ export const SHORTCUT_GROUPS = [
   { title: 'Zones and buildings', rows: [
     { keys: ['0–4'], text: '0 erases, 1 to 4 pick a zone', file: 'src/ui/modules/zoning.js', needle: '/^[0-4]$/' },
     { keys: ['V'], text: 'Turn the building before you place it', file: 'src/ui/modules/placement.js', needle: "=== 'v'" },
+  ] },
+  { title: 'Shaping the land', rows: [
+    { keys: ['1–4'], text: 'Raise, Lower, Flatten or Smooth', file: 'src/ui/modules/terrain.js', needle: "key: '4'" },
+    { keys: ['Drag'], text: 'Hold and drag the brush; Flatten levels to where you started' },
   ] },
   { title: 'Looking around', rows: [
     { keys: ['W', 'A', 'S', 'D'], text: 'Walk around the town', file: 'src/render/camera-math.js', needle: "has('w')" },

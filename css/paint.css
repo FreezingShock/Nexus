@@ -6,7 +6,7 @@
 .sw:hover{transform:translateY(-1px)}
 .sw[aria-pressed="true"]{outline:3px solid var(--action);outline-offset:2px}
 .sw.locked{border-style:dashed;box-shadow:none;opacity:.8}
-.sw.locked small{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:10px;font-weight:800;color:var(--ink);background:var(--paper);border-radius:6px;padding:0 3px}
+.sw.locked small{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:10px;font-weight:800;color:var(--text);background:var(--paper);border-radius:6px;padding:0 3px}
 .sw:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
 .sw .trim{position:absolute;right:-2px;bottom:-2px;width:11px;height:11px;border-radius:50%;border:2px solid var(--ink)}
 .paint .ph{margin-top:2px}

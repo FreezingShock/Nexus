@@ -16,6 +16,7 @@ import { readMetric } from './sim/achievement-metrics.js';
 import { shortDate } from './ui/date-text.js';
 import { summary as milestoneSummary } from './sim/achievements.js';
 import { createProfileStore } from './core/profile.js';
+import { createThemeStore } from './core/theme.js';
 
 const AUTOSAVE_MS = 45000;
 const SKIP_KEY = 'nexus.skiptitle';
@@ -34,6 +35,8 @@ const skipTitle = takeSkip() || params.get('title') === '0';
 
 let phase = 'title'; // 'title' (warm-up, then waiting), 'boot' (progress screen), 'play'
 let sim, state, scene, ui = null, loaded, quality, calendar, sound, profile;
+// Light or dark paper for the UI. Made first, before the title, so nothing is ever drawn in the wrong colours.
+const theme = createThemeStore({ storage: browserStorage, root: document.documentElement, media: typeof matchMedia === 'function' ? (q) => matchMedia(q) : null });
 let saveBlocked = false, lastSaved = null, saveFailing = false;
 
 // ---- saving ----
@@ -48,6 +51,7 @@ const actions = {
   get calendar() { return calendar; },
   get sound() { return sound; },
   get profile() { return profile; },
+  get theme() { return theme; },
   exportSave() {
     const blob = new Blob([exportText(sim.prepareSave(), Date.now())], { type: 'application/json' });
     const a = document.createElement('a');
@@ -124,7 +128,7 @@ async function warmUp() {
   scene.camera.setFloor(LOW_TILT); // the street-level shot goes lower than the game's own view allows
   requestAnimationFrame(frame);
   title.town(state);
-  title.ready({ quality, sound, profile });
+  title.ready({ quality, sound, profile, theme });
   if (skipTitle) play();
 }
 

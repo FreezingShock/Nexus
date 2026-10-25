@@ -11,7 +11,12 @@ export const TILE = 3;
 export const GRID_HALF = GRID_N / 2;
 
 // What the ground is. Fixed by the world, never changes during play. The starter town is plain LAND like the rest.
-export const MOUNTAIN_TOP = 26; // seeded land: ground higher than this is never built on, however level its top
+export const MOUNTAIN_TOP = 26; // ground higher than this is never built on, however level its top
+// A tile is a cliff (BASE.STEEP) when its ground rises more than this across it. Anything gentler is a hillside: homes,
+// shops and buildings stand on it on a stone terrace (render/systems/terraces.js), roads climb it (roadnet.js).
+export const CLIFF = 4.5;
+export const RIM = 5;         // seeded land: the outer rows climb into the mountain rim and are never built on
+export const HILLSIDE = 0.9; // above this spread a tile reads as a hillside: buildings get a terrace
 export const BASE = { LAND: 0, WATER: 1, STEEP: 2, FARM: 3 };
 
 export const inBounds = (gx, gz) => Number.isInteger(gx) && Number.isInteger(gz) && gx >= 0 && gz >= 0 && gx < GRID_N && gz < GRID_N;
@@ -44,24 +49,28 @@ export function createGrid(layout) {
   const district = new Uint8Array(GRID_N * GRID_N); // owned by districts (0 none, else a district slot 1 to 15)
   const tlo = new Float32Array(GRID_N * GRID_N), thi = new Float32Array(GRID_N * GRID_N); // lowest and highest ground of each tile
 
-  // What the ground is, from the terrain: water, or too steep. Read again by regen() when the land changes (Renewal).
-  // Buildable ground is decided by slope: no tile may rise or fall more than 0.9 across its corners and middle. The old
-  // land (seed 0) also called everything above 2.2 steep; seeded land has plateaus, so only the mountain tops are barred.
-  const regen = () => {
-    const legacy = terrainSeed() === 0;
-    for (let gz = 0; gz < GRID_N; gz++) for (let gx = 0; gx < GRID_N; gx++) {
-      const [cx, cz] = tileCenter(gx, gz);
-      let lo = Infinity, hi = -Infinity;
-      for (const [dx, dz] of [[0, 0], [-1.5, -1.5], [1.5, -1.5], [-1.5, 1.5], [1.5, 1.5]]) {
-        const h = heightAt(cx + dx, cz + dz);
-        if (h < lo) lo = h; if (h > hi) hi = h;
-      }
-      let k = BASE.LAND;
-      tlo[tileIndex(gx, gz)] = lo; thi[tileIndex(gx, gz)] = hi;
-      if (lo < -0.15 || Math.abs(cx - riverX(cz)) < 5) k = BASE.WATER;
-      else if (hi - lo > 0.9 || hi > (legacy ? 2.2 : MOUNTAIN_TOP)) k = BASE.STEEP;
-      base[tileIndex(gx, gz)] = k;
+  // What the ground is, from the terrain: water, or too steep. Read again by regen() when the land changes (Renewal, the
+  // terrain tools). Buildable ground is decided by slope: only a cliff (more than CLIFF across a tile's corners and middle)
+  // or a mountain top is barred, and on seeded land the outer RIM rows. Hillsides are buildable; buildings on them stand on
+  // a terrace.
+  const regenTile = (gx, gz, rim) => {
+    const [cx, cz] = tileCenter(gx, gz);
+    let lo = Infinity, hi = -Infinity;
+    for (const [dx, dz] of [[0, 0], [-1.5, -1.5], [1.5, -1.5], [-1.5, 1.5], [1.5, 1.5]]) {
+      const h = heightAt(cx + dx, cz + dz);
+      if (h < lo) lo = h; if (h > hi) hi = h;
     }
+    let k = BASE.LAND;
+    tlo[tileIndex(gx, gz)] = lo; thi[tileIndex(gx, gz)] = hi;
+    if (lo < -0.15 || Math.abs(cx - riverX(cz)) < 5) k = BASE.WATER;
+    else if (hi - lo > CLIFF || hi > MOUNTAIN_TOP || (rim && (gx < RIM || gz < RIM || gx >= GRID_N - RIM || gz >= GRID_N - RIM))) k = BASE.STEEP;
+    base[tileIndex(gx, gz)] = k;
+  };
+  // `tiles` ([[gx, gz], ...]) reads only those again: the terrain tools change a patch at a time.
+  const regen = (tiles = null) => {
+    const rim = terrainSeed() !== 0;
+    if (tiles) { for (const [gx, gz] of tiles) if (inBounds(gx, gz)) regenTile(gx, gz, rim); return; }
+    for (let gz = 0; gz < GRID_N; gz++) for (let gx = 0; gx < GRID_N; gx++) regenTile(gx, gz, rim);
   };
   regen();
   const grid = {

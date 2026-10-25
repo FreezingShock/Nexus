@@ -93,7 +93,6 @@ export function setTerrainSeed(seed) {
 }
 export const terrainSeed = () => SEED;
 export const terrainRev = () => REV;
-export const terrainLakes = () => (P ? P.lakes : []);
 
 // Terraces: flat steps with a short ramp between. u runs 0..levels.
 function terrace(u, ramp) {
@@ -135,7 +134,7 @@ function ground(x, z, q) {
   return h;
 }
 
-export function heightAt(x, z) {
+export function baseHeightAt(x, z) {
   if (!SEED) return legacyHeight(x, z);
   const rx = riverX(z), dx = x - rx;
   let h = ground(x, z, dx < 0 ? P : EAST);
@@ -152,4 +151,61 @@ export function heightAt(x, z) {
   if (x > 71) h += 30 * smooth(71, 80, x) * (1 - smooth(18, 34, Math.abs(z))) * (0.7 + 0.6 * fbm(x * 0.04, z * 0.04));
   const k = (1 - smooth(2.6, 6.5, Math.abs(dx))) * (1 - smooth(112, 130, Math.abs(z))); // the river runs out in the foothills
   return h * (1 - k) + (-1.3) * k;
+}
+
+// ---- the player's edits (world/land.js) ----
+// Offsets at the tile corners, (96 + 1) squared, 3 units apart from x = z = -145.5, blended across each tile. The corner
+// lattice is repeated here (not imported from grid.js) because grid.js reads this file. `ON` skips the blend while a town
+// has no edits, so untouched land costs nothing extra.
+const ECN = 97, EEDGE = -145.5, ET = 3;
+let EDITS = null, ON = false;
+// The town's offsets (a Float32Array of ECN * ECN, kept by reference: the brush changes it in place), or null.
+export function setLandEdits(edits) {
+  const next = edits && edits.length === ECN * ECN ? edits : null;
+  const on = !!next && next.some((v) => v !== 0);
+  if (next === EDITS && on === ON) return;
+  const was = ON;
+  EDITS = next; ON = on;
+  if (was || on) REV++;
+}
+// Call after changing the edits array in place (a brush dab): every cache keyed on terrainRev drops.
+export const landEdits = () => EDITS;
+export function landEdited() { if (!EDITS) return; ON = EDITS.some((v) => v !== 0); REV++; }
+export function editAt(x, z) {
+  if (!ON) return 0;
+  const u = (x - EEDGE) / ET, v = (z - EEDGE) / ET;
+  if (!(u >= 0 && v >= 0 && u <= ECN - 1 && v <= ECN - 1)) return 0;
+  const i = Math.min(ECN - 2, Math.floor(u)), j = Math.min(ECN - 2, Math.floor(v)), fu = u - i, fv = v - j, k = j * ECN + i;
+  return EDITS[k] * (1 - fu) * (1 - fv) + EDITS[k + 1] * fu * (1 - fv) + EDITS[k + ECN] * (1 - fu) * fv + EDITS[k + ECN + 1] * fu * fv;
+}
+const rawHeight = (x, z) => (ON ? baseHeightAt(x, z) + editAt(x, z) : baseHeightAt(x, z));
+
+// ---- the ground as drawn ----
+// The ground is a mesh of tiles, 3 units a side on the town's own tile lattice, each cut into four triangles that meet at its
+// centre (the mean of its corners). heightAt is that mesh exactly, so roads, lots, overlays, cars and buildings all stand on
+// the very surface the player sees: nothing pokes through and nothing floats. The lattice reaches past the town to FAN_HALF;
+// beyond it (the far mountains) the raw height is used. The land's own shape is sampled at the corners only.
+export const FAN_HALF = 187.5;                        // the town's corner lattice (from -145.5) carried out 14 tiles each way
+const FC = 125, FV = FC + 1, FE = -FAN_HALF, FT = 3, EOFF = 14;
+let BASE = null, baseSeed = -1;
+function baseCorners() {
+  if (BASE && baseSeed === SEED) return BASE;
+  BASE = new Float32Array(FV * FV); baseSeed = SEED;
+  for (let j = 0; j < FV; j++) for (let i = 0; i < FV; i++) BASE[j * FV + i] = baseHeightAt(FE + i * FT, FE + j * FT);
+  return BASE;
+}
+function cornerY(i, j) {
+  let h = BASE[j * FV + i];
+  if (ON) { const ei = i - EOFF, ej = j - EOFF; if (ei >= 0 && ej >= 0 && ei < ECN && ej < ECN) h += EDITS[ej * ECN + ei]; }
+  return h;
+}
+export function heightAt(x, z) {
+  const u = (x - FE) / FT, v = (z - FE) / FT;
+  if (!(u >= 0 && v >= 0 && u <= FC && v <= FC)) return rawHeight(x, z);
+  baseCorners();
+  const i = Math.min(FC - 1, Math.floor(u)), j = Math.min(FC - 1, Math.floor(v)), dx = u - i - 0.5, dz = v - j - 0.5;
+  const a = cornerY(i, j), b = cornerY(i + 1, j), c = cornerY(i, j + 1), d = cornerY(i + 1, j + 1), m = (a + b + c + d) / 4;
+  // the triangle of the four the point is in: east (b-d), west (a-c), south (a-b) or north (c-d), linear in each
+  if (Math.abs(dx) >= Math.abs(dz)) return dx >= 0 ? m + 2 * dx * ((b + d) / 2 - m) + dz * (d - b) : m - 2 * dx * ((a + c) / 2 - m) + dz * (c - a);
+  return dz >= 0 ? m + 2 * dz * ((c + d) / 2 - m) + dx * (d - c) : m - 2 * dz * ((a + b) / 2 - m) + dx * (b - a);
 }

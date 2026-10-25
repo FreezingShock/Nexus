@@ -16,9 +16,30 @@ export const KINDS = {
 
 export const CHANGELOG = [
   {
+    v: '0.11.0', date: '2026-10-25', name: 'Tunes on the breeze',
+    blurb: 'Little tunes now drift over the town, and the streets, gardens and river have more to say.',
+    items: [
+      { k: 'sound', t: 'New music: gentle tunes written on the spot for piano, harp, music box, flute and bass, with quiet stretches of town sound in between.' },
+      { k: 'sound', t: 'Each tune fits its moment: bright mornings, busy days, golden dusks and hushed nights, coloured by the season, slowed by rain and quickened on festival days.' },
+      { k: 'sound', t: 'The town has more voices: dogs in the gardens, a cuckoo in spring, frogs by the river on warm nights, far-off thunder in the rain and a crackling hearth on winter nights.' },
+      { k: 'sound', t: 'A handbell rings in the square on market mornings, and a peal of bells greets festival noons.' },
+      { k: 'sound', t: 'A little hamlet hums softly and a busy town hums fuller, and market days liven the streets.' },
+      { k: 'new', t: 'Settings, Sound shows the name of the tune playing, with a Next tune button.' },
+      { k: 'new', t: 'The Terrain tool (U): raise, lower and flatten the land with a soft brush. Roads, homes and trees ride along with the ground.', pr: 120 },
+      { k: 'new', t: 'Build on hills: homes, shops, parks and zones now go on steep slopes, each on a level stone terrace with a retaining wall. Only cliffs and the mountains stay wild.', pr: 121 },
+      { k: 'new', t: 'Smooth joins the Terrain tool: round off ridges, ramps and sharp terrace edges.', pr: 123 },
+      { k: 'look', t: 'Contour lines trace the shape of the land while the Terrain tool is in hand.', pr: 123 },
+      { k: 'better', t: 'Roads climb hills: only real cliffs say too steep. On a steep slope the road cuts into the hill or builds an embankment to keep a gentle climb, and the label shows the earthworks.', pr: 125 },
+      { k: 'fix', t: 'Roads, zones and terraces on hills sit cleanly on the ground: no more grass poking through streets, floating lot outlines or walls that stop short of the slope.' },
+      { k: 'better', t: 'The "Tip 1 of 5" notes in the corner are gone, so nothing sits over the population counter any more.' },
+      { k: 'look', t: 'The Demand plaque is tidier: just the chart badge and the R, C and I columns, with the "wanted" arrows tucked inside it. Hover for the words.' },
+    ],
+  },
+  {
     v: '0.10.0', date: '2026-10-25', name: 'The welcome mat',
     blurb: 'The front door of Nexus got warmer, brighter and friendlier, with a proper welcome for brand-new mayors.',
     items: [
+      { k: 'new', t: 'Dark paper: Settings can switch the menus, pages and title screen to slate paper with mint buttons, or follow your computer. The town looks the same.', pr: 113 },
       { k: 'look', t: 'A brighter title card: coloured icon tiles, a snapshot of your town and a little tip that changes each visit.' },
       { k: 'new', t: 'How to play, Changes, Credits and Settings open as big notebook pages in the middle of the screen, flipping open from the spine.' },
       { k: 'sound', t: 'Each page turns with a soft paper rustle and its own little chime.' },
@@ -37,6 +58,7 @@ export const CHANGELOG = [
       { k: 'better', t: 'Ctrl+Z while a road start is waiting just drops the start, instead of undoing your last road.', pr: 102 },
       { k: 'new', t: 'Replace in the road menu (J): click a street to change it to the chosen road type, paying only the difference.', pr: 103 },
       { k: 'better', t: 'The road cost label also shows the length in metres and how many junctions the new road makes.', pr: 103 },
+      { k: 'look', t: 'Upgrading a building puts up wooden scaffolding with a little pennant and puffs of work dust, then it comes down as the new level pops in.' },
       { k: 'look', t: 'A bigger Population counter: a "+1" and a little person hop off it each time someone moves in.', pr: 105 },
       { k: 'look', t: 'The Population panel has a ruled graph with a key, and its facts sit in small coloured tiles.', pr: 105 },
       { k: 'better', t: 'The corner hint is now one line, "/ for shortcuts". Press / or click it to see every key.', pr: 105 },
@@ -59,6 +81,8 @@ export const CHANGELOG = [
       { k: 'new', t: 'The Happiness panel says how many homes are well served and what homes can reach on foot: services, parks, shops and landmarks.', pr: 109 },
       { k: 'look', t: 'Demand is three little columns that fill up, with one line saying what the town wants most and a tidier card.', pr: 109 },
       { k: 'fix', t: 'Roads can pass the end of a side street or touch a street mid-way: that makes a junction now, not "Too close to another street".', pr: 108 },
+      { k: 'better', t: 'Big towns no longer hitch when a building grows or levels up: the town redraws in a blink instead of up to a second.' },
+      { k: 'fix', t: 'Drawing on hills lands where you point: roads, zones, buildings and decor no longer slip onto the tile behind a slope.' },
     ],
   },
   {

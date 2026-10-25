@@ -41,7 +41,7 @@
 /* segmented buttons and toggles inside settings */
 .nb-sheet .gfx-opt{box-shadow:0 2px 0 var(--ink);background:var(--paper)}
 /* chosen = the same strong look as a chosen tile: peach fill, terracotta outline and ring, dark text */
-.nb-sheet .gfx-opt[aria-pressed="true"]{background:#F9DFC9;color:var(--ink);border-color:var(--action);box-shadow:0 3px 0 var(--action),0 0 0 2px var(--action);transform:none}
+.nb-sheet .gfx-opt[aria-pressed="true"]{background:#F9DFC9;color:var(--text);border-color:var(--action);box-shadow:0 3px 0 var(--action),0 0 0 2px var(--action);transform:none}
 .nb-sheet .gfx-opt:disabled{opacity:.45}
 .nb-sheet .gfx-presets{grid-template-columns:repeat(4,1fr)}
 .nb-sheet .gfx-sw{background:var(--paper);box-shadow:0 2px 0 var(--ink)}
@@ -54,11 +54,5 @@
 .nb-sheet .gfx-row .gfx-opt:not([aria-pressed="true"]){background:var(--paper-2)}
 .nb-sheet .gfx-presets{padding:2px}
 
-/* town and saves */
-.sbox{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:14px;border:2.5px solid var(--ink);background:var(--paper);box-shadow:0 3px 0 var(--ink)}
-.sbox>.h-disp{font-size:18px}
-.sbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.sbox .btn{margin:0;width:100%}
-.sdanger{border-style:dashed;box-shadow:none;background:color-mix(in srgb,var(--coral) 22%,var(--paper))}
 @media (prefers-reduced-motion:reduce){.stile{transition:none}}
 .snd-row input[type="range"]::-moz-range-progress{height:6px;border-radius:6px;background:var(--action)}

@@ -9,7 +9,6 @@ import { PAGE_ICONS } from '../page-icons.js';
 import { thumbFor } from '../../render/thumbs.js';
 import { esc } from '../cards.js';
 
-const BUTTON_SVG = '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#2B2620" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M5 4h11a2 2 0 0 1 2 2v3H5z" fill="#E6BC62"/><path d="M18 7.5h2v5h-8V15" /><rect x="10.5" y="15" width="3" height="6" rx="1" fill="#C96F4F"/></svg>';
 const ROWS = [['wall', 'Walls', 'Each scheme brings its own trim'], ['trim', 'Trim', 'Doors, window frames and porches'], ['roof', 'Roof', 'Every roof in town']];
 const hex = (n) => '#' + n.toString(16).padStart(6, '0');
 const SAMPLES = ['cottage', 'mansard'];
@@ -25,7 +24,6 @@ export default {
     const btn = document.createElement('button');
     btn.className = 'ib'; btn.id = 'paintbtn';
     btn.setAttribute('aria-label', 'Paint the town'); btn.setAttribute('aria-expanded', 'false');
-    btn.innerHTML = BUTTON_SVG;
     ($('goalsbtn') || $('settingsbtn')).before(btn);
 
     const change = () => Object.fromEntries(Object.entries(draft).filter(([, v]) => v));
