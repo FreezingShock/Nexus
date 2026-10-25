@@ -32,6 +32,11 @@ export const CHANGELOG = [
       { k: 'new', t: 'Goals and milestones, Settings, Shortcuts and Paint town open as big notebook pages that flip open, with a rustle and a chime.', pr: 104 },
       { k: 'better', t: 'Goals and milestones share one page: Today for Charge, daily goals and Renewal, Milestones for every goal. G and M open each tab.', pr: 104 },
       { k: 'look', t: 'Settings sections are coloured bookmark tabs on the edge of the page, and Photo mode wears the same paper.', pr: 104 },
+      { k: 'new', t: 'Roads can be drawn in one go: press, drag and let go.', pr: 102 },
+      { k: 'better', t: 'With no start picked, the ends of your streets glow softly as good places to carry on from.', pr: 102 },
+      { k: 'better', t: 'Ctrl+Z while a road start is waiting just drops the start, instead of undoing your last road.', pr: 102 },
+      { k: 'new', t: 'Replace in the road menu (J): click a street to change it to the chosen road type, paying only the difference.', pr: 103 },
+      { k: 'better', t: 'The road cost label also shows the length in metres and how many junctions the new road makes.', pr: 103 },
     ],
   },
   {

@@ -37,6 +37,38 @@ export function connMask(roads, gx, gz) {
 }
 export const dirsOfMask = (m) => [0, 1, 2, 3].filter((d) => m & (1 << d));
 
+// Dead ends: road tiles with exactly one road neighbour, as [gx, gz]. The road tool glows them as good places to start.
+export function roadEnds(roads) {
+  const out = [];
+  for (const k of Object.keys(roads)) {
+    const i = Number(k), gx = i % GRID_N, gz = Math.floor(i / GRID_N), m = connMask(roads, gx, gz);
+    if (m && !(m & (m - 1))) out.push([gx, gz]);
+  }
+  return out;
+}
+
+// The run of street through a tile: from it both ways along plain road (straights, corners) up to, but not into, the
+// next junction or end. A junction on its own is a run of one. Ordered end to end, at most MAX_STROKE tiles.
+export function roadRun(roads, start) {
+  const deg = (t) => dirsOfMask(connMask(roads, t[0], t[1])).length;
+  if (!hasRoad(roads, start[0], start[1])) return [];
+  if (deg(start) > 2) return [start];
+  const seen = new Set([tileIndex(start[0], start[1])]);
+  const walk = (from) => {
+    const out = [];
+    let at = from;
+    while (out.length < MAX_STROKE) {
+      const next = DIRS.map(([dx, dz]) => [at[0] + dx, at[1] + dz])
+        .find((t) => hasRoad(roads, t[0], t[1]) && !seen.has(tileIndex(t[0], t[1])));
+      if (!next || deg(next) > 2) break;
+      seen.add(tileIndex(next[0], next[1])); out.push(next); at = next;
+    }
+    return out;
+  };
+  const one = walk(start), two = walk(start);
+  return [...two.reverse(), start, ...one].slice(0, MAX_STROKE);
+}
+
 // What a tile looks like given its connections.
 //   iso (none), end (one), straight (two opposite), corner (two at a right angle), tee (three), cross (four)
 export function shapeOf(mask) {

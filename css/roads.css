@@ -13,3 +13,4 @@ body.no-select,body.no-select *{-webkit-user-select:none;user-select:none}
 .road-foot .sub{font-size:13px;line-height:1.25;max-width:520px}
 .road-foot .btn{height:44px;padding:0 16px}
 .road-fly{padding:12px 16px 14px}
+#replaceRoad[aria-pressed="true"]{background:var(--action);color:var(--action-ink);box-shadow:0 1px 0 var(--ink);transform:translateY(2px)}
