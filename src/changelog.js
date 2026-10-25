@@ -55,9 +55,9 @@ export const CHANGELOG = [
       { k: 'better', t: 'Renaming the town and changing its badge now happen on the My town page, with a live preview of the plaque.' },
       { k: 'look', t: 'The Coins and Parts cards say what each is for and show where it comes from as little bars, with the next goal\'s progress.' },
       { k: 'better', t: 'The Renewal plaque left the top bar for now. Renewal itself still lives on the Goals page.' },
-      { k: 'better', t: 'Happiness shows a mood word and a face instead of a percentage, with four little steps for how cozy the town is.' },
-      { k: 'new', t: 'The Happiness panel says how many homes are well served and what homes can reach on foot: services, parks, shops and landmarks.' },
-      { k: 'look', t: 'Demand is three little columns that fill up, with one line saying what the town wants most and a tidier card.' },
+      { k: 'better', t: 'Happiness shows a mood word and a face instead of a percentage, with four little steps for how cozy the town is.', pr: 109 },
+      { k: 'new', t: 'The Happiness panel says how many homes are well served and what homes can reach on foot: services, parks, shops and landmarks.', pr: 109 },
+      { k: 'look', t: 'Demand is three little columns that fill up, with one line saying what the town wants most and a tidier card.', pr: 109 },
     ],
   },
   {
