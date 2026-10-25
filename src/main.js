@@ -12,6 +12,8 @@ import { cinePose, LOW_TILT } from './render/photo-math.js';
 import { ISO } from './render/camera-math.js';
 import { createTitle } from './ui/title.js';
 import { $, fmtAgo } from './ui/format.js';
+import { readMetric } from './sim/achievement-metrics.js';
+import { shortDate } from './ui/date-text.js';
 
 const AUTOSAVE_MS = 45000;
 const SKIP_KEY = 'nexus.skiptitle';
@@ -109,6 +111,8 @@ async function warmUp() {
     sim.setCalendar(calendar.get());
     sound = createSoundStore({ storage: browserStorage });
   });
+  try { title.townInfo({ pop: readMetric('population', { sim, state, grid: sim.grid }), coins: state.coins, date: shortDate(state) + ', Year ' + state.year }); }
+  catch (err) { console.warn('town snapshot skipped', err); } // the card simply goes without it
   const v = scene.camera.view;
   base = { tx: v.tx, tz: v.tz, az: v.az, elev: v.elev, zoom: v.tzoom };
   scene.camera.setFloor(LOW_TILT); // the street-level shot goes lower than the game's own view allows
