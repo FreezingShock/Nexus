@@ -7,6 +7,7 @@ import { Batch } from '../geom.js';
 import { lineMat } from '../materials.js';
 import { addHull, placeHull, proxyFor, partsBox } from '../town.js';
 import { lotDescription, lotId, lotTileOf } from '../../world/lots.js';
+import { createLandWatch } from '../land-watch.js';
 
 const POP_S = 0.62;
 const REBUILD_GAP_S = 0.3;
@@ -30,6 +31,7 @@ export default {
     let rev = -1, dirty = false, since = 1, night = false, first = true;
     let lifeRev = 0, lifeList = []; // for render/systems/life-*.js: the grown lots standing in the merged meshes
     const m = new THREE.Matrix4();
+    const land = createLandWatch();
 
     const roadAt = (gx, gz) => grid.roadAt(gx, gz) !== 0;
     let paintSig = '', townPaint = null; // the town-wide paint grown lots wear (state.townPaint), part of every lot's cache key
@@ -175,6 +177,9 @@ export default {
     return {
       frame(f) {
         if (f.state.zoneRev !== rev) { rev = f.state.zoneRev; sync(f.state); }
+        // The terrain tools moved ground: buildings on it are described again at their new height.
+        const moved = land.poll();
+        if (moved) for (const l of liveLots) if (moved.all || moved.tiles.has(l[0])) { dropEntry(keyOf(l)); dirty = true; }
         since += f.dt;
         const lotPop = selected ? pops.find((p) => p.tile === lotTileOf(selected)) : null;
         for (const p of pops) {

@@ -6,6 +6,7 @@ import calendar from './calendar.js';
 import core from './core.js';
 import decor from './decor.js';
 import districts from './districts.js';
+import land from './land.js';
 import offlinePostcard from './offline-postcard.js';
 import paint from './paint.js';
 import placement from './placement.js';
@@ -25,6 +26,7 @@ export const systems = [
   core,
   decor,
   districts,
+  land,
   offlinePostcard,
   paint,
   placement,

@@ -7,6 +7,7 @@
 // The `undo` command takes back whichever of the two was done last.
 import { isKey } from '../../world/paint.js';
 import { areaCost, describe, modelById, seedOf } from '../../world/models.js';
+import { terrainRev } from '../../world/terrain.js';
 import { LOT_BASE, MAX_PLACED, MAX_ROW, checkLot, lotTiles, planPlacement, problemText } from '../../world/placement.js';
 import { buildCost, income, levelOf } from '../economy.js';
 import { tileIndex, tileOf, GRID_N } from '../../world/grid.js';
@@ -82,7 +83,7 @@ export default {
     const rec = (id) => state.placed.find((r) => r.id === id) || (sim.goneRecords && sim.goneRecords.get(id));
     // Keyed by the record itself: a Renewal starts ids over at b1001, and a cache by id would show the old building.
     const descs = new WeakMap();
-    const desc = (r) => { let d = descs.get(r); if (!d || d.pal !== r.pal || d.roof !== (r.roof || null) || d.trim !== (r.trim || null)) { d = describe(r, 1); if (d) descs.set(r, d); } return d; }; // a repaint changes pal or roof in place
+    const desc = (r) => { let d = descs.get(r); if (!d || d.rev !== terrainRev() || d.pal !== r.pal || d.roof !== (r.roof || null) || d.trim !== (r.trim || null)) { d = describe(r, 1); if (d) { d.rev = terrainRev(); descs.set(r, d); } } return d; }; // a repaint changes pal or roof in place
     sim.building = (id) => { const r = rec(id); return r ? desc(r) : base.building(id); };
     sim.alive = (id) => (rec(id) ? !state.removed.includes(id) : base.alive(id));
     sim.placedRecords = () => state.placed;

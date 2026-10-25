@@ -33,7 +33,7 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
   const world = new THREE.Group(); scene.add(world);
   const camera = createCamera();
 
-  buildTerrain(world);
+  const ground = buildTerrain(world);
   buildStatic(world, layout);
   // Dust puffs come from the puffs system, which is created below: look it up when a building pops, not here.
   const town = createTown(world, {
@@ -103,6 +103,7 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
       const look = sky.update(dt, targets);
       applySeason(look);
       const f = { dt, t, simDt, state: s, tool, sky: look };
+      ground.follow(); // the terrain tools: lift the ground mesh where it moved
       for (const m of mods) if (m.frame) m.frame(f);
       const night = lighting.update(dt, look);
       const on = night > 0.5;

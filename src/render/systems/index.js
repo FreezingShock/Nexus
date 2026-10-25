@@ -6,6 +6,7 @@ import decor from './decor.js';
 import districts from './districts.js';
 import gridOverlay from './grid-overlay.js';
 import happyFx from './happy-fx.js';
+import landBrush from './land-brush.js';
 import lifeSmoke from './life-smoke.js';
 import lifeTown from './life-town.js';
 import lifeWindows from './life-windows.js';
@@ -27,6 +28,7 @@ export const renderSystems = [
   districts,
   gridOverlay,
   happyFx,
+  landBrush,
   lifeSmoke,
   lifeTown,
   lifeWindows,
