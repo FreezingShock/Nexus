@@ -75,7 +75,8 @@ test('the HUD fills its currency plaques and hover cards on the first frame', ()
   assert.equal(elFor('coins').textContent, fmtCompact(sim.state.coins));
   assert.equal(elFor('parts').textContent, fmtCompact(sim.state.parts));
   assert.match(elFor('coinspop').innerHTML, /in hand/);
-  assert.match(elFor('renpop').innerHTML, /Renewal/);
+  assert.match(elFor('townpop').innerHTML, /Your town/);
+  assert.match(elFor('townline').textContent, /Hamlet|Village|town · \d+ (folk|soul) · Year \d+/);
 });
 
 test('the date panel paints when opened (K) and on later frames', () => {

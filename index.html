@@ -35,6 +35,9 @@
 <link rel="stylesheet" href="css/toolbar.css">
 <link rel="stylesheet" href="css/feedback.css">
 <link rel="stylesheet" href="css/photo.css">
+<link rel="stylesheet" href="css/notebook.css">
+<link rel="stylesheet" href="css/pages.css">
+<link rel="stylesheet" href="css/town-page.css">
 <link rel="stylesheet" href="css/title.css">
 </head>
 <body class="booting">
@@ -42,24 +45,21 @@
   <div id="stage"></div>
 
   <header class="top">
-    <div class="brand card plaque" id="townplaque">
-      <button class="townbadge" id="townbadge" type="button" aria-expanded="false" aria-controls="townpick" aria-label="Town badge"></button>
-      <div class="townname">
-        <button class="townnamebtn" id="townname" type="button">Nexus</button>
-        <input class="townedit" id="townedit" type="text" autocomplete="off" spellcheck="false" aria-label="Town name" hidden>
-      </div>
+    <div class="brand card plaque" id="townplaque" role="button" tabindex="0" aria-haspopup="dialog" aria-describedby="townpop">
+      <span class="townbadge" id="townbadge" aria-hidden="true"></span>
+      <div class="townname"><b class="townnamebtn" id="townname">Nexus</b><small class="townline" id="townline"></small></div>
       <div class="pop card" id="townpop" role="tooltip"></div>
     </div>
     <div class="chips">
       <div class="chip card plaque res" id="coinschip" tabindex="0" aria-describedby="coinspop"><span class="badge" style="background:#E6BC62"><svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="9" fill="#F3D58A" stroke="#2B2620" stroke-width="2"/><circle cx="13" cy="13" r="4.5" fill="none" stroke="#2B2620" stroke-width="1.8"/></svg></span><div class="cval"><b id="coins">0</b><small>Coins <i id="rate">+0/s</i></small></div><div class="pop card" id="coinspop" role="tooltip"></div></div>
       <div class="chip card plaque res" id="partschip" tabindex="0" aria-describedby="partspop"><span class="badge" style="background:#E3A08E"><svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="3" y="7" width="20" height="13" rx="2" fill="#C98A6E" stroke="#2B2620" stroke-width="2"/><path d="M3 13.5H23M11 7V13.5M17 13.5V20" stroke="#2B2620" stroke-width="1.6" fill="none"/></svg></span><div class="cval"><b id="parts">0</b><small>Parts <i id="prate">+0/s</i></small></div><div class="pop card" id="partspop" role="tooltip"></div></div>
-      <div class="chip card plaque ren" id="renchip" tabindex="0" aria-describedby="renpop"><span class="badge" style="background:#BFD8C4"><svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><path d="M13 3L16 10L23 10.5L17.5 15L19.5 22L13 18L6.5 22L8.5 15L3 10.5L10 10Z" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.8" stroke-linejoin="round"/></svg></span><div class="cval"><b>Renewal <span id="renewal">0%</span></b><div class="meter" role="img" aria-label="Renewal progress"><i id="renewalbar" style="width:0"></i></div></div><div class="pop card" id="renpop" role="tooltip"></div></div>
       <div class="hpwrap" id="hpwrap">
-        <div class="chip card plaque hp" id="hpchip" role="button" tabindex="0" aria-expanded="false" aria-controls="hp-panel" aria-describedby="hppop"><span class="badge" style="background:#CFE0E8"><svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="9.5" fill="#F7E3A6" stroke="#2B2620" stroke-width="2"/><circle cx="9.7" cy="11" r="1.3" fill="#2B2620"/><circle cx="16.3" cy="11" r="1.3" fill="#2B2620"/><path d="M8.6 15.2Q13 19.4 17.4 15.2" fill="none" stroke="#2B2620" stroke-width="1.9" stroke-linecap="round"/></svg></span><div class="cval"><b>Happiness <span id="hppct">—</span></b><div class="meter" role="img" aria-label="Average happiness"><i id="hpbar" style="width:0"></i></div></div><div class="pop card" id="hppop" role="tooltip"></div></div>
+        <div class="chip card plaque hp" id="hpchip" role="button" tabindex="0" aria-expanded="false" aria-controls="hp-panel" aria-describedby="hppop"><span class="badge hpface" id="hpface" style="background:#CFE0E8"></span><div class="cval"><small class="hpname">Happiness</small><b class="hpmood" id="hpmood">—</b><span class="hp-pips" id="hppips" aria-hidden="true"></span></div><div class="pop card" id="hppop" role="tooltip"></div></div>
         <div class="card hppanel" id="hp-panel" data-mo hidden></div>
       </div>
       <section class="chip card plaque demand" id="demandw" aria-label="Zone demand" tabindex="0" aria-describedby="demandpop">
-        <b class="dtitle">Demand</b>
+        <span class="badge" style="background:#F3DDB0"><svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="#2B2620" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21.5h18"/><rect x="5.5" y="12" width="4" height="9.5" rx="1" fill="#8FCB9B"/><rect x="11" y="7" width="4" height="14.5" rx="1" fill="#EE9F8D"/><rect x="16.5" y="10" width="4" height="11.5" rx="1" fill="#E2C07C"/></svg></span>
+        <div class="cval"><small>Demand</small><b class="dwant" id="dwant">Steady</b></div>
         <div class="drows" id="demandrows"></div>
         <div class="pop card end" id="demandpop" role="tooltip"></div>
       </section>
@@ -79,15 +79,13 @@
     </nav>
     </div>
   </header>
-  <aside id="townpick" class="card townpick" data-mo hidden></aside>
   <div id="leftcol" class="leftcol"></div>
 
   <aside id="inspect" class="card" data-mo hidden aria-live="polite"></aside>
-  <aside id="settings" class="card" data-mo hidden></aside>
   <section id="fly" class="fly card" data-mo="up" hidden></section>
   <div id="toast" class="toast card" data-mo hidden></div>
 
-  <div class="hint card">Drag to pan · Scroll to zoom · Q / E to rotate · Click a building</div>
+  <button class="hint card" id="keyhint" type="button" aria-label="Keyboard shortcuts"><kbd>/</kbd><span>for shortcuts</span></button>
 
   <button class="toolfold" id="toolfold" aria-expanded="true" aria-controls="tools" aria-label="Hide the toolbar" title="Hide the toolbar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2B2620" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5L12 15.5L18 9.5"/></svg></button>
   <nav class="bar2 card off" id="tools" aria-label="Tools">
@@ -104,27 +102,20 @@
 
   <section id="title" class="title" data-mo="fade" aria-labelledby="tt-name">
     <i class="tt-curtain" id="tt-curtain" aria-hidden="true"></i>
-    <div class="tt-card card">
+    <div class="tt-card card" id="tt-card">
       <span class="tape tt-tape" aria-hidden="true"></span>
-      <div class="tt-logo"><span class="tt-crest"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M3 15L15 4L27 15" fill="#97553E" stroke="#2B2620" stroke-width="2" stroke-linejoin="round"/><rect x="6" y="15" width="18" height="12" fill="#EAE1D5" stroke="#2B2620" stroke-width="2"/><rect x="13" y="19" width="4.5" height="8" fill="#B8472E" stroke="#2B2620" stroke-width="1.6"/></svg></span><h1 class="tt-name h-disp" id="tt-name">Nexus</h1></div>
-      <div class="tt-box">
-        <span class="tt-eyebrow">Your town</span>
-        <h2 class="h-disp tt-await">Your town awaits</h2>
+      <div class="tt-logo"><span class="tt-crest"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M3 15L15 4L27 15" fill="#97553E" stroke="#2B2620" stroke-width="2" stroke-linejoin="round"/><rect x="6" y="15" width="18" height="12" fill="#EAE1D5" stroke="#2B2620" stroke-width="2"/><rect x="13" y="19" width="4.5" height="8" fill="#B8472E" stroke="#2B2620" stroke-width="1.6"/></svg></span><span><h1 class="tt-name h-disp" id="tt-name">Nexus</h1><small class="tt-tagline">a cozy town builder</small></span></div>
+      <div class="tt-box" id="tt-box">
+        <span class="tt-eyebrow" id="tt-eyebrow">Your town</span>
+        <h2 class="h-disp tt-await" id="tt-await">Your town awaits</h2>
         <p class="tt-save" id="tt-save"></p>
+        <ul class="tt-snap" id="tt-snap" hidden></ul>
         <button class="btn primary tt-play" id="tt-play" type="button" disabled><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M5 3L15 9L5 15Z" fill="currentColor"/></svg><span id="tt-playlabel">Waking the town</span></button>
         <div class="tt-warm" id="tt-warm" role="progressbar" aria-label="Getting the town ready" aria-valuemin="0" aria-valuemax="100"><i id="tt-warmbar"></i></div>
       </div>
-      <div class="tt-body">
-      <nav class="tt-list" id="tt-list" aria-label="Options">
-        <button class="tt-row" id="tt-howto" type="button" aria-expanded="false"><span class="tt-ico"><svg viewBox="0 0 28 28" fill="none" stroke="#2B2620" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="22" height="14" rx="2.5" fill="#F3E7D0"/><path d="M7 12h2M11 12h2M15 12h2M19 12h2M8 16.5h12"/></svg></span><span><b>How to play</b><small>your first five minutes</small></span></button>
-        <button class="tt-row" id="tt-settings" type="button" aria-expanded="false" disabled><span class="tt-ico"><svg viewBox="0 0 28 28" fill="none" stroke="#2B2620" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="14" cy="14" r="4" fill="#F3E7D0"/><path d="M14 3v3M14 22v3M3 14h3M22 14h3M6.2 6.2l2.1 2.1M19.7 19.7l2.1 2.1M6.2 21.8l2.1-2.1M19.7 8.3l2.1-2.1"/></svg></span><span><b>Settings</b><small>graphics and sound</small></span></button>
-        <button class="tt-row" id="tt-changes" type="button" aria-expanded="false"><span class="tt-ico"><svg viewBox="0 0 28 28" fill="none" stroke="#2B2620" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5h10l5 5V24.5H7Z" fill="#F3E7D0"/><path d="M17 3.5v5h5M11 14h7M11 18h7"/></svg></span><span><b>Changes</b><small>what is new in this version</small></span></button>
-        <button class="tt-row" id="tt-credits" type="button" aria-expanded="false"><span class="tt-ico"><svg viewBox="0 0 28 28" fill="none" stroke="#2B2620" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 24C6 18 4 14 4 10.5A5.5 5.5 0 0 1 14 8a5.5 5.5 0 0 1 10 2.5C24 14 22 18 14 24Z" fill="#E3A08E"/></svg></span><span><b>Credits</b><small>who made this and with what</small></span></button>
-        <button class="tt-row" id="tt-new" type="button" aria-expanded="false" disabled><span class="tt-ico"><svg viewBox="0 0 28 28" fill="none" stroke="#2B2620" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="14" cy="14" r="10" fill="#F3E7D0"/><path d="M14 9v10M9 14h10"/></svg></span><span><b>New town</b><small>start over, keeping a backup</small></span></button>
-      </nav>
-      <aside class="tt-pane" id="tt-pane" data-mo="fade" hidden></aside>
-      </div>
-      <footer class="tt-cardfoot"><span>Nexus, a cozy city builder</span><span class="tt-ver" id="tt-ver"></span></footer>
+      <nav class="tt-list" id="tt-list" aria-label="Options"></nav>
+      <p class="tt-tip" id="tt-tip"></p>
+      <footer class="tt-cardfoot"><span>Made with care by nate</span><button class="tt-ver" id="tt-ver" type="button" title="What is new"></button></footer>
     </div>
     <p class="tt-credit">Made by <b>nate</b> <i>(FreezingShock)</i></p>
   </section>
@@ -171,6 +162,6 @@
   </div>
 </div>
 <input type="file" id="importfile" class="sr" accept="application/json,.json" tabindex="-1" aria-hidden="true">
-<script type="module" src="src/main.js?v=0.9.0"></script>
+<script type="module" src="src/main.js?v=0.10.0"></script>
 </body>
 </html>

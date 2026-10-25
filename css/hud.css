@@ -1,4 +1,4 @@
-/* Top HUD row: the town plaque, the currency and Renewal plaques, Happiness, Demand, and their hover cards.
+/* Top HUD row: the town plaque, the Coins and Parts plaques, Happiness, Demand, and their hover cards.
    Every plaque has one height and a fixed width, so a number that grows never moves its neighbours. Only the town plaque
    sizes to its name. Wide windows keep the row on one line, plaques shrinking a little when it gets tight. Loaded last. */
 :root{--plaque-h:74px}
@@ -20,43 +20,42 @@
 .chip .badge{width:40px;height:40px}
 .chip .badge svg{width:24px;height:24px}
 .chip.res{width:184px}
-.chip.ren{width:200px}
-.chip.demand{width:250px;height:var(--plaque-h)}
-.hpwrap{position:relative;flex:0 1 214px;min-width:0}
+.chip.demand{width:232px;height:var(--plaque-h)}
+.hpwrap{position:relative;flex:0 1 230px;min-width:0}
 .chip.hp{width:100%;cursor:pointer}
 .chip .cval{min-width:0;flex:1 1 auto;display:block}
 .chip .cval b{white-space:nowrap;overflow:hidden}
-/* Renewal and Happiness: the name on the left, the percentage on the right, one meter under both */
-.chip.ren .cval b,.chip.hp .cval b{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:17px}
-.chip.ren .cval b span,.chip.hp .cval b span{font-size:19px;font-variant-numeric:tabular-nums}
-#hppct{display:inline-block;min-width:3ch;text-align:right}
-#renewal{display:inline-block;min-width:3ch;text-align:right}
+/* Happiness: a face, the word "Happiness" small, the mood word, and four pips for the step on the mood ladder */
+.chip.hp .cval{display:flex;flex-direction:column;justify-content:center;gap:1px}
+.chip.hp .hpname{margin:0;font-size:12px;line-height:1}
+.chip.hp .hpmood{display:block;font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:17px;line-height:1.15;text-overflow:ellipsis}
+.chip.hp .hpface svg{width:30px;height:30px}
+.hp-pips{display:flex;gap:4px;margin-top:3px}
+.hp-pips i{flex:1 1 0;max-width:26px;height:7px;border:1.5px solid var(--ink);border-radius:4px;background:var(--paper);transition:background .4s}
+.hp-pips i.on{background:var(--sky)}
+.chip.hp[data-step="4"] .hp-pips i.on{background:var(--sage)}
 .chip .meter{width:100%;max-width:none}
-.chip.ren .meter,.chip.hp .meter{margin-top:7px;height:15px}
-.chip.hp .meter i{width:0;background:var(--sky);transition:width .6s ease}
 .chip.hp.open>.pop{display:none}
 /* one line from this width up, the plaques shrinking a little but never below the point where a number would clip */
-@media (min-width:1480px){
+@media (min-width:1340px){
   .chips{flex-wrap:nowrap}
   .chip.res{flex-basis:184px;min-width:172px}
-  .chip.ren{flex-basis:200px;min-width:190px}
-  .hpwrap{min-width:206px}
-  .chip.demand{flex-basis:250px;min-width:228px}
+  .hpwrap{min-width:218px}
+  .chip.demand{flex-basis:232px;min-width:216px}
 }
 
-/* the town plaque: the badge opens the picker, the name renames inline */
-.townbadge{width:46px;height:46px;flex:0 0 auto;border-radius:50%;border:2.5px solid var(--ink);padding:0;display:grid;place-items:center;box-shadow:0 2px 0 var(--ink);transition:transform .08s,box-shadow .08s}
-.townbadge:active{transform:translateY(2px);box-shadow:0 0 0 var(--ink)}
-.townbadge[aria-expanded="true"]{outline:3px solid var(--sky);outline-offset:3px}
+/* the town plaque: badge, name and a small line about the town. A click opens the My town page (town-page.css). */
+.brand{cursor:pointer}
+.townbadge{width:46px;height:46px;flex:0 0 auto;border-radius:50%;border:2.5px solid var(--ink);padding:0;display:grid;place-items:center;box-shadow:0 2px 0 var(--ink),inset 0 0 0 4px rgba(251,246,234,.3)}
 .townbadge svg{display:block}
-.townname{min-width:0;flex:1 1 auto}
+.townname{min-width:0;flex:1 1 auto;display:flex;flex-direction:column;justify-content:center}
 /* a long name steps its type down a little instead of being cut short */
 .brand[data-len="mid"] .townnamebtn{font-size:24px}
 .brand[data-len="long"] .townnamebtn{font-size:20px}
-.townnamebtn{display:block;width:100%;margin:0;padding:2px 6px;border:0;border-radius:10px;background:none;font-family:var(--display);font-weight:800;font-size:28px;font-variation-settings:"SOFT" 100,"WONK" 1;line-height:1.15;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
-.townnamebtn:hover{background:rgba(43,38,32,.07)}
-.townedit{display:block;width:100%;box-sizing:border-box;margin:0;padding:2px 8px;border:2px solid var(--ink);border-radius:10px;background:var(--paper);font-family:var(--display);font-weight:800;font-size:24px;font-variation-settings:"SOFT" 100,"WONK" 1;color:var(--ink)}
-.townedit:focus{outline:3px solid var(--sky);outline-offset:2px}
+.townnamebtn{display:block;margin:0;padding:0 2px;font-family:var(--display);font-weight:800;font-size:27px;font-variation-settings:"SOFT" 100,"WONK" 1;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+.townline{display:block;margin-top:3px;padding:0 2px;font:700 12.5px/1.2 var(--body);color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.brand.plaque:hover .townbadge{animation:tw-nod .5s ease}
+@keyframes tw-nod{30%{rotate:-8deg}65%{rotate:5deg}}
 
 /* hover cards: paper cards under each plaque, shown on hover or keyboard focus */
 .pop{position:absolute;top:calc(100% + 14px);left:0;z-index:25;width:296px;max-width:calc(100vw - 32px);padding:14px 16px;box-sizing:border-box;font-size:14px;line-height:1.4;font-weight:600;color:var(--ink);text-align:left;white-space:normal;opacity:0;visibility:hidden;transform:translateY(-6px);transform-origin:top left;transition:opacity .15s ease,transform .15s ease,visibility 0s linear .15s;pointer-events:none;cursor:default}
@@ -76,16 +75,17 @@
 .pc-next b{font-size:15px;font-weight:800;line-height:1.25}
 .pc-next small{font-size:12.5px;color:var(--ink-soft);font-weight:600;font-variant-numeric:tabular-nums}
 .pc-foot{margin:9px 0 0;font-size:12.5px;color:var(--ink-soft);font-weight:600;font-variant-numeric:tabular-nums}
-.dr{display:grid;grid-template-columns:26px minmax(0,1fr);gap:10px;align-items:start;padding:7px 0;border-bottom:1.5px dashed rgba(43,38,32,.22)}
-.dr:last-child{border-bottom:0}
-.dr .dk{width:26px;height:26px;border-radius:50%;border:2px solid var(--ink);display:grid;place-items:center;font-family:var(--display);font-size:14px;font-weight:800;line-height:1;color:var(--ink)}
-.dr b{display:flex;justify-content:space-between;gap:10px;font-size:14.5px;font-weight:800}
-.dr em{font-style:normal;font-variant-numeric:tabular-nums}
-.dr small{display:block;margin-top:2px;font-size:12.5px;color:var(--ink-soft);font-weight:600}
+.dr{display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;align-items:start;padding:8px 0;border-bottom:1.5px dashed rgba(43,38,32,.22)}
+.dr:last-of-type{border-bottom:0}
+.dr .dk{width:30px;height:30px;border-radius:10px;border:2px solid var(--ink);display:grid;place-items:center;box-shadow:0 2px 0 var(--ink);font-family:var(--display);font-size:15px;font-weight:800;line-height:1;color:var(--ink)}
+.dr b{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:14.5px;font-weight:800}
+.dr em{padding:1px 8px;border:1.5px solid var(--ink);border-radius:999px;background:var(--paper-2);font-style:normal;font-size:11.5px;font-weight:800;white-space:nowrap}
+.dr.hot em{background:var(--action);color:var(--action-ink)}
+.dbar{display:block;height:8px;margin:5px 0 3px;border:1.5px solid var(--ink);border-radius:5px;background:var(--paper);overflow:hidden}
+.dbar i{display:block;height:100%}
+.dr small{display:block;font-size:12px;color:var(--ink-soft);font-weight:600}
 
-/* the badge picker: eight icons and six colours under the town plaque */
-.townpick{position:absolute;top:calc(var(--hud-bottom,108px) + 12px);left:var(--gutter);z-index:30;width:276px;max-width:calc(100vw - 32px);padding:14px 14px 16px;box-sizing:border-box}
-.townpick h3{margin:0 0 10px;font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:21px;line-height:1.1}
+/* the badge choices, used on the My town page: eight icons and six colours */
 .tp-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .tp-ic{aspect-ratio:1;display:grid;place-items:center;padding:0;border-radius:14px;border:2.5px solid var(--ink);background:var(--paper-2);box-shadow:0 3px 0 var(--ink);transition:transform .08s,box-shadow .08s}
 .tp-ic:hover{transform:translateY(-2px)}
@@ -96,4 +96,28 @@
 .tp-col:active{transform:translateY(2px);box-shadow:none}
 .tp-col[aria-pressed="true"]{outline:3px solid var(--action);outline-offset:2px}
 
-@media (prefers-reduced-motion:reduce){.plaque,.pop,.townbadge,.tp-ic,.tp-col{transition:none!important}}
+/* Coins and Parts cards: the amount big with its rate, a plain lead, and where it comes from as little bars */
+.rc-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:2px 0 6px}
+.rc-num{font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:28px;line-height:1;font-variant-numeric:tabular-nums}
+.rc-rate{padding:2px 9px;border:2px solid var(--ink);border-radius:999px;background:#E4EDCF;font-size:13px;font-weight:800;color:var(--sage-d);font-variant-numeric:tabular-nums}
+.rc-sec{margin:10px 0 6px;font-size:11.5px;font-weight:800;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.07em}
+.rc-src{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none}
+.rc-src li{display:grid;grid-template-columns:minmax(0,1fr) 72px auto;align-items:center;gap:8px;font-size:13px;font-weight:700}
+.rc-src li span{color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rc-src li i{display:block;height:9px;border:1.5px solid var(--ink);border-radius:6px;background:linear-gradient(90deg,var(--sage) var(--w),var(--paper) var(--w))}
+.rc-src li.neg i{background:linear-gradient(90deg,#E3A08E var(--w),var(--paper) var(--w))}
+.rc-src li b{min-width:58px;text-align:right;font-variant-numeric:tabular-nums}
+.rc-meter{display:block;height:9px;margin-top:5px;border:1.5px solid var(--ink);border-radius:6px;background:var(--paper);overflow:hidden}
+.rc-meter i{display:block;height:100%;background:repeating-linear-gradient(135deg,var(--mustard) 0 7px,#F3D58A 7px 14px)}
+#coinspop,#partspop{width:318px}
+
+/* the town plaque's hover snapshot, like the title screen's */
+.tw-snap{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 4px;padding:0;list-style:none;font-size:12.5px;font-weight:700;color:var(--ink-soft)}
+.tw-snap li{display:flex;align-items:center;gap:5px;padding:3px 9px 3px 5px;border:1.5px solid rgba(43,38,32,.35);border-radius:10px;background:var(--paper)}
+.tw-snap b{color:var(--ink);font-variant-numeric:tabular-nums}
+.tw-snap i{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--ink)}
+.tw-snap-people i{background:var(--sage)}.tw-snap-coins i{background:var(--mustard)}.tw-snap-parts i{background:#E3A08E;border-radius:4px}
+.tw-snap-mood i{background:#CFE0E8}.tw-snap-homes i{background:#C96F4F;border-radius:3px 3px 1px 1px}
+#townpop{width:320px}
+
+@media (prefers-reduced-motion:reduce){.plaque,.pop,.townbadge,.tp-ic,.tp-col{transition:none!important;animation:none!important}}

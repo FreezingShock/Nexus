@@ -1,4 +1,4 @@
-// The Time and weather section of the Settings card: the time of day, the day length, the season and its length, and
+// The Sky tab of the Settings page: the time of day, the day length, the season and its length, and
 // the weather. Each click writes through the calendar store (core/calendar.js), which hands the choice to the sim.
 // The sim only changes what the sky shows; the clock and the weather rolls keep going.
 import { clockText } from '../core/calendar.js';
@@ -52,7 +52,7 @@ export function atmosMarkup(o, state) {
     <div class="sgroup"><span class="gfx-label">Season</span>${tiles('season', o, SEASON_TILES, 'season')}</div>
     <div class="sgroup"><span class="gfx-label">Weather</span>${tiles('weather', o, WEATHER_TILES, 'weather')}</div>
     <div class="sgroup"><span class="gfx-label">Time of day</span>${tiles('timeLock', o, TIME_TILES, 'time')}</div>
-    ${segs}
+    <div class="sgroup sgroup-pace"><span class="gfx-label">Pace</span>${segs}</div>
   </section>`;
 }
 

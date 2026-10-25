@@ -16,6 +16,7 @@ your branch ──PR──> tests pass + PR is not a draft ──bot──> inte
 6. **Open as draft while it is rough.** Mark it ready for review when it is done and the bot will merge it into `integration` once tests pass. Drafts are never merged. Every run updates one status comment on the PR that says what happened, including why a run skipped.
 7. **Include the attribution block** as the first two lines of the PR body (the thread supplies the exact text), then a short description of what changed and what you did and did not measure.
 8. **Merge `origin/integration` into your branch when the bot says `integration` has moved** (its comment says whether the merge is clean). Do it before you push more work, not at the end. Do not force-push and do not rewrite shared history.
+9. **Add a changelog line** to the newest entry in `src/changelog.js` for anything a player can see or hear: one plain sentence, a kind (new, better, look, sound, fix) and your PR number, all on one line so parallel threads merge cleanly. A version bump opens a new entry; a test checks the newest entry matches `src/version.js`.
 
 ## Adding features without editing shared files
 

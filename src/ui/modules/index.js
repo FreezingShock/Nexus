@@ -11,7 +11,6 @@ import feedback from './feedback.js';
 import frameStats from './frame-stats.js';
 import happiness from './happiness.js';
 import menu from './menu.js';
-import milestones from './milestones.js';
 import notes from './notes.js';
 import onboarding from './onboarding.js';
 import paintTown from './paint-town.js';
@@ -25,6 +24,7 @@ import shortcutSheet from './shortcut-sheet.js';
 import sound from './sound.js';
 import toolbarFold from './toolbar-fold.js';
 import tooltips from './tooltips.js';
+import townPage from './town-page.js';
 import zoning from './zoning.js';
 
 export const uiModules = [
@@ -38,7 +38,6 @@ export const uiModules = [
   frameStats,
   happiness,
   menu,
-  milestones,
   notes,
   onboarding,
   paintTown,
@@ -52,5 +51,6 @@ export const uiModules = [
   sound,
   toolbarFold,
   tooltips,
+  townPage,
   zoning,
 ];

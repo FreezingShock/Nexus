@@ -30,9 +30,6 @@ export function adviceFrom({ built, average, homes, maps, counts }) {
   const t = ADVICE.touch;
   const level = levelOf(average, built);
   const pct = Math.round(average * 100);
-  const summary = built
-    ? level.label + '. Homes feel ' + pct + '% content on average.'
-    : 'Paint a few homes and they will start to feel something about the streets.';
 
   let total = 0;
   const reached = { service: 0, park: 0, shop: 0, landmark: 0, industry: 0 };
@@ -40,13 +37,15 @@ export function adviceFrom({ built, average, homes, maps, counts }) {
   const sumX = { service: 0, park: 0, shop: 0, industry: 0 }, sumZ = { service: 0, park: 0, shop: 0, industry: 0 };
   const need = { service: 0, park: 0, shop: 0 };
   let touchedX = 0, touchedZ = 0, touched = 0;
+  const served = { well: 0, some: 0, none: 0 }; // homes with two or more kinds in reach, with one, with none
   for (let i = 0; i < AREA; i++) {
     if (!homes[i]) continue;
     total++;
     const gx = i % GRID_N, gz = (i / GRID_N) | 0;
-    let covered = false;
-    for (const k of ['service', 'park', 'shop', 'landmark']) if (maps[k][i] >= t) { reached[k]++; covered = true; }
-    if (covered) anyCover++;
+    let kinds = 0;
+    for (const k of ['service', 'park', 'shop', 'landmark']) if (maps[k][i] >= t) { reached[k]++; kinds++; }
+    if (kinds) anyCover++;
+    served[kinds >= 2 ? 'well' : kinds ? 'some' : 'none']++;
     for (const k of ['service', 'park', 'shop']) if (maps[k][i] < t) { need[k]++; sumX[k] += gx; sumZ[k] += gz; }
     if (maps.industry[i] >= t) { reached.industry++; touched++; touchedX += gx; touchedZ += gz; }
   }
@@ -76,5 +75,16 @@ export function adviceFrom({ built, average, homes, maps, counts }) {
     .sort((a, b) => b.n - a.n).slice(0, ADVICE.tipsMax)
     .map(({ x, z, kind, text }) => ({ gx: x, gz: z, kind, text }));
 
-  return { built, average: pct, level, summary, helping, hurting, tips: ranked, quiet: total > 0 && ranked.length === 0 };
+  const summary = summaryOf(built, total, served);
+  return { built, average: pct, level, summary, helping, hurting, tips: ranked, quiet: total > 0 && ranked.length === 0, homes: total, reached, served, touched, counts: { ...counts } };
+}
+
+// One plain sentence about the homes: how many are well served (two or more kinds of good things in reach), and how many
+// still have nothing nearby. No percentages: happiness is about what each home can walk to.
+export function summaryOf(built, total, served) {
+  if (!built) return 'Paint a few homes and they will start to feel something about the streets.';
+  if (!total) return 'No homes yet. Happiness is about homes and what they can reach on foot.';
+  const lead = served.well === total ? 'Every home is well served, with two or more good things in reach.'
+    : plural(served.well, 'of ' + total + ' homes is', 'of ' + total + ' homes are') + ' well served, with two or more good things in reach.';
+  return served.none ? lead + ' ' + plural(served.none, 'home still has', 'homes still have') + ' nothing nearby.' : lead;
 }

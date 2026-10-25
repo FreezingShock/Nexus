@@ -1,24 +1,24 @@
-/* The town Paint menu: a card on the right, like Milestones but sized to its swatches. */
+/* The Paint the town page (src/ui/modules/paint-town.js): big previews of a cottage and a mansard block on the left,
+   the wall, trim and roof swatches on the right, and the price with the Paint button along the foot. */
 #paintbtn{--tc:#F2D9A6}
-#paintcard{position:absolute;top:calc(var(--hud-bottom,108px) + 12px);right:max(16px,env(safe-area-inset-right,0px));bottom:150px;width:380px;max-width:calc(100% - 32px);display:flex;flex-direction:column;padding:0;z-index:7}
-#paintcard .band{flex:0 0 auto;padding:16px 62px 14px 18px;background:var(--paper-3);background-image:var(--grain);border-bottom:2.5px solid var(--ink);border-radius:17px 21px 0 0}
-#paintcard .band h2{font-size:25px}
-#paintcard .band .sub{margin:2px 0 0;font-size:13.5px}
-#paintcard .pbody{flex:1 1 auto;overflow-y:auto;overscroll-behavior:contain;padding:12px 18px 16px;display:grid;gap:6px;align-content:start}
-#paintcard .pprev{display:flex;gap:10px;justify-content:center;padding-bottom:6px}
-#paintcard .pprev img,#paintcard .pprev .pic-ph{width:132px;height:99px;border-radius:12px;border:2.5px solid var(--ink);object-fit:cover;background:#F6EEDB}
-#paintcard .ph{display:flex;align-items:baseline;gap:8px;margin-top:6px}
-#paintcard .ph b{font-family:var(--display);font-weight:800;font-size:15px}
-#paintcard .ph small{font-size:12px;color:var(--ink-soft);font-weight:700}
-#paintcard .swrow{display:flex;flex-wrap:wrap;gap:7px}
-#paintcard .sw{position:relative;width:32px;height:32px;border-radius:50%;border:2.5px solid var(--ink);background:var(--sw);box-shadow:0 2px 0 var(--ink);padding:0}
-#paintcard .sw.keep{background:var(--paper);font-weight:800;color:var(--ink-soft)}
-#paintcard .sw[aria-pressed="true"]{outline:3px solid var(--action);outline-offset:2px}
-#paintcard .sw.locked{border-style:dashed;box-shadow:none;opacity:.85}
-#paintcard .sw.locked small{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:10px;font-weight:800;color:var(--ink);background:var(--paper);border-radius:6px;padding:0 3px}
-#paintcard .sw .trim{position:absolute;right:-3px;bottom:-3px;width:12px;height:12px;border-radius:50%;border:2px solid var(--ink)}
-#paintcard .pgo{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}
-#paintcard .pline{font-weight:800;font-size:14px;font-variant-numeric:tabular-nums}
-#paintcard .pline.poor{color:var(--action)}
-#paintcard .linkbtn{justify-self:start;background:none;border:0;padding:4px 0;font-weight:700;font-size:13px;color:var(--ink-soft);text-decoration:underline;cursor:pointer}
-@media (max-width:700px){#paintcard{top:auto;bottom:140px;left:var(--gutter);right:var(--gutter);width:auto;max-width:none;max-height:60%}}
+.pt-wrap{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:18px;align-items:start}
+.pt-prev{display:flex;flex-direction:column;gap:12px;position:sticky;top:0}
+.pt-pics{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pt-pic{margin:0;padding:8px 8px 6px;border:2px solid var(--ink);border-radius:14px;background:var(--paper);box-shadow:0 3px 0 rgba(43,38,32,.3)}
+.pt-pic:nth-child(odd){rotate:-1.2deg}.pt-pic:nth-child(even){rotate:1deg}
+.pt-pic img,.pt-pic .pic-ph{display:block;width:100%;aspect-ratio:4/3;height:auto;border-radius:9px;border:2px solid var(--ink);object-fit:cover;background:#F6EEDB}
+.pt-pic figcaption{margin-top:5px;text-align:center;font-family:var(--display);font-weight:800;font-size:14px}
+.pt-rows{display:flex;flex-direction:column;gap:12px}
+.pt-row .swrow{display:flex;flex-wrap:wrap;gap:9px}
+.pt-row .sw{position:relative;width:38px;height:38px;border-radius:50%;border:2.5px solid var(--ink);background:var(--sw);box-shadow:0 2px 0 var(--ink);padding:0;transition:translate .1s}
+.pt-row .sw:hover{translate:0 -2px}
+.pt-row .sw.keep{background:var(--paper);font-weight:800;color:var(--ink-soft)}
+.pt-row .sw[aria-pressed="true"]{outline:3px solid var(--action);outline-offset:2px}
+.pt-row .sw.locked{border-style:dashed;box-shadow:none;opacity:.85}
+.pt-row .sw.locked small{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:10.5px;font-weight:800;color:var(--ink);background:var(--paper);border-radius:6px;padding:0 3px}
+.pt-row .sw .trim{position:absolute;right:-3px;bottom:-3px;width:14px;height:14px;border-radius:50%;border:2px solid var(--ink)}
+.pt-go{position:sticky;bottom:-24px;display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:16px;padding:12px 16px;border:2.5px solid var(--ink);border-radius:16px;background:#FFF6DF;box-shadow:0 3px 0 var(--ink)}
+.pt-go .pline{font-weight:800;font-size:15.5px;font-variant-numeric:tabular-nums}
+.pt-go .pline.poor{color:var(--action)}
+.nb-sheet .linkbtn{align-self:flex-start;background:none;border:0;padding:4px 0;font-weight:700;font-size:13.5px;color:var(--ink-soft);text-decoration:underline;cursor:pointer}
+@media (max-width:900px){.pt-wrap{grid-template-columns:1fr}.pt-prev{position:static}}

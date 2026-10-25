@@ -37,6 +37,38 @@ export function connMask(roads, gx, gz) {
 }
 export const dirsOfMask = (m) => [0, 1, 2, 3].filter((d) => m & (1 << d));
 
+// Dead ends: road tiles with exactly one road neighbour, as [gx, gz]. The road tool glows them as good places to start.
+export function roadEnds(roads) {
+  const out = [];
+  for (const k of Object.keys(roads)) {
+    const i = Number(k), gx = i % GRID_N, gz = Math.floor(i / GRID_N), m = connMask(roads, gx, gz);
+    if (m && !(m & (m - 1))) out.push([gx, gz]);
+  }
+  return out;
+}
+
+// The run of street through a tile: from it both ways along plain road (straights, corners) up to, but not into, the
+// next junction or end. A junction on its own is a run of one. Ordered end to end, at most MAX_STROKE tiles.
+export function roadRun(roads, start) {
+  const deg = (t) => dirsOfMask(connMask(roads, t[0], t[1])).length;
+  if (!hasRoad(roads, start[0], start[1])) return [];
+  if (deg(start) > 2) return [start];
+  const seen = new Set([tileIndex(start[0], start[1])]);
+  const walk = (from) => {
+    const out = [];
+    let at = from;
+    while (out.length < MAX_STROKE) {
+      const next = DIRS.map(([dx, dz]) => [at[0] + dx, at[1] + dz])
+        .find((t) => hasRoad(roads, t[0], t[1]) && !seen.has(tileIndex(t[0], t[1])));
+      if (!next || deg(next) > 2) break;
+      seen.add(tileIndex(next[0], next[1])); out.push(next); at = next;
+    }
+    return out;
+  };
+  const one = walk(start), two = walk(start);
+  return [...two.reverse(), start, ...one].slice(0, MAX_STROKE);
+}
+
 // What a tile looks like given its connections.
 //   iso (none), end (one), straight (two opposite), corner (two at a right angle), tee (three), cross (four)
 export function shapeOf(mask) {
@@ -53,7 +85,7 @@ export function shapeOf(mask) {
 // ---- routes ----
 // A road is laid as a chain of pivots: the last committed tile, any pivots added while drawing, and the cursor.
 // Between two pivots the route is one L (a leg, a corner, a leg), or a ruler line when `straight`.
-// validateRoute then checks the grid rules, so a route can never loop, hug a street or zig-zag.
+// validateRoute then checks the grid rules, so a route can never loop, run alongside a street or zig-zag.
 
 // The corner sits on the longer leg's far side, so an L reads as a street; `flip` swaps which leg comes first.
 export function elbowPath(a, b, flip = false) {
@@ -159,7 +191,7 @@ export function pathDirs(path) {
 // returns why a tile cannot hold a road (from roadBlock), or null.
 //   revisit  the route crosses itself
 //   loop     a tile touches the route somewhere other than its neighbors, or closes a 2 by 2 block of road
-//   hug      a new tile touches an existing street that the route does not join at that tile
+//   hug      a new tile runs side by side with an existing street (two route tiles in a row touch it on one side)
 //   zigzag   two turns in a row with a single tile between them
 //   long     longer than one road may be
 export function validateRoute(path, roads, blockedBy = () => null) {
@@ -174,15 +206,11 @@ export function validateRoute(path, roads, blockedBy = () => null) {
   });
   const mine = (gx, gz) => at.has(tileIndex(gx, gz));
   const roadish = (gx, gz) => hasRoad(roads, gx, gz) || mine(gx, gz);
-  const onStreet = (gx, gz, k) => {
-    const prev = path[k - 1], next = path[k + 1];
-    return [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dz]) => {
-      const nx = gx + dx, nz = gz + dz;
-      if (!hasRoad(roads, nx, nz)) return false;
-      const linked = (prev && prev[0] === nx && prev[1] === nz) || (next && next[0] === nx && next[1] === nz);
-      return !linked;
-    });
-  };
+  const street = (x, z) => hasRoad(roads, x, z) && !mine(x, z);
+  // Side by side: this tile and the new route tile next to it both have existing street on the same side, so the new
+  // road would run alongside it with no gap (closing the corner of a street is a loop instead). Touching a street at one tile (a T, a crossing, passing a dead end) is fine.
+  const sideBySide = (gx, gz, k) => [path[k - 1], path[k + 1]].some((p) => p && !hasRoad(roads, p[0], p[1]) && DIRS.some(([dx, dz]) =>
+    dx * (p[0] - gx) + dz * (p[1] - gz) === 0 && street(gx + dx, gz + dz) && street(p[0] + dx, p[1] + dz)));
 
   path.forEach(([gx, gz], k) => {
     if (at.get(tileIndex(gx, gz)) !== k) return; // a revisit is already reported
@@ -192,10 +220,7 @@ export function validateRoute(path, roads, blockedBy = () => null) {
       if (j !== undefined && Math.abs(j - k) > 1) { flag('loop', k); break; }
     }
     if (!fresh) return;
-    const prev = path[k - 1], next = path[k + 1];
-    const end = k === 0 || k === n - 1;
-    // Touching the network is expected only at the ends, where the road joins it.
-    if (!end && onStreet(gx, gz, k)) flag('hug', k);
+    if (sideBySide(gx, gz, k)) { flag('hug', k); return; }
     for (const [ox, oz] of [[-1, -1], [0, -1], [-1, 0], [0, 0]]) {
       const sq = [[gx + ox, gz + oz], [gx + ox + 1, gz + oz], [gx + ox, gz + oz + 1], [gx + ox + 1, gz + oz + 1]];
       if (sq.every(([x, z]) => inBounds(x, z) && roadish(x, z))) { flag('loop', k); break; }

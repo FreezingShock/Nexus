@@ -34,7 +34,10 @@ test('four bare homes in the west get tips for a clinic, a green and a shop, and
   const homes = [[5, 5], [5, 6], [6, 5], [6, 6]];
   const adv = adviceFrom({ built: 4, average: 0.3, homes: homesAt(homes), maps: maps(), counts: { ...none, service: 1 } });
   assert.equal(adv.level.label, 'Finding its feet');
-  assert.match(adv.summary, /30% content/);
+  assert.equal(adv.summary, '0 of 4 homes are well served, with two or more good things in reach. 4 homes still have nothing nearby.');
+  assert.doesNotMatch(adv.summary, /%/, 'happiness is never a percentage');
+  assert.deepEqual(adv.served, { well: 0, some: 0, none: 4 });
+  assert.equal(adv.homes, 4);
   assert.ok(adv.hurting.some((h) => /4 homes have nothing nearby yet/.test(h.text)));
   assert.ok(adv.tips.length <= ADVICE.tipsMax);
   assert.ok(adv.tips.some((t) => t.kind === 'service' && /clinic near the north-west side/.test(t.text) && /4 homes have no service/.test(t.text)));
@@ -88,4 +91,39 @@ test('the sim gives advice for a real town, caches it, and refreshes after a pla
   const after = sim.services.advice();
   assert.notEqual(after, empty, 'a placement rebuilds the advice');
   assert.equal(after.built, empty.built + 1, 'one more built tile');
+});
+
+test('homes are sorted into well served, one thing in reach, and nothing yet', async () => {
+  const { summaryOf } = await import('../src/sim/happiness-advice.js');
+  const homes = [[10, 10], [11, 10], [12, 10]];
+  const covered = (tiles) => { const m = new Float32Array(GRID_N * GRID_N); for (const [x, z] of tiles) m[z * GRID_N + x] = 1; return m; };
+  const adv = adviceFrom({ built: 3, average: 0.5, homes: homesAt(homes), maps: maps({ park: covered([[10, 10], [11, 10]]), shop: covered([[10, 10]]) }), counts: { ...none, park: 1, shop: 1 } });
+  assert.deepEqual(adv.served, { well: 1, some: 1, none: 1 });
+  assert.deepEqual([adv.reached.park, adv.reached.shop, adv.reached.service], [2, 1, 0]);
+  assert.equal(adv.counts.park, 1);
+  assert.match(adv.summary, /^1 of 3 homes is well served/);
+  assert.match(adv.summary, /1 home still has nothing nearby\.$/);
+  assert.equal(summaryOf(2, 0, { well: 0, some: 0, none: 0 }), 'No homes yet. Happiness is about homes and what they can reach on foot.');
+  assert.equal(summaryOf(2, 2, { well: 2, some: 0, none: 0 }), 'Every home is well served, with two or more good things in reach.');
+});
+
+test('the Happiness plaque and panel: a mood word and a face, never a percentage, and a row per thing in reach', async () => {
+  const { moodStep, faceSvg, pipsHtml, panelHtml, hoverHtml, FACTORS } = await import('../src/ui/happiness-view.js');
+  assert.deepEqual(ADVICE.levels.map((l) => moodStep(l.label)), [4, 3, 2, 1]);
+  assert.equal(moodStep('Nothing built yet'), 0);
+  assert.match(faceSvg(4), /<svg/);
+  assert.notEqual(faceSvg(1), faceSvg(4), 'the face changes with the mood');
+  assert.equal((pipsHtml(2).match(/class="on"/g) || []).length, 2);
+  const homes = [[10, 10], [11, 10], [12, 10]];
+  const adv = adviceFrom({ built: 3, average: 0.5, homes: homesAt(homes), maps: maps(), counts: { ...none, industry: 2 } });
+  const html = panelHtml(adv);
+  assert.doesNotMatch(html, /\d%</, 'no percentages in the words');
+  for (const f of FACTORS) assert.match(html, new RegExp(f.name));
+  assert.match(html, /0 of 3/);
+  assert.match(html, /Workshops nearby/);
+  assert.match(html, /How happiness works/);
+  assert.match(html, /Roads do not change it/);
+  assert.match(html, /data-tip="0"/);
+  assert.match(hoverHtml(adv), /Click to see what homes can reach/);
+  assert.match(hoverHtml({ built: 0 }), /appears once there are homes/);
 });

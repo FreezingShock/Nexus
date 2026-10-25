@@ -32,3 +32,18 @@ test('site build keeps everything the pages load and leaves out tests and toolin
     rmSync(out, { recursive: true, force: true });
   }
 });
+
+// A new index.html beside an old cached module breaks the page (it happened twice on localhost), so nothing that runs is
+// ever reused without asking: the dev server sends no-store, the live site no-cache on the page, modules and styles.
+test('code is never reused from a stale cache, locally or on the live site', () => {
+  const read = (f) => readFileSync(new URL('../' + f, import.meta.url), 'utf8');
+  const serve = read('scripts/serve.py');
+  assert.match(serve, /Cache-Control', 'no-store/);
+  assert.match(serve, /Clear-Site-Data', '"cache"'/, 'the page drops old cached modules, never the saves');
+  assert.doesNotMatch(serve, /"storage"|"\*"|"cookies"/);
+  const headers = read('_headers');
+  for (const path of ['/', '/index.html', '/src/*', '/css/*']) {
+    assert.match(headers, new RegExp('^' + path.replace(/[*/.]/g, '\\$&') + '\\n  Cache-Control: no-cache$', 'm'), path);
+  }
+  assert.match(headers, /^\/vendor\/fonts\/\*\n  Cache-Control: public, max-age=604800$/m, 'fonts may stay a week');
+});

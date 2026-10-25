@@ -7,3 +7,4 @@ index.html merge=union
 docs/*.md merge=union
 CONTRIBUTING.md merge=union
 tests/*.test.js merge=union
+src/changelog.js merge=union

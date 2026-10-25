@@ -1,12 +1,21 @@
-// The keyboard sheet: press ? (or the ? button) to see every binding. Built from src/ui/shortcuts.js, so it lists the real keys.
+// The Shortcuts page: press ? (or Shortcuts in the menu) for every binding on one notebook page (src/ui/book.js).
+// Built from src/ui/shortcuts.js, so it lists the real keys.
 import { $ } from '../format.js';
 import { SHORTCUT_GROUPS } from '../shortcuts.js';
+import { book } from '../book.js';
+import { PAGE_ICONS } from '../page-icons.js';
 
-const CLOSE_SVG = '<svg width="16" height="16" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2L12 12M12 2L2 12" stroke="#2B2620" stroke-width="2.2" stroke-linecap="round"/></svg>';
+// A tint per group, in the order of SHORTCUT_GROUPS.
+const TINTS = ['#D3E4C4', '#E4D5B2', '#F2C9BA', '#D2E3EE', '#F6DDA0'];
 
-function groupHtml(g) {
-  const rows = g.rows.map((r) => `<li><span class="kcaps">${r.keys.map((k) => `<kbd>${k}</kbd>`).join('')}</span><span>${r.text}</span></li>`).join('');
-  return `<section class="kgroup"><h3>${g.title}</h3><ul>${rows}</ul></section>`;
+export function shortcutsHtml() {
+  const groups = SHORTCUT_GROUPS.map((g, i) => {
+    const rows = g.rows.map((r) => `<li><span class="kcaps">${r.keys.map((k) => `<kbd>${k}</kbd>`).join('')}</span><span>${r.text}</span></li>`).join('');
+    return `<section class="pg-box kgroup" style="--i:${i};--gc:${TINTS[i % TINTS.length]}"><h3 class="h-disp">${g.title}</h3><ul>${rows}</ul></section>`;
+  }).join('');
+  return `<div class="kgroups">${groups}</div>
+    <div class="kfoot"><p class="nb-promise">Tips pop up as you play, the first time you meet something new. Want them again?</p>
+    <button class="btn" type="button" data-act="tips">Show the tips again</button></div>`;
 }
 
 export default {
@@ -20,36 +29,24 @@ export default {
     btn.innerHTML = '<span class="qmark" aria-hidden="true">?</span>';
     $('settingsbtn').before(btn);
 
-    const card = document.createElement('aside');
-    card.id = 'shortcuts';
-    card.className = 'card shortcuts';
-    card.dataset.mo = 'pop';
-    card.hidden = true;
-    card.setAttribute('aria-label', 'Keyboard shortcuts');
-    card.innerHTML = `<button class="x" id="kx" aria-label="Close">${CLOSE_SVG}</button>
-      <div class="band"><h2 class="h-disp">Keyboard shortcuts</h2><div class="sub">Press ? any time to close this</div></div>
-      <div class="pad">${SHORTCUT_GROUPS.map(groupHtml).join('')}</div>
-      <div class="pad foot"><button class="btn" id="kreset">Show the tips again</button></div>`;
-    $('app').appendChild(card);
-
-    const isOpen = () => !card.hidden;
-    function toggle(on = !isOpen()) {
-      card.hidden = !on;
-      btn.setAttribute('aria-expanded', String(on));
-      if (on) $('kx').focus({ preventScroll: true }); else btn.focus({ preventScroll: true });
-    }
-
-    btn.onclick = () => toggle();
-    $('kx').onclick = () => toggle(false);
-    $('kreset').onclick = () => {
-      dispatchEvent(new Event('nexus:tips-reset'));
-      toast('The tips are back. They show up as you play.');
-    };
+    book.register('shortcuts', {
+      title: 'Keyboard shortcuts', sub: 'Every key in the town. Press / any time to open or close this page.', c: '#8FB8D6', icon: PAGE_ICONS.shortcuts,
+      render: shortcutsHtml,
+      click(e) {
+        if (!e.target.closest('[data-act="tips"]')) return;
+        dispatchEvent(new Event('nexus:tips-reset'));
+        toast('The tips are back. They show up as you play.');
+      },
+    });
+    btn.onclick = () => book.toggle('shortcuts');
+    // The bottom-left chip says "/ for shortcuts" and opens this page too.
+    const hint = document.getElementById('keyhint');
+    if (hint) hint.onclick = () => book.toggle('shortcuts');
 
     return {
       onKey(e) {
-        if (e.key === '?') { toggle(); return true; }
-        if (e.key === 'Escape' && isOpen()) { toggle(false); return true; }
+        // / is the key the hint names; ? (Shift and /) still works.
+        if (e.key === '/' || e.key === '?') { e.preventDefault(); book.toggle('shortcuts'); return true; }
         return false;
       },
     };

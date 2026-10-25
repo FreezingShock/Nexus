@@ -25,11 +25,13 @@ export const SHORTCUT_GROUPS = [
   { title: 'While drawing roads', rows: [
     { keys: ['1–5'], text: 'Pick a road type', file: 'src/ui/modules/road-tool.js', needle: '/^[1-5]$/' },
     { keys: ['Click'], text: 'Set the start, then click again to lay the road to the cursor' },
+    { keys: ['Drag'], text: 'Press, drag and let go to lay a road in one go' },
+    { keys: ['J'], text: 'Replace: click a street to change it to the chosen type', file: 'src/ui/modules/road-tool.js', needle: "REPLACE_KEY = 'j'" },
     { keys: ['Space'], text: 'Add a pivot: bend the road at the cursor, then keep going', file: 'src/ui/modules/road-tool.js', needle: "const PIVOT_KEY = ' '" },
     { keys: ['L'], text: 'Flip the bend: the road picks the cleanest L by itself, L overrides it', file: 'src/ui/modules/road-tool.js', needle: "FLIP_KEY = 'l'" },
     { keys: ['Shift'], text: 'Hold for a straight line', file: 'src/ui/modules/road-tool.js', needle: "e.key === 'Shift'" },
     { keys: ['Esc', 'Right click'], text: 'Step back one pivot, then let go of the start', file: 'src/ui/modules/road-tool.js', needle: "e.key === 'Escape'" },
-    { keys: ['Ctrl', 'Z'], text: 'Undo the last step: road, building, zone, district, tree or bulldoze', file: 'src/ui/modules/road-tool.js', needle: "send({ type: 'undo' })" },
+    { keys: ['Ctrl', 'Z'], text: 'Undo the last step: road, building, zone, district, tree or bulldoze (a waiting road start goes first)', file: 'src/ui/modules/road-tool.js', needle: "send({ type: 'undo' })" },
   ] },
   { title: 'Zones and buildings', rows: [
     { keys: ['0–4'], text: '0 erases, 1 to 4 pick a zone', file: 'src/ui/modules/zoning.js', needle: '/^[0-4]$/' },
@@ -47,11 +49,11 @@ export const SHORTCUT_GROUPS = [
     { keys: ['Scroll'], text: 'Zoom in and out' },
   ] },
   { title: 'Town', rows: [
-    { keys: ['G'], text: 'Town goals', file: 'src/ui/modules/progress.js', needle: "e.key === 'g'" },
+    { keys: ['G'], text: 'Goals: Charge, today\'s goals and Renewal', file: 'src/ui/modules/progress.js', needle: "e.key === 'g'" },
     { keys: ['K'], text: 'Calendar: the date, festivals and skipping days', file: 'src/ui/modules/date.js', needle: "toLowerCase() !== 'k'" },
-    { keys: ['M'], text: 'Milestones and achievements', file: 'src/ui/modules/milestones.js', needle: "e.key === 'm'" },
-    { keys: ['Esc'], text: 'Leave a tool, or close a card', file: 'src/ui/ui.js', needle: "e.key === 'Escape'" },
+    { keys: ['M'], text: 'Milestones: every goal, its stages and rewards', file: 'src/ui/modules/progress.js', needle: "e.key === 'm'" },
+    { keys: ['Esc'], text: 'Close a page, leave a tool, or close a card', file: 'src/ui/ui.js', needle: "e.key === 'Escape'" },
     { keys: ['Right click'], text: 'Leave a tool, or close a card' },
-    { keys: ['?'], text: 'Show or hide this sheet', file: 'src/ui/modules/shortcut-sheet.js', needle: "e.key === '?'" },
+    { keys: ['/'], text: 'Show or hide this page (? works too)', file: 'src/ui/modules/shortcut-sheet.js', needle: "e.key === '/'" },
   ] },
 ];

@@ -1,0 +1,57 @@
+/* The town's notebook pages (src/ui/book.js): the stage they open on and the pieces their contents share. The sheet,
+   tabs, chips and buttons are css/notebook.css; each page's own bits are in its file (settings, progress, milestones,
+   paint-town). The town keeps running behind the soft dim. */
+.nb-stage{position:absolute;inset:0;z-index:50;perspective:1800px;pointer-events:none}
+.nb-stage>:not([hidden]){pointer-events:auto}
+
+/* a band at the top of a tab: its icon on its colour, the name and a line */
+.pg-band{display:flex;align-items:center;gap:14px;margin:0 0 16px;padding:12px 16px;border:2.5px solid var(--ink);border-radius:16px;background:color-mix(in srgb,var(--tc) 70%,var(--paper));box-shadow:0 3px 0 var(--ink)}
+.pg-band-ico{flex:none;width:44px;height:44px;display:grid;place-items:center;border:2px solid var(--ink);border-radius:12px;background:var(--paper);rotate:-3deg}
+.pg-band-ico svg{width:30px;height:30px}
+.pg-band b{display:block;font-size:22px;line-height:1.1}
+.pg-band small{display:block;color:var(--ink-soft);font-size:13.5px;margin-top:2px}
+
+/* paper boxes, in one, two or three columns */
+.pg-box{display:flex;flex-direction:column;gap:10px;padding:14px 16px 16px;border:2px solid var(--ink);border-radius:16px;background:var(--paper);box-shadow:0 3px 0 rgba(43,38,32,.3);min-width:0}
+.pg-box>h3{margin:0;font-size:20px;line-height:1.15}
+.pg-box>h3 small{font-family:var(--body);font-size:13px;font-weight:700;color:var(--ink-soft);margin-left:4px}
+.pg-box p{margin:0}
+.pg-box .btn{align-self:flex-start}
+.pg-soft{color:var(--ink-soft);font-size:13.5px!important}
+.pg-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+.pg-col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.pg-grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:stretch}
+.pg-grid3 .pg-box .btn{margin-top:auto}
+.pg-danger{border-style:dashed;box-shadow:none;background:color-mix(in srgb,var(--coral) 22%,var(--paper))}
+.nb-sheet .meter.wide{width:100%;height:14px;margin:0}
+.nb-sheet .meter.wide i{transition:width .4s}
+
+/* a question asked on the page (restore, start over, import) */
+.pg-ask{max-width:460px;margin:40px auto 0;display:flex;flex-direction:column;gap:12px;padding:22px 24px;border:2.5px solid var(--ink);border-radius:18px;background:var(--paper);box-shadow:0 5px 0 var(--ink);rotate:-.4deg}
+.pg-ask h3{margin:0;font-size:26px}
+.pg-ask p{margin:0}
+.pg-ask.danger{background:color-mix(in srgb,var(--coral) 18%,var(--paper))}
+
+/* Settings tabs: two columns of boxes on Sky and Graphics, wide sliders on Sound */
+.pg-sky .gfx{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:0;border:0}
+.pg-sky .sky-now{grid-column:1/-1;margin:0;padding:8px 14px;border-radius:12px;background:rgba(246,221,160,.45);border:1.5px dashed rgba(151,85,62,.45);font-size:14px}
+.pg-sky .sgroup-pace .gfx-row{padding:0;border:0;box-shadow:none}
+.pg-gfx .gfx{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:0;border:0}
+.pg-gfx .gfx-presets,.pg-gfx .gfx-note,.pg-gfx .gfx-switches{grid-column:1/-1}
+.pg-gfx .gfx-presets .gfx-opt{min-height:50px;font-size:16px}
+.pg-gfx .gfx-switches{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.pg-snd .snd{padding:16px 18px!important;border:2px solid var(--ink)!important;border-radius:16px;background:var(--paper);box-shadow:0 3px 0 rgba(43,38,32,.3);gap:16px}
+.pg-snd .snd-row{grid-template-columns:110px 1fr 54px;font-size:16px}
+.pg-snd .gfx-sw{min-height:48px;font-size:15px}
+
+/* Shortcuts: tinted boxes in two columns, the tips button at the foot */
+.kgroups{columns:2 320px;column-gap:16px}
+.kgroup{break-inside:avoid;margin:0 0 16px;background:color-mix(in srgb,var(--gc) 35%,var(--paper))}
+.kgroup>h3{display:inline-block;align-self:flex-start;padding:2px 12px;border-radius:10px;background:var(--gc);border:2px solid var(--ink);font-size:18px;rotate:-1deg}
+.kgroup ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.kgroup li{display:flex;align-items:center;gap:10px;font-size:14.5px;font-weight:600;line-height:1.3}
+.kfoot{display:flex;align-items:center;gap:14px}
+.kfoot .nb-promise{flex:1;margin:0}
+.kfoot .btn{flex:none}
+
+@media (max-width:900px){.pg-cols,.pg-grid3,.pg-sky .gfx,.pg-gfx .gfx{grid-template-columns:1fr}.pg-gfx .gfx-switches{grid-template-columns:1fr}}

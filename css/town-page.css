@@ -1,0 +1,38 @@
+/* The My town page (src/ui/modules/town-page.js): a band with the badge and name, the town drawn from above, stat tiles,
+   the badge and name editor with a live plaque preview, and the mayor. Sheet, tabs and boxes come from notebook.css and
+   pages.css; the badge buttons (.tp-*) and the mayor pieces (.pf-*) are shared with hud.css and title.css. */
+.tw-band{position:relative}
+.tw-badge{flex:none;display:grid;place-items:center;width:64px;height:64px;border:3px solid var(--ink);border-radius:50%;box-shadow:0 3px 0 var(--ink),inset 0 0 0 5px rgba(251,246,234,.35);rotate:-4deg}
+.tw-band b.h-disp{font-size:30px}
+.tw-band>div{min-width:0;flex:1 1 auto}
+.tw-band>div b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tw-edit{flex:none;height:40px;font-size:14px}
+.tw-cols{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}
+
+/* the map: a framed paper print of the grid, tilted a hair */
+.tw-mapwrap{position:relative;padding:8px;border:2.5px solid var(--ink);border-radius:14px;background:var(--paper-2);box-shadow:inset 0 0 0 4px rgba(251,246,234,.6);rotate:-.5deg}
+.tw-map{display:block;width:100%;aspect-ratio:1;border-radius:8px;background:#D5DFB6}
+.tw-legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin:0;font-size:12.5px;font-weight:700;color:var(--ink-soft)}
+.tw-legend span{display:inline-flex;align-items:center;gap:5px}
+.tw-legend i{width:12px;height:12px;border:1.5px solid var(--ink);border-radius:3px}
+
+/* the four stat tiles */
+.tw-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0;padding:0;list-style:none}
+.tw-stats li{display:flex;flex-direction:column;padding:8px 10px 9px 14px;border:2px solid var(--ink);border-radius:12px;background:var(--paper);box-shadow:inset 6px 0 0 var(--c)}
+.tw-stats b{font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:22px;line-height:1.1;font-variant-numeric:tabular-nums}
+.tw-stats span{font-size:12.5px;font-weight:700;color:var(--ink-soft)}
+.tw-built{margin:0}
+
+/* Name and badge: the preview plaque, the name field and the choices */
+.tw-preview{display:flex;flex-direction:column;align-items:center;gap:8px;margin:0 0 18px}
+.tw-eyebrow{font-size:11.5px;font-weight:800;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.08em}
+.tw-plaque{display:flex;align-items:center;gap:10px;padding:8px 22px 8px 10px;rotate:-1.4deg}
+.tw-plaque b{font-size:28px;white-space:nowrap}
+.tw-name{width:100%;box-sizing:border-box;padding:6px 12px;border:2.5px solid var(--ink);border-radius:12px;background:var(--paper);font-size:24px;color:var(--ink);box-shadow:inset 0 2px 0 rgba(43,38,32,.12)}
+.tw-name:focus{outline:3px solid var(--sky);outline-offset:2px}
+
+/* Mayor: the title screen's profile head, a little smaller */
+.tw-mayor .pf-avatar{width:84px;height:84px}
+.tw-mayorname{display:block;font-size:28px;margin:2px 0 4px}
+.tw-mayornote{margin:14px 0 0}
+@media (max-width:760px){.tw-cols{grid-template-columns:1fr}.tw-band{flex-wrap:wrap}}

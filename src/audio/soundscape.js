@@ -69,6 +69,7 @@ export function cueFor(e) {
     case 'roadsChanged':
       if (e.kind === 'draw') return 'road';
       if (e.kind === 'undo') return 'undo';
+      if (e.kind === 'replace') return 'upgrade';
       return 'erase';
     case 'zonePainted': return 'zone';
     case 'zoneCleared': return 'erase';

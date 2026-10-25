@@ -12,6 +12,10 @@ import { cinePose, LOW_TILT } from './render/photo-math.js';
 import { ISO } from './render/camera-math.js';
 import { createTitle } from './ui/title.js';
 import { $, fmtAgo } from './ui/format.js';
+import { readMetric } from './sim/achievement-metrics.js';
+import { shortDate } from './ui/date-text.js';
+import { summary as milestoneSummary } from './sim/achievements.js';
+import { createProfileStore } from './core/profile.js';
 
 const AUTOSAVE_MS = 45000;
 const SKIP_KEY = 'nexus.skiptitle';
@@ -29,7 +33,7 @@ const takeSkip = () => { try { const v = sessionStorage.getItem(SKIP_KEY); sessi
 const skipTitle = takeSkip() || params.get('title') === '0';
 
 let phase = 'title'; // 'title' (warm-up, then waiting), 'boot' (progress screen), 'play'
-let sim, state, scene, ui = null, loaded, quality, calendar, sound;
+let sim, state, scene, ui = null, loaded, quality, calendar, sound, profile;
 let saveBlocked = false, lastSaved = null, saveFailing = false;
 
 // ---- saving ----
@@ -43,6 +47,7 @@ const actions = {
   get quality() { return quality; },
   get calendar() { return calendar; },
   get sound() { return sound; },
+  get profile() { return profile; },
   exportSave() {
     const blob = new Blob([exportText(sim.prepareSave(), Date.now())], { type: 'application/json' });
     const a = document.createElement('a');
@@ -54,7 +59,7 @@ const actions = {
   importPick() { $('importfile').click(); },
   previewPostcard() { ui.previewPostcard(); },
   // Start over moves the town into the backup slot first, so Settings can restore it.
-  reset() { saveBlocked = true; clearSave(); reloadIntoTown(); },
+  reset() { saveBlocked = true; if (profile) profile.newTown(); clearSave(); reloadIntoTown(); },
   restore() {
     saveBlocked = true;
     if (restoreBackup(undefined, Date.now())) reloadIntoTown();
@@ -108,14 +113,27 @@ async function warmUp() {
     calendar = createCalendarStore({ storage: browserStorage, onChange: (o) => sim.setCalendar(o) });
     sim.setCalendar(calendar.get());
     sound = createSoundStore({ storage: browserStorage });
+    profile = createProfileStore({ storage: browserStorage }); // the mayor: kept per browser, outlasts any one town
+    profile.firstTown();
+    noteBests();
   });
+  try { title.townInfo({ pop: readMetric('population', { sim, state, grid: sim.grid }), coins: state.coins, date: shortDate(state) + ', Year ' + state.year }); }
+  catch (err) { console.warn('town snapshot skipped', err); } // the card simply goes without it
   const v = scene.camera.view;
   base = { tx: v.tx, tz: v.tz, az: v.az, elev: v.elev, zoom: v.tzoom };
   scene.camera.setFloor(LOW_TILT); // the street-level shot goes lower than the game's own view allows
   requestAnimationFrame(frame);
-  title.ready({ quality, sound });
+  title.town(state);
+  title.ready({ quality, sound, profile });
   if (skipTitle) play();
 }
+
+// The profile's personal bests: the population record and the most milestone stages reached.
+function noteBests() {
+  try { profile.note({ pop: readMetric('population', { sim, state, grid: sim.grid }), stages: milestoneSummary(state).stages }); }
+  catch (err) { console.warn('profile bests skipped', err); }
+}
+const PROFILE_EVERY_MS = 15000; // time played is counted in these steps, only while the tab is showing
 
 // ---- play: the progress screen, then the town ----
 let bootP = null, shown = 0, base = null;
@@ -176,6 +194,7 @@ function open() {
   document.body.classList.replace('booting', 'revealing');
   title.hideBoot();
   setInterval(save, AUTOSAVE_MS);
+  setInterval(() => { if (document.visibilityState !== 'hidden') { profile.addPlay(PROFILE_EVERY_MS); noteBests(); } }, PROFILE_EVERY_MS);
   addEventListener('pagehide', save);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') save(); });
   setTimeout(() => { if (state.offline) ui.showPostcard(); }, 750);

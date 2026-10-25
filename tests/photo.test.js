@@ -93,9 +93,9 @@ test('the photo camera lens is wired: perspective camera, lowered floor, hour ov
 test('the photo module is registered, labelled, styled and never touches the sim', () => {
   const mod = read('src/ui/modules/photo.js');
   assert.match(read('src/ui/modules/index.js'), /from '\.\/photo\.js'/);
-  assert.match(read('src/ui/modules/menu.js'), /photobtn: 'Photo mode'/);
+  assert.match(read('src/ui/modules/menu.js'), /id: 'photobtn', label: 'Photo mode'/);
   assert.match(read('index.html'), /css\/photo\.css/);
-  assert.match(read('css/topbar.css'), /#photobtn/);
+  assert.match(mod, /book\.close\(\); \/\/ a page would sit over the picture/);
   assert.ok(!/send\(|dispatch\(/.test(mod), 'photo mode sends no commands');
   assert.ok(!/fetch\(|XMLHttpRequest|sendBeacon/.test(mod), 'no network');
   assert.match(mod, /dataset\.mo = 'pop'/); assert.match(mod, /dataset\.mo = 'up'/);

@@ -1,6 +1,7 @@
 // Route planning and the grid rules for drawn roads (src/world/roadnet.js): pivots, L legs, validation.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { createSim } from '../src/sim/sim.js';
 import { getLayout } from '../src/world/layout.js';
 import { tileIndex, GRID_HALF } from '../src/world/grid.js';
@@ -80,6 +81,20 @@ test('a street one free tile (one lot) from a parallel street is allowed', () =>
 test('streets touching side by side are still refused', () => {
   const roads = row(10, 0, 10);
   assert.ok(reasons(line([0, 11], [4, 11]), roads).includes('hug'));
+});
+
+test('passing the dead end of a side street makes a T, not a "too close" (nate, 2026-10-25)', () => {
+  // A street ending at x = 3 on row 12, and a stub coming down at x = 8 that stops on row 11, one tile above the route.
+  const roads = merge(row(12, 0, 3), col(8, 6, 11));
+  assert.deepEqual(reasons(line([3, 12], [10, 12]), roads), [], 'carrying on from the end, past the stub');
+  assert.deepEqual(reasons(line([4, 12], [10, 12]), roads), [], 'starting beside the end');
+  assert.deepEqual(reasons(line([0, 13], [6, 13]).concat([]), row(12, 3, 3)), [], 'a route may touch one tile of a street mid-way');
+});
+
+test('a short spur beside a street is refused only where it runs alongside', () => {
+  const roads = row(10, 0, 10);
+  assert.ok(reasons([[4, 11], [5, 11]], roads).includes('hug'), 'two tiles side by side with the street');
+  assert.deepEqual(reasons([[4, 11], [4, 12], [4, 13]], roads), [], 'one tile touching it is a T');
 });
 
 test('the auto-bend planner accepts a route one tile from a parallel street', () => {
@@ -177,4 +192,23 @@ test('auto-pick keeps the stops of each pivot, so later pivots still land on the
 
 test('every grid rule has a sheet-friendly message', () => {
   for (const r of ['revisit', 'loop', 'hug', 'zigzag', 'long']) assert.ok(BLOCK_TEXT[r], r);
+});
+
+test('roadEnds lists the dead ends of the network', async () => {
+  const { roadEnds } = await import('../src/world/roadnet.js');
+  const { tileIndex } = await import('../src/world/grid.js');
+  const roads = {};
+  for (let x = 10; x <= 14; x++) roads[tileIndex(x, 10)] = { t: 'two', p: 0 };
+  roads[tileIndex(12, 11)] = { t: 'two', p: 0 };            // a stub off the middle: a tee and a third end
+  roads[tileIndex(30, 30)] = { t: 'two', p: 0 };            // a lone tile is not an end (nothing to carry on from)
+  const key = (t) => t.join(',');
+  assert.deepEqual(roadEnds(roads).map(key).sort(), ['10,10', '12,11', '14,10']);
+});
+
+test('road tool: a laid road lets go of its start (no chaining)', () => {
+  const src = readFileSync(new URL('../src/ui/modules/road-tool.js', import.meta.url), 'utf8');
+  assert.match(src, /function finish\(\) \{ anchor = null; pivots = \[\]; \}/);
+  assert.doesNotMatch(src, /anchor = route\.path\[route\.path\.length - 1\]; pivots/);
+  assert.match(src, /if \(drawing\(\) && anchor\) \{ anchor = null;/, 'Ctrl+Z drops a waiting start before undoing');
+  assert.doesNotMatch(src, /keepRoad|KEEP_KEY/, 'nate chose no Keep drawing toggle');
 });

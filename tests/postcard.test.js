@@ -26,7 +26,7 @@ test('the snapshot frames the town centre, not wherever the camera was left', ()
 });
 
 test('Settings can preview the postcard without paying out', () => {
-  assert.match(read('src/ui/panels.js'), /id="pcv"/);
+  assert.match(read('src/ui/panels.js'), /data-act="pcv"/);
   assert.match(read('src/ui/postcard.js'), /if \(!previewing\) send\(\{ type: 'collectOffline' \}\)/);
 });
 

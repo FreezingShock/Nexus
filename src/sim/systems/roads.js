@@ -17,6 +17,30 @@ function syncGrid({ grid, state }) {
   for (const [k, r] of Object.entries(state.roads)) grid.road[Number(k)] = ROAD_KIND[r.t];
 }
 
+// Writes a planned stroke: charges, records the undo step, moves trees and zone paint out of the way, tells the world.
+function layRoad(ctx, plan, kind) {
+  const { state, grid, emit, note, charge, sim } = ctx;
+  if (!plan.tiles.length) return;
+  if (!charge(plan.cost)) return;
+  const next = { ...state.roads }, prev = [], cleared = [];
+  for (const e of plan.tiles) {
+    prev.push({ idx: e.idx, old: e.old });
+    const rec = { t: e.t, p: (e.old ? e.old.p : 0) + e.price };
+    if (e.d !== undefined) rec.d = e.d;
+    next[e.idx] = rec;
+    grid.road[e.idx] = ROAD_KIND[e.t];
+    if (grid.zone[e.idx]) { grid.zone[e.idx] = 0; cleared.push([e.gx, e.gz]); }
+  }
+  state.roads = next;
+  // Trees on the new road give way; the undo step brings them back.
+  const tk = takeOnTiles(state.trees, new Set(plan.tiles.map((e) => e.idx)));
+  if (tk.taken.length) state.trees = tk.kept;
+  sim.roadUndo.push({ prev, paid: plan.cost, trees: tk.taken, seq: sim.nextSeq() }); if (sim.roadUndo.length > UNDO_DEPTH) sim.roadUndo.shift();
+  note('road');
+  emit({ type: 'roadsChanged', kind, tiles: plan.tiles.map((e) => [e.gx, e.gz]), cost: plan.cost });
+  if (cleared.length) sim.dispatch({ type: 'clearZoneTiles', tiles: cleared });
+}
+
 export default {
   id: 'roads',
   state: () => ({ roads: starterRoads(), roadUnlocks: [] }),
@@ -40,32 +64,30 @@ export default {
   commands: {
     // path: ordered, 4-connected [gx, gz] tiles of one route (pivots joined by L legs). One-way roads follow the drawing direction.
     drawRoad(ctx, { roadType, path }) {
-      const { state, grid, layout, emit, note, charge, sim } = ctx;
+      const { state, grid, layout, emit } = ctx;
       const t = typeOf(roadType);
       if (!t || (t.unlockParts && !state.roadUnlocks.includes(t.id))) return;
       if (!Array.isArray(path) || !path.length || path.length > MAX_STROKE || !path.every(isTile)) return;
       for (let k = 1; k < path.length; k++) if (Math.abs(path[k][0] - path[k - 1][0]) + Math.abs(path[k][1] - path[k - 1][1]) !== 1) return;
       const plan = planStroke({ path, type: t.id, roads: state.roads, blockedBy: (gx, gz) => roadBlock(grid, layout, state, gx, gz), costOf });
       if (plan.problems.length) { emit({ type: 'toast', text: BLOCK_TEXT[plan.problems[0].reason] }); return; }
-      if (!plan.tiles.length) return;
-      if (!charge(plan.cost)) return;
-      const next = { ...state.roads }, prev = [], cleared = [];
-      for (const e of plan.tiles) {
-        prev.push({ idx: e.idx, old: e.old });
-        const rec = { t: e.t, p: (e.old ? e.old.p : 0) + e.price };
-        if (e.d !== undefined) rec.d = e.d;
-        next[e.idx] = rec;
-        grid.road[e.idx] = ROAD_KIND[e.t];
-        if (grid.zone[e.idx]) { grid.zone[e.idx] = 0; cleared.push([e.gx, e.gz]); }
-      }
-      state.roads = next;
-      // Trees on the new road give way; the undo step brings them back.
-      const tk = takeOnTiles(state.trees, new Set(plan.tiles.map((e) => e.idx)));
-      if (tk.taken.length) state.trees = tk.kept;
-      sim.roadUndo.push({ prev, paid: plan.cost, trees: tk.taken, seq: sim.nextSeq() }); if (sim.roadUndo.length > UNDO_DEPTH) sim.roadUndo.shift();
-      note('road');
-      emit({ type: 'roadsChanged', kind: 'draw', tiles: plan.tiles.map((e) => [e.gx, e.gz]), cost: plan.cost });
-      if (cleared.length) sim.dispatch({ type: 'clearZoneTiles', tiles: cleared });
+      layRoad(ctx, plan, 'draw');
+    },
+
+    // Replace mode: retype a run of existing street (paying the difference), or flip a one-way by passing its run the
+    // other way round. Only tiles that already hold a road change, so the grid rules have nothing to check; the bridge
+    // and the tunnel road keep their type.
+    replaceRoad(ctx, { roadType, path }) {
+      const { state } = ctx;
+      const t = typeOf(roadType);
+      if (!t || (t.unlockParts && !state.roadUnlocks.includes(t.id))) return;
+      if (!Array.isArray(path) || !path.length || path.length > MAX_STROKE || !path.every(isTile)) return;
+      for (let k = 1; k < path.length; k++) if (Math.abs(path[k][0] - path[k - 1][0]) + Math.abs(path[k][1] - path[k - 1][1]) !== 1) return;
+      if (!path.every(([gx, gz]) => gx >= 0 && gz >= 0 && gx < GRID_N && gz < GRID_N && state.roads[tileIndex(gx, gz)])) return;
+      const plan = planStroke({ path, type: t.id, roads: state.roads, costOf });
+      plan.tiles = plan.tiles.filter((e) => !PROTECTED.has(e.idx));
+      plan.cost = plan.tiles.reduce((a, e) => a + e.price, 0);
+      layRoad(ctx, plan, 'replace');
     },
 
     // tiles: [gx, gz] list. Half of what each tile cost comes back; the starter streets refund nothing. The bridge and the
