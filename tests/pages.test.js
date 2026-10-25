@@ -140,3 +140,44 @@ test('a page never touches the sim just by opening, and tool keys wait while one
   assert.ok(ui.indexOf('if (book.isOpen()) return;') < ui.indexOf('if (TOOL_KEYS[k])'));
   assert.doesNotMatch(read('src/ui/book.js') + read('src/ui/notebook.js'), /send\(|dispatch\(|togglePause/);
 });
+
+test('the menu dresses every button as a row: icon tile, name, live line and key', async () => {
+  // A small fake DOM: just what menu.js touches.
+  const el = (id) => {
+    const kids = [];
+    const e = {
+      id, innerHTML: '', dataset: {}, attrs: {}, kids,
+      classList: { names: new Set(), add(n) { this.names.add(n); }, contains(n) { return this.names.has(n); } },
+      style: { setProperty() {} },
+      setAttribute(k, v) { this.attrs[k] = v; }, getAttribute(k) { return this.attrs[k]; },
+      addEventListener() {}, appendChild(c) { kids.push(c); return c; },
+      querySelector(sel) {
+        if (sel === 'svg,.qmark') return { outerHTML: '<svg data-own="' + id + '"></svg>' };
+        if (sel === '.mi-text') return (this.text ||= el(id + '-text'));
+        if (sel === '.mi-sub') return (this.sub ||= { textContent: '' });
+        return null;
+      },
+      querySelectorAll: () => [],
+    };
+    return e;
+  };
+  const els = {};
+  const saved = { document: globalThis.document };
+  globalThis.document = { getElementById: (id) => (els[id] ||= el(id)), createElement: () => el('hr'), addEventListener() {} };
+  try {
+    const { default: menu } = await import('../src/ui/modules/menu.js');
+    menu.create({ sim: { state: { charge: 10, achievements: {}, best: {} } } });
+    const grid = els.menugrid;
+    const rows = grid.kids.filter((k) => k.id !== 'hr');
+    assert.deepEqual(rows.map((r) => r.id), MENU_ROWS.map((r) => r.id), 'rows in menu order');
+    for (const r of MENU_ROWS) {
+      const html = els[r.id].innerHTML;
+      assert.match(html, /class="mi-ico"><svg/, r.id + ' icon tile');
+      assert.ok(html.includes(`<b>${r.label}</b>`), r.id + ' name');
+      assert.match(html, /class="mi-sub"/, r.id + ' line');
+      if (r.key) assert.ok(html.includes(`<kbd>${r.key}</kbd>`), r.id + ' key');
+      assert.ok(els[r.id].classList.contains('mrow'));
+    }
+    assert.equal(grid.kids.filter((k) => k.id === 'hr').length, MENU_ROWS.filter((r) => r.gap).length);
+  } finally { globalThis.document = saved.document; }
+});
