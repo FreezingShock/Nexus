@@ -19,3 +19,9 @@
 .toolfold[aria-expanded="false"]{bottom:0;border-bottom:0}
 .toolfold[aria-expanded="false"] svg{rotate:180deg}
 @media (max-width:900px){.toolfold{bottom:calc(max(18px,env(safe-area-inset-bottom,0px)) + 104px)}.toolfold[aria-expanded="false"]{bottom:0}}
+
+/* Tool flyouts and the bulldoze chip sit above the chevron tab, never over it (--fly-b is read by css/ui.css and
+   css/menus.css). With the bar folded the chevron sits on the bottom edge, so they drop down to just above it. */
+:root{--fly-b:calc(max(18px,env(safe-area-inset-bottom,0px)) + 112px + 34px)}
+@media (max-width:900px){:root{--fly-b:calc(max(18px,env(safe-area-inset-bottom,0px)) + 104px + 34px)}}
+body:has(#toolfold[aria-expanded="false"]){--fly-b:36px}

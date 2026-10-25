@@ -1,18 +1,58 @@
-/* The Population chip (bottom left, above the hint) and its paper panel. */
-.pop-chip{position:absolute;left:var(--gutter);bottom:74px;z-index:7;display:flex;align-items:center;gap:8px;height:48px;padding:0 16px 0 12px;font-weight:800;font-size:17px;color:var(--ink);font-variant-numeric:tabular-nums}
+/* The Population counter (bottom left, above the "/ for shortcuts" chip), its hover card, the "+1" and little people
+   that fly off it, and the paper panel it opens. */
+.pop-chip{position:absolute;left:var(--gutter);bottom:calc(max(18px,env(safe-area-inset-bottom,0px)) + 52px);z-index:7;display:flex;align-items:center;gap:10px;height:62px;padding:0 18px 0 9px;color:var(--ink);font-variant-numeric:tabular-nums;text-align:left;transform:rotate(-1deg);transition:translate .12s}
+.pop-chip:hover{translate:0 -2px}
 .pop-chip.open{box-shadow:0 5px 0 var(--action),0 0 0 3px var(--action)}
-.pop-chip:active{transform:translateY(2px)}
-.pop-panel{position:absolute;left:var(--gutter);bottom:134px;z-index:8;width:320px;max-width:calc(100vw - 32px);padding:0;box-sizing:border-box;overflow:hidden}
-.pop-panel .pp-head{padding:12px 18px 10px;background:var(--paper-3);background-image:var(--grain);border-bottom:2.5px solid var(--ink)}
+.pop-chip:active{translate:0 2px}
+.pop-chip .pc-badge{display:grid;place-items:center;width:42px;height:42px;border:2.5px solid var(--ink);border-radius:13px;background:#BFD8C4;box-shadow:0 2px 0 var(--ink)}
+.pop-chip .pc-badge svg{width:26px;height:26px}
+.pop-chip .pc-txt{display:flex;flex-direction:column;line-height:1}
+.pop-chip .pc-n{display:inline-block;transform-origin:left center;font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:30px;line-height:1}
+.pop-chip .pc-sub{margin-top:3px;font-size:12.5px;font-weight:700;color:var(--ink-soft)}
+.pop-chip .pc-sub i{font-style:normal;color:var(--sage-d);margin-left:2px}
+/* hover card: above the chip, since the chip sits at the bottom */
+.pop-chip>.pc-pop{top:auto;bottom:calc(100% + 14px);width:250px;display:flex;flex-direction:column;gap:3px;transform:translateY(6px);transform-origin:bottom left}
+.pop-chip>.pc-pop b{font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:19px}
+.pop-chip>.pc-pop em{font-style:normal;font-size:12.5px;color:var(--ink-soft)}
+.pop-chip:hover>.pc-pop,.pop-chip:focus-visible>.pc-pop{opacity:1;visibility:visible;transform:none;transition-delay:.25s,.25s,0s}
+.pop-chip.open>.pc-pop{display:none}
+
+/* What flies off the number: a terracotta "+1" up and away, a grey "−1" drifting down, and little people hopping right. */
+.pc-flies{position:absolute;left:58px;top:4px;width:0;height:0;pointer-events:none}
+.pc-fly{position:absolute;left:0;top:0;font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:24px;white-space:nowrap;-webkit-text-stroke:5px var(--paper);paint-order:stroke fill;animation:pc-up 1.2s cubic-bezier(.2,.8,.3,1) both}
+.pc-fly.up{color:var(--action)}
+.pc-fly.down{color:#8A8173;font-size:20px;animation-name:pc-down}
+@keyframes pc-up{0%{opacity:0;transform:translate(0,4px) scale(.6) rotate(-6deg)}18%{opacity:1;transform:translate(6px,-16px) scale(1.15) rotate(-4deg)}35%{transform:translate(10px,-24px) scale(1) rotate(-2deg)}100%{opacity:0;transform:translate(22px,-60px) scale(.95) rotate(4deg)}}
+@keyframes pc-down{0%{opacity:0;transform:translate(0,-4px)}20%{opacity:.9}100%{opacity:0;transform:translate(8px,34px)}}
+.pc-hop{position:absolute;left:12px;top:20px;width:14px;height:18px;animation:pc-hop 1.1s cubic-bezier(.3,.6,.4,1) both}
+.pc-hop svg{display:block;width:100%;height:100%}
+@keyframes pc-hop{0%{opacity:0;transform:translate(0,0) scale(.4)}12%{opacity:1;transform:translate(calc(var(--dx)*.2),-18px) scale(1)}30%{transform:translate(calc(var(--dx)*.45),-2px)}48%{transform:translate(calc(var(--dx)*.7),-14px)}66%{opacity:1;transform:translate(calc(var(--dx)*.9),0)}100%{opacity:0;transform:translate(calc(var(--dx) + 10px),-4px) scale(.8)}}
+
+/* the panel: a paper sheet above the chip, with a stamped icon heading like the notebook pages */
+.pop-panel{position:absolute;left:var(--gutter);bottom:calc(max(18px,env(safe-area-inset-bottom,0px)) + 128px);z-index:8;width:340px;max-width:calc(100vw - 32px);padding:0;box-sizing:border-box;overflow:hidden}
+.pop-panel .pp-head{display:flex;align-items:center;gap:12px;padding:12px 18px 11px;background:var(--paper-3);background-image:var(--grain);border-bottom:2.5px solid var(--ink)}
+.pop-panel .pp-stamp{display:grid;place-items:center;flex:none;width:40px;height:40px;border:2.5px solid var(--ink);border-radius:12px;background:#BFD8C4;box-shadow:0 2px 0 var(--ink);transform:rotate(-4deg)}
 .pop-panel .pp-head h2{margin:0;font-size:22px}
+.pop-panel .pp-head small{display:block;font-size:12.5px;font-weight:700;color:var(--ink-soft)}
 .pop-panel .pp-body{padding:12px 18px 16px}
+.pop-panel .pp-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
 .pop-panel .pp-big{margin:0;font-size:15px;color:var(--ink-soft);font-weight:700}
-.pop-panel .pp-big b{font-family:var(--display);font-variation-settings:"SOFT" 100,"WONK" 1;font-size:34px;color:var(--ink);margin-right:2px}
+.pop-panel .pp-big b{font-family:var(--display);font-variation-settings:"SOFT" 100,"WONK" 1;font-size:36px;color:var(--ink);margin-right:2px}
+.pop-panel .pp-pace{flex:none;padding:3px 10px;border:2px solid var(--ink);border-radius:999px;background:var(--paper-2);font-size:12.5px;font-weight:800}
 .pop-panel .pp-graph{position:relative;margin:8px 0 10px;padding:8px 8px 6px;border:2px solid var(--ink);border-radius:14px;background:var(--paper-2)}
-.pop-panel .pp-graph small{display:block;margin-top:2px;font-size:12px;font-weight:700;color:var(--ink-soft)}
-.pop-panel .pr-list{margin:0}
+.pop-panel .pp-graph svg{cursor:crosshair}
+.pop-panel .pp-key{display:flex;gap:12px;align-items:center;margin-top:2px;font-size:12px;font-weight:700;color:var(--ink-soft)}
+.pop-panel .pp-key span::before{content:"";display:inline-block;width:14px;height:0;margin-right:5px;vertical-align:middle}
+.pop-panel .pp-key .k-people::before{height:8px;border-top:2.4px solid var(--ink);background:#BFD8C4}
+.pop-panel .pp-key .k-room::before{border-top:2px dashed var(--terra)}
+.pop-panel .pp-key .k-when{margin-left:auto}
+.pop-panel .pp-key .k-when::before{display:none}
+.pop-panel .pp-facts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0;padding:0;list-style:none}
+.pop-panel .pp-facts li{display:flex;flex-direction:column;padding:7px 10px 8px;border:2px solid var(--ink);border-radius:12px;background:var(--paper);box-shadow:inset 5px 0 0 var(--c)}
+.pop-panel .pp-facts b{padding-left:4px;font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:20px;line-height:1.1}
+.pop-panel .pp-facts span{padding-left:4px;font-size:12px;font-weight:700;color:var(--ink-soft)}
 .pop-panel .pp-note{margin:10px 0 0;font-size:13.5px;line-height:1.35;font-weight:600;color:var(--ink-soft)}
-@media (max-width:700px){.pop-panel{bottom:134px;width:calc(100vw - 32px)}}
 .pop-panel .pp-tip{position:absolute;top:6px;transform:translateX(-50%);display:flex;flex-direction:column;gap:1px;padding:6px 10px;border:2px solid var(--ink);border-radius:11px;background:var(--paper);box-shadow:0 2px 0 var(--ink);font-size:12.5px;font-weight:700;white-space:nowrap;pointer-events:none;font-variant-numeric:tabular-nums}
 .pop-panel .pp-tip b{font-size:13px;color:var(--action)}
-.pop-panel .pp-graph svg{cursor:crosshair}
+@media (max-width:900px){.pop-chip{bottom:max(18px,env(safe-area-inset-bottom,0px))}.pop-panel{bottom:calc(max(18px,env(safe-area-inset-bottom,0px)) + 76px)}}
+@media (max-width:700px){.pop-panel{width:calc(100vw - 32px)}}

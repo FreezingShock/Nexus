@@ -117,3 +117,20 @@ test('graph covers 10 minutes with a hover point every 2 minutes', () => {
   assert.equal(steps([[1, 2]]).length, 1);
   assert.match(graphSvg(hist, 5), /<line/);
 });
+
+test('the counter flies whole-number changes and ignores jumps', async () => {
+  const { popDelta, flyLabel, hoppers, hoverHtml, FLY_MAX } = await import('../src/ui/modules/population.js');
+  assert.equal(popDelta(10.2, 10.9), 0, 'no new whole person yet');
+  assert.equal(popDelta(10.9, 11.1), 1);
+  assert.equal(popDelta(11.1, 13.4), 2);
+  assert.equal(popDelta(12, 11.5), -1, 'someone moved out');
+  assert.equal(popDelta(10, 10 + FLY_MAX + 5), 0, 'offline catch-up or import is not a fly-off');
+  assert.equal(popDelta(-1, 5), 0, 'unset population');
+  assert.equal(popDelta(NaN, 5), 0);
+  assert.equal(flyLabel(3), '+3');
+  assert.equal(flyLabel(-1), '\u22121');
+  assert.equal(flyLabel(0), '');
+  assert.deepEqual([hoppers(1), hoppers(2), hoppers(9), hoppers(-2)], [1, 2, 3, 0]);
+  assert.match(hoverHtml(summaryOf(40, 100, 0.6)), /40 residents/);
+  assert.match(hoverHtml(summaryOf(100, 100, 0.6)), /Every home is full/);
+});

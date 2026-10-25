@@ -1,8 +1,10 @@
-// The Population panel: a small chip in the bottom left (key U) that opens a paper card with a graph of recent growth,
-// the capacity the homes allow, and a few plain facts. Reads sim.population and state.popHist; sends no commands.
+// The Population counter: a big chip in the bottom left (key U) where a "+1" and a little person fly off as folk move
+// in. Hover shows a short card; a click opens a paper panel with a graph of recent growth, the room the homes allow, and a
+// few plain facts. Reads sim.population and state.popHist; sends no commands.
 import { summaryOf } from '../../sim/population.js';
 import { fmtExact } from '../format.js';
 import { MOOD } from '../../sim/services-config.js';
+import { renderSettings } from '../../core/quality.js';
 
 const el = (tag, cls, html) => {
   const n = document.createElement(tag);
@@ -50,9 +52,12 @@ export function graphSvg(hist, hover = null) {
     mark = `<line x1="${x}" x2="${x}" y1="4" y2="${H - 8}" stroke="#2B2620" stroke-width="1.5" stroke-dasharray="3 3" opacity=".55"/>` + mark +
       `<circle cx="${x}" cy="${Y(s.people).toFixed(1)}" r="5" fill="#B8472E" stroke="#2B2620" stroke-width="2"/>`;
   }
-  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="People over the last 10 minutes, against the room the homes allow">` +
+  // soft ruled lines, like the notebook paper, at a quarter, half and three quarters of the height
+  let grid = '';
+  for (const f of [0.25, 0.5, 0.75]) { const y = (H - 8 - f * (H - 18)).toFixed(1); grid += `<line x1="6" x2="${W - 6}" y1="${y}" y2="${y}" stroke="#C9B48E" stroke-width="1" stroke-dasharray="2 4"/>`; }
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="People over the last 10 minutes, against the room the homes allow">${grid}` +
     `<path d="${cap}" fill="none" stroke="#97553E" stroke-width="2" stroke-dasharray="5 4" stroke-linecap="round"/>` +
-    `<polygon points="${x0},${H - 8} ${line} ${x1},${H - 8}" fill="#BFD8C4" opacity=".75"/>` +
+    `<polygon points="${x0},${H - 8} ${line} ${x1},${H - 8}" fill="#BFD8C4" opacity=".8"/>` +
     `<polyline points="${line}" fill="none" stroke="#2B2620" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>${mark}</svg>`;
 }
 
@@ -66,38 +71,71 @@ function tipHtml(hist, hover) {
   return `<div class="pp-tip" style="left:${left.toFixed(1)}%"><b>${when}</b><span>${fmtExact(Math.floor(s.people))} people</span><span>${fmtExact(Math.round(s.cap))} places</span>${rate}</div>`;
 }
 
-export function panelHtml(sum, hist, happy, hover = null) {
-  const row = (k, v) => `<div class="pr"><dt>${k}</dt><dd>${v}</dd></div>`;
-  const helping = happy >= 0.6 ? 'A happy town: newcomers arrive quicker.' : happy <= MOOD.base + 0.05 ? 'Services, parks and shops nearby would bring people in faster.' : 'Steady. More services and parks speed it up.';
-  return `<p class="pp-big"><b>${fmtExact(Math.floor(sum.people))}</b> <span>of ${fmtExact(sum.capacity)} places</span></p>` +
-    `<div class="pp-graph" data-graph>${graphSvg(hist, hover)}${hover != null ? tipHtml(hist, hover) : ''}<small>Last 10 minutes · hover for each 2 minutes · dashed line is the room the homes allow</small></div>` +
-    `<dl class="pr-list">` +
-    row('Homes lived in', Math.round(sum.fill * 100) + '%') +
-    row('Free places', fmtExact(Math.ceil(sum.vacancy))) +
-    row('Moving in', sum.perMin >= 0.5 ? sum.perMin.toFixed(1) + ' a minute' : sum.vacancy > 0.5 ? 'a trickle' : 'homes are full') +
-    row('Pace', sum.pace + (sum.relSpeed >= 0.05 ? ' · ' + sum.relSpeed.toFixed(2) + '×' : '')) +
-    row('Full in', sum.vacancy > 0.5 ? 'about ' + clock(sum.toFullS) : '—') +
-    `</dl><p class="pp-note">${helping} Everyone arrives through the tunnel; the more people, the more cars and walkers you see.</p>`;
+// The facts under the graph, as small tiles: a coloured dot, the value big, and what it means under it.
+function factTiles(sum) {
+  const tile = (c, v, k) => `<li style="--c:${c}"><b>${v}</b><span>${k}</span></li>`;
+  return `<ul class="pp-facts">` +
+    tile('#BFD8C4', Math.round(sum.fill * 100) + '%', 'of homes lived in') +
+    tile('#F2D27A', fmtExact(Math.ceil(sum.vacancy)), 'free places') +
+    tile('#E3A08E', sum.perMin >= 0.5 ? sum.perMin.toFixed(1) : sum.vacancy > 0.5 ? 'a trickle' : '—', sum.perMin >= 0.5 ? 'moving in a minute' : sum.vacancy > 0.5 ? 'moving in' : 'homes are full') +
+    tile('#9CC3D5', sum.vacancy > 0.5 ? clock(sum.toFullS) : 'Full', sum.vacancy > 0.5 ? 'until the homes are full' : 'every place is taken') +
+    `</ul>`;
 }
+
+export function panelHtml(sum, hist, happy, hover = null) {
+  const helping = happy >= 0.6 ? 'A happy town: newcomers arrive quicker.' : happy <= MOOD.base + 0.05 ? 'Services, parks and shops near homes would bring people in faster.' : 'Steady. More services and parks near homes speed it up.';
+  return `<div class="pp-top"><p class="pp-big"><b>${fmtExact(Math.floor(sum.people))}</b> <span>of ${fmtExact(sum.capacity)} places</span></p>` +
+    `<span class="pp-pace">${sum.pace}${sum.relSpeed >= 0.05 ? ' · ' + sum.relSpeed.toFixed(2) + '×' : ''}</span></div>` +
+    `<div class="pp-graph" data-graph>${graphSvg(hist, hover)}${hover != null ? tipHtml(hist, hover) : ''}` +
+    `<div class="pp-key"><span class="k-people">Residents</span><span class="k-room">Room in homes</span><span class="k-when">last 10 min</span></div></div>` +
+    factTiles(sum) +
+    `<p class="pp-note">${helping} Everyone arrives through the tunnel, and the more people, the more cars and walkers you see.</p>`;
+}
+
+// The short card on hover: the count, the room left and how fast people arrive.
+export function hoverHtml(sum) {
+  const rate = sum.perMin >= 0.5 ? sum.perMin.toFixed(1) + ' moving in a minute' : sum.vacancy > 0.5 ? 'A trickle moving in' : 'Every home is full';
+  return `<b>${fmtExact(Math.floor(sum.people))} residents</b><span>${fmtExact(Math.ceil(sum.vacancy))} free places · ${rate}</span><em>Click for the graph · U</em>`;
+}
+
+// What the counter shows flying off it when the count changes: the whole-number change between two readings, or 0 for
+// no change and for a jump (offline catch-up, import, Start over), which would only be noise.
+export const FLY_MAX = 40;
+export function popDelta(prev, now) {
+  if (!Number.isFinite(prev) || !Number.isFinite(now) || prev < 0 || now < 0) return 0;
+  const d = Math.floor(now) - Math.floor(prev);
+  return Math.abs(d) > FLY_MAX ? 0 : d;
+}
+export const flyLabel = (d) => (d > 0 ? '+' + d : d < 0 ? '−' + -d : '');
+// Little people hop off with the number: one per newcomer, at most three so a rush stays calm. None when people leave.
+export const hoppers = (d) => (d > 0 ? Math.min(3, d) : 0);
+export const FLY_GAP_S = 0.7; // a new number flies at most this often; arrivals in between join the next one
+
+const PERSON = '<svg viewBox="0 0 14 18" aria-hidden="true"><circle cx="7" cy="4.4" r="3.2" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.6"/><path d="M1.6 17c0-4 2.4-6.6 5.4-6.6s5.4 2.6 5.4 6.6Z" fill="#E3A08E" stroke="#2B2620" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+const calmer = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 export default {
   id: 'population',
-  create({ sim }) {
+  create({ sim, quality }) {
     const pp = sim.population;
     const host = document.getElementById('leftcol');
     if (!pp || !host) return {};
-    const chip = el('button', 'card pop-chip', ICON + '<span class="pc-n">—</span>');
+    const fx = () => (quality ? renderSettings(quality.get()).effects : 1);
+    const chip = el('button', 'card pop-chip',
+      `<span class="pc-badge">${ICON}</span><span class="pc-txt"><b class="pc-n">—</b><small class="pc-sub">residents <i class="pc-rate"></i></small></span>` +
+      `<span class="pc-flies" aria-hidden="true"></span><span class="pop card pc-pop" role="tooltip" id="poppop"></span>`);
     chip.id = 'popchip'; chip.type = 'button';
     chip.setAttribute('aria-expanded', 'false'); chip.setAttribute('aria-controls', 'poppanel');
-    chip.setAttribute('aria-label', 'Population');
+    chip.setAttribute('aria-label', 'Population'); chip.setAttribute('aria-describedby', 'poppop');
     const panel = el('aside', 'card pop-panel');
     panel.id = 'poppanel'; panel.setAttribute('data-mo', 'up'); panel.hidden = true;
-    const head = el('div', 'pp-head', '<h2 class="h-disp">Population</h2>');
+    const head = el('div', 'pp-head', `<span class="pp-stamp">${ICON}</span><div><h2 class="h-disp">Population</h2><small>Who lives in town, and how fast it grows</small></div>`);
     const body = el('div', 'pp-body');
     panel.append(head, body);
     host.after(chip, panel);
-    const num = chip.querySelector('.pc-n');
-    let open = false, shown = '', acc = 1, hover = null;
+    const num = chip.querySelector('.pc-n'), rate = chip.querySelector('.pc-rate'), flies = chip.querySelector('.pc-flies'), pop = chip.querySelector('.pc-pop');
+    let open = false, shown = '', shownPop = '', acc = 1, hover = null;
+    let last = null, pending = 0, flyAt = -9;
 
     const set = (on) => {
       open = on; panel.hidden = !on;
@@ -122,17 +160,39 @@ export default {
     body.addEventListener('pointerleave', () => { if (hover != null) { hover = null; paint(); } });
     document.addEventListener('keydown', (e) => { if (open && e.key === 'Escape') set(false); });
 
+    // The number that flies off the counter, and a few little people hopping away with it when folk move in.
+    function fly(d) {
+      if (calmer() || fx() === 0) return;
+      const n = el('span', 'pc-fly ' + (d > 0 ? 'up' : 'down'), flyLabel(d));
+      flies.append(n); setTimeout(() => n.remove(), 1300);
+      const k = fx() >= 1 ? hoppers(d) : Math.min(1, hoppers(d));
+      for (let i = 0; i < k; i++) {
+        const h = el('span', 'pc-hop', PERSON);
+        h.style.setProperty('--dx', (14 + i * 16 + Math.random() * 8).toFixed(0) + 'px');
+        h.style.animationDelay = (i * 90) + 'ms';
+        flies.append(h); setTimeout(() => h.remove(), 1200 + i * 90);
+      }
+      num.classList.remove('fx-bump'); void num.offsetWidth; num.classList.add('fx-bump');
+    }
+
     function paint() {
       const happy = sim.services ? sim.services.average() : MOOD.base;
       const sum = summaryOf(pp.people(), pp.capacity(), happy);
+      const now = performance.now() / 1000;
+      if (last !== null) pending += popDelta(last, sum.people);
+      last = sum.people;
+      if (pending && now - flyAt >= FLY_GAP_S) { fly(pending); pending = 0; flyAt = now; }
       num.textContent = fmtExact(Math.floor(sum.people));
+      rate.textContent = sum.perMin >= 0.5 ? '+' + sum.perMin.toFixed(1) + '/min' : '';
+      const ph = hoverHtml(sum);
+      if (ph !== shownPop) { shownPop = ph; pop.innerHTML = ph; }
       if (!open) return;
       const html = panelHtml(sum, sim.state.popHist, happy, hover);
       if (html !== shown) { shown = html; body.innerHTML = html; }
     }
     paint();
     return {
-      frame(dt) { acc += dt; if (acc >= 0.5) { acc = 0; paint(); } },
+      frame(dt) { acc += dt; if (acc >= 0.25) { acc = 0; paint(); } },
       onKey(e) { if (e.key === 'u' || e.key === 'U') { set(!open); return true; } return false; },
     };
   },

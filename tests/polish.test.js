@@ -131,3 +131,19 @@ test('a milestone gets a postcard with its own title and the colour of its stage
 test('the toast is skipped only for note events in ui.js', () => {
   assert.match(read('src/ui/ui.js'), /if \(e\.text && !isNoteEvent\(e\)\) hud\.toast/);
 });
+
+test('the bottom-left chip says "/ for shortcuts" and / opens the page', () => {
+  const html = read('index.html'), sheet = read('src/ui/modules/shortcut-sheet.js');
+  assert.match(html, /id="keyhint"[^>]*>\s*<kbd>\/<\/kbd><span>for shortcuts<\/span>/);
+  assert.doesNotMatch(html, /Drag to pan/, 'the long list of controls is gone from the corner');
+  assert.match(sheet, /getElementById\('keyhint'\)/);
+  assert.match(sheet, /e\.key === '\/' \|\| e\.key === '\?'/);
+});
+
+test('tool flyouts sit above the toolbar chevron', () => {
+  const ui = read('css/ui.css'), bar = read('css/toolbar.css'), menus = read('css/menus.css');
+  assert.match(bar, /--fly-b:calc\(max\(18px,env\(safe-area-inset-bottom,0px\)\) \+ 112px \+ 34px\)/, 'chevron top (bar + 112px + 24px tab) plus a gap');
+  assert.match(bar, /#toolfold\[aria-expanded="false"\]\)\{--fly-b:/);
+  assert.match(ui, /\.fly\{position:absolute;[^}]*bottom:var\(--fly-b\)/);
+  assert.match(menus, /\.fly\.bdchip\{[^}]*bottom:var\(--fly-b\)/);
+});

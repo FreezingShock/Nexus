@@ -30,7 +30,7 @@ export default {
     $('settingsbtn').before(btn);
 
     book.register('shortcuts', {
-      title: 'Keyboard shortcuts', sub: 'Every key in the town. Press ? any time to open or close this page.', c: '#8FB8D6', icon: PAGE_ICONS.shortcuts,
+      title: 'Keyboard shortcuts', sub: 'Every key in the town. Press / any time to open or close this page.', c: '#8FB8D6', icon: PAGE_ICONS.shortcuts,
       render: shortcutsHtml,
       click(e) {
         if (!e.target.closest('[data-act="tips"]')) return;
@@ -39,10 +39,14 @@ export default {
       },
     });
     btn.onclick = () => book.toggle('shortcuts');
+    // The bottom-left chip says "/ for shortcuts" and opens this page too.
+    const hint = document.getElementById('keyhint');
+    if (hint) hint.onclick = () => book.toggle('shortcuts');
 
     return {
       onKey(e) {
-        if (e.key === '?') { book.toggle('shortcuts'); return true; }
+        // / is the key the hint names; ? (Shift and /) still works.
+        if (e.key === '/' || e.key === '?') { e.preventDefault(); book.toggle('shortcuts'); return true; }
         return false;
       },
     };
