@@ -191,14 +191,10 @@ test('roadEnds lists the dead ends of the network', async () => {
   assert.deepEqual(roadEnds(roads).map(key).sort(), ['10,10', '12,11', '14,10']);
 });
 
-test('road tool: a laid road lets go of its start unless Keep drawing is on', () => {
+test('road tool: a laid road lets go of its start (no chaining)', () => {
   const src = readFileSync(new URL('../src/ui/modules/road-tool.js', import.meta.url), 'utf8');
-  assert.match(src, /function finish\(route\) \{ anchor = keep \? route\.path\[route\.path\.length - 1\] : null; pivots = \[\]; \}/);
+  assert.match(src, /function finish\(\) \{ anchor = null; pivots = \[\]; \}/);
   assert.doesNotMatch(src, /anchor = route\.path\[route\.path\.length - 1\]; pivots/);
   assert.match(src, /if \(drawing\(\) && anchor\) \{ anchor = null;/, 'Ctrl+Z drops a waiting start before undoing');
-  assert.match(src, /localStorage\.getItem\(KEEP_STORE\)/);
-  for (const m of src.matchAll(/localStorage\.\w+\(/g)) {
-    const before = src.slice(Math.max(0, m.index - 12), m.index);
-    assert.match(before, /try \{ |keep = /, 'storage calls sit in try/catch');
-  }
+  assert.doesNotMatch(src, /keepRoad|KEEP_KEY/, 'nate chose no Keep drawing toggle');
 });
