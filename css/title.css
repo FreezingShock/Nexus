@@ -163,6 +163,68 @@ body.revealing #app>:not(#stage):not(#title):not(#boot):not(#offline){transition
 .st-row small{display:block;color:var(--ink-soft);font-size:12.5px}
 .st-row input[type=range]{width:min(260px,40vw);accent-color:var(--action)}
 
+/* Mayor profile */
+.pf-head{display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:center;padding:16px 18px;border:2px solid var(--ink);border-radius:18px;background:linear-gradient(120deg,color-mix(in srgb,var(--pc) 14%,var(--paper)),var(--paper) 55%);box-shadow:0 3px 0 rgba(43,38,32,.3)}
+.pf-avatar{display:grid;place-items:center;width:96px;height:96px;border:3px solid var(--ink);border-radius:50%;background:var(--pc);box-shadow:0 4px 0 var(--ink),inset 0 0 0 5px rgba(251,246,234,.35);animation:tt-bob 5s ease-in-out infinite}
+.pf-avatar svg{width:58px;height:58px}
+.pf-init{font-family:var(--display);font-variation-settings:"SOFT" 100,"WONK" 1;font-weight:800;font-size:36px;color:#FFF8EE;text-shadow:0 2px 0 rgba(43,38,32,.35);letter-spacing:.02em}
+.pf-id{min-width:0}
+.pf-name{display:block;width:100%;max-width:420px;margin:2px 0 4px;padding:2px 4px;border:0;border-bottom:2.5px dashed rgba(43,38,32,.35);background:transparent;font-size:30px;color:var(--ink);outline:0}
+.pf-name::placeholder{color:rgba(90,77,63,.55)}
+.pf-name:focus{border-bottom-color:var(--action);border-bottom-style:solid}
+.pf-rank{margin:4px 0 6px;font-size:14px}
+.pf-rank b{color:var(--action);font-family:var(--display);font-size:17px}
+.pf-rankbar,.pf-allbar,.pf-bar{display:block;height:10px;border:2px solid var(--ink);border-radius:7px;background:var(--paper);overflow:hidden;max-width:360px}
+.pf-rankbar i,.pf-allbar i,.pf-bar i{display:block;height:100%;background:repeating-linear-gradient(135deg,var(--action) 0 7px,var(--action-hi) 7px 14px)}
+.pf-tonext{display:block;margin-top:4px;color:var(--ink-soft);font-size:12.5px}
+.pf-stats{display:grid;grid-template-columns:repeat(2,minmax(120px,1fr));gap:8px;margin:0;padding:0;list-style:none}
+.pf-stats li{padding:8px 12px;border:2px solid var(--ink);border-radius:12px;background:var(--paper);box-shadow:0 2px 0 var(--ink)}
+.pf-stats b{display:block;font-size:19px;font-variant-numeric:tabular-nums}
+.pf-stats small{display:block;color:var(--ink-soft);font-size:12px}
+.pf-stats li::before{content:"";float:right;width:12px;height:12px;margin-top:4px;border:1.5px solid var(--ink);border-radius:50%}
+.pf-stat-clock::before{background:var(--sky)}.pf-stat-people::before{background:var(--sage)}.pf-stat-towns::before{background:var(--coral)}.pf-stat-coins::before{background:var(--mustard)}
+.pf-pick{display:flex;flex-wrap:wrap;gap:12px 28px;margin:14px 0 4px;padding:12px 16px;border:1.5px dashed rgba(43,38,32,.3);border-radius:14px}
+.pf-emblems,.pf-colors{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.pf-emblem{display:grid;place-items:center;width:42px;height:42px;padding:0;border:2px solid var(--ink);border-radius:50%;background:var(--pc);box-shadow:0 2px 0 var(--ink);transition:translate .12s}
+.pf-emblem svg{width:26px;height:26px}
+.pf-emblem .pf-init{font-size:15px}
+.pf-emblem:hover,.pf-color:hover{translate:0 -2px}
+.pf-emblem[aria-pressed="true"],.pf-color[aria-pressed="true"]{outline:3px solid var(--ink);outline-offset:2px}
+.pf-color{width:30px;height:30px;padding:0;border:2px solid var(--ink);border-radius:50%;background:var(--pc);box-shadow:0 2px 0 var(--ink);transition:translate .12s}
+.pf-cols{display:grid;grid-template-columns:1fr 230px;gap:14px;margin-top:14px;align-items:start}
+.pf-badges{padding:14px 16px;border:2px solid var(--ink);border-radius:18px;background:var(--paper);box-shadow:0 3px 0 rgba(43,38,32,.3)}
+.pf-badges header{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.pf-badges h3,.pf-ladder h3{font-size:22px}
+.pf-count{color:var(--ink-soft)}.pf-count b{color:var(--ink);font-size:17px}
+.pf-allbar{flex:1;min-width:120px;max-width:none}
+.pf-next{margin:10px 0 0;padding:8px 12px;border:1.5px dashed var(--action);border-radius:12px;background:#FCE9DF;font-size:13.5px}
+.pf-group{margin:14px 0 6px;font-size:11.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--terra)}
+.pf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin:0;padding:0;list-style:none}
+.pf-badge{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1.5px solid rgba(43,38,32,.25);border-radius:12px;background:rgba(243,231,208,.35)}
+.pf-badge.got{border:2px solid var(--ink);background:linear-gradient(135deg,color-mix(in srgb,var(--sc) 22%,var(--paper)),var(--paper));box-shadow:0 2px 0 var(--ink)}
+.pf-badge>span:last-child{flex:1;min-width:0}
+.pf-badge b{display:block;font-size:14px}
+.pf-badge small{display:block;color:var(--ink-soft);font-size:11.5px}
+.pf-badge .pf-bar{height:7px;margin-top:4px;border-width:1.5px}
+.pf-badge .pf-bar i{background:var(--sc)}
+.pf-badge:not(.got) .pf-bar i{background:var(--sage)}
+.pf-medal{position:relative;flex:none;display:grid;place-items:center;width:42px;height:42px;border:2px solid var(--ink);border-radius:50%;background:var(--sc)}
+.pf-badge:not(.got) .pf-medal{filter:grayscale(1);opacity:.5;border-style:dashed}
+.pf-medal svg{width:26px;height:26px}
+.pf-medal i{position:absolute;right:-5px;bottom:-4px;min-width:18px;height:18px;padding:0 4px;display:grid;place-items:center;border:1.5px solid var(--ink);border-radius:9px;background:var(--paper);font-style:normal;font-weight:800;font-size:11px}
+.pf-ladder{padding:14px 16px;border:2px solid var(--ink);border-radius:18px;background:var(--paper);box-shadow:0 3px 0 rgba(43,38,32,.3)}
+.pf-ladder ol{list-style:none;margin:8px 0 0;padding:0}
+.pf-ladder li{display:grid;grid-template-columns:26px 1fr;column-gap:8px;align-items:center;padding:5px 6px;border-radius:10px;color:var(--ink-soft)}
+.pf-ladder li span{grid-row:span 2;width:24px;height:24px;display:grid;place-items:center;border:1.5px solid rgba(43,38,32,.4);border-radius:50%;font-size:12px;font-weight:800}
+.pf-ladder li small{font-size:11.5px}
+.pf-ladder li.past{color:var(--ink)}
+.pf-ladder li.past span{background:var(--sage);border-color:var(--ink)}
+.pf-ladder li.now{background:#FCE9DF;color:var(--ink)}
+.pf-ladder li.now span{background:var(--action);color:var(--action-ink);border:2px solid var(--ink)}
+.pf-ladder li.now small{color:var(--action);font-weight:800}
+.pf-note{margin:10px 0 0;font-size:12px!important;color:var(--ink-soft)}
+@media (max-width:800px){.pf-head{grid-template-columns:auto 1fr}.pf-stats{grid-column:1/-1}.pf-cols{grid-template-columns:1fr}}
+
 /* paper curtain that hides the cut between camera shots */
 .tt-curtain{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,#E9D6B2,#CDBB96);opacity:0;pointer-events:none}
 

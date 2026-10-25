@@ -17,3 +17,7 @@ Each row opens its page in `#tt-sheet`, a big notebook sheet centred over the to
 ## Changelog
 
 src/changelog.js holds every release, newest first: `{ v, date, name, blurb, items: [{ k, t, pr }] }`, with kinds new, better, look, sound and fix. **Every PR that changes something a player sees or hears adds a line** to the newest entry, or opens a new entry when it bumps the version. tests/changelog.test.js fails if the newest entry is not src/version.js's version. The Changes row shows a New badge when the game has moved past the version the player last saw (`nexus.seenVersion`).
+
+## Mayor profile
+
+The Mayor profile page shows the player's name (typed straight into the header), a picture (initials by default, or one of eight drawn emblems, in one of eight colours), a rank, personal bests and a badge per milestone goal. The record lives in its own key, `nexus.profile.v1` (src/core/profile.js), not in the save, so it outlasts Start over and Renewal like the sound settings do; it is not part of a town export. Rank climbs the `RANKS` ladder with milestone stages, using the best ever reached. main.js counts time played in 15 second steps while the tab shows, and notes the population record and stages; Start over counts one more town. Badges read the loaded town's `standing` for each goal and are coloured by stage (Bronze to Crown).
