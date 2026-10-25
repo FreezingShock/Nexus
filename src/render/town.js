@@ -66,7 +66,7 @@ export function createTown(root, hooks = {}) {
   function regenerate(e, level) {
     e.level = level;
     e.desc = e.b = { ...e.desc, level };
-    e.parts = makeParts(e.desc);
+    e.parts = makeParts(e.desc); e.baked = null;
     e.proxy.geometry.dispose();
     e.proxy = proxyFor(e.parts, e.world);
   }
@@ -77,9 +77,14 @@ export function createTown(root, hooks = {}) {
   function rebuild(excludeId) {
     lifeRev++;
     disposeAll(built, group);
-    const items = [];
-    for (const e of entries.values()) if (!removed.has(e.b.id) && e.b.id !== excludeId) items.push(e);
-    built = mergeBuildings(group, items, false);
+    // Each building is baked into world-space arrays once (and again only when its parts change), so a rebuild is a copy.
+    const batch = new Batch();
+    for (const e of entries.values()) {
+      if (removed.has(e.b.id) || e.b.id === excludeId) continue;
+      if (!e.baked) { const one = new Batch(); addToBatch(one, e.parts, e.world, false); e.baked = one.bake(); }
+      batch.addBaked(e.baked);
+    }
+    built = batch.build(group);
     applyNight();
   }
 
@@ -151,7 +156,7 @@ export function createTown(root, hooks = {}) {
         const d = describe(r, e.level);
         if (!d) continue;
         e.desc = e.b = d;
-        e.parts = makeParts(d);
+        e.parts = makeParts(d); e.baked = null;
         e.proxy.geometry.dispose();
         e.proxy = proxyFor(e.parts, e.world);
         if (selected === r.id) setHull(r.id);

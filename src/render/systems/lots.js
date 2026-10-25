@@ -55,23 +55,24 @@ export default {
       cache.delete(key);
     }
 
-    // Same as buildings.js addToBatch (plain parts share the vertex-color material), with the ink edges cached.
+    // Same as buildings.js addToBatch (plain parts share the vertex-color material), with the ink edges cached. Each
+    // building is baked into world-space arrays once, so a rebuild of the whole town is a copy, not a transform.
     function addToBatch(batch, e) {
-      const vc = toonVC();
-      e.parts.forEach((p, k) => {
-        m.multiplyMatrices(e.world, p.local);
-        if (p.body) {
-          for (const s of p.splits) {
-            const walls = s.materialIndex === 0 || s.materialIndex === 1 || s.materialIndex === 4 || s.materialIndex === 5;
-            if (walls) batch.add(s.geo, p.facadeMat, m); else batch.add(s.geo, vc, m, { color: p.color });
-          }
-        } else batch.add(p.geo, vc, m, { color: p.color });
-        const ed = e.edges[k];
-        if (ed) {
-          const v = new THREE.Vector3();
-          for (let i = 0; i < ed.length; i += 3) { v.set(ed[i], ed[i + 1], ed[i + 2]).applyMatrix4(m); batch.lines.push(v.x, v.y, v.z); }
-        }
-      });
+      if (!e.baked) {
+        const one = new Batch(), vc = toonVC();
+        e.parts.forEach((p, k) => {
+          m.multiplyMatrices(e.world, p.local);
+          if (p.body) {
+            for (const s of p.splits) {
+              const walls = s.materialIndex === 0 || s.materialIndex === 1 || s.materialIndex === 4 || s.materialIndex === 5;
+              if (walls) one.add(s.geo, p.facadeMat, m); else one.add(s.geo, vc, m, { color: p.color });
+            }
+          } else one.add(p.geo, vc, m, { color: p.color });
+          if (e.edges[k]) one.addLines(e.edges[k], m);
+        });
+        e.baked = one.bake();
+      }
+      batch.addBaked(e.baked);
     }
     function applyNight() {
       for (const mesh of built) if (mesh.isMesh && nightWall(mesh.userData.day)) mesh.material = night ? nightWall(mesh.userData.day) : mesh.userData.day;
