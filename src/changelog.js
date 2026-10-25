@@ -25,7 +25,8 @@ export const CHANGELOG = [
       { k: 'sound', t: 'A handbell rings in the square on market mornings, and a peal of bells greets festival noons.' },
       { k: 'sound', t: 'A little hamlet hums softly and a busy town hums fuller, and market days liven the streets.' },
       { k: 'new', t: 'Settings, Sound shows the name of the tune playing, with a Next tune button.' },
-      { k: 'new', t: 'The Terrain tool (U): raise, lower and flatten the land with a soft brush. Roads, homes and trees ride along with the ground.' },
+      { k: 'new', t: 'The Terrain tool (U): raise, lower and flatten the land with a soft brush. Roads, homes and trees ride along with the ground.', pr: 120 },
+      { k: 'new', t: 'Build on hills: homes, shops, parks and zones now go on steep slopes, each on a level stone terrace with a retaining wall. Only cliffs and the mountains stay wild.' },
     ],
   },
   {

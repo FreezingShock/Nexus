@@ -19,14 +19,15 @@ test('the grid is 96 tiles a side and its middle is the origin', () => {
   assert.equal(SAVE_VERSION, 8);
 });
 
-test('the old 64-tile ground is unchanged: the same land, water and steep tiles as before the grid grew', () => {
+// Since the hills revamp (2026-10-25) only cliffs and mountain tops are steep: hillsides are buildable. Water is unchanged.
+test('the old 64-tile ground: the same water as before the grid grew, and only cliffs left steep', () => {
   const g = createGrid(null); // the ground alone, without the farm plots
   const counts = [0, 0, 0, 0];
   for (let gz = 0; gz < GRID_N; gz++) for (let gx = 0; gx < GRID_N; gx++) {
     const [cx, cz] = tileCenter(gx, gz);
     if (Math.abs(cx) <= 93 && Math.abs(cz) <= 93) counts[g.base[tileIndex(gx, gz)]]++;
   }
-  assert.deepEqual(counts, [1362, 256, 2351, 0]);
+  assert.deepEqual(counts, [3509, 256, 204, 0]);
 });
 
 test('the new ring is mostly buildable plain, not hills', () => {

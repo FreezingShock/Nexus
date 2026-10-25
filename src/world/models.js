@@ -142,6 +142,17 @@ const PAL_KEYS = ['warm', 'pastel', 'slate', 'green'];
 //   gx, gz: the lowest tile; fw x fd: tiles occupied on the grid (after turning)
 //   rot:    quarter turns (0..3); the front faces +z at rot 0
 // describe() turns it into everything the renderer needs. It is a pure function of the record and the level.
+// Where a lot of fw x fd tiles centred on (x, z) stands: y, its level pad (on the highest corner, so a building on a slope
+// never sinks), and lo, the lowest ground round its edge. Where y is well above lo the lot is a hillside terrace and a stone
+// retaining wall runs down to the ground (render/systems/terraces.js); the kit's own foundation covers gentle slopes.
+export function standOn(x, z, fw, fd) {
+  let y = 0.1, lo = Infinity;
+  const hx = fw * TILE / 2, hz = fd * TILE / 2;
+  for (const [ox, oz] of [[0, 0], [-1, -1], [1, -1], [-1, 1], [1, 1]]) y = Math.max(y, heightAt(x + ox * hx, z + oz * hz) + 0.05);
+  for (const [ox, oz] of [[-1, -1], [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0]]) lo = Math.min(lo, Math.max(0, heightAt(x + ox * hx, z + oz * hz)));
+  return { y, lo };
+}
+
 export function describe(rec, level = 1) {
   const def = byId.get(rec.model);
   if (!def) return null;
@@ -152,9 +163,7 @@ export function describe(rec, level = 1) {
   const [lo, hi] = def.floors;
   const floors = rec.floors ?? floorsFor(def, area, Math.floor(t[0] * (hi - lo + 1)));
   const x = (rec.gx + (rec.fw - 1) / 2 - GRID_HALF) * TILE, z = (rec.gz + (rec.fd - 1) / 2 - GRID_HALF) * TILE;
-  // stand on the highest corner so a building on a gentle slope never sinks; the kit's foundation fills the gap below
-  let y = 0.1;
-  for (const [ox, oz] of [[0, 0], [-1, -1], [1, -1], [-1, 1], [1, 1]]) y = Math.max(y, heightAt(x + ox * rec.fw * TILE / 2, z + oz * rec.fd * TILE / 2) + 0.05);
+  const { y } = standOn(x, z, rec.fw, rec.fd);
   return {
     id: rec.id, model: def.id, name: def.name, cat: def.cat, style: def.style,
     seed, t, level, rot, floors, fw: rec.fw, fd: rec.fd, cw, cd,
