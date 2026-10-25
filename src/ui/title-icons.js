@@ -17,6 +17,8 @@ export const ICONS = {
   profile: svg('<path d="M3.5 21.5c3 2 18 2 21 0" fill="#3B352D"/><path d="M8.5 21V7.5c0-1.4 11-1.4 11 0V21c-2.5 1-8.5 1-11 0Z" fill="#3B352D"/><path d="M8.5 16.5c2.5 1 8.5 1 11 0v2.6c-2.5 1-8.5 1-11 0Z" fill="#B8472E"/><circle cx="17.5" cy="17.6" r="1.2" fill="#E6BC62" stroke-width="1.1"/>'),
   // a lantern with a warm flame
   pass: svg('<path d="M11 5.5h6M12 5.5V3.5h4v2"/><path d="M9 8.5h10l-1.2 13h-7.6Z" fill="#E6BC62"/><path d="M8 8.5h12M8 21.5h12"/><path d="M14 18.5c-1.8 0-2.6-1.4-2-3 .5-1.2 1.6-1.6 2-3.2.9 1.2 2.4 2.4 2 4.4-.2 1.1-.9 1.8-2 1.8Z" fill="#D2603F" stroke-width="1.4"/><path d="M10 24.5h8"/>'),
+  // a rolled charter with a wax seal
+  charter: svg('<path d="M6 6h14a2.5 2.5 0 0 1 2.5 2.5V22H8.5A2.5 2.5 0 0 1 6 19.5Z" fill="#FBF6EA"/><path d="M6 6a2.5 2.5 0 0 0-2.5 2.5V10H6M10 10.5h8M10 14h6"/><circle cx="18" cy="19" r="3.4" fill="#B8472E"/><path d="M16.5 22l-1 3.5 2.5-1.2 2.5 1.2-1-3.5" fill="#B8472E" stroke-width="1.4"/>'),
   close: svg('<path d="M8 8l12 12M20 8L8 20" stroke-width="2.6"/>'),
   back: svg('<path d="M16.5 7.5L10 14l6.5 6.5" stroke-width="2.6"/>'),
 };

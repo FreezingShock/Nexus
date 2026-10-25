@@ -26,6 +26,7 @@ export const CHANGELOG = [
       { k: 'new', t: 'Brand-new players get a warm welcome and a Start my town button, with How to play glowing beside it.' },
       { k: 'better', t: 'Changes shows a "new since you last played" ribbon when the game has moved on.' },
       { k: 'new', t: 'A mayor profile: your name, a picture, a rank that climbs with your milestones, personal bests and a badge for every goal.' },
+      { k: 'look', t: 'Two placeholder pass cards, the Lantern Pass and the Town Charter. Nothing is sold: the button only shows a friendly note.' },
     ],
   },
   {

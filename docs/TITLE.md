@@ -21,3 +21,7 @@ src/changelog.js holds every release, newest first: `{ v, date, name, blurb, ite
 ## Mayor profile
 
 The Mayor profile page shows the player's name (typed straight into the header), a picture (initials by default, or one of eight drawn emblems, in one of eight colours), a rank, personal bests and a badge per milestone goal. The record lives in its own key, `nexus.profile.v1` (src/core/profile.js), not in the save, so it outlasts Start over and Renewal like the sound settings do; it is not part of a town export. Rank climbs the `RANKS` ladder with milestone stages, using the best ever reached. main.js counts time played in 15 second steps while the tab shows, and notes the population record and stages; Start over counts one more town. Badges read the loaded town's `standing` for each goal and are coloured by stage (Bronze to Crown).
+
+## Passes (placeholder)
+
+The Passes row opens two cards, the Lantern Pass (evening ink and gold) and the Town Charter (olive and gold), with mock perks. They are placeholders only: no price, no payment, no account and no network. The button shows a small paper note and the pass chime. `PASSES` in src/ui/title.js; a test checks they hold no prices or links.

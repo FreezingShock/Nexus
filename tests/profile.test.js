@@ -76,3 +76,17 @@ test('play time reads like a person would say it', () => {
   assert.equal(playTime(60 * 60000), '1 h');
   assert.equal(playTime(200 * 60000), '3 h 20 min');
 });
+
+test('the passes are placeholders: no price, no link, no network', async () => {
+  const { PASSES, ROWS, PAGES } = await import('../src/ui/title.js');
+  const { ICONS } = await import('../src/ui/title-icons.js');
+  const { readFileSync } = await import('node:fs');
+  assert.deepEqual(PASSES.map((p) => p.id), ['lantern', 'charter']);
+  for (const p of PASSES) {
+    assert.ok(ICONS[p.icon] && p.perks.length >= 3 && p.note && p.cta, p.id);
+    assert.doesNotMatch(JSON.stringify(p), /[$€£]|\d+\.\d\d|https?:/, 'no prices or links');
+  }
+  assert.ok(ROWS.some((r) => r.id === 'pass') && PAGES.pass);
+  const js = readFileSync(new URL('../src/ui/title.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(js, /fetch\(|XMLHttpRequest|window\.open|location\.href\s*=/);
+});
