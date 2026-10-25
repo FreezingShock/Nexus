@@ -128,10 +128,10 @@ test('the Milestones tab lists every goal on All and only its group when filtere
   for (const g of GOALS) assert.equal(one.includes(`class="ag" data-goal="${g.id}"`), g.group === GROUPS[0].id, g.id);
 });
 
-test('the Shortcuts page lists every group and keeps the tips button', () => {
+test('the Shortcuts page lists every group', () => {
   const html = shortcutsHtml();
   for (const g of SHORTCUT_GROUPS) assert.ok(html.includes(g.title), g.title);
-  assert.match(html, /data-act="tips"/);
+  assert.doesNotMatch(html, /data-act="tips"/, 'the first-time tips are gone');
 });
 
 test('a page never touches the sim just by opening, and tool keys wait while one is open', () => {

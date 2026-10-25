@@ -1,12 +1,5 @@
-/* Cozy polish: first-time tips, hover tips, postcard notes and the shortcut sheet. Same cream paper and ink as ui.css. */
+/* Cozy polish: hover tips, postcard notes and the shortcut sheet. Same cream paper and ink as ui.css. */
 
-/* first-time tip: a sticky note above the hint bar */
-.tipnote{position:absolute;left:var(--gutter);bottom:calc(max(18px,env(safe-area-inset-bottom,0px)) + 56px);width:min(330px,calc(100% - 32px));padding:14px 16px 12px;transform:rotate(-.6deg);z-index:6}
-.tn-kick{margin:0 0 4px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--terra)}
-.tn-text{margin:0 0 10px;font-size:15px;font-weight:700;line-height:1.35}
-.tn-praise{color:var(--sage-d)}
-.tipnote .row{align-items:center;gap:12px}
-.tipnote .btn{height:42px;font-size:15px;padding:0 16px}
 .linkbtn{background:none;border:0;padding:6px 2px;font-size:14px;font-weight:700;color:var(--sky-ink);text-decoration:underline;text-underline-offset:3px}
 
 /* hover tip: one floating bubble, placed by JS */
@@ -30,9 +23,6 @@
 .kcaps{display:flex;flex-wrap:wrap;gap:4px;flex:0 0 auto;min-width:84px}
 .kcaps kbd{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:0 6px;box-sizing:border-box;border:2px solid var(--ink);border-radius:8px;background:var(--paper);box-shadow:0 2px 0 var(--ink);font:800 12px/1 var(--body);color:var(--text)}
 
-@media (max-width:640px){
-    .tipnote{width:calc(100% - 32px)}
-}
 @media (prefers-reduced-motion:reduce){
   .note{animation:none}
   .note{transition:none}

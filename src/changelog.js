@@ -29,6 +29,8 @@ export const CHANGELOG = [
       { k: 'new', t: 'Build on hills: homes, shops, parks and zones now go on steep slopes, each on a level stone terrace with a retaining wall. Only cliffs and the mountains stay wild.', pr: 121 },
       { k: 'new', t: 'Smooth joins the Terrain tool: round off ridges, ramps and sharp terrace edges.' },
       { k: 'look', t: 'Contour lines trace the shape of the land while the Terrain tool is in hand.' },
+      { k: 'new', t: 'Build on hills: homes, shops, parks and zones now go on steep slopes, each on a level stone terrace with a retaining wall. Only cliffs and the mountains stay wild.' },
+      { k: 'better', t: 'The "Tip 1 of 5" notes in the corner are gone, so nothing sits over the population counter any more.' },
     ],
   },
   {
