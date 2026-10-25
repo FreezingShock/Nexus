@@ -1,6 +1,6 @@
 // Cars and buses, drawn. The movement is in vehicle-agents.js (pure logic, tested in node); this file poses each vehicle
 // on its lane and writes it into instanced meshes. Six car models and one bus model, each a painted body and a trim mesh (glass, wheels, lamps),
-// both instanced, plus one dynamic line buffer per model for the ink edges. Only vehicles on screen are written, so the GPU work
+// both instanced, plus one dynamic line buffer shared by every model for the ink edges (one draw call, not seven). Only vehicles on screen are written, so the GPU work
 // follows what the player can see. Nothing here feeds back into the sim.
 import * as THREE from '../../vendor/three/three.module.min.js';
 import { toon, toonUncached, lineMat } from './materials.js';
@@ -20,21 +20,29 @@ const PAINT = [0xE9C1B8, 0xBFD8C4, 0xEBD9A0, 0xCBC3DC, 0xD98C7A, 0xFAF3E4, 0x9DB
 // How often (in town hours) the list of residents out driving is worked out again.
 const RECOUNT_H = 0.02;
 
-// Six car bodies and the bus, from vehicle-models.js. Each model: painted bodies, trim (glass, wheels, lamps) and ink edges.
+// Six car bodies and the bus, from vehicle-models.js. Each model: painted bodies, trim (glass, wheels, lamps) and an ink
+// edge template. The trim casts no shadow: the body's shadow already covers it, and it saves a shadow draw per model.
 function buildModel(parent, spec, cap) {
   const g = buildVehicle(spec);
   const bodies = allocInstanceColors(new THREE.InstancedMesh(g.body, toon(0xffffff), cap));
   const trim = new THREE.InstancedMesh(g.trim, toonUncached(0xffffff, { vertexColors: true }), cap);
-  for (const m of [bodies, trim]) { m.frustumCulled = false; m.castShadow = true; m.receiveShadow = true; m.count = 0; }
-  const tmpl = g.edges, verts = tmpl.length / 3;
-  const lineGeo = new THREE.BufferGeometry();
-  const lp = new Float32Array(tmpl.length * cap);
-  lineGeo.setAttribute('position', new THREE.BufferAttribute(lp, 3));
-  const lines = new THREE.LineSegments(lineGeo, lineMat);
+  for (const m of [bodies, trim]) { m.frustumCulled = false; m.receiveShadow = true; m.count = 0; }
+  bodies.castShadow = true;
+  parent.add(bodies, trim);
+  const tmpl = new Float32Array(g.edges);
+  return { bodies, trim, tmpl, verts: tmpl.length / 3, cap, n: 0 };
+}
+
+// One line buffer with room for every model at its cap. Vehicles are written one after another each frame.
+function buildEdges(parent, models) {
+  const size = models.reduce((a, M) => a + M.tmpl.length * M.cap, 0);
+  const geo = new THREE.BufferGeometry(), lp = new Float32Array(size);
+  geo.setAttribute('position', new THREE.BufferAttribute(lp, 3));
+  geo.setDrawRange(0, 0);
+  const lines = new THREE.LineSegments(geo, lineMat);
   lines.frustumCulled = false;
-  lineGeo.setDrawRange(0, 0);
-  parent.add(bodies, trim, lines);
-  return { bodies, trim, lines, lineGeo, lp, tmpl: new Float32Array(tmpl), verts, n: 0 };
+  parent.add(lines);
+  return { lines, geo, lp, n: 0 };
 }
 
 // Shared state every vehicle reads: the roads, the sim's traffic model (read only) and the view box for culling.
@@ -45,6 +53,7 @@ export function buildCars(parent, grid, camera) {
   const persons = new Int32Array(CAR_MAX), seen = { hour: -1, n: -1, day: -1, count: 0 };
   let crowd = 1; // graphics setting: scales the car target (CAR_MAX is the hard cap)
   const all = [...models, bus];
+  const edges = buildEdges(parent, all);
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
   const pos = new THREE.Vector3(), sc = new THREE.Vector3(), v = new THREE.Vector3(), col = new THREE.Color();
   const pose = { x: 0, z: 0, heading: 0 };
@@ -93,12 +102,13 @@ export function buildCars(parent, grid, camera) {
     M.bodies.setMatrixAt(i, m);
     M.trim.setMatrixAt(i, m);
     M.bodies.setColorAt(i, col.setHex(colourHex));
-    const { tmpl, verts, lp } = M;
+    const { tmpl, verts } = M, lp = edges.lp;
     for (let k = 0; k < verts; k++) {
       v.set(tmpl[3 * k], tmpl[3 * k + 1], tmpl[3 * k + 2]).applyMatrix4(m);
-      const o = (i * verts + k) * 3;
+      const o = (edges.n + k) * 3;
       lp[o] = v.x; lp[o + 1] = v.y; lp[o + 2] = v.z;
     }
+    edges.n += verts;
   }
 
   // Cheap culling: a circle around the view centre, wide enough for the widest screen at this zoom.
@@ -110,6 +120,7 @@ export function buildCars(parent, grid, camera) {
 
   function draw(view) {
     for (const M of all) M.n = 0;
+    edges.n = 0;
     for (const a of fleet.agents) {
       if (!a.alive) continue;
       const s = scaleOf(a);
@@ -122,12 +133,14 @@ export function buildCars(parent, grid, camera) {
     }
     for (const M of all) {
       M.bodies.count = M.trim.count = M.n;
-      M.lineGeo.setDrawRange(0, M.verts * M.n);
       M.bodies.instanceMatrix.needsUpdate = true;
       M.trim.instanceMatrix.needsUpdate = true;
       if (M.bodies.instanceColor) M.bodies.instanceColor.needsUpdate = true;
-      M.lineGeo.attributes.position.needsUpdate = true;
     }
+    edges.geo.setDrawRange(0, edges.n);
+    const attr = edges.geo.attributes.position;
+    attr.updateRange.offset = 0; attr.updateRange.count = Math.max(edges.n * 3, 3); // upload only what was written
+    attr.needsUpdate = true;
   }
 
   return {
@@ -156,7 +169,7 @@ export function buildCars(parent, grid, camera) {
     // Graphics settings: how many cars, and whether the ink edges are drawn. Nothing here touches the fleet's logic.
     setQuality(rs) {
       crowd = rs.crowd;
-      for (const m of all) m.lines.visible = rs.edges;
+      edges.lines.visible = rs.edges;
     },
     carCount: () => fleet.carCount(),
     busCount: () => fleet.busCount(),
