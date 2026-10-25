@@ -28,6 +28,10 @@ export const CHANGELOG = [
       { k: 'new', t: 'A mayor profile: your name, a picture, a rank that climbs with your milestones, personal bests and a badge for every goal.' },
       { k: 'look', t: 'Two placeholder pass cards, the Lantern Pass and the Town Charter. Nothing is sold: the button only shows a friendly note.' },
       { k: 'better', t: 'Finishing a road no longer starts a new one from its end: the road tool lets go, so your next click picks a fresh start.', pr: 101 },
+      { k: 'new', t: 'Roads can be drawn in one go: press, drag and let go.', pr: 102 },
+      { k: 'new', t: 'A Keep drawing switch (Tab) in the road menu, for when you do want each road to carry on from the last.', pr: 102 },
+      { k: 'better', t: 'With no start picked, the ends of your streets glow softly as good places to carry on from.', pr: 102 },
+      { k: 'better', t: 'Ctrl+Z while a road start is waiting just drops the start, instead of undoing your last road.', pr: 102 },
     ],
   },
   {

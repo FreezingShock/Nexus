@@ -1,12 +1,13 @@
-// The road tool: click-to-click routes on the shared grid, bulldozing roads, undo. A route is a chain of pivots, each
-// joined to the next by an L (a straight line with Shift). Space adds a pivot, L flips the bend, Esc or right-click
-// steps back one pivot. Routes are checked by the grid rules in src/world/roadnet.js (validateRoute), so the preview
+// The road tool: click-to-click (or press-drag-release) routes on the shared grid, bulldozing roads, undo. A route is a
+// chain of pivots, each joined to the next by an L (a straight line with Shift). Space adds a pivot, L flips the bend,
+// Esc or right-click steps back one pivot. A laid road lets go of its start unless Keep drawing (Tab) is on, which
+// starts the next road from its end. Routes are checked by the grid rules in src/world/roadnet.js (validateRoute), so the preview
 // and the sim always agree.
 // Pointer handling follows docs/GRID.md: capture-phase listeners on the stage while the tool is active, button 0 only,
 // so right and middle drag still pan and the wheel still zooms.
 import { ROAD_TYPES } from '../../sim/catalog.js';
 import { inBounds, tileIndex, worldToTile } from '../../world/grid.js';
-import { BLOCK_TEXT, chooseRoute, planStroke, roadBlock } from '../../world/roadnet.js';
+import { BLOCK_TEXT, chooseRoute, planStroke, roadBlock, roadEnds } from '../../world/roadnet.js';
 import { $, fmt } from '../format.js';
 import { roadSwatch, tileCard } from '../cards.js';
 import { playCue } from '../../audio/cuehub.js';
@@ -14,8 +15,9 @@ import { playCue } from '../../audio/cuehub.js';
 const costOf = (id) => ROAD_TYPES.find((r) => r.id === id).cost;
 const BLUE = 0x8FB8D6, RED = 0xE3A08E, TERRA = 0xB8472E, GOLD = 0xE6BC62;
 // The drawing keys. src/ui/shortcuts.js lists them with the file and literal the sheet checks.
-const PIVOT_KEY = ' ', FLIP_KEY = 'l';
-const PAINT_LAYERS = ['hover', 'start', 'pivot', 'join', 'bad'];
+const PIVOT_KEY = ' ', FLIP_KEY = 'l', KEEP_KEY = 'Tab';
+const KEEP_STORE = 'nexus.roadKeep';
+const PAINT_LAYERS = ['hover', 'start', 'pivot', 'join', 'ends', 'bad'];
 const near = (a, b) => a[0] === b[0] && a[1] === b[1];
 const manhattan = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
 
@@ -25,9 +27,12 @@ export default {
     const state = sim.state;
     const stage = scene.canvas.parentElement, canvas = scene.canvas;
     // anchor: the start the player clicked for this road. pivots: corners added while drawing it. Laying a road clears
-    // both, so the next click picks a fresh start instead of chaining on from the end.
+    // both, so the next click picks a fresh start, unless keep (Keep drawing) is on. drag: the press that set the start,
+    // while the button is still down; letting go on another tile lays the road there.
     let type = 'two', anchor = null, pivots = [], erase = null, hover = null, shift = false, flip = false, pointer = { x: 0, y: 0 };
-    let lastKey = '', rev = 0, lastRoads = state.roads, previewLen = 0;
+    let lastKey = '', rev = 0, lastRoads = state.roads, previewLen = 0, drag = null, ends = null, endsRev = -1;
+    let keep = false;
+    try { keep = localStorage.getItem(KEEP_STORE) === '1'; } catch { /* storage blocked: off */ }
     const label = document.createElement('div');
     label.id = 'roadlabel'; label.dataset.mo = 'tag'; label.hidden = true; label.setAttribute('aria-hidden', 'true');
     $('app').appendChild(label);
@@ -67,7 +72,7 @@ export default {
       if (state.roads !== lastRoads) { lastRoads = state.roads; rev++; }
       const route = drawing() ? routeNow() : null;
       const key = [drawing() ? type : 'x', route ? route.path.map((p) => p[0] + ',' + p[1]).join(';') : '', hover ? hover.join(',') : '',
-        pivots.length, erase ? erase.tiles.size : 0, rev, anchor ? anchor.join(',') : '', flip ? 1 : 0, shift ? 1 : 0].join('|');
+        pivots.length, erase ? erase.tiles.size : 0, rev, anchor ? anchor.join(',') : '', flip ? 1 : 0, shift ? 1 : 0, keep ? 1 : 0].join('|');
       if (!force && key === lastKey) return;
       lastKey = key;
 
@@ -83,18 +88,22 @@ export default {
       }
 
       if (!route) {
-        // no start yet: the tile under the cursor, and whether a road could start there
-        for (const n of PAINT_LAYERS.filter((n) => n !== 'hover')) paint(grid, n, []);
+        // no start yet: the tile under the cursor, whether a road could start there, and the dead ends worth carrying on
+        for (const n of PAINT_LAYERS.filter((n) => n !== 'hover' && n !== 'ends')) paint(grid, n, []);
         rv.clearPreview();
         previewLen = 0;
+        if (endsRev !== rev) { ends = roadEnds(state.roads); endsRev = rev; }
+        paint(grid, 'ends', ends.map((t) => [t[0], t[1], BLUE]), { opacity: 0.3, outline: true });
         if (!hover) { paint(grid, 'hover', []); label.hidden = true; return; }
         const why = blockAt(hover[0], hover[1]);
         paint(grid, 'hover', [[hover[0], hover[1], why ? RED : BLUE]], { opacity: 0.5, outline: true });
         if (why) say(BLOCK_TEXT[why], 'bad');
-        else say(`${coin}<b>₵ ${costOf(type)}</b><small>per tile</small><em>${short()}</em><small>Click to start</small>`);
+        else if (isRoad(hover)) say(`<b>Start from this street</b><em>${short()}</em><small>Click, or drag to draw</small>`);
+        else say(`${coin}<b>₵ ${costOf(type)}</b><small>per tile</small><em>${short()}</em><small>Click, or drag to draw</small>`);
         return;
       }
 
+      paint(grid, 'ends', []);
       const plan = evaluate(route), bad = plan.problems.length > 0;
       rv.preview({ key, tiles: plan.tiles.map((e) => ({ gx: e.gx, gz: e.gz, t: e.t, d: e.d })), bad });
       // One soft tick for each tile the route gained since the last look (the engine rate-limits long routes).
@@ -117,6 +126,7 @@ export default {
         pivots.length ? `${pivots.length} ${pivots.length === 1 ? 'pivot' : 'pivots'}` : '',
         shift ? 'straight' : flip ? 'bend flipped' : '',
         joins.length ? 'joins a road' : '',
+        keep ? 'keep drawing' : '',
       ].filter(Boolean).map((s) => `<small>${s}</small>`).join('');
       say(`${coin}<b>−₵ ${fmt(plan.cost)}</b><small>${plan.length} ${plan.length === 1 ? 'tile' : 'tiles'}</small><em>${short()}</em>${notes}` +
         (poor ? `<small class="need">need ₵ ${fmt(plan.cost - state.coins)} more</small>` : ''), poor ? 'poor' : '');
@@ -133,7 +143,15 @@ export default {
       if (anchor) { anchor = null; return true; }
       return false;
     }
-    function cancel() { anchor = null; pivots = []; erase = null; refresh(true); }
+    function cancel() { anchor = null; pivots = []; erase = null; drag = null; refresh(true); }
+    // After a road is laid: let go of the start, or carry on from the road's end when Keep drawing is on.
+    function finish(route) { anchor = keep ? route.path[route.path.length - 1] : null; pivots = []; }
+    function setKeep(on) {
+      keep = on;
+      try { localStorage.setItem(KEEP_STORE, on ? '1' : '0'); } catch { /* storage blocked: this visit only */ }
+      if (drawing()) renderFlyout();
+      refresh(true);
+    }
 
     // ---- committing ----
     // Commits one segment (one undo step). Returns false when the route is refused (the start stays), true when it is done.
@@ -159,7 +177,7 @@ export default {
 
     // ---- pointer ----
     function onDown(e) {
-      if (e.button === 2 && (anchor || erase)) { claim(e); if (erase) erase = null; else stepBack(); refresh(true); return; }
+      if (e.button === 2 && (anchor || erase)) { claim(e); drag = null; if (erase) erase = null; else stepBack(); refresh(true); return; }
       if (e.button !== 0) return;
       const t = tileAt(e); if (!t) return;
       if (drawing()) {
@@ -168,10 +186,13 @@ export default {
         if (!anchor) {
           const why = blockAt(t[0], t[1]);
           if (why) { toast(BLOCK_TEXT[why]); return; }
-          anchor = t; pivots = []; refresh(true); return;
+          anchor = t; pivots = [];
+          drag = { id: e.pointerId, moved: false };
+          try { canvas.setPointerCapture(e.pointerId); } catch { /* not capturable */ }
+          refresh(true); return;
         }
         const route = routeFor([anchor, ...pivots, t]);
-        if (commit(route)) { anchor = null; pivots = []; }
+        if (commit(route)) finish(route);
         refresh(true);
       } else if (erasing() && isRoad(t)) {
         claim(e); document.body.classList.add('no-select');
@@ -185,6 +206,7 @@ export default {
       if (!drawing() && !erasing()) return;
       const t = tileAt(e);
       hover = t;
+      if (t && drag && anchor && !near(t, anchor)) drag.moved = true;
       if (t && erase && isRoad(t)) erase.tiles.set(tileIndex(t[0], t[1]), t);
       refresh();
       if (!label.hidden) say(label.innerHTML, label.className);
@@ -192,6 +214,19 @@ export default {
     function onUp(e) {
       if (e.button !== 0) return;
       document.body.classList.remove('no-select');
+      if (drag) {
+        // A press that moved off its tile is a drag: lay the road where it was let go. A press that stayed is a click,
+        // and the start waits for the next click.
+        const moved = drag.moved; drag = null;
+        const t = tileAt(e) || hover;
+        if (moved && anchor && t && !near(t, anchor) && drawing()) {
+          claim(e);
+          const route = routeFor([anchor, ...pivots, t]);
+          if (commit(route)) finish(route);
+          refresh(true);
+        }
+        return;
+      }
       if (erase) {
         const tiles = [...erase.tiles.values()];
         erase = null;
@@ -200,11 +235,16 @@ export default {
       }
     }
     for (const [n, fn] of [['pointerdown', onDown], ['pointermove', onMove], ['pointerup', onUp]]) stage.addEventListener(n, fn, true);
-    stage.addEventListener('pointercancel', () => { if (erase) cancel(); }, true);
+    stage.addEventListener('pointercancel', () => { drag = null; if (erase) cancel(); }, true);
     stage.addEventListener('pointerleave', () => { hover = null; label.hidden = true; refresh(); });
     addEventListener('keyup', (e) => { if (e.key === 'Shift') { shift = false; refresh(true); } });
     addEventListener('keydown', (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey && !(e.target.closest && e.target.closest('input,textarea,select'))) { e.preventDefault(); send({ type: 'undo' }); }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey && !(e.target.closest && e.target.closest('input,textarea,select'))) {
+        e.preventDefault();
+        // A start waiting for its end goes first, so undo never takes back a finished road by surprise.
+        if (drawing() && anchor) { anchor = null; pivots = []; drag = null; refresh(true); return; }
+        send({ type: 'undo' });
+      }
     });
 
     // ---- flyout ----
@@ -218,7 +258,7 @@ export default {
           key: String(i + 1), locked: !open, pressed: type === r.id, data: { road: r.id },
         });
       }).join('');
-      f.innerHTML = `<div class="rhead"><b class="ptitle">Roads</b><span class="rhint">Click, move, click · Space adds a pivot · L flips the bend · Shift straight · Esc steps back</span><button class="btn" id="undoRoad">Undo</button><button class="btn primary" id="doneRoad">Done</button></div><div class="strip road-strip">${tiles}</div>`;
+      f.innerHTML = `<div class="rhead"><b class="ptitle">Roads</b><span class="rhint">Click, move, click (or drag) · Space adds a pivot · L flips the bend · Shift straight · Esc steps back</span><button class="btn" id="keepRoad" aria-pressed="${keep}" title="Start the next road from the end of the last one (Tab)">Keep drawing</button><button class="btn" id="undoRoad">Undo</button><button class="btn primary" id="doneRoad">Done</button></div><div class="strip road-strip">${tiles}</div>`;
       f.hidden = false; f.classList.add('road-fly');
       f.querySelectorAll('[data-road]').forEach((b) => {
         b.onclick = () => {
@@ -231,13 +271,14 @@ export default {
           type = r.id; renderFlyout(); refresh(true);
         };
       });
+      $('keepRoad').onclick = () => setKeep(!keep);
       $('undoRoad').onclick = () => send({ type: 'undo' }); // the last thing done, road or building
       $('doneRoad').onclick = () => { cancel(); document.querySelector('.tool[data-tool="roads"]').click(); };
     }
 
     return {
       onTool(t, was) {
-        if (was === 'roads' || was === 'bulldoze') { anchor = null; pivots = []; erase = null; }
+        if (was === 'roads' || was === 'bulldoze') { anchor = null; pivots = []; erase = null; drag = null; }
         canvas.classList.toggle('pencil', t === 'roads');
         if (t !== 'roads') $('fly').classList.remove('road-fly');
         const g = overlay(); if (g) g.show(t === 'roads' || t === 'bulldoze');
@@ -256,6 +297,7 @@ export default {
         }
         if (!drawing()) return false;
         if (e.key === 'Escape') { if (stepBack()) { refresh(true); return true; } return false; }
+        if (e.key === KEEP_KEY) { e.preventDefault(); if (!e.repeat) { setKeep(!keep); toast(keep ? 'Keep drawing: on' : 'Keep drawing: off'); } return true; }
         if (e.key === PIVOT_KEY) { e.preventDefault(); if (!e.repeat && addPivot()) refresh(true); return true; }
         if (e.key.toLowerCase() === FLIP_KEY) { flip = !flip; refresh(true); return true; }
         if (/^[1-5]$/.test(e.key)) {
