@@ -1,14 +1,16 @@
 // Ground: jittered fractal-noise hills, sage palette by patch, river water plane.
 import * as THREE from '../../vendor/three/three.module.min.js';
-import { fbm, hash, heightAt } from '../world/terrain.js';
+import { fbm, hash, heightAt, FAN_HALF } from '../world/terrain.js';
 import { toonUncached } from './materials.js';
 import { patchSeason } from './season.js';
 import { createLandWatch } from './land-watch.js';
 
-const S = 380, N = 150;
+// The fine ground is the tile lattice of world/terrain.js heightAt, 3 units a cell, out to FAN_HALF: every cell four
+// triangles round its centre. The mesh is that surface exactly, so roads and lots laid on heightAt meet it cleanly.
+const S = FAN_HALF * 2, N = Math.round(S / 3);
 const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
-export const OUT_HALF = 480, OUT_STEP = S / 2 / 19; // the far ground: coarse, round the fine map, out past where the fog hides it
+export const OUT_HALF = 487.5, OUT_STEP = 12.5;   // the far ground: coarse, round the fine map, out past where the fog hides it (cells meet the fine edge)
 const SKIRT = 8;                              // a wall under every seam, so a crack between the fine and coarse ground shows no sky
 
 // The painted colour of triangle `i` (its first vertex index) of position attribute q, written into col.
@@ -89,18 +91,12 @@ const edgePoints = (half, n) => {
 };
 
 export function buildTerrain(parent) {
-  const geo = new THREE.PlaneGeometry(S, S, N, N);
-  geo.rotateX(-Math.PI / 2);
-  const p = geo.attributes.position;
-  for (let i = 0; i < p.count; i++) {
-    let x = p.getX(i), z = p.getZ(i);
-    if (Math.abs(x) < S / 2 - 3 && Math.abs(z) < S / 2 - 3) { x += (hash(i, 7) - 0.5) * 1.9; z += (hash(i, 13) - 0.5) * 1.9; }
-    p.setX(i, x); p.setZ(i, z); p.setY(i, heightAt(x, z));
+  const inner = [], h = S / 2, st = S / N;
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const x0 = -h + i * st, z0 = -h + j * st, x1 = x0 + st, z1 = z0 + st, mx = x0 + st / 2, mz = z0 + st / 2;
+    const v = (x, z) => [x, heightAt(x, z), z], m = v(mx, mz), a = v(x0, z0), b = v(x1, z0), c = v(x0, z1), d = v(x1, z1);
+    inner.push(...a, ...m, ...b, ...b, ...m, ...d, ...d, ...m, ...c, ...c, ...m, ...a);
   }
-  const g2 = geo.toNonIndexed();
-  geo.dispose();
-  const inner = Array.from(g2.attributes.position.array);
-  g2.dispose();
   for (const line of edgePoints(S / 2, N)) skirt(inner, line);
   const fine = paintedMesh(new Float32Array(inner));
   parent.add(fine);

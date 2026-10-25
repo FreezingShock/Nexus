@@ -55,7 +55,15 @@ new village (Settings, Start over).
 
 ## Far ground
 
-`render/terrain.js` builds the fine map (2.5 units a vertex) and a coarse ring round it out to 480 units (10 units a vertex), the same `heightAt`. Both have a wall under their seams so no crack shows sky. About 63k triangles in all; one more draw call.
+`render/terrain.js` builds the fine map out to 187.5 units and a coarse ring round it out to 487.5 units (12.5 units a vertex, its cells meeting the fine edge). Both have a wall under their seams so no crack shows sky. One more draw call.
+
+## One surface (heightAt is the mesh)
+
+The land's shape is `baseHeightAt` (plus the player's edits), but what everything stands on is `heightAt`: the town's tile lattice (3 units, corners from -145.5) carried out to `FAN_HALF` = 187.5, each tile cut into four flat triangles that meet at its centre, the centre being the mean of the four corners. The shape is sampled at the corners only (cached per seed; the edits are added at their corners), so heightAt agrees with the old height at every tile corner and is cheaper than before. Past the lattice the raw height is used.
+
+The fine ground mesh is that surface triangle for triangle, so nothing laid on heightAt can poke through or float: the tile overlays (`render/ground.js`, four triangles a tile too), roads, lamps, lots, terraces, cars and people. Roads go one step further (`render/road-mesh.js`): on a tile whose corners are not in one plane, every road piece and ink line is cut along the tile's diagonals, so each piece lies on one flat triangle at its lift above the ground. A graded road tile (level across, a ramp along) is one plane and is not cut. `tests/ground-surface.test.js` checks the mesh, the overlays and a road on a hillside, before and after grading.
+
+Before this the fine mesh was a jittered 2.5-unit grid that did not line up with tiles, so on hills and in cuts the grass came up through roads, overlays hung over the ground and terrace walls stopped short of it.
 
 ## Never seeing the edge
 
