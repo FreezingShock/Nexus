@@ -6,7 +6,6 @@ import { advance, rateG, speedOf, summaryOf } from '../src/sim/population.js';
 import { unwrap, wrap, migrations } from '../src/sim/save.js';
 import { POP } from '../src/sim/population-config.js';
 import { graphSvg, panelHtml, steps } from '../src/ui/modules/population.js';
-import { townCard } from '../src/ui/hud-detail.js';
 
 test('growth is closed form: ticking and one big step agree', () => {
   let p = 10;
@@ -98,10 +97,6 @@ test('panel and hover card text', () => {
   assert.match(html, /of 100 places/);
   assert.match(html, /<svg/);
   assert.match(graphSvg([]), /<svg/);
-  const card = townCard({ renewals: 0, points: 0 }, { people: 40, capacity: 100, perMin: 3 });
-  assert.match(card, /40 of 100/);
-  assert.match(card, /3\.0 a minute/);
-  assert.match(townCard({ renewals: 0, points: 0 }), /Renewals/);
 });
 
 test('graph covers 10 minutes with a hover point every 2 minutes', () => {

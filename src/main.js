@@ -47,6 +47,7 @@ const actions = {
   get quality() { return quality; },
   get calendar() { return calendar; },
   get sound() { return sound; },
+  get profile() { return profile; },
   exportSave() {
     const blob = new Blob([exportText(sim.prepareSave(), Date.now())], { type: 'application/json' });
     const a = document.createElement('a');

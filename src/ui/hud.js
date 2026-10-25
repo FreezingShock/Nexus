@@ -1,9 +1,9 @@
-// Top HUD: the town plaque (name and badge), Coins and Parts, the Renewal chip, the hover cards on each plaque,
+// Top HUD: the town plaque (badge, name and a line about the town), Coins and Parts, the hover cards on each plaque,
 // pause / speed / time / settings buttons, and toasts. Numbers sit in fixed-width boxes, so a changing digit never moves the row.
 import { $, fmtCompact, fmtRateCompact } from './format.js';
-import { TOWN_COLORS, TOWN_ICONS, TOWN_NAME_MAX, cleanName } from '../sim/town.js';
-import { ICON_LABEL, COLOR_LABEL, townIconSvg, townColor } from './town-icons.js';
-import { coinsCard, partsCard, renewalCard, townCard } from './hud-detail.js';
+import { townIconSvg, townColor } from './town-icons.js';
+import { coinsCard, partsCard, townSnap } from './hud-detail.js';
+import { plaqueLine, townHoverHtml } from './town-view.js';
 
 export function createHud({ sim, send, onSettings, calendar }) {
   let acc = 0, toastTimer = 0;
@@ -30,79 +30,28 @@ export function createHud({ sim, send, onSettings, calendar }) {
   };
   $('settingsbtn').onclick = onSettings;
 
-  // ---- town plaque: rename inline, pick a badge
-  const plaque = $('townplaque'), nameBtn = $('townname'), nameIn = $('townedit'), badge = $('townbadge'), pick = $('townpick');
-  const pops = { town: $('townpop'), coins: $('coinspop'), parts: $('partspop'), renewal: $('renpop') };
+  // ---- town plaque: badge, name and a small line. Renaming and the badge live on the town page (modules/town-page.js),
+  // which a click on the plaque opens; hovering shows a snapshot of the town.
+  const plaque = $('townplaque'), nameEl = $('townname'), lineEl = $('townline'), badge = $('townbadge');
+  const pops = { town: $('townpop'), coins: $('coinspop'), parts: $('partspop') };
   const lastPop = {};
-  let editing = false, pickOpen = false, lastTown = '';
-  nameIn.maxLength = TOWN_NAME_MAX;
-
-  pick.innerHTML = '<h3>Town badge</h3>' +
-    `<div class="tp-grid" role="group" aria-label="Icon">${TOWN_ICONS.map((n) => `<button class="tp-ic" data-icon="${n}" aria-pressed="false" aria-label="${ICON_LABEL[n]}" title="${ICON_LABEL[n]}">${townIconSvg(n, 30)}</button>`).join('')}</div>` +
-    `<div class="tp-sw" role="group" aria-label="Badge colour">${Object.keys(TOWN_COLORS).map((c) => `<button class="tp-col" data-color="${c}" aria-pressed="false" aria-label="${COLOR_LABEL[c]}" title="${COLOR_LABEL[c]}" style="background:${TOWN_COLORS[c]}"></button>`).join('')}</div>`;
+  let lastTown = '';
 
   function paintTown() {
-    const t = s.town;
+    const t = s.town, pp = sim.population;
+    const line = plaqueLine({ people: pp ? pp.people() : 0, year: s.year });
+    if (lineEl.textContent !== line) lineEl.textContent = line;
     const key = t.name + '|' + t.icon + '|' + t.color;
     if (key === lastTown) return;
     lastTown = key;
-    nameBtn.textContent = t.name;
+    nameEl.textContent = t.name;
     // The plaque grows to fit the name; a longer one steps the type down so it still shows in full.
     const len = [...t.name].length;
     plaque.dataset.len = len > 18 ? 'long' : len > 12 ? 'mid' : 'short';
-    nameBtn.title = t.name;
+    plaque.setAttribute('aria-label', 'Town page: ' + t.name);
     badge.innerHTML = townIconSvg(t.icon, 28);
     badge.style.background = townColor(t.color);
-    badge.setAttribute('aria-label', `Town badge: ${ICON_LABEL[t.icon]}, ${COLOR_LABEL[t.color]}. Change it`);
-    for (const b of pick.querySelectorAll('[data-icon]')) b.setAttribute('aria-pressed', String(b.dataset.icon === t.icon));
-    for (const b of pick.querySelectorAll('[data-color]')) b.setAttribute('aria-pressed', String(b.dataset.color === t.color));
   }
-
-  function startRename() {
-    if (editing) return;
-    editing = true;
-    plaque.style.width = plaque.offsetWidth + 'px'; // the plaque holds its width while the field is open
-    nameIn.value = s.town.name;
-    nameBtn.hidden = true; nameIn.hidden = false;
-    nameIn.focus(); nameIn.select();
-  }
-  // Enter or leaving the field keeps the name; Escape drops the edit. A blank name is never saved.
-  function endRename(keep) {
-    if (!editing) return;
-    editing = false;
-    plaque.style.width = '';
-    const name = keep ? cleanName(nameIn.value) : null;
-    nameIn.hidden = true; nameBtn.hidden = false;
-    if (name && name !== s.town.name) send({ type: 'renameTown', name });
-    sync();
-  }
-  nameBtn.onclick = startRename;
-  nameIn.onkeydown = (e) => {
-    e.stopPropagation(); // typing a name must not fire tool keys
-    if (e.key === 'Enter') { e.preventDefault(); endRename(true); }
-    else if (e.key === 'Escape') { e.preventDefault(); endRename(false); nameBtn.focus(); }
-  };
-  nameIn.onblur = () => endRename(true);
-
-  function togglePicker(force) {
-    pickOpen = force === undefined ? !pickOpen : force;
-    pick.hidden = !pickOpen;
-    badge.setAttribute('aria-expanded', String(pickOpen));
-    if (pickOpen) pick.querySelector('[aria-pressed="true"]')?.focus();
-  }
-  badge.onclick = () => togglePicker();
-  pick.onclick = (e) => {
-    const ic = e.target.closest('[data-icon]'), col = e.target.closest('[data-color]');
-    if (!ic && !col) return;
-    send({ type: 'setTownBadge', icon: ic ? ic.dataset.icon : undefined, color: col ? col.dataset.color : undefined });
-    sync();
-  };
-  addEventListener('pointerdown', (e) => {
-    if (pickOpen && !pick.contains(e.target) && !badge.contains(e.target)) togglePicker(false);
-  });
-  addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && pickOpen) { togglePicker(false); badge.focus(); }
-  });
 
   // Keep each hover card inside the window: shift it sideways when it would run off either edge.
   function clampCard(plaque) {
@@ -126,11 +75,9 @@ export function createHud({ sim, send, onSettings, calendar }) {
   }
   function paintCards() {
     const bd = sim.breakdown ? sim.breakdown() : { coins: {}, parts: {}, mult: {} };
-    const pp = sim.population;
-    paintPop('town', townCard(s, pp ? { people: pp.people(), capacity: pp.capacity(), perMin: pp.arrivals() * 60 } : null));
+    paintPop('town', townHoverHtml(townSnap(sim)));
     paintPop('coins', coinsCard(s, sim.rate(), bd));
     paintPop('parts', partsCard(s, sim.partsRate(), bd));
-    paintPop('renewal', renewalCard(s));
   }
 
   function sync() {

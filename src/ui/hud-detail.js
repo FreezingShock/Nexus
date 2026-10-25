@@ -3,8 +3,13 @@
 import { BALANCE } from '../sim/balance.js';
 import { ROAD_TYPES } from '../sim/catalog.js';
 import { fmtTarget, goalById, standing } from '../sim/achievements.js';
-import { pendingPoints, pointsMult, runNeededFor } from '../sim/progress.js';
-import { fmtCompact, fmtExact, fmtRateCompact } from './format.js';
+import { pointsMult } from '../sim/progress.js';
+import { fmtExact, fmtRateCompact } from './format.js';
+import { FULL_S } from '../sim/offline.js';
+import { modelById } from '../world/models.js';
+import { MOOD } from '../sim/services-config.js';
+import { longDate, townDays } from './date-text.js';
+import { moodWord } from './town-view.js';
 
 const CH = BALANCE.charge;
 
@@ -14,19 +19,8 @@ const SOURCE = {
   progression: 'Goals and boosts', roads: 'Roads', traffic: 'Traffic', trees: 'Trees', upgrades: 'Upgrades',
 };
 
-// The biggest sources first, skipping anything too small to show at one decimal.
-export function sourceRows(by, limit = 4) {
-  return Object.entries(by || {})
-    .filter(([, v]) => Number.isFinite(v) && Math.abs(v) >= 0.05)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, limit)
-    .map(([id, v]) => ({ label: SOURCE[id] || 'Other', value: fmtRateCompact(v) }));
-}
-
-const rowsHtml = (rows) => rows.map((r) => `<div class="pr"><dt>${r.label}</dt><dd>${r.value}</dd></div>`).join('');
-const list = (rows) => (rows.length ? `<dl class="pr-list">${rowsHtml(rows)}</dl>` : '');
 const head = (title, lead) => `<h3>${title}</h3><p class="pc-lead">${lead}</p>`;
-const next = (label, title, detail) => `<div class="pc-next"><span>${label}</span><b>${title}</b><small>${detail}</small></div>`;
+const next = (label, title, detail, extra = '') => `<div class="pc-next"><span>${label}</span><b>${title}</b><small>${detail}</small>${extra}</div>`;
 
 // The next stage of the Coins earned goal, with its progress. Null when every stage is paid.
 export function nextMilestone(state) {
@@ -43,57 +37,53 @@ export function nextRoadUnlock(state) {
   return { name: t.short, need: t.unlockParts };
 }
 
+// Each source as a row with a little bar for its share of the total, biggest first. Upkeep (a minus) gets a clay bar.
+export function sourceBars(by, limit = 5) {
+  const rows = Object.entries(by || {}).filter(([, v]) => Number.isFinite(v) && Math.abs(v) >= 0.05).sort((a, b) => b[1] - a[1]).slice(0, limit);
+  const top = Math.max(1e-9, ...rows.map(([, v]) => Math.abs(v)));
+  return rows.length ? `<ul class="rc-src">${rows.map(([id, v]) =>
+    `<li class="${v < 0 ? 'neg' : ''}"><span>${SOURCE[id] || 'Other'}</span><i style="--w:${Math.max(6, Math.round((Math.abs(v) / top) * 100))}%"></i><b>${fmtRateCompact(v)}</b></li>`).join('')}</ul>` : '';
+}
+const meter = (have, need) => `<span class="rc-meter"><i style="width:${need > 0 ? Math.min(100, Math.floor((have / need) * 100)) : 100}%"></i></span>`;
+const big = (n, rate) => `<div class="rc-head"><b class="rc-num">${fmtExact(n)}</b><span class="rc-rate">${fmtRateCompact(rate)}</span></div>`;
+const sec = (t) => `<h4 class="rc-sec">${t}</h4>`;
+
 export function coinsCard(state, rate, breakdown) {
   const notes = [];
   if (state.boostS > 0) notes.push(`Charged boost ×${CH.boostMult}, ${Math.ceil(state.boostS)} s left`);
   const renewal = pointsMult(state.points) - 1;
   if (renewal > 0) notes.push(`+${Math.round(renewal * 100)}% from ${state.points} Renewal ${state.points === 1 ? 'point' : 'points'}`);
   const m = nextMilestone(state);
-  return head('Coins', `<b>${fmtExact(state.coins)}</b> in hand. Earned every second, and while you are away.`) +
-    list([{ label: 'Total', value: fmtRateCompact(rate) }, ...sourceRows(breakdown.coins)]) +
+  return `<h3>Coins</h3>` + big(state.coins, rate) +
+    `<p class="pc-lead"><b>${fmtExact(state.coins)}</b> in hand. Coins pay for roads, zones, buildings and upgrades. They come in every second, and keep coming while you are away: full pace for ${FULL_S / 3600} hours, then easing off.</p>` +
+    sec('Where they come from') + sourceBars(breakdown.coins) +
     notes.map((n) => `<p class="pc-note">${n}</p>`).join('') +
-    (m ? next('Next milestone', m.text, `${fmtExact(m.have)} of ${fmtExact(m.need)}`) : '') +
-    `<p class="pc-foot">Lifetime: ${fmtExact(state.earned)} coins</p>`;
+    (m ? next('Next milestone', m.text, `${fmtExact(m.have)} of ${fmtExact(m.need)}`, meter(m.have, m.need)) : '') +
+    `<p class="pc-foot">Earned in this town, all told: ${fmtExact(state.earned)} coins</p>`;
 }
 
 export function partsCard(state, rate, breakdown) {
   const u = nextRoadUnlock(state);
-  return head('Parts', `<b>${fmtExact(state.parts)}</b> in hand. Parts unlock bigger roads, and industrial lots make the most.`) +
-    list([{ label: 'Total', value: fmtRateCompact(rate) }, ...sourceRows(breakdown.parts)]) +
+  return `<h3>Parts</h3>` + big(state.parts, rate) +
+    `<p class="pc-lead"><b>${fmtExact(state.parts)}</b> in hand. Parts are the town's spare bolts and beams: they open bigger roads, new paint colours and new decorations, once each. Workshops and industrial lots make the most, and daily goals pay out in Parts.</p>` +
+    sec('Where they come from') + sourceBars(breakdown.parts) +
     (u
-      ? next('Next road unlock', u.name, state.parts >= u.need ? `Ready: ${fmtExact(u.need)} Parts to open it` : `${fmtExact(state.parts)} of ${fmtExact(u.need)} Parts`)
+      ? next('Next road unlock', u.name, state.parts >= u.need ? `Ready: ${fmtExact(u.need)} Parts to open it` : `${fmtExact(state.parts)} of ${fmtExact(u.need)} Parts`, meter(state.parts, u.need))
       : '<p class="pc-note">Every road type is open.</p>');
 }
 
-// Renewal: what it is, the progress to the next point, and what the points already give.
-export function renewalCard(state) {
-  const pts = pendingPoints(state.runEarned), need = runNeededFor(pts), pct = Math.min(100, Math.floor((state.runEarned / need) * 100));
-  const kept = state.points, bonus = Math.round((pointsMult(kept) - 1) * 100);
-  const status = pts < 1
-    ? `Opens at ${fmtExact(BALANCE.renewal.divisor)} coins in one run.`
-    : `Ready: renewing now gives +${pts} ${pts === 1 ? 'point' : 'points'}.`;
-  return head('Renewal', 'Start the town again for income that lasts. Your points stay with you for good.') +
-    next('This run', `${pct}%`, `${fmtCompact(state.runEarned)} of ${fmtCompact(need)} coins for the next point`) +
-    `<p class="pc-note">${status}</p>` +
-    list([
-      { label: 'Points kept', value: String(kept) },
-      { label: 'Income bonus', value: '+' + bonus + '%' },
-      { label: 'Renewals', value: String(state.renewals) },
-    ]);
-}
-
-// The town plaque: how to change it, and the Renewal count.
-// `pop` is { people, capacity, perMin } from sim.population (optional: the card still works without it).
-export function townCard(state, pop) {
-  const rows = [];
-  if (pop) {
-    const full = pop.capacity > 0 ? Math.round((100 * pop.people) / pop.capacity) : 0;
-    rows.push({ label: 'People', value: `${fmtExact(Math.floor(pop.people))} of ${fmtExact(pop.capacity)}` });
-    rows.push({ label: 'Homes lived in', value: `${full}%` });
-    rows.push({ label: 'Moving in', value: pop.perMin >= 0.5 ? `${pop.perMin.toFixed(1)} a minute` : pop.capacity > pop.people ? 'a trickle' : 'homes are full' });
-  }
-  rows.push({ label: 'Renewals', value: String(state.renewals) }, { label: 'Points kept', value: String(state.points) });
-  return head('Your town', pop ? 'People move in through the tunnel, faster when the town is happy. Click the name to rename it.' : 'Click the name to rename it. Click the badge to pick a new icon and colour.') + list(rows);
+// The town plaque's snapshot, read from the sim: { people, capacity, coinsRate, partsRate, mood, homes, date, day }.
+export function townSnap(sim) {
+  const s = sim.state, pp = sim.population;
+  let homes = 0;
+  for (const r of s.placed || []) { const m = modelById(r.model); if (m && m.cat === 'home') homes++; }
+  if (sim.grid && s.lots) for (const [i] of s.lots) if (sim.grid.zone[i] === 1) homes++;
+  return {
+    people: pp ? pp.people() : 0, capacity: pp ? pp.capacity() : 0,
+    coinsRate: sim.rate(), partsRate: sim.partsRate(),
+    mood: moodWord(sim.services ? sim.services.average() : MOOD.base), homes,
+    date: s.month != null ? longDate(s) : '', day: s.dayIdx != null ? townDays(s) : '',
+  };
 }
 
 // Demand: the full zone names, the percentage, and what drives each bar. stats are zoning.stats() (lot counts by zone).

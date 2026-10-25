@@ -1,10 +1,10 @@
 // Goals and milestones: one notebook page (src/ui/book.js) with two bookmark tabs. Today holds the Charge boost, the
 // daily goals, the goals closest to their next stage and Renewal; Milestones holds every goal with its stages and rewards
-// (src/ui/milestone-list.js). G opens Today, M opens Milestones. Also paints the Goals tile's charge bar, its dot when a
-// new stage is waiting to be seen, and the Renewal chip in the header. Reads sim snapshots and sends commands.
+// (src/ui/milestone-list.js). G opens Today, M opens Milestones. Also paints the Goals tile's charge bar and its dot when a
+// new stage is waiting to be seen. Reads sim snapshots and sends commands.
 import { BALANCE } from '../../sim/balance.js';
 import { nearest, summary } from '../../sim/achievements.js';
-import { dayKey, goalDef, pendingPoints, pointsMult, runNeededFor } from '../../sim/progress.js';
+import { dayKey, goalDef, pendingPoints, pointsMult } from '../../sim/progress.js';
 import { $, fmt, fmtDuration } from '../format.js';
 import { book } from '../book.js';
 import { PAGE_ICONS } from '../page-icons.js';
@@ -104,11 +104,8 @@ export default {
 
     const set = (id, text) => { const el = $(id); if (el && el.textContent !== text) el.textContent = text; };
 
-    // Charge bar and dot on the tile, and the Renewal chip in the header; the page only while it is open.
+    // Charge bar and dot on the tile; the page only while it is open. (Renewal left the header for now: it lives on Today.)
     function paintChip() {
-      const pts = pendingPoints(s.runEarned), need = runNeededFor(pts);
-      set('renewal', pct(s.runEarned / need) + '%');
-      $('renewalbar').style.width = pct(s.runEarned / need) + '%';
       btn.querySelector('.chg b').style.width = pct(s.charge / CH.max) + '%';
       const fresh = summary(s).stages > seen && !isOpen(), dot = btn.querySelector('.dot');
       if (dot.hidden === fresh) dot.hidden = !fresh;

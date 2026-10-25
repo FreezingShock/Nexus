@@ -9,7 +9,9 @@ import { SAVE_VERSION, migrations, sanitize, unwrap, wrap } from '../src/sim/sav
 import { createSim } from '../src/sim/sim.js';
 import { freshState } from '../src/sim/state.js';
 import { getLayout } from '../src/world/layout.js';
-import { coinsCard, demandCard, nextRoadUnlock, partsCard, renewalCard, sourceRows, townCard } from '../src/ui/hud-detail.js';
+import { coinsCard, demandCard, nextRoadUnlock, partsCard, sourceBars, townSnap } from '../src/ui/hud-detail.js';
+import { badgeHtml, mayorHtml, moodWord, overviewHtml, plaqueLine, townBounds, townCounts, townHoverHtml, townMapSvg, townSize } from '../src/ui/town-view.js';
+import { createGrid } from '../src/world/grid.js';
 import { townIconSvg } from '../src/ui/town-icons.js';
 
 const read = (p) => readFileSync(new URL('../' + p, import.meta.url), 'utf8');
@@ -130,22 +132,24 @@ test('the sim reports the income split by system, for the hover cards', () => {
 
 // ---- hover-card text ----
 
-test('the hover cards show exact numbers, the next unlock and the Renewal progress', () => {
+test('the Coins and Parts cards show exact numbers, what they are for, where they come from and the next step', () => {
   const s = { ...freshState(), coins: 8059, parts: 502, runEarned: 0, points: 0, renewals: 0, earned: 9000 };
   const bd = { coins: { base: 12, placement: 8.2, services: -0.4 }, parts: { base: 0.4 }, mult: {} };
   const coins = coinsCard(s, 20.2, bd);
   assert.match(coins, /<b>8,059<\/b> in hand/);
+  assert.match(coins, /class="rc-num">8,059/);
+  assert.match(coins, /pay for roads, zones, buildings and upgrades/);
+  assert.match(coins, /full pace for 4 hours/, 'the offline window comes from offline.js');
   assert.match(coins, /Buildings/);
   assert.match(coins, /Next milestone/);
+  assert.match(coins, /class="rc-meter"/);
   assert.match(coins, /−/, 'upkeep reads as a minus');
+  assert.doesNotMatch(coins, /Renewal/, 'no Renewal points yet, so no Renewal line');
   const parts = partsCard(s, 0.4, bd);
+  assert.match(parts, /bigger roads, new paint colours and new decorations/);
   assert.match(parts, /Bike street/, 'the cheapest locked road is the next unlock');
   assert.match(parts, /Ready: 450 Parts to open it/, 'with enough Parts, the card says so');
   assert.match(partsCard({ ...s, parts: 40 }, 0.4, bd), /40 of 450 Parts/, 'short of the cost, it shows the progress');
-  const ren = renewalCard(s);
-  assert.match(ren, /Opens at 10,000,000 coins/);
-  assert.match(ren, /0%/);
-  assert.match(renewalCard({ ...s, runEarned: 5e6 }), /50%/);
 });
 
 test('the next road unlock skips the ones already open, and reports none when all are open', () => {
@@ -154,11 +158,14 @@ test('the next road unlock skips the ones already open, and reports none when al
   assert.equal(nextRoadUnlock({ roadUnlocks: ['bike', 'one', 'bus', 'free'] }), null);
 });
 
-test('the source rows are the biggest first, skip the tiny ones, and name unknown systems', () => {
-  const rows = sourceRows({ base: 12, placement: 8.2, mystery: 0.01, services: -0.4 });
-  assert.deepEqual(rows.map((r) => r.label), ['Base income', 'Buildings', 'Services and landmarks']);
-  assert.equal(rows[2].value, '−0.4/s');
-  assert.equal(sourceRows({ mystery: 3 })[0].label, 'Other');
+test('the source bars are the biggest first, skip the tiny ones, mark upkeep and name unknown systems', () => {
+  const html = sourceBars({ base: 12, placement: 8.2, mystery: 0.01, services: -0.4 });
+  const labels = [...html.matchAll(/<span>([^<]+)<\/span>/g)].map((m) => m[1]);
+  assert.deepEqual(labels, ['Base income', 'Buildings', 'Services and landmarks']);
+  assert.match(html, /--w:100%/, 'the biggest fills its bar');
+  assert.match(html, /class="neg"[^]*−0\.4\/s/);
+  assert.match(sourceBars({ mystery: 3 }), /Other/);
+  assert.equal(sourceBars({}), '');
 });
 
 test('the demand card gives full names, percentages and what drives each bar', () => {
@@ -170,23 +177,78 @@ test('the demand card gives full names, percentages and what drives each bar', (
   assert.match(html, /Strong: zone more of this/);
 });
 
-test('the town card never includes the town name, so saved text stays out of the markup', () => {
-  const html = townCard({ ...freshState(), town: { name: '<img src=x>', icon: 'house', color: 'mustard' } });
-  assert.doesNotMatch(html, /<img/);
-  assert.match(html, /Click the name to rename it/);
+test('the town plaque line, sizes and mood words', () => {
+  assert.equal(townSize(0), 'Hamlet');
+  assert.equal(townSize(69), 'Village');
+  assert.equal(townSize(5000), 'City');
+  assert.equal(plaqueLine({ people: 69.7, year: 2 }), 'Village · 69 folk · Year 2');
+  assert.equal(plaqueLine({ people: 1, year: 1 }), 'Hamlet · 1 soul · Year 1');
+  assert.equal(moodWord(0.7), 'Cozy');
+  assert.equal(moodWord(0.25), 'Just getting started');
+});
+
+test('the town snapshot and the town page escape saved text and count what is built', () => {
+  const sim = createSim({ state: freshState(), layout: getLayout() });
+  const snap = townSnap(sim);
+  assert.ok(snap.homes > 0, 'the starter village has homes');
+  assert.match(townHoverHtml(snap), /Your town/);
+  assert.match(townHoverHtml(snap), /Click for the town page/);
+  const town = { name: '<img src=x>', icon: 'house', color: 'mustard' };
+  const catOf = () => 'home';
+  const counts = townCounts(sim.state.placed, catOf, sim.grid, sim.state.lots);
+  assert.equal(counts.home, sim.state.placed.length);
+  assert.ok(counts.roadTiles > 0);
+  const ov = overviewHtml({ town, size: 'Hamlet', dateLong: '1 March, Year 1', day: 'Day 1 of the town', people: 3, capacity: 9, coinsRate: 1, partsRate: 0.1, mood: 'Cozy', counts, map: '<svg></svg>', districts: 0 });
+  assert.doesNotMatch(ov, /<img/);
+  assert.match(ov, /&lt;img/);
+  assert.match(ov, /data-act="badge"/);
+  const bd = badgeHtml(town);
+  assert.doesNotMatch(bd, /<img/);
+  assert.match(bd, /id="tw-name"/);
+  assert.match(bd, /data-icon="windmill"/);
+  assert.match(bd, /data-color="sage"/);
+  const may = mayorHtml({ name: '<b>x', color: '#B8472E', playMs: 0 }, { rank: { name: 'Newcomer' }, next: { name: 'Village Clerk' }, frac: 0.5, toNext: 3 }, '<span class="pf-init">X</span>', [['1', 'played']]);
+  assert.doesNotMatch(may, /<b>x/);
+  assert.match(may, /title screen under <b>Mayor profile<\/b>/);
+});
+
+test('the town map crops to what is built and draws roads, zones and buildings', () => {
+  const sim = createSim({ state: freshState(), layout: getLayout() });
+  const catOf = () => 'home';
+  const b = townBounds(sim.grid, sim.state.placed);
+  assert.ok(b.x1 - b.x0 + 1 >= 13 && b.x1 - b.x0 + 1 <= sim.grid.N, 'a sensible crop');
+  const svg = townMapSvg(sim.grid, sim.state.placed, catOf);
+  assert.match(svg, /^<svg class="tw-map" viewBox="\d+ \d+ \d+ \d+"/);
+  assert.match(svg, /fill="#857B6C"/, 'roads');
+  assert.match(svg, /fill="#C96F4F" stroke="#2B2620"/, 'homes');
+  assert.ok(svg.length < 200000, 'small enough to draw every two seconds');
+  const empty = { N: 96, base: new Uint8Array(96 * 96), road: new Uint8Array(96 * 96), zone: new Uint8Array(96 * 96), lot: new Uint16Array(96 * 96) };
+  const eb = townBounds(empty, []);
+  assert.ok(eb.x0 >= 0 && eb.x1 <= 95 && eb.x1 > eb.x0, 'an empty town still gets a frame in the middle');
 });
 
 // ---- markup the row depends on ----
 
-test('the top row has every plaque, its hover card and the badge picker, and the stylesheet is linked', () => {
+test('the top row has every plaque and its hover card, Renewal is gone, and the stylesheet is linked', () => {
   const html = read('index.html');
-  for (const id of ['townplaque', 'townname', 'townedit', 'townbadge', 'townpop', 'townpick', 'coinschip', 'coinspop',
-    'partschip', 'partspop', 'renchip', 'renpop', 'hpchip', 'hppop', 'hp-panel', 'hppct', 'hpbar', 'demandw', 'demandrows', 'demandpop', 'coins', 'parts', 'rate', 'prate', 'renewal', 'renewalbar']) {
+  for (const id of ['townplaque', 'townname', 'townline', 'townbadge', 'townpop', 'coinschip', 'coinspop',
+    'partschip', 'partspop', 'hpchip', 'hppop', 'hp-panel', 'hppct', 'hpbar', 'demandw', 'demandrows', 'demandpop', 'coins', 'parts', 'rate', 'prate']) {
     assert.match(html, new RegExp('id="' + id + '"'), id);
   }
+  for (const id of ['renchip', 'renpop', 'renewalbar', 'townedit', 'townpick']) assert.doesNotMatch(html, new RegExp('id="' + id + '"'), id + ' is gone');
   assert.match(html, /<link rel="stylesheet" href="css\/hud\.css">/);
+  assert.match(html, /<link rel="stylesheet" href="css\/town-page\.css">/);
   assert.match(read('css/hud.css'), /\.pop\{/);
   assert.match(read('css/hud.css'), /\.chip\.res\{width:184px\}/, 'fixed plaque widths keep the row still');
+});
+
+test('the town plaque opens the My town page, the only place to rename or change the badge', () => {
+  const hud = read('src/ui/hud.js'), page = read('src/ui/modules/town-page.js');
+  assert.doesNotMatch(hud, /renameTown|setTownBadge|townedit/, 'no inline rename or picker on the plaque');
+  assert.match(page, /book\.register\('mytown'/);
+  assert.match(page, /plaque\.addEventListener\('click', \(\) => book\.toggle\('mytown'\)\)/);
+  assert.match(page, /send\(\{ type: 'renameTown', name \}\)/);
+  assert.match(page, /send\(\{ type: 'setTownBadge'/);
 });
 
 test('the old plaque tips are gone from the tooltip list, so there is one card per plaque', () => {
