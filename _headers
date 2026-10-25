@@ -1,0 +1,9 @@
+# Cloudflare Pages response headers (also fine for Netlify). Code is never fingerprinted, so it is left on the
+# host's default of revalidating on every load (a 304 when nothing changed). Only fonts are cached for a week.
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+/vendor/fonts/*
+  Cache-Control: public, max-age=604800
