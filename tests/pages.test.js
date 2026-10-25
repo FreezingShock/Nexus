@@ -152,7 +152,6 @@ test('the menu dresses every button as a row: icon tile, name, live line and key
       setAttribute(k, v) { this.attrs[k] = v; }, getAttribute(k) { return this.attrs[k]; },
       addEventListener() {}, appendChild(c) { kids.push(c); return c; },
       querySelector(sel) {
-        if (sel === 'svg,.qmark') return { outerHTML: '<svg data-own="' + id + '"></svg>' };
         if (sel === '.mi-text') return (this.text ||= el(id + '-text'));
         if (sel === '.mi-sub') return (this.sub ||= { textContent: '' });
         return null;

@@ -93,7 +93,6 @@ export function setTerrainSeed(seed) {
 }
 export const terrainSeed = () => SEED;
 export const terrainRev = () => REV;
-export const terrainLakes = () => (P ? P.lakes : []);
 
 // Terraces: flat steps with a short ramp between. u runs 0..levels.
 function terrace(u, ramp) {

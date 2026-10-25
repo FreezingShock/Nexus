@@ -69,5 +69,4 @@ export function nextMonthSkip(state, monthDays) {
   const day = state.dayIdx - (state.dayOfMonth - 1) + monthDays;
   return { day, inDays: day - state.dayIdx, month: (state.month + 1) % 12 };
 }
-export const skipText = (n) => 'Skip ' + n + (n > 1 ? ' days' : ' day');
 export { clockText };
