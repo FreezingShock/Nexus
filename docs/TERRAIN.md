@@ -33,8 +33,13 @@ everything on the village side.
 Decided by slope, never by height (grid.js `regen`). Since the hills revamp (2026-10-25) a tile is steep (`BASE.STEEP`) only
 when it is a cliff, its corners and middle more than `CLIFF` (4.5) apart, or above `MOUNTAIN_TOP` (26), or on seeded land
 in the outer `RIM` (5) rows, the mountain rim. Everything gentler is a hillside and takes zones, buildings, parks and decor.
-Water is below -0.15 or within 5 units of the river line. Farms keep their flat rule. Roads still use their own slope rule
-(roadnet.js `tooSteep`) until roads learn to grade themselves.
+Water is below -0.15 or within 5 units of the river line. Farms keep their flat rule. Roads refuse only cliffs too.
+
+A road on a hillside grades itself (`src/world/grade.js`): `profile` keeps the road's height within `GRADE` (0.75, 3 m) of
+the tile before and after, meeting existing streets at their height; tiles that had to change, or tilt more than `TILT`
+(0.5) across, get their four corners set to the mean height of the road tiles round each corner, so the road is level
+across and ramps along, and the land beside it slopes away as a cut or an embankment. The earth moved is priced like the
+terrain tools and added to the road (the label shows "earthworks"); undoing the road puts the hill back.
 
 A lot on a hillside stands on a level pad at its highest corner (`standOn` in world/models.js). When the pad is more than
 `WALL_FROM` (0.45) above the lowest ground round the lot, `render/systems/terraces.js` draws a stone retaining wall from

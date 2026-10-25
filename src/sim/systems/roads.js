@@ -5,6 +5,10 @@ import { GRID_N, tileIndex } from '../../world/grid.js';
 import { starterProtected } from '../../world/starter.js';
 import { putTrees, takeOnTiles } from '../../world/trees.js';
 import { MAX_STROKE, ROAD_IDS, ROAD_KIND, BLOCK_TEXT, planStroke, roadBlock, starterRoads } from '../../world/roadnet.js';
+import { gradeRoute } from '../../world/grade.js';
+import { editable } from '../../world/land.js';
+import { terrainSeed } from '../../world/terrain.js';
+import { applyMoves, landPrice, restore } from './land.js';
 
 const UNDO_DEPTH = 24;
 const PROTECTED = starterProtected();   // the bridge and the road into the tunnel: bulldozing refuses them
@@ -12,16 +16,21 @@ const typeOf = (id) => ROAD_TYPES.find((r) => r.id === id);
 const costOf = (id) => (typeOf(id) ? typeOf(id).cost : 0);
 const isTile = (t) => Array.isArray(t) && Number.isInteger(t[0]) && Number.isInteger(t[1]);
 
+const gradeFor = (state, path) => { const key = String(terrainSeed()); return gradeRoute(path, state.roads, (i, j) => !editable(i, j, key)); };
+
 function syncGrid({ grid, state }) {
   grid.road.fill(0);
   for (const [k, r] of Object.entries(state.roads)) grid.road[Number(k)] = ROAD_KIND[r.t];
 }
 
 // Writes a planned stroke: charges, records the undo step, moves trees and zone paint out of the way, tells the world.
-function layRoad(ctx, plan, kind) {
+// `grade` (world/grade.js): the earthworks a climbing road needs, paid with the road and undone with it.
+function layRoad(ctx, plan, kind, grade = null) {
   const { state, grid, emit, note, charge, sim } = ctx;
   if (!plan.tiles.length) return;
-  if (!charge(plan.cost)) return;
+  const works = grade ? landPrice(grade.earth) : 0;
+  if (!charge(plan.cost + works)) return;
+  const land = grade && grade.moves.size ? applyMoves(ctx, grade.moves) : null;
   const next = { ...state.roads }, prev = [], cleared = [];
   for (const e of plan.tiles) {
     prev.push({ idx: e.idx, old: e.old });
@@ -35,9 +44,9 @@ function layRoad(ctx, plan, kind) {
   // Trees on the new road give way; the undo step brings them back.
   const tk = takeOnTiles(state.trees, new Set(plan.tiles.map((e) => e.idx)));
   if (tk.taken.length) state.trees = tk.kept;
-  sim.roadUndo.push({ prev, paid: plan.cost, trees: tk.taken, seq: sim.nextSeq() }); if (sim.roadUndo.length > UNDO_DEPTH) sim.roadUndo.shift();
+  sim.roadUndo.push({ prev, paid: plan.cost + works, trees: tk.taken, land, seq: sim.nextSeq() }); if (sim.roadUndo.length > UNDO_DEPTH) sim.roadUndo.shift();
   note('road');
-  emit({ type: 'roadsChanged', kind, tiles: plan.tiles.map((e) => [e.gx, e.gz]), cost: plan.cost });
+  emit({ type: 'roadsChanged', kind, tiles: plan.tiles.map((e) => [e.gx, e.gz]), cost: plan.cost + works });
   if (cleared.length) sim.dispatch({ type: 'clearZoneTiles', tiles: cleared });
 }
 
@@ -60,7 +69,11 @@ export default {
     for (const r of Object.values(roads)) if (typeOf(r.t) && typeOf(r.t).unlockParts) unlocks.push(r.t);
     return { roads, roadUnlocks: [...new Set(unlocks)] };
   },
-  init(ctx) { ctx.sim.roadUndo = []; syncGrid(ctx); },
+  init(ctx) {
+    ctx.sim.roadUndo = []; syncGrid(ctx);
+    // The coins a road along `path` would add for its earthworks, for the road tool's label.
+    ctx.sim.roadWorks = (path) => landPrice(gradeFor(ctx.state, path).earth);
+  },
   commands: {
     // path: ordered, 4-connected [gx, gz] tiles of one route (pivots joined by L legs). One-way roads follow the drawing direction.
     drawRoad(ctx, { roadType, path }) {
@@ -71,7 +84,7 @@ export default {
       for (let k = 1; k < path.length; k++) if (Math.abs(path[k][0] - path[k - 1][0]) + Math.abs(path[k][1] - path[k - 1][1]) !== 1) return;
       const plan = planStroke({ path, type: t.id, roads: state.roads, blockedBy: (gx, gz) => roadBlock(grid, layout, state, gx, gz), costOf });
       if (plan.problems.length) { emit({ type: 'toast', text: BLOCK_TEXT[plan.problems[0].reason] }); return; }
-      layRoad(ctx, plan, 'draw');
+      layRoad(ctx, plan, 'draw', gradeFor(state, path));
     },
 
     // Replace mode: retype a run of existing street (paying the difference), or flip a one-way by passing its run the
@@ -122,6 +135,7 @@ export default {
       }
       state.roads = next; state.coins = Math.max(0, state.coins + e.paid); syncDisplay();
       state.trees = putTrees(state.trees, e.trees || []);
+      if (e.land) restore(ctx, e.land); // the cut and fill the road made goes back too
       emit({ type: 'roadsChanged', kind: 'undo', tiles, cost: -e.paid });
     },
 

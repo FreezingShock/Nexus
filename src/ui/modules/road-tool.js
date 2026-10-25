@@ -52,7 +52,13 @@ export default {
     // The route through the points: anchor, each pivot, then the cursor. The auto-pick chooses each L's bend.
     const routeFor = (points) => chooseRoute({ points, straight: shift, flip, roads: state.roads, blockedBy: blockAt });
     const routeNow = () => (anchor && hover ? routeFor([anchor, ...pivots, hover]) : null);
-    const evaluate = (route) => planStroke({ path: route.path, type, roads: state.roads, blockedBy: blockAt, costOf });
+    // A road up a hill adds its earthworks (cut and fill, world/grade.js) to the price.
+    const evaluate = (route) => {
+      const plan = planStroke({ path: route.path, type, roads: state.roads, blockedBy: blockAt, costOf });
+      plan.works = plan.tiles.length && sim.roadWorks ? sim.roadWorks(route.path) : 0;
+      plan.cost += plan.works;
+      return plan;
+    };
     const claim = (e) => { e.stopPropagation(); e.preventDefault(); };
     // Replace mode: the street run under the cursor and what retyping it would do. One-way streets keep the way they
     // run: the run is walked in the direction its first tile already points.
@@ -161,6 +167,7 @@ export default {
         pivots.length ? `${pivots.length} ${pivots.length === 1 ? 'pivot' : 'pivots'}` : '',
         shift ? 'straight' : flip ? 'bend flipped' : '',
         joins.length ? `${joins.length} ${joins.length === 1 ? 'junction' : 'junctions'}` : '',
+        plan.works ? `earthworks ₵ ${fmt(plan.works)}` : '',
       ].filter(Boolean).map((s) => `<small>${s}</small>`).join('');
       say(`${coin}<b>−₵ ${fmt(plan.cost)}</b><small>${plan.length} ${plan.length === 1 ? 'tile' : 'tiles'} · ${fmt(plan.length * TILE_METRES)} m</small><em>${short()}</em>${notes}` +
         (poor ? `<small class="need">need ₵ ${fmt(plan.cost - state.coins)} more</small>` : ''), poor ? 'poor' : '');

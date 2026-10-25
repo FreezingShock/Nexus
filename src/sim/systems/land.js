@@ -6,7 +6,7 @@
 // state.land); state.land is written back from it before every save.
 import { BALANCE } from '../balance.js';
 import { landEdits, landEdited, heightAt, terrainSeed } from '../../world/terrain.js';
-import { TOOLS, BRUSH, LAND_LOW, brush, editable, pairsFromEdits, sanitizeLand, tilesOfCorners } from '../../world/land.js';
+import { TOOLS, BRUSH, LAND_LOW, STEP, brush, editable, pairsFromEdits, sanitizeLand, tilesOfCorners } from '../../world/land.js';
 import { GRID_N } from '../../world/grid.js';
 
 const DRY = 0.05; // ground under anything built stays above the water line (grid.js reads below -0.15 as water)
@@ -22,8 +22,21 @@ function builtAround(grid, i, j) {
 
 export const landPrice = (earth) => Math.ceil(earth * BALANCE.land.perEarth);
 
+// Moves corners by `moves` (corner -> change in offset), reads their tiles again, and returns what they were before
+// (corner -> old offset) for restore. Used by the roads system when a road cuts and fills the hill it climbs.
+export function applyMoves(ctx, moves) {
+  const edits = landEdits(), snap = new Map();
+  if (!edits || !moves.size) return snap;
+  for (const [k, dh] of moves) { snap.set(k, edits[k]); edits[k] = Math.round((edits[k] + dh) / STEP) * STEP; }
+  landEdited();
+  const tiles = tilesOfCorners([...moves.keys()]);
+  ctx.grid.regen(tiles);
+  ctx.emit({ type: 'landChanged', tiles });
+  return snap;
+}
+
 // Puts corners back to the offsets in `snap` (corner -> old offset) and reads their tiles again.
-function restore(ctx, snap) {
+export function restore(ctx, snap) {
   const edits = landEdits();
   if (!edits) return;
   for (const [k, v] of snap) edits[k] = v;
