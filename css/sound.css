@@ -1,5 +1,5 @@
 /* Sound section in Settings: volume sliders and the mute switch (the switch itself is styled in graphics.css as .gfx-sw). */
-.snd{display:flex;flex-direction:column;gap:10px;padding:12px 14px;border:2px dashed rgba(43,38,32,.3);border-radius:14px}
+.snd{display:flex;flex-direction:column;gap:10px;padding:12px 14px;border:2px dashed rgb(var(--line) / .3);border-radius:14px}
 .snd>.h-disp{font-size:20px}
 .snd-rows{display:flex;flex-direction:column;gap:8px}
 .snd-row{display:grid;grid-template-columns:84px 1fr 44px;align-items:center;gap:10px;font-weight:800;font-size:14px}

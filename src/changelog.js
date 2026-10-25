@@ -19,6 +19,7 @@ export const CHANGELOG = [
     v: '0.10.0', date: '2026-10-25', name: 'The welcome mat',
     blurb: 'The front door of Nexus got warmer, brighter and friendlier, with a proper welcome for brand-new mayors.',
     items: [
+      { k: 'new', t: 'Dark paper: Settings can switch the menus, pages and title screen to slate paper with mint buttons, or follow your computer. The town looks the same.' },
       { k: 'look', t: 'A brighter title card: coloured icon tiles, a snapshot of your town and a little tip that changes each visit.' },
       { k: 'new', t: 'How to play, Changes, Credits and Settings open as big notebook pages in the middle of the screen, flipping open from the spine.' },
       { k: 'sound', t: 'Each page turns with a soft paper rustle and its own little chime.' },

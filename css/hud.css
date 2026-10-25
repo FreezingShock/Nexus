@@ -52,21 +52,21 @@
 /* a long name steps its type down a little instead of being cut short */
 .brand[data-len="mid"] .townnamebtn{font-size:24px}
 .brand[data-len="long"] .townnamebtn{font-size:20px}
-.townnamebtn{display:block;margin:0;padding:0 2px;font-family:var(--display);font-weight:800;font-size:27px;font-variation-settings:"SOFT" 100,"WONK" 1;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+.townnamebtn{display:block;margin:0;padding:0 2px;font-family:var(--display);font-weight:800;font-size:27px;font-variation-settings:"SOFT" 100,"WONK" 1;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
 .townline{display:block;margin-top:3px;padding:0 2px;font:700 12.5px/1.2 var(--body);color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 .brand.plaque:hover .townbadge{animation:tw-nod .5s ease}
 @keyframes tw-nod{30%{rotate:-8deg}65%{rotate:5deg}}
 
 /* hover cards: paper cards under each plaque, shown on hover or keyboard focus */
-.pop{position:absolute;top:calc(100% + 14px);left:0;z-index:25;width:296px;max-width:calc(100vw - 32px);padding:14px 16px;box-sizing:border-box;font-size:14px;line-height:1.4;font-weight:600;color:var(--ink);text-align:left;white-space:normal;opacity:0;visibility:hidden;transform:translateY(-6px);transform-origin:top left;transition:opacity .15s ease,transform .15s ease,visibility 0s linear .15s;pointer-events:none;cursor:default}
+.pop{position:absolute;top:calc(100% + 14px);left:0;z-index:25;width:296px;max-width:calc(100vw - 32px);padding:14px 16px;box-sizing:border-box;font-size:14px;line-height:1.4;font-weight:600;color:var(--text);text-align:left;white-space:normal;opacity:0;visibility:hidden;transform:translateY(-6px);transform-origin:top left;transition:opacity .15s ease,transform .15s ease,visibility 0s linear .15s;pointer-events:none;cursor:default}
 .pop.end{left:auto;right:0;transform-origin:top right}
 .plaque:hover>.pop,.plaque:focus-visible>.pop{opacity:1;visibility:visible;transform:none;transition-delay:.25s,.25s,0s}
 .pop:empty{display:none}
 .pop h3{margin:0 0 4px;font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:21px;line-height:1.1}
 .pc-lead{margin:0 0 10px;font-size:13.5px;color:var(--ink-soft);font-weight:600}
-.pc-lead b{color:var(--ink);font-variant-numeric:tabular-nums}
+.pc-lead b{color:var(--text);font-variant-numeric:tabular-nums}
 .pr-list{margin:0 0 8px;display:flex;flex-direction:column;gap:5px}
-.pr{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:13.5px;font-weight:700;padding-bottom:4px;border-bottom:1.5px dashed rgba(43,38,32,.22)}
+.pr{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:13.5px;font-weight:700;padding-bottom:4px;border-bottom:1.5px dashed rgb(var(--line) / .22)}
 .pr dt{margin:0;color:var(--ink-soft);font-weight:700}
 .pr dd{margin:0;white-space:nowrap;font-variant-numeric:tabular-nums}
 .pc-note{margin:6px 0 0;font-size:13px;font-weight:700;color:var(--sky-ink)}
@@ -75,9 +75,9 @@
 .pc-next b{font-size:15px;font-weight:800;line-height:1.25}
 .pc-next small{font-size:12.5px;color:var(--ink-soft);font-weight:600;font-variant-numeric:tabular-nums}
 .pc-foot{margin:9px 0 0;font-size:12.5px;color:var(--ink-soft);font-weight:600;font-variant-numeric:tabular-nums}
-.dr{display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;align-items:start;padding:8px 0;border-bottom:1.5px dashed rgba(43,38,32,.22)}
+.dr{display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;align-items:start;padding:8px 0;border-bottom:1.5px dashed rgb(var(--line) / .22)}
 .dr:last-of-type{border-bottom:0}
-.dr .dk{width:30px;height:30px;border-radius:10px;border:2px solid var(--ink);display:grid;place-items:center;box-shadow:0 2px 0 var(--ink);font-family:var(--display);font-size:15px;font-weight:800;line-height:1;color:var(--ink)}
+.dr .dk{width:30px;height:30px;border-radius:10px;border:2px solid var(--ink);display:grid;place-items:center;box-shadow:0 2px 0 var(--ink);font-family:var(--display);font-size:15px;font-weight:800;line-height:1;color:var(--text)}
 .dr b{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:14.5px;font-weight:800}
 .dr em{padding:1px 8px;border:1.5px solid var(--ink);border-radius:999px;background:var(--paper-2);font-style:normal;font-size:11.5px;font-weight:800;white-space:nowrap}
 .dr.hot em{background:var(--action);color:var(--action-ink)}
@@ -113,8 +113,8 @@
 
 /* the town plaque's hover snapshot, like the title screen's */
 .tw-snap{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 4px;padding:0;list-style:none;font-size:12.5px;font-weight:700;color:var(--ink-soft)}
-.tw-snap li{display:flex;align-items:center;gap:5px;padding:3px 9px 3px 5px;border:1.5px solid rgba(43,38,32,.35);border-radius:10px;background:var(--paper)}
-.tw-snap b{color:var(--ink);font-variant-numeric:tabular-nums}
+.tw-snap li{display:flex;align-items:center;gap:5px;padding:3px 9px 3px 5px;border:1.5px solid rgb(var(--line) / .35);border-radius:10px;background:var(--paper)}
+.tw-snap b{color:var(--text);font-variant-numeric:tabular-nums}
 .tw-snap i{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--ink)}
 .tw-snap-people i{background:var(--sage)}.tw-snap-coins i{background:var(--mustard)}.tw-snap-parts i{background:#E3A08E;border-radius:4px}
 .tw-snap-mood i{background:#CFE0E8}.tw-snap-homes i{background:#C96F4F;border-radius:3px 3px 1px 1px}

@@ -30,8 +30,8 @@
 .menu::after{content:"";position:absolute;left:11px;top:20px;bottom:20px;width:6px;background:radial-gradient(circle,rgba(43,38,32,.35) 2.4px,transparent 3px) 0 0/6px 26px repeat-y;pointer-events:none}
 .menu h3{margin:0 0 8px 8px;font-size:22px}
 .menugrid{display:flex;flex-direction:column}
-.mgap{border:0;border-top:1.5px dashed rgba(43,38,32,.28);margin:5px 8px}
-.menugrid .mrow{position:relative;width:100%;height:auto;display:flex;align-items:center;gap:12px;padding:7px 8px;border:0;border-radius:12px;background:none;box-shadow:none;text-align:left;color:var(--ink);transition:background .15s,translate .15s}
+.mgap{border:0;border-top:1.5px dashed rgb(var(--line) / .28);margin:5px 8px}
+.menugrid .mrow{position:relative;width:100%;height:auto;display:flex;align-items:center;gap:12px;padding:7px 8px;border:0;border-radius:12px;background:none;box-shadow:none;text-align:left;color:var(--text);transition:background .15s,translate .15s}
 .menugrid .mrow:hover,.menugrid .mrow:focus-visible{background:rgba(233,214,178,.55);translate:4px 0;box-shadow:none;transform:none}
 .menugrid .mrow:active{transform:none;box-shadow:none}
 .menugrid .mrow[aria-expanded="true"]{background:rgba(168,193,121,.4);box-shadow:none}

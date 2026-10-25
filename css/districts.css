@@ -1,6 +1,6 @@
 /* Districts: the name labels over the town, and the flyout list. Colours come from the shared tokens in ui.css. */
 .dlayer{position:fixed;left:0;top:0;width:0;height:0;overflow:visible;pointer-events:none;z-index:11}
-.dlabel{position:absolute;left:0;top:0;display:flex;align-items:center;gap:6px;padding:3px 10px 3px 6px;white-space:nowrap;background:var(--paper);border:2px solid var(--ink);border-radius:11px 13px 10px 12px;box-shadow:0 2px 0 var(--ink);font:700 12.5px/1.2 var(--body);color:var(--ink)}
+.dlabel{position:absolute;left:0;top:0;display:flex;align-items:center;gap:6px;padding:3px 10px 3px 6px;white-space:nowrap;background:var(--paper);border:2px solid var(--ink);border-radius:11px 13px 10px 12px;box-shadow:0 2px 0 var(--ink);font:700 12.5px/1.2 var(--body);color:var(--text)}
 .dlabel[hidden]{display:none}
 .dlabel.blocked{visibility:hidden}
 .dlabel i{flex:0 0 auto;width:12px;height:12px;border-radius:4px;border:1.5px solid var(--ink)}
@@ -12,7 +12,7 @@
 .dfly .head{margin-bottom:8px}
 .dtools{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;margin-bottom:8px}
 .dseg{display:flex;border:2.5px solid var(--ink);border-radius:12px;overflow:hidden;background:var(--paper);box-shadow:0 2px 0 var(--ink)}
-.dseg button,.dseg-erase{display:flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:0 12px;border:0;background:none;font:800 14px/1 var(--body);color:var(--ink);cursor:pointer}
+.dseg button,.dseg-erase{display:flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:0 12px;border:0;background:none;font:800 14px/1 var(--body);color:var(--text);cursor:pointer}
 .dseg button+button{border-left:2px solid var(--ink)}
 .dseg button[aria-pressed="true"]{background:var(--action);color:#FFFDF6}
 .dsize button{padding:0 11px}
@@ -20,7 +20,7 @@
 .dseg-erase[aria-pressed="true"]{background:var(--action);color:#FFFDF6}
 .dnew{width:100%;min-height:44px;margin-top:8px}
 .dicon{flex:0 0 auto;display:grid;place-items:center;width:32px;height:32px;padding:0;border:0;border-radius:9px;background:none;color:var(--ink-soft);cursor:pointer}
-.dicon:hover{background:var(--paper-3);color:var(--ink)}
+.dicon:hover{background:var(--paper-3);color:var(--text)}
 .dlist{list-style:none;margin:0;padding:0;max-height:min(44vh,360px);overflow:auto}
 .drow{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:2px dashed var(--paper-3)}
 .drow:last-child{border-bottom:0}
@@ -29,7 +29,7 @@
 .dswatch{display:block;width:100%;height:100%;border-radius:9px;border:2.5px solid var(--ink);box-shadow:0 2px 0 var(--ink)}
 .drow[aria-pressed="true"] .dpick{outline:3px solid var(--action);outline-offset:2px;border-radius:10px}
 .dtext{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
-.dname{width:100%;min-width:0;font:800 15px/1.2 var(--display);color:var(--ink);background:var(--paper);border:2px solid transparent;border-radius:10px;padding:4px 8px}
+.dname{width:100%;min-width:0;font:800 15px/1.2 var(--display);color:var(--text);background:var(--paper);border:2px solid transparent;border-radius:10px;padding:4px 8px}
 .dname:hover{border-color:var(--paper-3)}
 .dname:focus{outline:none;border-color:var(--action);background:#FFFDF6}
 .dtext small{font-size:12.5px;color:var(--ink-soft);font-weight:700;padding-left:8px}
