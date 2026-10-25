@@ -1,8 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -11,14 +10,16 @@ import { fileURLToPath } from 'node:url';
 // needs is not left out of the deploy by mistake.
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
+// With no argument the script writes to dist/ inside the repo, as the host's build does; that case once failed
+// because Node cannot copy a folder into its own subfolder.
 test('site build keeps everything the pages load and leaves out tests and tooling', () => {
-  const out = mkdtempSync(join(tmpdir(), 'nexus-site-'));
+  const out = join(ROOT, 'dist');
   try {
-    execFileSync('node', [join(ROOT, 'scripts/build-site.mjs'), out], { stdio: 'pipe' });
+    execFileSync('node', [join(ROOT, 'scripts/build-site.mjs')], { stdio: 'pipe' });
     for (const f of ['index.html', 'kit.html', '404.html', '_headers', 'src/main.js', 'vendor/three/three.module.min.js']) {
       assert.ok(existsSync(join(out, f)), `${f} is in the build`);
     }
-    for (const f of ['tests', 'scripts', 'docs', 'package.json', '.git', '.github']) {
+    for (const f of ['tests', 'scripts', 'docs', 'package.json', 'wrangler.jsonc', '.git', '.github']) {
       assert.ok(!existsSync(join(out, f)), `${f} is not in the build`);
     }
     for (const page of ['index.html', 'kit.html']) {
