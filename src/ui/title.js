@@ -7,7 +7,9 @@ import { VERSION } from '../version.js';
 import { CHANGELOG, KINDS, newSince, kindCounts } from '../changelog.js';
 import { CREDITS, saveLine, tipOfTheDay } from '../core/boot.js';
 import { createPageSounds } from '../audio/page-sounds.js';
-import { ICONS, KIND_ICONS, STEP_ICONS } from './title-icons.js';
+import { ICONS, KIND_ICONS, STEP_ICONS, EMBLEM_ICONS, GROUP_ICONS } from './title-icons.js';
+import { RANKS, EMBLEMS, COLORS, rankFor, initials, playTime, NAME_MAX } from '../core/profile.js';
+import { GOALS, GROUPS, STAGES, standing, summary, nearest, fmtTarget } from '../sim/achievements.js';
 
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const SEEN_KEY = 'nexus.seenVersion';
@@ -29,6 +31,7 @@ export const ROWS = [
   { id: 'howto', label: 'How to play', sub: 'your first five minutes', c: '#C9DDB8' },
   { id: 'changes', label: 'Changes', sub: 'every version, in colour', c: '#F2D27A' },
   { id: 'credits', label: 'Credits', sub: 'who made this and with what', c: '#F0C4B6' },
+  { id: 'profile', label: 'Mayor profile', sub: 'your name, rank and badges', c: '#E9C1B8', gap: true, needsReady: true },
   { id: 'settings', label: 'Settings', sub: 'graphics and sound', c: '#DCE8EC', gap: true, needsReady: true },
   { id: 'new', label: 'New town', sub: 'start over, keeping a backup', c: '#E9DCC4', needsReady: true },
 ];
@@ -38,6 +41,7 @@ export const PAGES = {
   howto: { title: 'How to play', sub: 'Five small steps, then the town is yours', c: '#A8C179' },
   changes: { title: 'Changes', sub: 'Every version of Nexus, newest first', c: '#E6BC62' },
   credits: { title: 'Credits', sub: 'Who made Nexus, and with what', c: '#E3A08E' },
+  profile: { title: 'Mayor profile', sub: 'Your name, rank, personal bests and badges', c: '#E3A08E' },
   settings: { title: 'Settings', sub: 'Changes save straight away', c: '#8FB8D6' },
   new: { title: 'Start a new town?', sub: 'Your current town is kept as a backup', c: '#C9A27A', narrow: true },
 };
@@ -57,7 +61,7 @@ const VERSION_COLORS = ['#B8472E', '#5F7A3E', '#C08A2E', '#35566A', '#97553E', '
 export function createTitle({ onPlay, onNewTown }) {
   const title = $('title'), boot = $('boot'), play = $('tt-play'), list = $('tt-list');
   const sheet = $('tt-sheet'), scrim = $('tt-scrim'), body = $('tt-sheet-body');
-  let ready = false, open = null, stores = null, isNew = false, filter = 'all';
+  let ready = false, open = null, stores = null, isNew = false, filter = 'all', town = null;
   const seen = readSeen();
   let fresh = newSince(seen);
   const sounds = createPageSounds({ getSettings: () => (stores ? stores.sound.get() : null) });
@@ -106,6 +110,7 @@ export function createTitle({ onPlay, onNewTown }) {
           <input type="range" min="0" max="100" step="5" value="${Math.round(s.master * 100)}" data-k="master" aria-label="Volume"></label>
         <p class="tt-promise">Seasons, weather, saves and more wait in the town, under the menu.</p>`;
     },
+    profile: () => profilePage(),
     new: () => `<p>You begin again with the small starter village. Your current town moves to the backup slot, and Settings in the town can bring it back.</p>
         <div class="tt-row-btns"><button class="btn" type="button" data-act="cancel">Keep my town</button><button class="btn primary" type="button" data-act="new">Start fresh</button></div>`,
   };
@@ -125,6 +130,52 @@ export function createTitle({ onPlay, onNewTown }) {
         <ul class="cl-items">${items.map((it) => `<li><span class="cl-kind" style="--c:${KINDS[it.k].color}" title="${KINDS[it.k].label}">${KIND_ICONS[it.k]}</span><span>${esc(it.t)}</span>${it.pr ? `<span class="cl-pr">#${it.pr}</span>` : ''}</li>`).join('')}</ul>
         </details></li>`;
     }).join('');
+  }
+
+  // ---- the mayor profile
+  const avatar = (p) => (p.emblem !== 'initials' && EMBLEM_ICONS[p.emblem]) ? EMBLEM_ICONS[p.emblem] : `<span class="pf-init">${esc(initials(p.name)) || '?'}</span>`;
+  function profilePage() {
+    const p = stores.profile.get(), st = town ? summary(town) : { stages: 0, totalStages: 0 };
+    const r = rankFor(Math.max(p.bestStages, st.stages));
+    const tiles = [
+      ['clock', playTime(p.playMs), 'played'],
+      ['people', fmt(p.popRecord), 'population record'],
+      ['towns', fmt(p.towns), p.towns === 1 ? 'town started' : 'towns started'],
+      ['coins', town ? fmt(town.earned || 0) : '0', 'coins this town has earned'],
+    ];
+    const next = town ? nearest(town, 1)[0] : null;
+    return `<section class="pf-head" style="--pc:${p.color}">
+        <span class="pf-avatar" id="pf-avatar">${avatar(p)}</span>
+        <div class="pf-id">
+          <label class="tt-eyebrow" for="pf-name">Mayor</label>
+          <input class="pf-name h-disp" id="pf-name" type="text" maxlength="${NAME_MAX}" autocomplete="off" spellcheck="false" placeholder="What should the town call you?" value="${esc(p.name)}">
+          <p class="pf-rank">Rank <b>${r.rank.name}</b> · mayor since ${fmtDate(p.since)}</p>
+          <div class="pf-rankbar" role="progressbar" aria-label="Progress to the next rank" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(r.frac * 100)}"><i style="width:${Math.round(r.frac * 100)}%"></i></div>
+          <small class="pf-tonext">${r.next ? `${r.toNext} more badge stage${r.toNext === 1 ? '' : 's'} to <b>${r.next.name}</b>` : 'The top of the ladder. The town is proud of you.'}</small>
+        </div>
+        <ul class="pf-stats">${tiles.map(([id, v, label]) => `<li class="pf-stat-${id}"><b>${esc(v)}</b><small>${label}</small></li>`).join('')}</ul>
+      </section>
+      <section class="pf-pick">
+        <div><span class="tt-eyebrow">Picture</span><div class="pf-emblems" data-k="emblem">${EMBLEMS.map((e) => `<button class="pf-emblem" type="button" data-v="${e}" aria-pressed="${p.emblem === e}" aria-label="${e === 'initials' ? 'Initials' : e}" style="--pc:${p.color}">${e === 'initials' ? `<span class="pf-init">${esc(initials(p.name)) || 'AB'}</span>` : EMBLEM_ICONS[e]}</button>`).join('')}</div></div>
+        <div><span class="tt-eyebrow">Colour</span><div class="pf-colors" data-k="color">${COLORS.map((c) => `<button class="pf-color" type="button" data-v="${c}" aria-pressed="${p.color === c}" aria-label="Colour ${c}" style="--pc:${c}"></button>`).join('')}</div></div>
+      </section>
+      <div class="pf-cols">
+        <section class="pf-badges">
+          <header><h3 class="h-disp">Badges</h3><span class="pf-count"><b>${st.stages}</b> of ${st.totalStages} stages</span><span class="pf-allbar"><i style="width:${st.totalStages ? Math.round(st.stages / st.totalStages * 100) : 0}%"></i></span></header>
+          ${next ? `<p class="pf-next"><b>Next up:</b> ${esc(next.goal.name)}, ${esc(fmtTarget(next.goal, next.next))}. ${esc(next.goal.blurb)}</p>` : ''}
+          ${GROUPS.map((g) => `<h4 class="pf-group">${esc(g.name)}</h4><ul class="pf-grid">${GOALS.filter((x) => x.group === g.id).map((goal) => badge(goal)).join('')}</ul>`).join('')}
+        </section>
+        <aside class="pf-ladder"><h3 class="h-disp">Ranks</h3><ol>${RANKS.map((rk, i) => `<li class="${i === r.index ? 'now' : i < r.index ? 'past' : ''}"><span>${i + 1}</span><b>${rk.name}</b><small>${i === r.index ? 'you are here' : rk.stages + ' stages'}</small></li>`).reverse().join('')}</ol>
+          <p class="pf-note">Your name, picture and bests stay in this browser, and stay with you when you start a new town.</p></aside>
+      </div>`;
+  }
+  function badge(goal) {
+    const s = town ? standing(town, goal) : { done: 0, total: goal.tiers.length, frac: 0, next: goal.tiers[0], complete: false };
+    const stage = s.done ? STAGES[s.done - 1] : null;
+    return `<li class="pf-badge${stage ? ' got' : ''}" style="--sc:${stage ? stage.color : '#E9DCC4'}">
+        <span class="pf-medal">${GROUP_ICONS[goal.group]}${stage ? `<i>${s.done}</i>` : ''}</span>
+        <span><b>${esc(goal.name)}</b><small>${stage ? stage.name : 'Not yet'}${s.complete ? ', every stage' : ` · next ${esc(fmtTarget(goal, s.next))}`}</small>
+        ${s.complete ? '' : `<span class="pf-bar"><i style="width:${Math.round(s.frac * 100)}%"></i></span>`}</span></li>`;
   }
 
   function show(name) {
@@ -164,9 +215,18 @@ export function createTitle({ onPlay, onNewTown }) {
     if (b.dataset.act === 'new') { b.disabled = true; onNewTown(); return; }
     const group = b.parentElement.dataset.k;
     if (group === 'filter') { filter = b.dataset.v; for (const c of b.parentElement.children) c.setAttribute('aria-pressed', String(c === b)); $('cl-list').innerHTML = changeList(); return; }
+    if (group === 'emblem' || group === 'color') { stores.profile.set(group, b.dataset.v); const top = body.scrollTop; body.innerHTML = pages.profile(); body.scrollTop = top; return; }
     if (group === 'preset') stores.quality.choose(b.dataset.v);
     if (group === 'sound') stores.sound.set('muted', b.dataset.v === 'off');
     if (group) { const top = body.scrollTop; body.innerHTML = pages.settings(); body.scrollTop = top; }
+  });
+  body.addEventListener('input', (e) => {
+    if (e.target.id !== 'pf-name') return;
+    stores.profile.set('name', e.target.value);
+    const p = stores.profile.get();
+    $('pf-avatar').innerHTML = avatar(p);
+    const init = body.querySelector('.pf-emblem[data-v="initials"] .pf-init');
+    if (init) init.textContent = initials(p.name) || 'AB';
   });
   body.addEventListener('change', (e) => { if (e.target.dataset.k === 'master') stores.sound.set('master', Number(e.target.value) / 100); });
   title.addEventListener('keydown', (e) => { if (e.key === 'Escape' && open) { e.preventDefault(); show(null); } });
@@ -189,6 +249,8 @@ export function createTitle({ onPlay, onNewTown }) {
         rowEl('howto').querySelector('small').textContent = 'start here: five small steps';
       }
     },
+    // The loaded town, for the profile's badges.
+    town(state) { town = state; },
     // The town at a glance, under the save line: { pop, coins, date }.
     townInfo(snap) {
       if (isNew || !snap) return;
