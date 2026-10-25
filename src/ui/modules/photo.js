@@ -13,7 +13,6 @@ import {
 } from '../../render/photo-math.js';
 
 const KEY = 'nexus.photo.v1';
-const CAMERA_SVG = '<svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#2B2620" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M3 7.5h3.2L7.6 5h6.8l1.4 2.5H19a1 1 0 0 1 1 1V17a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8.5a1 1 0 0 1 1-1Z" fill="#FBF6EA"/><circle cx="11" cy="12.5" r="3.4"/></svg>';
 const CLOSE_SVG = '<svg width="16" height="16" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2L12 12M12 2L2 12" stroke="#2B2620" stroke-width="2.2" stroke-linecap="round"/></svg>';
 
 const load = () => { try { return cleanPhoto(JSON.parse(localStorage.getItem(KEY))); } catch { return cleanPhoto(null); } };
@@ -33,7 +32,6 @@ export default {
     const btn = document.createElement('button');
     btn.className = 'ib'; btn.id = 'photobtn';
     btn.setAttribute('aria-label', 'Photo mode'); btn.setAttribute('aria-pressed', 'false');
-    btn.innerHTML = CAMERA_SVG;
     $('settingsbtn').before(btn);
 
     const veil = document.createElement('div'); // vignette and frame, over the town

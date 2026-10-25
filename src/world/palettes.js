@@ -55,7 +55,6 @@ export const ROOFS = {
 export const AWNINGS = [0xD98C7A, 0xEBD9A0, 0xBFD8C4];
 export const TREE_COLORS = [0xA0B873, 0x9DB37C, 0x7D8A5E, 0xA0B873, 0xD9A25F];
 export const PINE_COLORS = [0x5D6A48, 0x4F5B3F, 0x6B7A4F];
-export const CAR_COLORS = [0xE9C1B8, 0xBFD8C4, 0xEBD9A0, 0xCBC3DC, 0xD98C7A, 0xFAF3E4];
 // Crops for the fields: a ground colour and a colour for the rows. The season shifts both (render/season.js).
 export const CROPS = [
   { name: 'wheat', base: '#E2C27A', row: '#C49A4E' },
