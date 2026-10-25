@@ -33,11 +33,10 @@ export default {
     for (const r of MENU_ROWS) {
       const b = $(r.id);
       if (!b || !b.querySelector) continue;
-      const own = b.querySelector('svg,.qmark');
       const extras = [...b.querySelectorAll('.chg,.dot')];
       b.classList.add('mrow');
       b.style.setProperty('--c', r.c);
-      b.innerHTML = `<span class="mi-ico">${r.icon || (own ? own.outerHTML : '')}</span><span class="mi-text"><b>${r.label}</b><small class="mi-sub">${r.sub || ''}</small></span>${r.key ? `<kbd>${r.key}</kbd>` : ''}`;
+      b.innerHTML = `<span class="mi-ico">${r.icon}</span><span class="mi-text"><b>${r.label}</b><small class="mi-sub">${r.sub || ''}</small></span>${r.key ? `<kbd>${r.key}</kbd>` : ''}`;
       const text = b.querySelector('.mi-text');
       for (const x of extras) (x.classList.contains('chg') ? text : b).appendChild(x);
       if (r.gap) grid.appendChild(Object.assign(document.createElement('hr'), { className: 'mgap' }));

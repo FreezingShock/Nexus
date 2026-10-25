@@ -65,7 +65,6 @@ for (const m of MODELS) m.cost = Math.round(m.cost * BALANCE.priceMult);
 const byId = new Map(MODELS.map((m) => [m.id, m]));
 export const modelById = (id) => byId.get(id) || null;
 export const modelsIn = (cat) => MODELS.filter((m) => m.cat === cat);
-export const modelsForTool = (tool) => CATEGORIES.filter((c) => c.tool === tool).map((c) => ({ ...c, models: modelsIn(c.id) }));
 
 // ---- footprints ----
 
@@ -117,7 +116,6 @@ export function pickModelForLot(cat, fw, fd, seed = 0) {
 export const areaCost = (def, fw, fd) => Math.round(def.cost * fw * fd);
 // Storeys (a farm's yield) a model reaches at its lowest roll on a lot of `area` tiles. The menus show it as the starting income.
 export const floorsFor = (def, area, roll = 0) => (def.perTile ? Math.max(1, Math.round(area * def.perTile)) : Math.min(12, def.floors[0] + roll + Math.min(6, Math.floor(def.grow * (area - 1) + 0.0001))));
-export const minFloors = (def, area) => floorsFor(def, area);
 
 // ---- seeds and traits ----
 

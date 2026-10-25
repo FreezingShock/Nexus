@@ -10,7 +10,6 @@ import { book } from '../book.js';
 import { PAGE_ICONS } from '../page-icons.js';
 import { milestonesHtml, paintMilestones, openGoal, nearHtml, pct } from '../milestone-list.js';
 
-const FLAG_SVG = '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4M5 5H17L14 9.5L17 14H5" fill="#E6BC62" stroke="#2B2620" stroke-width="2" stroke-linejoin="round"/></svg>';
 const CH = BALANCE.charge, GOALS = BALANCE.goals;
 const SEEN_KEY = 'nexus.milestones.seen';
 const readSeen = () => { try { const n = Number(localStorage.getItem(SEEN_KEY)); return Number.isFinite(n) && n >= 0 ? n : 0; } catch { return 0; } };
@@ -31,7 +30,7 @@ export default {
     const btn = document.createElement('button');
     btn.className = 'ib goalsib'; btn.id = 'goalsbtn';
     btn.setAttribute('aria-label', 'Goals and milestones'); btn.setAttribute('aria-expanded', 'false');
-    btn.innerHTML = FLAG_SVG + '<i class="chg" aria-hidden="true"><b></b></i><i class="dot" aria-hidden="true" hidden></i>';
+    btn.innerHTML = '<i class="chg" aria-hidden="true"><b></b></i><i class="dot" aria-hidden="true" hidden></i>';
     $('settingsbtn').before(btn);
 
     const isOpen = () => book.current() === 'goals';

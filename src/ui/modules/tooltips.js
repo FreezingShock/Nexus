@@ -1,5 +1,6 @@
 // Hover tips for the tool bar and the HUD. One floating bubble, shown after a short pause, mouse and keyboard focus only.
 import { HOVER_TIPS } from '../hovers.js';
+import { book } from '../book.js';
 
 const DELAY = 350;
 
@@ -35,7 +36,7 @@ export default {
     }
 
     function show(hit) {
-      if (document.getElementById('shortcuts') && !document.getElementById('shortcuts').hidden) return;
+      if (book.current() === 'shortcuts') return;
       anchor = hit.el;
       bubble.textContent = hit.text;
       bubble.hidden = false;

@@ -72,7 +72,6 @@ export const GOALS = [
 ];
 
 export const goalById = (id) => GOALS.find((g) => g.id === id) || null;
-export const goalsIn = (group) => GOALS.filter((g) => g.group === group);
 export const totalStages = () => GOALS.reduce((n, g) => n + g.tiers.length, 0);
 
 // Counters the state already keeps. The panel reads these directly, so it is never behind; every other metric is read
