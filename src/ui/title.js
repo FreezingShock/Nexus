@@ -4,7 +4,7 @@
 // which flips open from its spine with a paper rustle and the page's own chime. The sheet is the shared one in
 // src/ui/notebook.js, the same the town's pages use.
 import { $, fmt } from './format.js';
-import { VERSION } from '../version.js';
+import { AUTHOR, AUTHOR_HANDLE, VERSION } from '../version.js';
 import { CHANGELOG, KINDS, newSince, kindCounts } from '../changelog.js';
 import { CREDITS, saveLine, tipOfTheDay } from '../core/boot.js';
 import { createPageSounds } from '../audio/page-sounds.js';
@@ -84,6 +84,8 @@ export function createTitle({ onPlay, onNewTown }) {
   const sounds = createPageSounds({ getSettings: () => (stores ? stores.sound.get() : null) });
 
   $('tt-ver').textContent = 'v' + VERSION;
+  $('tt-made').textContent = 'Made with care by ' + AUTHOR;
+  $('tt-credit').innerHTML = `Made by <b>${esc(AUTHOR)}</b> <i>(${esc(AUTHOR_HANDLE)})</i>`;
   $('tt-tip').innerHTML = '<b>Tip</b> ' + esc(tipOfTheDay(new Date()));
 
   // ---- the rows
