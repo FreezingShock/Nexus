@@ -17,7 +17,6 @@ const ICONS = {
   barn: `<path d="M4 24V13L8.5 7.5H17.5L22 13V24Z" fill="${CLAY}" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/><path d="M9.5 24V17.5H16.5V24M9.5 17.5L16.5 24M16.5 17.5L9.5 24" fill="none" stroke="${PAPER}" stroke-width="1.6"/><path d="M4 13L13 4.5L22 13" fill="none" stroke="${INK}" stroke-width="1.8" stroke-linejoin="round"/>`,
 };
 
-export const ICON_NAMES = Object.keys(ICONS);
 export const ICON_LABEL = { house: 'House', tree: 'Tree', windmill: 'Windmill', church: 'Church', boat: 'Boat', flower: 'Flower', lighthouse: 'Lighthouse', barn: 'Barn' };
 export const COLOR_LABEL = { mustard: 'Mustard', coral: 'Coral', mint: 'Mint', sage: 'Sage', sky: 'Sky', clay: 'Clay' };
 

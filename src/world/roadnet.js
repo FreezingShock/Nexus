@@ -5,7 +5,7 @@
 //   d  direction of travel for one-way roads: 0 east (+x), 1 south (+z), 2 west, 3 north
 //   p  coins paid for the tile (the starter streets paid nothing), used for refunds
 // Tiles connect to every 4-neighbor that is also a road, so shapes (curves, tees, crossings) are derived, never stored.
-import { GRID_N, GRID_HALF, inBounds, tileIndex, tileOf } from './grid.js';
+import { GRID_N, GRID_HALF, inBounds, tileIndex } from './grid.js';
 import { heightAt, terrainRev, terrainSeed } from './terrain.js';
 import { starterStreetTiles } from './starter.js';
 
@@ -257,7 +257,6 @@ export function planStroke({ path, type, roads, blockedBy = () => null, costOf }
   return { tiles, joins, problems, cost: tiles.reduce((a, t) => a + t.price, 0), length: seen.size };
 }
 
-export const tileOfKey = (k) => tileOf(Number(k));
 
 // ---- what may hold a road ----
 // Roads follow the ground, but a tile that rises or tilts too much still reads as too steep for one.

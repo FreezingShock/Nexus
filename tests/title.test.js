@@ -133,3 +133,13 @@ test('a tip a day, the same all day and cycling through every tip', () => {
   for (let d = 0; d < TIPS.length; d++) seen.add(tipOfTheDay(new Date(2026, 0, 1 + d)));
   assert.equal(seen.size, TIPS.length);
 });
+
+test('the author name is written once, in src/version.js, and the title screen reads it', async () => {
+  const { AUTHOR, AUTHOR_HANDLE } = await import('../src/version.js');
+  const { CREDITS } = await import('../src/core/boot.js');
+  assert.ok(CREDITS[0].lines[0].includes(AUTHOR) && CREDITS[0].lines[0].includes(AUTHOR_HANDLE));
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  assert.doesNotMatch(html, new RegExp('Made (with care )?by[^<]*' + AUTHOR), 'no name typed into index.html');
+  const js = readFileSync(new URL('../src/ui/title.js', import.meta.url), 'utf8');
+  assert.match(js, /\$\('tt-made'\)/); assert.match(js, /\$\('tt-credit'\)/);
+});

@@ -26,7 +26,6 @@ export default {
     btn.id = 'keysbtn';
     btn.setAttribute('aria-label', 'Keyboard shortcuts');
     btn.setAttribute('aria-expanded', 'false');
-    btn.innerHTML = '<span class="qmark" aria-hidden="true">?</span>';
     $('settingsbtn').before(btn);
 
     book.register('shortcuts', {
