@@ -25,11 +25,13 @@ export const SHORTCUT_GROUPS = [
   { title: 'While drawing roads', rows: [
     { keys: ['1–5'], text: 'Pick a road type', file: 'src/ui/modules/road-tool.js', needle: '/^[1-5]$/' },
     { keys: ['Click'], text: 'Set the start, then click again to lay the road to the cursor' },
+    { keys: ['Drag'], text: 'Press, drag and let go to lay a road in one go' },
+    { keys: ['Tab'], text: 'Keep drawing: start the next road from the end of the last', file: 'src/ui/modules/road-tool.js', needle: "KEEP_KEY = 'Tab'" },
     { keys: ['Space'], text: 'Add a pivot: bend the road at the cursor, then keep going', file: 'src/ui/modules/road-tool.js', needle: "const PIVOT_KEY = ' '" },
     { keys: ['L'], text: 'Flip the bend: the road picks the cleanest L by itself, L overrides it', file: 'src/ui/modules/road-tool.js', needle: "FLIP_KEY = 'l'" },
     { keys: ['Shift'], text: 'Hold for a straight line', file: 'src/ui/modules/road-tool.js', needle: "e.key === 'Shift'" },
     { keys: ['Esc', 'Right click'], text: 'Step back one pivot, then let go of the start', file: 'src/ui/modules/road-tool.js', needle: "e.key === 'Escape'" },
-    { keys: ['Ctrl', 'Z'], text: 'Undo the last step: road, building, zone, district, tree or bulldoze', file: 'src/ui/modules/road-tool.js', needle: "send({ type: 'undo' })" },
+    { keys: ['Ctrl', 'Z'], text: 'Undo the last step: road, building, zone, district, tree or bulldoze (a waiting road start goes first)', file: 'src/ui/modules/road-tool.js', needle: "send({ type: 'undo' })" },
   ] },
   { title: 'Zones and buildings', rows: [
     { keys: ['0–4'], text: '0 erases, 1 to 4 pick a zone', file: 'src/ui/modules/zoning.js', needle: '/^[0-4]$/' },

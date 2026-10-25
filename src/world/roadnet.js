@@ -37,6 +37,16 @@ export function connMask(roads, gx, gz) {
 }
 export const dirsOfMask = (m) => [0, 1, 2, 3].filter((d) => m & (1 << d));
 
+// Dead ends: road tiles with exactly one road neighbour, as [gx, gz]. The road tool glows them as good places to start.
+export function roadEnds(roads) {
+  const out = [];
+  for (const k of Object.keys(roads)) {
+    const i = Number(k), gx = i % GRID_N, gz = Math.floor(i / GRID_N), m = connMask(roads, gx, gz);
+    if (m && !(m & (m - 1))) out.push([gx, gz]);
+  }
+  return out;
+}
+
 // What a tile looks like given its connections.
 //   iso (none), end (one), straight (two opposite), corner (two at a right angle), tee (three), cross (four)
 export function shapeOf(mask) {

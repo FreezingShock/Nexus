@@ -1,6 +1,7 @@
 // Route planning and the grid rules for drawn roads (src/world/roadnet.js): pivots, L legs, validation.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { createSim } from '../src/sim/sim.js';
 import { getLayout } from '../src/world/layout.js';
 import { tileIndex, GRID_HALF } from '../src/world/grid.js';
@@ -177,4 +178,27 @@ test('auto-pick keeps the stops of each pivot, so later pivots still land on the
 
 test('every grid rule has a sheet-friendly message', () => {
   for (const r of ['revisit', 'loop', 'hug', 'zigzag', 'long']) assert.ok(BLOCK_TEXT[r], r);
+});
+
+test('roadEnds lists the dead ends of the network', async () => {
+  const { roadEnds } = await import('../src/world/roadnet.js');
+  const { tileIndex } = await import('../src/world/grid.js');
+  const roads = {};
+  for (let x = 10; x <= 14; x++) roads[tileIndex(x, 10)] = { t: 'two', p: 0 };
+  roads[tileIndex(12, 11)] = { t: 'two', p: 0 };            // a stub off the middle: a tee and a third end
+  roads[tileIndex(30, 30)] = { t: 'two', p: 0 };            // a lone tile is not an end (nothing to carry on from)
+  const key = (t) => t.join(',');
+  assert.deepEqual(roadEnds(roads).map(key).sort(), ['10,10', '12,11', '14,10']);
+});
+
+test('road tool: a laid road lets go of its start unless Keep drawing is on', () => {
+  const src = readFileSync(new URL('../src/ui/modules/road-tool.js', import.meta.url), 'utf8');
+  assert.match(src, /function finish\(route\) \{ anchor = keep \? route\.path\[route\.path\.length - 1\] : null; pivots = \[\]; \}/);
+  assert.doesNotMatch(src, /anchor = route\.path\[route\.path\.length - 1\]; pivots/);
+  assert.match(src, /if \(drawing\(\) && anchor\) \{ anchor = null;/, 'Ctrl+Z drops a waiting start before undoing');
+  assert.match(src, /localStorage\.getItem\(KEEP_STORE\)/);
+  for (const m of src.matchAll(/localStorage\.\w+\(/g)) {
+    const before = src.slice(Math.max(0, m.index - 12), m.index);
+    assert.match(before, /try \{ |keep = /, 'storage calls sit in try/catch');
+  }
 });
