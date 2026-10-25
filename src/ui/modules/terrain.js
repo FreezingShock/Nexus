@@ -1,4 +1,4 @@
-// The Terrain tool (U): Raise, Lower or Flatten the land by dragging a soft brush over it. Flatten levels toward the height
+// The Terrain tool (U): Raise, Lower, Flatten or Smooth the land by dragging a soft brush over it. Flatten levels toward the height
 // where the drag began. Roads, zones and buildings on the ground ride along with it. Each dab costs a few coins for the
 // earth it moves; one drag is one Ctrl+Z. The mountain rim, the river and the tunnel mountain stay as they are.
 // Reads the sim and sends terraform. Rules and the brush live in src/world/land.js and src/sim/systems/land.js.
@@ -9,6 +9,7 @@ import { $, fmt } from '../format.js';
 import { esc, tileCard } from '../cards.js';
 
 const COIN = '<i class="coin"></i>';
+// While the tool is in hand, contour lines show the shape of the land (render/systems/land-contours.js).
 const P = 'fill="none" stroke="#2B2620" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"';
 const TOOLS = [
   { id: 'raise', name: 'Raise', key: '1', sub: 'Lift the land into a hill or a terrace',
@@ -17,6 +18,8 @@ const TOOLS = [
     pic: `<svg viewBox="0 0 60 44" aria-hidden="true"><path d="M4 22Q18 24 24 34Q30 42 36 34Q42 24 56 22V40H4Z" fill="#C9A27A" ${P}/><ellipse cx="30" cy="34" rx="6" ry="2.5" fill="#8FC4D8" ${P}/><path d="M30 6V18M25 13L30 18L35 13" ${P}/></svg>` },
   { id: 'flatten', name: 'Flatten', key: '3', sub: 'Level the land to the height where you start dragging',
     pic: `<svg viewBox="0 0 60 44" aria-hidden="true"><path d="M4 38V26H56V38Z" fill="#E6CF8E" ${P}/><path d="M8 18H52" ${P} stroke-dasharray="4 3"/><rect x="18" y="8" width="24" height="6" rx="2" fill="#B98558" ${P}/></svg>` },
+  { id: 'smooth', name: 'Smooth', key: '4', sub: 'Round off ridges, ramps and sharp terrace edges',
+    pic: `<svg viewBox="0 0 60 44" aria-hidden="true"><path d="M4 38Q16 38 22 30L26 24L30 30Q36 22 42 26Q50 32 56 32V40H4Z" fill="#B7CB82" ${P} stroke-dasharray="3 3" opacity=".55"/><path d="M4 38Q20 36 30 28Q42 22 56 30V40H4Z" fill="#A8C179" ${P}/><path d="M18 12Q30 4 42 12" ${P}/><path d="M38 8L42 12L37 14" ${P}/></svg>` },
 ];
 const SIZES = [['small', 'S'], ['medium', 'M'], ['large', 'L']];
 const DAB_S = 0.09; // a held brush dabs this often (seconds), and again whenever it moves a little

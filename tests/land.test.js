@@ -130,3 +130,12 @@ test('digging never puts a road or a building under water', () => {
   assert.ok(heightAt(x, z) > -0.15, `the road stays dry (${heightAt(x, z)})`);
   assert.notEqual(sim.grid.baseAt(gx, gz), 1, 'not water');
 });
+
+test('Smooth rounds off a sharp bump', () => {
+  const sim = mk();
+  for (let s = 0; s < 8; s++) sim.dispatch({ type: 'terraform', tool: 'raise', x: P.x, z: P.z, size: 'small', stroke: 11 });
+  const peak = () => heightAt(P.x, P.z) - heightAt(P.x + 6, P.z);
+  const before = peak();
+  for (let s = 0; s < 10; s++) sim.dispatch({ type: 'terraform', tool: 'smooth', x: P.x, z: P.z, size: 'large', stroke: 12 });
+  assert.ok(peak() < before * 0.7, `the bump is gentler (${before.toFixed(2)} -> ${peak().toFixed(2)})`);
+});

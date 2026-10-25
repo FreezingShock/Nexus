@@ -58,3 +58,21 @@ test('trees stand on the moved ground', () => {
   trunk.getMatrixAt(idx, m); const y1 = p.setFromMatrixPosition(m).y;
   assert.ok(y1 > y0 + 0.5, `tree rose ${y0} -> ${y1}`);
 });
+
+test('contour lines show only while the Terrain tool is in hand, and follow the moved ground', async () => {
+  const { default: contours } = await import('../src/render/systems/land-contours.js');
+  const sim = mk(), world = new THREE.Group();
+  const sys = contours.create({ THREE, world, grid: sim.grid });
+  const mesh = world.children[0];
+  sys.frame({ state: sim.state, tool: null, dt: 0.1 });
+  assert.equal(mesh.visible, false);
+  for (let k = 0; k < 4; k++) sys.frame({ state: sim.state, tool: 'terrain', dt: 0.1 });
+  assert.equal(mesh.visible, true);
+  assert.equal(mesh.material.uniforms.uShow.value, 1);
+  const q = mesh.geometry.attributes.position, V = 97, k0 = Math.round((P.z + 145.5) / TILE) * V + Math.round((P.x + 145.5) / TILE), y0 = q.getY(k0);
+  for (let k = 0; k < 6; k++) sim.dispatch({ type: 'terraform', tool: 'raise', x: P.x, z: P.z, size: 'large', stroke: 3 });
+  sys.frame({ state: sim.state, tool: 'terrain', dt: 0.1 });
+  assert.ok(q.getY(k0) > y0 + 0.5, 'the plane rose with the land');
+  for (let k = 0; k < 4; k++) sys.frame({ state: sim.state, tool: null, dt: 0.1 });
+  assert.equal(mesh.visible, false, 'fades away with the tool');
+});

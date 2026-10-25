@@ -1,10 +1,10 @@
 // The terrain tools' brush: a soft ring on the ground under the cursor, in the colour of the tool (sage raises, clay
-// lowers, sand flattens) and rose where the land is out of reach. Two draw calls while shown, none when hidden.
+// lowers, sand flattens, sky smooths) and rose where the land is out of reach. Two draw calls while shown, none when hidden.
 // Driven by the terrain UI module: scene.sys('land-brush').show(x, z, r, tool, ok) / .hide().
 import { heightAt } from '../../world/terrain.js';
 
 const SEG = 48;
-const COLORS = { raise: 0x7FA35C, lower: 0xB8704F, flatten: 0xD9B865, bad: 0xD98C7A };
+const COLORS = { raise: 0x7FA35C, lower: 0xB8704F, flatten: 0xD9B865, smooth: 0x8FB8D6, bad: 0xD98C7A };
 
 export default {
   id: 'land-brush',
