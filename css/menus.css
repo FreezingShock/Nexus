@@ -55,7 +55,7 @@
 .pprice{flex:0 0 auto;font-size:14px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
 
 /* Bulldoze: one hint chip above the toolbar, no menu */
-.fly.bdchip{left:50%;right:auto;transform:translateX(-50%);width:max-content;max-width:calc(100vw - 32px);padding:7px 16px;border-radius:999px;bottom:122px;max-height:none;overflow:visible}
+.fly.bdchip{left:50%;right:auto;transform:translateX(-50%);width:max-content;max-width:calc(100vw - 32px);padding:7px 16px;border-radius:999px;bottom:var(--fly-b);max-height:none;overflow:visible}
 .bdtext{display:block;font-size:14px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* Traffic legend */

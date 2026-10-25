@@ -54,6 +54,6 @@ export const SHORTCUT_GROUPS = [
     { keys: ['M'], text: 'Milestones: every goal, its stages and rewards', file: 'src/ui/modules/progress.js', needle: "e.key === 'm'" },
     { keys: ['Esc'], text: 'Close a page, leave a tool, or close a card', file: 'src/ui/ui.js', needle: "e.key === 'Escape'" },
     { keys: ['Right click'], text: 'Leave a tool, or close a card' },
-    { keys: ['?'], text: 'Show or hide this page', file: 'src/ui/modules/shortcut-sheet.js', needle: "e.key === '?'" },
+    { keys: ['/'], text: 'Show or hide this page (? works too)', file: 'src/ui/modules/shortcut-sheet.js', needle: "e.key === '/'" },
   ] },
 ];

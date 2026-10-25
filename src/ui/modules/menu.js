@@ -17,7 +17,7 @@ export const MENU_ROWS = [
   { id: 'night', label: 'Time of day', c: '#F6DDA0', icon: PAGE_ICONS.sky, gap: true },
   { id: 'paintbtn', label: 'Paint town', c: '#F2D9A6', page: 'paint', icon: PAGE_ICONS.paint, sub: 'One brush for every wall and roof' },
   { id: 'photobtn', label: 'Photo mode', key: 'O', c: '#E8D9EC', icon: PAGE_ICONS.photo, sub: 'Filters, viewpoints and a slow camera' },
-  { id: 'keysbtn', label: 'Shortcuts', key: '?', c: '#D2E3EE', page: 'shortcuts', icon: PAGE_ICONS.shortcuts, sub: 'Every key on one page', gap: true },
+  { id: 'keysbtn', label: 'Shortcuts', key: '/', c: '#D2E3EE', page: 'shortcuts', icon: PAGE_ICONS.shortcuts, sub: 'Every key on one page', gap: true },
   { id: 'settingsbtn', label: 'Settings', c: '#E4D5B2', page: 'settings', icon: PAGE_ICONS.settings, sub: 'Sky, graphics, sound and saves' },
 ];
 
