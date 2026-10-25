@@ -12,7 +12,6 @@ import frameStats from './frame-stats.js';
 import happiness from './happiness.js';
 import menu from './menu.js';
 import notes from './notes.js';
-import onboarding from './onboarding.js';
 import paintTown from './paint-town.js';
 import photo from './photo.js';
 import placement from './placement.js';
@@ -40,7 +39,6 @@ export const uiModules = [
   happiness,
   menu,
   notes,
-  onboarding,
   paintTown,
   photo,
   placement,

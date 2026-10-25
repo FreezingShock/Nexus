@@ -22,7 +22,7 @@ test('static panels carry data-mo in index.html', () => {
 
 test('script-built surfaces set data-mo', () => {
   assert.match(read('src/ui/notebook.js'), /data-mo="flip"/, 'the pages flip open (Goals, Settings, Shortcuts, Paint town)');
-  const files = ['onboarding', 'tooltips', 'zoning', 'districts', 'placement', 'road-tool', 'frame-stats'];
+  const files = ['tooltips', 'zoning', 'districts', 'placement', 'road-tool', 'frame-stats'];
   for (const f of files) assert.match(read(`src/ui/modules/${f}.js`), /data(set)?[.-]?mo|dataset\.mo/, f);
 });
 

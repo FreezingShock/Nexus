@@ -5,7 +5,6 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { TOOL_KEYS, SHORTCUT_GROUPS } from '../src/ui/shortcuts.js';
 import { HOVER_TIPS } from '../src/ui/hovers.js';
-import { TIP_STEPS, activeTip, loadSeen, saveSeen, TIPS_KEY } from '../src/ui/tips.js';
 import { isNoteEvent, noteFor, NOTE_ICONS } from '../src/ui/notes.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -54,52 +53,6 @@ test('every hover tip selector points at an element the game makes', () => {
     } else missing.push(sel);
   }
   assert.deepEqual(missing, []);
-});
-
-// ---- first-time tips ----
-
-test('tip steps have unique ids and text', () => {
-  const ids = TIP_STEPS.map((s) => s.id);
-  assert.equal(new Set(ids).size, ids.length);
-  for (const s of TIP_STEPS) assert.ok(s.text.length > 20, s.id);
-});
-
-test('a brand-new town is offered the road tip first', () => {
-  const fresh = { roadTiles: 0, painted: 0, placed: 0, upgrades: 0 };
-  assert.equal(activeTip(fresh, []).id, 'road');
-});
-
-test('tips move on as the player does the thing, and skip what is already done', () => {
-  assert.equal(activeTip({ roadTiles: 3, painted: 0, placed: 0, upgrades: 0 }, []).id, 'zone');
-  assert.equal(activeTip({ roadTiles: 3, painted: 9, placed: 2, upgrades: 0 }, []).id, 'inspect');
-  assert.equal(activeTip({ roadTiles: 3, painted: 9, placed: 2, upgrades: 1 }, []).id, 'away');
-});
-
-test('seen tips are not shown again, and a finished list returns null', () => {
-  const fresh = { roadTiles: 0, painted: 0, placed: 0, upgrades: 0 };
-  assert.equal(activeTip(fresh, ['road']).id, 'zone');
-  const all = TIP_STEPS.map((s) => s.id);
-  assert.equal(activeTip(fresh, all), null);
-});
-
-function memStore(initial) {
-  const m = new Map(Object.entries(initial || {}));
-  return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), m };
-}
-
-test('seen tips survive a round trip through storage', () => {
-  const s = memStore();
-  saveSeen(s, ['road', 'zone']);
-  assert.deepEqual(loadSeen(s), ['road', 'zone']);
-  assert.ok(s.m.has(TIPS_KEY));
-});
-
-test('broken or missing storage never throws and gives no seen tips', () => {
-  assert.deepEqual(loadSeen(memStore({ [TIPS_KEY]: '{not json' })), []);
-  assert.deepEqual(loadSeen(memStore({ [TIPS_KEY]: '{"a":1}' })), []);
-  const broken = { getItem() { throw new Error('denied'); }, setItem() { throw new Error('denied'); } };
-  assert.deepEqual(loadSeen(broken), []);
-  assert.doesNotThrow(() => saveSeen(broken, ['road']));
 });
 
 // ---- postcard notes ----
