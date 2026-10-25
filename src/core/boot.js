@@ -1,4 +1,5 @@
 import { viewpointOf } from '../render/photo-math.js';
+import { AUTHOR, AUTHOR_HANDLE } from '../version.js';
 
 // The front-of-game sequence, the parts that need no browser: the two lists of real load steps (the ones that run quietly
 // behind the title screen, and the ones the progress screen shows), the progress tracker they report to, the smoothing
@@ -70,7 +71,7 @@ export function saveLine(source, savedAgo) {
 }
 
 export const CREDITS = [
-  { head: 'Made by', lines: ['nate (FreezingShock)'] },
+  { head: 'Made by', lines: [`${AUTHOR} (${AUTHOR_HANDLE})`] },
   { head: 'Drawn with', lines: ['Three.js (MIT licence)', 'Every building, tree and townsperson is made from code, no image files.'] },
   { head: 'Lettering', lines: ['Fraunces and Capriola (SIL Open Font Licence)'] },
   { head: 'Sound', lines: ['Every chime, bird and bell is made live in your browser with Web Audio.'] },

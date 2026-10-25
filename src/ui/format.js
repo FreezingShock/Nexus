@@ -1,6 +1,5 @@
 export const $ = (id) => document.getElementById(id);
 export const fmt = (n) => Math.floor(n).toLocaleString('en-US');
-export const fmtRate = (r) => '+' + (Math.round(r * 10) / 10) + '/s';
 // "just now", "12 min ago", "3 h ago", then a short date. For saves and backups.
 export function fmtAgo(t, now = Date.now()) {
   if (!Number.isFinite(t)) return 'a while ago';

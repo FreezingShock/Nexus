@@ -16,7 +16,6 @@ export function cornerHeights() {
   }
   return corners;
 }
-export const cornerWorld = (i) => EDGE + i * TILE;
 
 export function groundPlaneGeometry(lift) {
   const h = cornerHeights(), pos = new Float32Array(V * V * 3), idx = [];

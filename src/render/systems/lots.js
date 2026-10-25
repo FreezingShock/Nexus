@@ -5,7 +5,7 @@ import { makeParts, worldMatrix } from '../buildings.js';
 import { toonVC, nightWall } from '../models/materials.js';
 import { Batch } from '../geom.js';
 import { lineMat } from '../materials.js';
-import { addHull, placeHull, proxyFor } from '../town.js';
+import { addHull, placeHull, proxyFor, partsBox } from '../town.js';
 import { lotDescription, lotId, lotTileOf } from '../../world/lots.js';
 
 const POP_S = 0.62;
@@ -26,6 +26,7 @@ export default {
     let pops = [];                 // { key, tile, group, t, grow }
     let selected = null;           // id of the lot with an outline
     const upgrading = new Set();   // tiles a player upgrade just touched: they throw dust when they pop
+    const held = new Map();        // tile -> { lot, h }: under upgrade scaffolding, still drawn as the old lot until the reveal
     let rev = -1, dirty = false, since = 1, night = false, first = true;
     let lifeRev = 0, lifeList = []; // for render/systems/life-*.js: the grown lots standing in the merged meshes
     const m = new THREE.Matrix4();
@@ -82,31 +83,32 @@ export default {
       built = [];
       const batch = new Batch(), keys = new Set();
       const holding = new Set(pops.filter((p) => p.t < POP_S).map((p) => p.key));
-      for (const l of liveLots) {
+      const shown = liveLots.map((l) => held.get(l[0])?.lot || l);
+      for (const l of shown) {
         const e = entryFor(l);
         if (holding.has(e.key)) continue;
         addToBatch(batch, e); keys.add(e.key);
       }
       built = batch.build(group);
       included = keys; applyNight();
-      lifeList = liveLots.map(entryFor).filter((e) => keys.has(e.key)); lifeRev++;
+      lifeList = shown.map(entryFor).filter((e) => keys.has(e.key)); lifeRev++;
       // settled pops are now inside the merged mesh: remove their stand-ins
       pops = pops.filter((p) => {
         if (p.t >= POP_S && included.has(p.key)) { popRoot.remove(p.group); disposePop(p); return false; }
         return true;
       });
       // forget geometry for buildings that are gone, and any stand-in still showing one
-      const live = new Set(liveLots.map(keyOf));
+      const live = new Set([...liveLots, ...shown].map(keyOf));
       pops = pops.filter((p) => { if (live.has(p.key)) return true; popRoot.remove(p.group); disposePop(p); return false; });
       for (const k of [...cache.keys()]) if (!live.has(k)) dropEntry(k);
       dirty = false; since = 0;
     }
     function disposePop(p) { for (const o of p.group.children) if (o.isLineSegments) o.geometry.dispose(); }
 
-    function startPop(l, grow) {
+    function startPop(l, grow, dust = false) {
       const e = entryFor(l);
       if (grow) sys('puffs')?.burst(e.b.x, e.b.z, 3, 10); // a new building: a little dust as it goes up
-      else if (upgrading.delete(l[0])) sys('puffs')?.burst(e.b.x, e.b.z, 3.4, 16); // a player upgrade: as big as a placed one's
+      else if (upgrading.delete(l[0]) || dust) sys('puffs')?.burst(e.b.x, e.b.z, 3.4, 16); // a player upgrade: as big as a placed one's
       const g = new THREE.Group();
       g.position.set(e.b.x, e.b.y, e.b.z); g.rotation.y = e.b.rotY;
       for (const p of e.parts) {
@@ -121,6 +123,22 @@ export default {
       pops.push({ key: e.key, tile: l[0], group: g, t: 0, grow });
     }
 
+    // A player upgrade: scaffolding goes up round the old lot (`was` is its key), and the new one pops in at the reveal.
+    function raiseScaffold(l, was) {
+      const scaffold = sys('scaffold');
+      if (!scaffold) return false;
+      const tile = l[0], e = entryFor(l);
+      const h = scaffold.raise(e.world, partsBox(e.parts), () => {
+        held.delete(tile);
+        const now = liveLots.find((x) => x[0] === tile);
+        if (now) startPop(now, false, true);
+        dirty = true;
+      });
+      if (!h) return false;
+      held.set(tile, { lot: was.split(':').slice(0, 3).map(Number), h });
+      return true;
+    }
+
     let liveLots = [];
     function sync(state) {
       const prev = current;
@@ -132,9 +150,12 @@ export default {
       if (!first && !repainted) {
         for (const l of state.lots) {
           const was = prev.get(l[0]), key = current.get(l[0]);
-          if (was !== key) startPop(l, !was);
+          if (was === key || held.has(l[0])) continue; // under scaffolding: the reveal shows whatever the lot is by then
+          if (was && upgrading.has(l[0]) && raiseScaffold(l, was)) { upgrading.delete(l[0]); continue; }
+          startPop(l, !was);
         }
       }
+      for (const [tile, hd] of held) if (!current.has(tile)) { hd.h.cancel(); held.delete(tile); } // bulldozed mid-build
       first = false; dirty = true;
       if (selected) select(selected); // the outline follows a new level, and clears when the lot is gone
     }
