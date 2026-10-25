@@ -5,8 +5,7 @@
 //   d  direction of travel for one-way roads: 0 east (+x), 1 south (+z), 2 west, 3 north
 //   p  coins paid for the tile (the starter streets paid nothing), used for refunds
 // Tiles connect to every 4-neighbor that is also a road, so shapes (curves, tees, crossings) are derived, never stored.
-import { GRID_N, GRID_HALF, inBounds, tileIndex } from './grid.js';
-import { heightAt, terrainRev, terrainSeed } from './terrain.js';
+import { GRID_N, inBounds, tileIndex } from './grid.js';
 import { starterStreetTiles } from './starter.js';
 
 // Direction index -> grid step. 0 east (+x), 1 south (+z), 2 west (-x), 3 north (-z).
@@ -259,21 +258,6 @@ export function planStroke({ path, type, roads, blockedBy = () => null, costOf }
 
 
 // ---- what may hold a road ----
-// Roads follow the ground, but a tile that rises or tilts too much still reads as too steep for one.
-let slope = new Int8Array(GRID_N * GRID_N), slopeRev = -1; // 0 unknown, 1 flat, 2 steep; dropped when the land changes
-function tooSteep(gx, gz) {
-  if (slopeRev !== terrainRev()) { slope = new Int8Array(GRID_N * GRID_N); slopeRev = terrainRev(); }
-  const k = tileIndex(gx, gz);
-  if (!slope[k]) {
-    const cx = (gx - GRID_HALF) * 3, cz = (gz - GRID_HALF) * 3;
-    let hi = -Infinity, lo = Infinity;
-    for (const [dx, dz] of [[0, 0], [-1.5, -1.5], [1.5, -1.5], [-1.5, 1.5], [1.5, 1.5]]) { const h = Math.max(0, heightAt(cx + dx, cz + dz)); hi = Math.max(hi, h); lo = Math.min(lo, h); }
-    // The same slope rule as zones and farms. Old land also refused any road higher than 0.9; seeded land has plateaus.
-    slope[k] = (terrainSeed() === 0 && hi > 0.9) || hi - lo > 0.5 ? 2 : 1;
-  }
-  return slope[k] === 2;
-}
-
 // Why a road cannot go on this tile, or null when it can. Roads may cover zone paint (the paint clears) and may
 // replace other roads, but not water, hills, farmland, or a lot that is built (a starter or player building, or grown).
 // `layout` and `state` are kept for the callers; buildings are on the grid's lot layer, so only the grid is read here.
@@ -281,7 +265,7 @@ export function roadBlock(grid, layout, state, gx, gz) {
   if (!inBounds(gx, gz)) return 'bounds';
   const b = grid.baseAt(gx, gz);
   if (b === 1) return 'water';
-  if (b === 2 || tooSteep(gx, gz)) return 'steep';
+  if (b === 2) return 'steep'; // only cliffs: on a hillside the road grades its own way (world/grade.js)
   if (b === 3) return 'farm';
   if (grid.lotAt(gx, gz)) return 'lot';
   return null;
