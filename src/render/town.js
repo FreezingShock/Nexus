@@ -7,6 +7,8 @@ import { describe } from '../world/models.js';
 import { Batch, disposeAll } from './geom.js';
 import { lineMat } from './materials.js';
 import { nightWall } from './models/materials.js';
+import { createLandWatch } from './land-watch.js';
+import { GRID_N } from '../world/grid.js';
 
 const HULL = new THREE.MeshBasicMaterial({ color: 0x6DB6EC, side: THREE.BackSide });
 const proxyMat = new THREE.MeshBasicMaterial();
@@ -55,6 +57,12 @@ export function placeHull(group, b, sx, sy, sz) {
   group.position.set(b.x, b.y ?? 0.1, b.z); group.rotation.set(0, b.rotY, 0); group.scale.set(sx, sy, sz);
 }
 
+// Does a placed record's footprint cover any of these tile indexes?
+function touches(r, tiles) {
+  for (let z = r.gz; z < r.gz + r.fd; z++) for (let x = r.gx; x < r.gx + r.fw; x++) if (tiles.has(z * GRID_N + x)) return true;
+  return false;
+}
+
 // hooks.burst(x, z, radius, count): a dust puff when a building levels up (the puffs system).
 // hooks.scaffold(world, box, onReveal): scaffolding round a building the player upgraded (the scaffold system). The old
 // look stays inside it until onReveal, then the new level pops in. A null answer means no scaffolding: pop at once.
@@ -64,6 +72,7 @@ export function createTown(root, hooks = {}) {
   const entries = new Map();
   let built = [], removed = new Set(), night = false, popping = null, selected = null;
   let placedSig = '', wantPop = new Set(), wantSettle = new Set();
+  const land = createLandWatch();
   let lifeRev = 0, lifeList = [], lifeSeen = -1; // for render/systems/life-*.js: what is standing, and a counter that moves when it changes
 
   // desc -> entry. `base` is the level the building starts at before any upgrade.
@@ -75,7 +84,7 @@ export function createTown(root, hooks = {}) {
     e.level = level;
     e.desc = e.b = { ...e.desc, level };
     e.parts = e.next && e.next.level === level ? e.next.parts : makeParts(e.desc);
-    e.next = null;
+    e.next = null; e.baked = null;
     e.proxy.geometry.dispose();
     e.proxy = proxyFor(e.parts, e.world);
   }
@@ -100,9 +109,14 @@ export function createTown(root, hooks = {}) {
   function rebuild(excludeId) {
     lifeRev++;
     disposeAll(built, group);
-    const items = [];
-    for (const e of entries.values()) if (!removed.has(e.b.id) && e.b.id !== excludeId) items.push(e);
-    built = mergeBuildings(group, items, false);
+    // Each building is baked into world-space arrays once (and again only when its parts change), so a rebuild is a copy.
+    const batch = new Batch();
+    for (const e of entries.values()) {
+      if (removed.has(e.b.id) || e.b.id === excludeId) continue;
+      if (!e.baked) { const one = new Batch(); addToBatch(one, e.parts, e.world, false); e.baked = one.bake(); }
+      batch.addBaked(e.baked);
+    }
+    built = batch.build(group);
     applyNight();
   }
 
@@ -175,11 +189,23 @@ export function createTown(root, hooks = {}) {
         const d = describe(r, e.level);
         if (!d) continue;
         e.desc = e.b = d;
-        e.parts = makeParts(d);
+        e.parts = makeParts(d); e.baked = null;
         e.proxy.geometry.dispose();
         e.proxy = proxyFor(e.parts, e.world);
         if (selected === r.id) setHull(r.id);
         if (hooks.burst) hooks.burst(d.x, d.z, 2.4, 10);
+        dirty = true;
+      }
+      // The terrain tools moved ground under buildings: they stand at their new height.
+      const moved = land.poll();
+      if (moved) for (const r of placed) {
+        const e = entries.get(r.id);
+        if (!e || !(moved.all || touches(r, moved.tiles))) continue;
+        const d = describe(r, e.level);
+        if (!d) continue;
+        e.desc = e.b = d; e.world = worldMatrix(d);
+        e.proxy.geometry.dispose(); e.proxy = proxyFor(e.parts, e.world);
+        if (selected === r.id) setHull(r.id);
         dirty = true;
       }
       let popId = null;

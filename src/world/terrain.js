@@ -134,7 +134,7 @@ function ground(x, z, q) {
   return h;
 }
 
-export function heightAt(x, z) {
+export function baseHeightAt(x, z) {
   if (!SEED) return legacyHeight(x, z);
   const rx = riverX(z), dx = x - rx;
   let h = ground(x, z, dx < 0 ? P : EAST);
@@ -152,3 +152,30 @@ export function heightAt(x, z) {
   const k = (1 - smooth(2.6, 6.5, Math.abs(dx))) * (1 - smooth(112, 130, Math.abs(z))); // the river runs out in the foothills
   return h * (1 - k) + (-1.3) * k;
 }
+
+// ---- the player's edits (world/land.js) ----
+// Offsets at the tile corners, (96 + 1) squared, 3 units apart from x = z = -145.5, blended across each tile. The corner
+// lattice is repeated here (not imported from grid.js) because grid.js reads this file. `ON` skips the blend while a town
+// has no edits, so untouched land costs nothing extra.
+const ECN = 97, EEDGE = -145.5, ET = 3;
+let EDITS = null, ON = false;
+// The town's offsets (a Float32Array of ECN * ECN, kept by reference: the brush changes it in place), or null.
+export function setLandEdits(edits) {
+  const next = edits && edits.length === ECN * ECN ? edits : null;
+  const on = !!next && next.some((v) => v !== 0);
+  if (next === EDITS && on === ON) return;
+  const was = ON;
+  EDITS = next; ON = on;
+  if (was || on) REV++;
+}
+// Call after changing the edits array in place (a brush dab): every cache keyed on terrainRev drops.
+export const landEdits = () => EDITS;
+export function landEdited() { if (!EDITS) return; ON = EDITS.some((v) => v !== 0); REV++; }
+export function editAt(x, z) {
+  if (!ON) return 0;
+  const u = (x - EEDGE) / ET, v = (z - EEDGE) / ET;
+  if (!(u >= 0 && v >= 0 && u <= ECN - 1 && v <= ECN - 1)) return 0;
+  const i = Math.min(ECN - 2, Math.floor(u)), j = Math.min(ECN - 2, Math.floor(v)), fu = u - i, fv = v - j, k = j * ECN + i;
+  return EDITS[k] * (1 - fu) * (1 - fv) + EDITS[k + 1] * fu * (1 - fv) + EDITS[k + ECN] * (1 - fu) * fv + EDITS[k + ECN + 1] * fu * fv;
+}
+export const heightAt = (x, z) => (ON ? baseHeightAt(x, z) + editAt(x, z) : baseHeightAt(x, z));

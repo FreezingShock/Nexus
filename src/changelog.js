@@ -16,6 +16,19 @@ export const KINDS = {
 
 export const CHANGELOG = [
   {
+    v: '0.11.0', date: '2026-10-25', name: 'Tunes on the breeze',
+    blurb: 'Little tunes now drift over the town, and the streets, gardens and river have more to say.',
+    items: [
+      { k: 'sound', t: 'New music: gentle tunes written on the spot for piano, harp, music box, flute and bass, with quiet stretches of town sound in between.' },
+      { k: 'sound', t: 'Each tune fits its moment: bright mornings, busy days, golden dusks and hushed nights, coloured by the season, slowed by rain and quickened on festival days.' },
+      { k: 'sound', t: 'The town has more voices: dogs in the gardens, a cuckoo in spring, frogs by the river on warm nights, far-off thunder in the rain and a crackling hearth on winter nights.' },
+      { k: 'sound', t: 'A handbell rings in the square on market mornings, and a peal of bells greets festival noons.' },
+      { k: 'sound', t: 'A little hamlet hums softly and a busy town hums fuller, and market days liven the streets.' },
+      { k: 'new', t: 'Settings, Sound shows the name of the tune playing, with a Next tune button.' },
+      { k: 'new', t: 'The Terrain tool (U): raise, lower and flatten the land with a soft brush. Roads, homes and trees ride along with the ground.' },
+    ],
+  },
+  {
     v: '0.10.0', date: '2026-10-25', name: 'The welcome mat',
     blurb: 'The front door of Nexus got warmer, brighter and friendlier, with a proper welcome for brand-new mayors.',
     items: [
@@ -61,6 +74,7 @@ export const CHANGELOG = [
       { k: 'new', t: 'The Happiness panel says how many homes are well served and what homes can reach on foot: services, parks, shops and landmarks.', pr: 109 },
       { k: 'look', t: 'Demand is three little columns that fill up, with one line saying what the town wants most and a tidier card.', pr: 109 },
       { k: 'fix', t: 'Roads can pass the end of a side street or touch a street mid-way: that makes a junction now, not "Too close to another street".', pr: 108 },
+      { k: 'better', t: 'Big towns no longer hitch when a building grows or levels up: the town redraws in a blink instead of up to a second.' },
       { k: 'fix', t: 'Drawing on hills lands where you point: roads, zones, buildings and decor no longer slip onto the tile behind a slope.' },
     ],
   },

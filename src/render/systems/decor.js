@@ -6,6 +6,7 @@
 import * as THREE from '../../../vendor/three/three.module.min.js';
 import { toonUncached, hullInk } from '../materials.js';
 import { mergeDecor } from '../decor-geom.js';
+import { createLandWatch } from '../land-watch.js';
 
 const TINT = { ok: new THREE.Color(0x9AD0A0), bad: new THREE.Color(0xE8806A) };
 
@@ -25,9 +26,11 @@ export default {
     const swap = (mesh, geo) => { mesh.geometry.dispose(); mesh.geometry = geo; };
 
     let shown = null, previewKey = '';
+    const land = createLandWatch();
     return {
       frame(f) {
         const list = f.state.decor;
+        if (land.poll()) shown = null; // the terrain tools moved the ground: set every piece on it again
         if (!list || list === shown) return;
         shown = list;
         body.visible = hull.visible = list.length > 0;

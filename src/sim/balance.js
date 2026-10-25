@@ -24,6 +24,9 @@ export const BALANCE = {
     civ: { cost: 36, coins: 0.10, parts: 0.01 },
   },
 
+  // Terrain tools: coins for each unit of ground a dab moves (one tile corner up or down by one). A medium dab moves about 3.
+  land: { perEarth: 12 },
+
   // Parts gates for road types (tier 2 at 450, bus at 1,800, freeway at 4,500). Spent once per type.
   tiers: { bike: 450, one: 450, bus: 1800, free: 4500 },
 

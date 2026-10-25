@@ -4,7 +4,7 @@ Nexus is a static site: no server, no build step for the game itself, no network
 
 ## What the repo provides
 
-- `scripts/build-site.mjs` copies the files the browser needs into `dist/` and leaves out `tests/`, `docs/`, `scripts/`, `package.json`, the markdown files and repo tooling. It changes nothing and bundles nothing (`node scripts/build-site.mjs [outDir]`). New top-level folders are published by default; add a name to `EXCLUDE` in that script to keep one out.
+- `scripts/build-site.mjs` copies the files the browser needs into `dist/` and leaves out `tests/`, `docs/`, `scripts/`, `package.json`, the markdown files and repo tooling. It bundles nothing: every file keeps its path. Our own JS and CSS (`src/`, `css/`) are then minified file by file with esbuild, the one dev dependency (`npm ci` installs it; the game itself never loads it). Without esbuild the files are copied as they are, with a warning in the build log; `--no-minify` does the same on purpose (`node scripts/build-site.mjs [outDir] [--no-minify]`). The build log line `minified src/ and css/: X KB -> Y KB` shows it ran. New top-level folders are published by default; add a name to `EXCLUDE` in that script to keep one out.
 - `_headers` sets `nosniff`, a referrer policy and a locked-down permissions policy on every response, and a one-week cache on the fonts. Code is not fingerprinted, so the page, `src/*` and `css/*` are sent `Cache-Control: no-cache`: the browser asks on every load and gets a 304 when nothing changed, so a new `index.html` never runs beside an old module. The `?v=` on the `main.js` script tag in `index.html` (from `src/version.js`, kept in step by a test) is an extra bust for the entry file only. **Bump `src/version.js` (and `package.json`, and the `?v=` in `index.html`) when promoting a release to `main`**, so returning players fetch the new entry even past an old cache.
 - Locally, `scripts/serve.py` (what `refresh.sh` and `refresh.ps1` start) sends `no-store` on everything. A browser that cached files from an older plain `http.server` can still hold them once: a hard refresh (Cmd+Shift+R, Ctrl+Shift+R) clears it for good.
 - `wrangler.jsonc` tells `wrangler deploy` to publish `dist/`.
@@ -19,7 +19,7 @@ Nexus is a static site: no server, no build step for the game itself, no network
 | --- | --- |
 | Git repository | `FreezingShock/Nexus` |
 | Production branch | `main` |
-| Build command | `node scripts/build-site.mjs` |
+| Build command | `npm ci && node scripts/build-site.mjs` (Workers Builds also installs from `package-lock.json` on its own; the `npm ci` makes sure) |
 | Deploy command | `npx wrangler deploy` |
 | Root directory | `/` |
 | API token | a valid token for the build (use **Create new token** if it says unavailable) |

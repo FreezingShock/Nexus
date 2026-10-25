@@ -47,21 +47,24 @@ export function createGrid(layout) {
   // What the ground is, from the terrain: water, or too steep. Read again by regen() when the land changes (Renewal).
   // Buildable ground is decided by slope: no tile may rise or fall more than 0.9 across its corners and middle. The old
   // land (seed 0) also called everything above 2.2 steep; seeded land has plateaus, so only the mountain tops are barred.
-  const regen = () => {
-    const legacy = terrainSeed() === 0;
-    for (let gz = 0; gz < GRID_N; gz++) for (let gx = 0; gx < GRID_N; gx++) {
-      const [cx, cz] = tileCenter(gx, gz);
-      let lo = Infinity, hi = -Infinity;
-      for (const [dx, dz] of [[0, 0], [-1.5, -1.5], [1.5, -1.5], [-1.5, 1.5], [1.5, 1.5]]) {
-        const h = heightAt(cx + dx, cz + dz);
-        if (h < lo) lo = h; if (h > hi) hi = h;
-      }
-      let k = BASE.LAND;
-      tlo[tileIndex(gx, gz)] = lo; thi[tileIndex(gx, gz)] = hi;
-      if (lo < -0.15 || Math.abs(cx - riverX(cz)) < 5) k = BASE.WATER;
-      else if (hi - lo > 0.9 || hi > (legacy ? 2.2 : MOUNTAIN_TOP)) k = BASE.STEEP;
-      base[tileIndex(gx, gz)] = k;
+  const regenTile = (gx, gz, legacy) => {
+    const [cx, cz] = tileCenter(gx, gz);
+    let lo = Infinity, hi = -Infinity;
+    for (const [dx, dz] of [[0, 0], [-1.5, -1.5], [1.5, -1.5], [-1.5, 1.5], [1.5, 1.5]]) {
+      const h = heightAt(cx + dx, cz + dz);
+      if (h < lo) lo = h; if (h > hi) hi = h;
     }
+    let k = BASE.LAND;
+    tlo[tileIndex(gx, gz)] = lo; thi[tileIndex(gx, gz)] = hi;
+    if (lo < -0.15 || Math.abs(cx - riverX(cz)) < 5) k = BASE.WATER;
+    else if (hi - lo > 0.9 || hi > (legacy ? 2.2 : MOUNTAIN_TOP)) k = BASE.STEEP;
+    base[tileIndex(gx, gz)] = k;
+  };
+  // `tiles` ([[gx, gz], ...]) reads only those again: the terrain tools change a patch at a time.
+  const regen = (tiles = null) => {
+    const legacy = terrainSeed() === 0;
+    if (tiles) { for (const [gx, gz] of tiles) if (inBounds(gx, gz)) regenTile(gx, gz, legacy); return; }
+    for (let gz = 0; gz < GRID_N; gz++) for (let gx = 0; gx < GRID_N; gx++) regenTile(gx, gz, legacy);
   };
   regen();
   const grid = {

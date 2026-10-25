@@ -2,7 +2,7 @@
 // Coins buy each piece (the price creeps up with every piece owned); the rarer kinds need a one-time Parts unlock first.
 // A piece goes quietly, with a full refund, if a road, zone or building is later put on its tile.
 // Undo: placing and clearing push onto sim.undoStack. Rules and prices live in src/world/decor.js.
-import { GRID_N } from '../../world/grid.js';
+import { GRID_N, BASE } from '../../world/grid.js';
 import {
   MAX_DECOR, MAX_DRAG, decorById, decorCost, decorRefund, isOpen, problemAt, problemText, sanitizeDecor, sanitizeUnlocks, takenSet,
 } from '../../world/decor.js';
@@ -12,7 +12,9 @@ function prune({ state, grid }) {
   const kept = [];
   let back = 0;
   for (const d of state.decor) {
-    if (problemAt(grid, d.gx, d.gz, null)) back += decorById(d.k).cost;
+    const p = problemAt(grid, d.gx, d.gz, null);
+    // Ground the terrain tools tilted keeps its pieces; only water, roads and buildings push one out.
+    if (p && !(p === 'ground' && grid.baseAt(d.gx, d.gz) === BASE.STEEP)) back += decorById(d.k).cost;
     else kept.push(d);
   }
   if (kept.length !== state.decor.length) { state.decor = kept; state.coins += back; return back; }

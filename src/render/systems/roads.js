@@ -2,14 +2,16 @@
 // the traffic tint (congestion classes from grid.load, set by the traffic sim) and the ghost preview that the pencil tool drives (scene.sys('roads')).
 //   preview({ key, tiles: [{ gx, gz, t, d }], bad })   show a ghost of the roads a stroke would lay (key skips rebuilds)
 //   clearPreview()
-// Chunks are 16 x 16 tiles and cost two draw calls each (one vertex-colored mesh, one line buffer).
+// Chunks are 24 x 24 tiles (a 4 x 4 map) and cost two draw calls each (one vertex-colored mesh, one line buffer). 16-tile
+// chunks cost up to 72 calls on a well-roaded map; 24 caps it at 32 and an edit rebuilds its chunk in a few ms.
 import { GRID_N } from '../../world/grid.js';
 import { DIRS, connMask, shapeOf } from '../../world/roadnet.js';
 import { hash } from '../../world/terrain.js';
 import { Acc, ASPHALT, emitTiles, groundY, roadMaterial, tileWorld } from '../road-mesh.js';
 import { allocInstanceColors } from '../geom.js';
+import { createLandWatch } from '../land-watch.js';
 
-const CHUNK = 16, PER_ROW = GRID_N / CHUNK;
+const CHUNK = 24, PER_ROW = GRID_N / CHUNK;
 const TRAFFIC = [null, [0.616, 0.702, 0.486], [0.851, 0.706, 0.373], [0.722, 0.278, 0.18]]; // by class: free, busy, jammed
 const WAVES = 5, WAVE_GAP = 0.07, POP_S = 0.4;
 const MAX_LAMPS = 260, MAX_PUFFS = 80;
@@ -37,6 +39,7 @@ export default {
     const dirty = new Set();
     const puffQueue = [];
     let ghost = null;
+    const land = createLandWatch();
 
     // ---- chunks ----
     function dropChunk(id) {
@@ -208,6 +211,13 @@ export default {
       frame(f) {
         clock = f.t;
         if (f.state.roads !== roads) sync(f.state.roads);
+        // The terrain tools moved ground: redraw the road chunks on it (roads follow the land).
+        const moved = land.poll();
+        if (moved && roads) {
+          if (moved.all) for (const k of Object.keys(roads)) dirty.add(chunkOf(Number(k)));
+          else for (const i of moved.tiles) if (roads[i]) dirty.add(chunkOf(i));
+          rebuildDirty();
+        }
         const want = f.tool === 'traffic';
         if (want !== traffic) { traffic = want; for (const c of chunks.values()) tint(c); }
         if (traffic && grid.loadRev !== seenLoad) { seenLoad = grid.loadRev; for (const c of chunks.values()) tint(c); }

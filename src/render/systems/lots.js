@@ -7,6 +7,7 @@ import { Batch } from '../geom.js';
 import { lineMat } from '../materials.js';
 import { addHull, placeHull, proxyFor, partsBox } from '../town.js';
 import { lotDescription, lotId, lotTileOf } from '../../world/lots.js';
+import { createLandWatch } from '../land-watch.js';
 
 const POP_S = 0.62;
 const REBUILD_GAP_S = 0.3;
@@ -30,6 +31,7 @@ export default {
     let rev = -1, dirty = false, since = 1, night = false, first = true;
     let lifeRev = 0, lifeList = []; // for render/systems/life-*.js: the grown lots standing in the merged meshes
     const m = new THREE.Matrix4();
+    const land = createLandWatch();
 
     const roadAt = (gx, gz) => grid.roadAt(gx, gz) !== 0;
     let paintSig = '', townPaint = null; // the town-wide paint grown lots wear (state.townPaint), part of every lot's cache key
@@ -56,23 +58,24 @@ export default {
       cache.delete(key);
     }
 
-    // Same as buildings.js addToBatch (plain parts share the vertex-color material), with the ink edges cached.
+    // Same as buildings.js addToBatch (plain parts share the vertex-color material), with the ink edges cached. Each
+    // building is baked into world-space arrays once, so a rebuild of the whole town is a copy, not a transform.
     function addToBatch(batch, e) {
-      const vc = toonVC();
-      e.parts.forEach((p, k) => {
-        m.multiplyMatrices(e.world, p.local);
-        if (p.body) {
-          for (const s of p.splits) {
-            const walls = s.materialIndex === 0 || s.materialIndex === 1 || s.materialIndex === 4 || s.materialIndex === 5;
-            if (walls) batch.add(s.geo, p.facadeMat, m); else batch.add(s.geo, vc, m, { color: p.color });
-          }
-        } else batch.add(p.geo, vc, m, { color: p.color });
-        const ed = e.edges[k];
-        if (ed) {
-          const v = new THREE.Vector3();
-          for (let i = 0; i < ed.length; i += 3) { v.set(ed[i], ed[i + 1], ed[i + 2]).applyMatrix4(m); batch.lines.push(v.x, v.y, v.z); }
-        }
-      });
+      if (!e.baked) {
+        const one = new Batch(), vc = toonVC();
+        e.parts.forEach((p, k) => {
+          m.multiplyMatrices(e.world, p.local);
+          if (p.body) {
+            for (const s of p.splits) {
+              const walls = s.materialIndex === 0 || s.materialIndex === 1 || s.materialIndex === 4 || s.materialIndex === 5;
+              if (walls) one.add(s.geo, p.facadeMat, m); else one.add(s.geo, vc, m, { color: p.color });
+            }
+          } else one.add(p.geo, vc, m, { color: p.color });
+          if (e.edges[k]) one.addLines(e.edges[k], m);
+        });
+        e.baked = one.bake();
+      }
+      batch.addBaked(e.baked);
     }
     function applyNight() {
       for (const mesh of built) if (mesh.isMesh && nightWall(mesh.userData.day)) mesh.material = night ? nightWall(mesh.userData.day) : mesh.userData.day;
@@ -174,6 +177,9 @@ export default {
     return {
       frame(f) {
         if (f.state.zoneRev !== rev) { rev = f.state.zoneRev; sync(f.state); }
+        // The terrain tools moved ground: buildings on it are described again at their new height.
+        const moved = land.poll();
+        if (moved) for (const l of liveLots) if (moved.all || moved.tiles.has(l[0])) { dropEntry(keyOf(l)); dirty = true; }
         since += f.dt;
         const lotPop = selected ? pops.find((p) => p.tile === lotTileOf(selected)) : null;
         for (const p of pops) {

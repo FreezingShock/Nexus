@@ -4,6 +4,7 @@
 //   paint(layer, tiles, opts)      tiles: [[gx, gz, hexColor?], ...]; opts: { color, opacity, outline }; [] clears the layer
 import { createGrid, BASE, GRID_N, GRID_HALF, TILE } from '../../world/grid.js';
 import { groundY } from '../road-mesh.js';
+import { createLandWatch } from '../land-watch.js';
 
 const CAP = 1600; // tiles per paint layer
 
@@ -13,6 +14,7 @@ export default {
     const group = new THREE.Group(); world.add(group);
     const lineMat = new THREE.LineBasicMaterial({ color: 0x2B2620, transparent: true, opacity: 0, depthWrite: false });
     let lines = null, want = 0, amount = 0;
+    const land = createLandWatch();
 
     function buildLines() {
       const grid = createGrid(layout), pos = [], seen = new Set();
@@ -75,6 +77,8 @@ export default {
         L.edge.visible = outline && n > 0; L.lmat.opacity = Math.min(1, opacity + 0.35);
       },
       frame(f) {
+        // The terrain tools moved the ground: draw the lines again (on the new ground) the next time they show.
+        if (land.poll() && lines) { group.remove(lines); lines.geometry.dispose(); lines = null; if (want) { buildLines(); lines.visible = true; } }
         amount += (want - amount) * Math.min(1, f.dt * 9);
         if (Math.abs(want - amount) < 0.01) amount = want;
         lineMat.opacity = amount * (0.2 + 0.04 * Math.sin(f.t * 2));
