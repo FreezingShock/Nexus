@@ -1,31 +1,8 @@
-// The offline return: an envelope that opens to a postcard. Numbers come from the closed-form catch-up.
+// The offline return: an envelope that opens to a postcard. Numbers come from the closed-form catch-up. What the card
+// says lives in postcard-note.js; the flight of coins and parts into the HUD on collect lives in collect-fx.js.
 import { $, fmt, fmtDuration, fmtPostmark } from './format.js';
-
-const BASE_NOTES = [
-  'Dear mayor, everything stayed cozy while you were away. The lamps are lit, the river is calm and the bakery is still warm.',
-  'Dear mayor, the streets were quiet and the cars kept their slow, steady rounds. Come and see what grew.',
-  'Dear mayor, a gentle breeze moved through the pines and every chimney stayed warm. We saved your seat.',
-];
-
-function note(log, night) {
-  const last = log[log.length - 1];
-  let m = BASE_NOTES[Math.floor(Math.random() * BASE_NOTES.length)];
-  if (last) {
-    const n = last.n.toLowerCase();
-    if (last.k === 'up') m = 'Dear mayor, your ' + n + ' has been shining since the upgrade, and the neighbours keep stopping to look at it.';
-    else if (last.k === 'road') m = 'Dear mayor, the new road is open and the first cars have already found it. Traffic has never felt so calm.';
-    else if (last.k === 'doze') m = 'Dear mayor, the lot where the ' + n + ' stood is quiet now, and wildflowers are starting to come up.';
-  }
-  return night ? m + ' The lamps look lovely tonight.' : m;
-}
-
-// A line about the days that went by: how many, and the festivals the town kept without you.
-function awayCalendar(o) {
-  if (!o.days) return '';
-  const fests = (o.festivals || []).map((f) => f.name + (f.count > 1 ? ' (' + f.count + ' times)' : ''));
-  const days = o.days + (o.days > 1 ? ' days' : ' day') + ' went by.';
-  return ' ' + days + (fests.length ? ' We kept ' + fests.join(', ') + ' for you.' : '');
-}
+import { writeNote, postscript } from './postcard-note.js';
+import { burst } from './collect-fx.js';
 
 function caption(night) {
   const h = new Date().getHours();
@@ -41,9 +18,9 @@ function postmark(text) {
 
 const PREVIEW = { awayS: 6 * 3600 + 40 * 60, fullS: 4 * 3600, easeS: 2 * 3600 + 40 * 60, coins: 48250, parts: 312 };
 
-export function createPostcard({ sim, send, scene }) {
+export function createPostcard({ sim, send, scene, hud }) {
   const modal = $('offline'), mail = $('mail');
-  let open = false, previewing = false;
+  let open = false, previewing = false, current = null;
 
   // `sample` previews the postcard with made-up numbers (Settings). Collecting then pays nothing.
   function show(sample) {
@@ -51,17 +28,17 @@ export function createPostcard({ sim, send, scene }) {
     if (!o) return;
     previewing = !!sample;
     $('awaytime').textContent = fmtDuration(o.awayS);
+    $('awaytime').title = o.easeS > 60 ? fmtDuration(o.fullS) + ' at full rate, then ' + fmtDuration(o.easeS) + ' easing off' : 'All at full rate';
     // The second postmark gets a distinct arc id so the two <textPath> references do not clash.
     document.querySelectorAll('.pm-host').forEach((h, i) => { h.innerHTML = postmark(fmtPostmark(o.awayS)).replace(/pm-arc/g, 'pm-arc' + i); });
-    const full = Math.max(o.fullS, 1), ease = o.easeS;
-    $('bar-full').style.flex = String(full); $('bar-ease').style.flex = String(ease); $('bar-ease').style.display = ease > 60 ? '' : 'none';
-    $('bars').setAttribute('aria-label', fmtDuration(o.fullS) + ' at full rate' + (ease > 60 ? ', then ' + fmtDuration(ease) + ' easing off' : ''));
-    $('cap-full').textContent = fmtDuration(o.fullS) + ' full rate';
-    $('cap-ease').textContent = ease > 60 ? fmtDuration(ease) + ' easing off' : '';
     $('gain-coins').textContent = '+' + fmt(o.coins);
     $('gain-parts').textContent = '+' + fmt(o.parts);
-    $('pcmsg').textContent = note(sim.state.log, sim.state.night) + awayCalendar(o);
+    $('gain-p').hidden = !(o.parts >= 1);
+    $('pcmsg').textContent = writeNote({ log: sim.state.log, night: sim.state.night, offline: o, town: sim.state.town });
+    $('pcps').textContent = postscript(o);
+    $('pctown').textContent = (sim.state.town && sim.state.town.name) || 'Nexus';
     $('photocap').textContent = caption(sim.state.night);
+    current = o;
     mail.dataset.state = 'closed';
     modal.hidden = false; open = true;
     scene.snapshot($('snap'));
@@ -77,7 +54,21 @@ export function createPostcard({ sim, send, scene }) {
   }
   $('envelope').onclick = openMail;
   $('envelope').onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openMail(); } };
-  $('collect').onclick = () => { if (!previewing) send({ type: 'collectOffline' }); hide(); };
+  // Collect: the sim pays at once, the HUD holds the amounts back, and icons burst from the button into the counters,
+  // each landing letting its share in. A preview flies the icons but pays nothing, so the counters stay put.
+  const ICONS = { coins: $('gain-c').querySelector('svg').outerHTML, parts: $('gain-p').querySelector('svg').outerHTML };
+  $('collect').onclick = () => {
+    const o = current, from = $('collect');
+    if (!o || !open) return;
+    const pay = !previewing;
+    if (pay) { hud.hold('coins', Math.floor(o.coins)); hud.hold('parts', Math.floor(o.parts)); send({ type: 'collectOffline' }); }
+    const kinds = ['coins', 'parts'].map((key) => ({
+      key, amount: o[key], target: hud.badgeOf(key), icon: ICONS[key],
+      onLand: (share, last) => { if (pay) hud.land(key, share, last ? '+' + fmt(o[key]) : ''); },
+    }));
+    burst(from, kinds);
+    hide();
+  };
 
   return {
     show, hide, preview: () => show(PREVIEW), isOpen: () => open,
