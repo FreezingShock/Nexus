@@ -5,11 +5,12 @@
 // src/ui/notebook.js, the same the town's pages use.
 import { MODES, MODE_LABEL } from '../core/theme.js';
 import { $, fmt } from './format.js';
-import { AUTHOR, AUTHOR_HANDLE, VERSION } from '../version.js';
+import { AUTHOR, VERSION } from '../version.js';
 import { CHANGELOG, KINDS, newSince, kindCounts } from '../changelog.js';
 import { CREDITS, saveLine, tipOfTheDay } from '../core/boot.js';
 import { createPageSounds } from '../audio/page-sounds.js';
 import { createNotebook, notebookMarkup } from './notebook.js';
+import { createFeedbackBox } from './feedback-box.js';
 import { ICONS, KIND_ICONS, STEP_ICONS, EMBLEM_ICONS, GROUP_ICONS } from './title-icons.js';
 import { RANKS, EMBLEMS, COLORS, rankFor, initials, playTime, NAME_MAX } from '../core/profile.js';
 import { GOALS, GROUPS, STAGES, standing, summary, nearest, fmtTarget } from '../sim/achievements.js';
@@ -77,7 +78,8 @@ const VERSION_COLORS = ['#B8472E', '#5F7A3E', '#C08A2E', '#35566A', '#97553E', '
 
 export function createTitle({ onPlay, onNewTown }) {
   const title = $('title'), boot = $('boot'), play = $('tt-play'), list = $('tt-list');
-  title.querySelector('.tt-credit').insertAdjacentHTML('beforebegin', notebookMarkup('tt'));
+  createFeedbackBox(title);
+  title.insertAdjacentHTML('beforeend', notebookMarkup('tt'));
   const body = $('tt-sheet-body');
   let ready = false, stores = null, isNew = false, filter = 'all', town = null;
   const seen = readSeen();
@@ -85,8 +87,7 @@ export function createTitle({ onPlay, onNewTown }) {
   const sounds = createPageSounds({ getSettings: () => (stores ? stores.sound.get() : null) });
 
   $('tt-ver').textContent = 'v' + VERSION;
-  $('tt-made').textContent = 'Made with care by ' + AUTHOR;
-  $('tt-credit').innerHTML = `Made by <b>${esc(AUTHOR)}</b> <i>(${esc(AUTHOR_HANDLE)})</i>`;
+  $('tt-made').textContent = 'Made by ' + AUTHOR;
   $('tt-tip').innerHTML = '<b>Tip</b> ' + esc(tipOfTheDay(new Date()));
 
   // ---- the rows

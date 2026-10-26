@@ -25,6 +25,8 @@ export const CHANGELOG = [
       { k: 'new', t: "Fireworks on the Fourth of July and New Year's Eve: after dark rockets climb from the middle of town and burst into rings, gold willows and crackles, with a big finale at midnight." },
       { k: 'sound', t: 'Fireworks whistle up and boom softly from across town.' },
       { k: 'look', t: 'The calendar (K) shows the festive season under way with how dressed the town is, or the next one coming, and the date plaque wears the event\'s badge.' },
+      { k: 'look', t: 'Nexus has a new hand-drawn emblem: a little hilltop town by the river, on the title screen, the loading screen and the browser tab.' },
+      { k: 'new', t: 'Ideas & feedback: a note in the title screen\'s corner where you can send ideas, bugs or a hello straight to the maker. Written offline? It waits and goes next time.' },
       { k: 'look', t: 'The welcome-back postcard is a real postcard now: a short landscape card with your town on the picture side, a little note, a stamp and your takings on the address lines.' },
       { k: 'better', t: 'Click the envelope to open it (the button that sent it sliding away is gone), and the envelope and card stay centred.' },
       { k: 'new', t: 'Collecting your takings bursts coins and parts out of the button and sends them flying into your counters, which climb as each one lands.' },
