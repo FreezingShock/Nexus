@@ -10,6 +10,7 @@ import { DIRS, connMask, dirsOfMask, opposite } from '../world/roadnet.js';
 import { makeRng } from '../world/rng.js';
 import { groundY, tileWorld } from './road-mesh.js';
 import { TUNNEL_GATE } from '../world/starter.js';
+import { costumeLayer } from './festive/costumes.js';
 
 const MAX = 500, TARGET = 300, PER_ROAD_TILE = 0.5;
 const SPEED = 1.6, TILE = 3, PAVEMENT = 1.35; // units per second, tile size, offset from the road centre
@@ -64,6 +65,8 @@ export function buildTownsfolk(parent, grid, camera) {
   const parts = [coat, legs, head, hair];
   const col = new THREE.Color();
   parent.add(...parts);
+  const costume = costumeLayer(parent, coat, MAX); // festive costumes ride on the coats' matrices
+  let event = '';
 
   const people = [];
   const out = new Int32Array(MAX), seen = { hour: -1, n: -1, day: -1, count: 0 }, walking = new Set();
@@ -85,6 +88,7 @@ export function buildTownsfolk(parent, grid, camera) {
     legs.setColorAt(i, col.setHex(pick(TROUSERS, 35)));
     head.setColorAt(i, col.setHex(pick(SKIN, 36)));
     hair.setColorAt(i, col.setHex(elder ? 0xD8CFC0 : pick(HAIR, 37)));
+    costume.dress(i, event, id);
   }
   const hide = (i) => { for (const m of parts) m.setMatrixAt(i, ZERO); };
 
@@ -161,8 +165,9 @@ export function buildTownsfolk(parent, grid, camera) {
 
   return {
     // hour is the town clock (state.routineHour). The walkers on screen are the residents whose walk window is open now.
-    update(dt, next, pop, live, hour, day = 0) {
+    update(dt, next, pop, live, hour, day = 0, ev = '') {
       arrive = live ? live.perS : 0;
+      if (ev !== event) { event = ev; people.forEach((p, i) => costume.dress(i, event, p.person >= 0 ? p.person : i)); }
       if (next !== roads) {
         roads = next;
         roadTiles = Object.keys(next).map(Number);
@@ -211,6 +216,7 @@ export function buildTownsfolk(parent, grid, camera) {
         for (const m of parts) m.setMatrixAt(i, mtx);
       });
       for (const m of parts) { m.count = people.length; m.instanceMatrix.needsUpdate = true; }
+      costume.sync();
     },
     count: () => people.filter((p) => p.alive && p.mode !== 'inside').length,
     setCrowd(c) { crowd = c; },
