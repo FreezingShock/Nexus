@@ -8,6 +8,16 @@ import { plaqueLine, townHoverHtml } from './town-view.js';
 export function createHud({ sim, send, onSettings, calendar }) {
   let acc = 0, toastTimer = 0;
   const s = sim.state;
+  // Amounts already in the sim but still flying in from the postcard (collect-fx.js). The counters leave them out until
+  // each icon lands, so the number climbs as they arrive.
+  const held = { coins: 0, parts: 0 };
+  const CHIP = { coins: 'coinschip', parts: 'partschip' };
+  function paintRes() {
+    const d = sim.display(1);
+    $('coins').textContent = fmtCompact(Math.max(0, d.coins - held.coins));
+    $('parts').textContent = fmtCompact(Math.max(0, d.parts - held.parts));
+  }
+  function restart(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
 
   function toast(text) {
     const el = $('toast');
@@ -96,14 +106,29 @@ export function createHud({ sim, send, onSettings, calendar }) {
 
   return {
     toast, sync,
+    // Hold an amount back from a counter; land(key, share) lets part of it in, with a squish, and `tag` pops "+amount".
+    hold(key, amount) { held[key] = Math.max(0, amount || 0); paintRes(); },
+    land(key, share, tag) {
+      held[key] = tag ? 0 : Math.max(0, held[key] - share);
+      paintRes();
+      const chip = $(CHIP[key]);
+      restart(chip, 'got');
+      if (tag) {
+        const t = document.createElement('span');
+        t.className = 'got-tag'; t.textContent = tag;
+        chip.appendChild(t);
+        setTimeout(() => t.remove(), 1400);
+      }
+    },
+    badgeOf: (key) => $(CHIP[key]).querySelector('.badge'),
     // Called every frame; the DOM is only touched five times a second.
     frame(dt, alpha, force) {
       acc += dt;
       if (acc < 0.2 && !force) return false;
       acc = 0;
       const d = sim.display(alpha);
-      $('coins').textContent = fmtCompact(d.coins);
-      $('parts').textContent = fmtCompact(d.parts);
+      $('coins').textContent = fmtCompact(Math.max(0, d.coins - held.coins));
+      $('parts').textContent = fmtCompact(Math.max(0, d.parts - held.parts));
       paintTown(); // the line under the name follows the population
       paintCards();
       return true;

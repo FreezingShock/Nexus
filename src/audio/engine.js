@@ -236,6 +236,11 @@ export function createEngine({ win = globalThis } = {}) {
     renew: (t) => [523.25, 783.99, 1046.5].forEach((f, i) => bell(t + i * 0.14, f, 2.8, 0.18)),
     charge: (t) => { sweep(t, 'lowpass', 300, 2600, 0.7, 0.12); blip(t, 260, 0.7, 0.04, 'sine', 620); },
     postcard: (t) => { noiseBurst(t, 'highpass', 3000, 0.22, 0.07); blip(t + 0.3, 120, 0.05, 0.16); },
+    // Collecting the postcard: a soft pop as the icons burst out, then a clink per coin and a wooden tock per part as
+    // they land, each a step higher than the last.
+    burst: (t) => { noiseBurst(t, 'bandpass', 1400, 0.12, 0.07); blip(t, 330, 0.14, 0.06, 'sine', 660); },
+    coin: (t, o) => { const f = 1318.5 * Math.pow(2, Math.min(o.n || 1, 16) / 24); blip(t, f, 0.09, 0.035, 'triangle', f * 1.02); blip(t + 0.02, f * 2, 0.06, 0.012, 'sine'); },
+    part: (t, o) => { const f = 392 * Math.pow(2, Math.min(o.n || 1, 16) / 24); blip(t, f, 0.06, 0.05, 'square', f * 0.9); noiseBurst(t, 'bandpass', 900, 0.03, 0.03); },
     // A family arriving: two soft rising notes. A sparkle: one tiny high twinkle.
     arrive: (t) => { bell(t, 659.25, 1.1, 0.07, 0.5); bell(t + 0.16, 987.77, 1.4, 0.06, 0.5); },
     sparkle: (t) => { blip(t, 2093, 0.14, 0.02, 'sine', 2349); blip(t + 0.07, 3135.96, 0.12, 0.014, 'sine'); },

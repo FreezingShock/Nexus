@@ -143,25 +143,26 @@
         <span class="tape env-tape" aria-hidden="true"></span>
         <div class="env-addr"><b>For the mayor</b><i></i><i></i><span>From your town, with love</span></div>
         <div class="stampw"><div class="stamp"><canvas id="stamp1" width="140" height="160"></canvas><span>NEXUS</span></div><span class="pm-host"></span></div>
-        <button class="btn primary openbtn" id="openmail" style="height:56px;font-size:18px" tabindex="-1">Open the postcard</button>
       </div>
+      <p class="env-hint" aria-hidden="true">Click the envelope to open it</p>
       <article class="postcard" id="postcard" aria-labelledby="pctitle">
         <span class="tape sage pc-tape" aria-hidden="true"></span>
-        <div class="pc-photo"><figure class="photo"><span class="tape t1" aria-hidden="true"></span><span class="tape rose t2" aria-hidden="true"></span><canvas id="snap" width="480" height="360" role="img" aria-label="Snapshot of your town"></canvas><figcaption id="photocap">Our town this evening</figcaption></figure></div>
-        <div class="pc-text">
-          <div class="pc-head"><h2 class="h-disp" id="pctitle">Welcome<br>back</h2><div class="stampw"><div class="stamp"><canvas id="stamp2" width="140" height="160"></canvas><span>NEXUS</span></div><span class="pm-host"></span></div></div>
+        <div class="pc-front"><canvas id="snap" width="480" height="360" role="img" aria-label="Snapshot of your town"></canvas><h2 class="pc-greet" id="pctitle"><small>Greetings from</small><b id="pctown">Nexus</b></h2><span class="pc-cap" id="photocap">Our town this evening</span></div>
+        <div class="pc-back">
           <p class="pc-msg" id="pcmsg"></p>
-          <div class="away"><span>Time away</span><b id="awaytime">6 h 40 min</b></div>
-          <div class="bars" id="bars" role="img"><i id="bar-full" style="flex:1;background:repeating-linear-gradient(135deg,#A8C179 0 8px,#B9D08C 8px 16px)"></i><i id="bar-ease" style="flex:0;background:linear-gradient(90deg,#C9C48A,#E4DAC0)"></i></div>
-          <div class="cap"><span id="cap-full"></span><span id="cap-ease"></span></div>
-          <div class="gain">
-            <div><span class="badge" style="background:#E6BC62"><svg width="24" height="24" viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="9" fill="#F3D58A" stroke="#2B2620" stroke-width="2"/><circle cx="13" cy="13" r="4.5" fill="none" stroke="#2B2620" stroke-width="1.8"/></svg></span><span><b id="gain-coins">+0</b><small>Coins</small></span></div>
-            <div><span class="badge" style="background:#E3A08E"><svg width="24" height="24" viewBox="0 0 26 26" aria-hidden="true"><rect x="3" y="7" width="20" height="13" rx="2" fill="#C98A6E" stroke="#2B2620" stroke-width="2"/><path d="M3 13.5H23M11 7V13.5M17 13.5V20" stroke="#2B2620" stroke-width="1.6" fill="none"/></svg></span><span><b id="gain-parts">+0</b><small>Parts</small></span></div>
+          <div class="pc-right">
+            <div class="stampw"><div class="stamp"><canvas id="stamp2" width="140" height="160"></canvas><span>NEXUS</span></div><span class="pm-host"></span></div>
+            <ul class="pc-addr">
+              <li class="pc-to">To the mayor</li>
+              <li><span>Away</span><b id="awaytime">6 h 40 min</b></li>
+              <li id="gain-c"><span class="mini coin" aria-hidden="true"><svg viewBox="0 0 26 26"><circle cx="13" cy="13" r="9" fill="#F3D58A" stroke="#2B2620" stroke-width="2"/><circle cx="13" cy="13" r="4.5" fill="none" stroke="#2B2620" stroke-width="1.8"/></svg></span><span>Coins</span><b id="gain-coins">+0</b></li>
+              <li id="gain-p"><span class="mini part" aria-hidden="true"><svg viewBox="0 0 26 26"><rect x="3" y="7" width="20" height="13" rx="2" fill="#C98A6E" stroke="#2B2620" stroke-width="2"/><path d="M3 13.5H23M11 7V13.5M17 13.5V20" stroke="#2B2620" stroke-width="1.6" fill="none"/></svg></span><span>Parts</span><b id="gain-parts">+0</b></li>
+            </ul>
           </div>
-          <p class="ps">P.S. Nothing broke and nothing was lost. Income eases off after 4 hours away, up to 24 hours.</p>
-          <button class="btn primary collect" id="collect"><span>Collect and continue</span><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11H17M12 5.5L17.5 11L12 16.5"/></svg></button>
+          <p class="ps" id="pcps"></p>
         </div>
       </article>
+      <button class="btn primary collect" id="collect"><span>Collect and continue</span><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11H17M12 5.5L17.5 11L12 16.5"/></svg></button>
     </div>
   </div>
 </div>
