@@ -17,7 +17,7 @@ test('the plaque and the hover card read the date in words', () => {
 
 test('upcoming festivals are in order, with distances', () => {
   const up = upcoming(s, 3, 3);
-  assert.deepEqual(up.map((u) => u.id), ['blossom', 'midsummer', 'harvest']);
+  assert.deepEqual(up.map((u) => u.id), ['blossom', 'midsummer', 'july4']);
   assert.equal(up[0].inDays, 4);
   assert.ok(up[0].inDays < up[1].inDays);
 });

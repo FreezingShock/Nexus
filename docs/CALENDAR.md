@@ -17,6 +17,16 @@ A row in `HOLIDAYS` is `{ id, name, month, at: 'first' | 'mid' | 'last', text }`
 Events raised (sim events other systems and the UI can read): `newDay`, `newMonth`, `holiday` (`id`, `title`, `text`; a postcard note), `market` (a toast), `firstSnow`, `skipped`.
 Time away and skips count festivals in closed form (`holidaysBetween`), not by walking days.
 
+## Seasonal events
+
+`src/core/events.js` holds the events the whole town dresses up for: the Fourth of July (July), Halloween (October) and
+Christmas (December, with New Year's Eve). An event covers whole months of the game calendar and builds to its holiday:
+on the first morning about a third of the town puts decorations up, more each day, and every street is dressed by the
+holiday. Derived on `state` (never saved): `event` (id or `''`), `eventCover` (0 to 1), `eventPeak` (1 on the big day)
+and `fireworks` (1 on the Fourth and on New Year's Eve). The sim raises `eventStart` (a postcard) the morning an event
+begins. The calendar panel shows the season under way with a decorations bar, or the next one coming; the date plaque
+wears the event's glyph. Render and sound read the state fields; nothing here touches the save.
+
 ## Skipping
 
 `sim.skipToDay(dayIdx)` (command `skipToDay`) jumps to the dawn of a day up to two years ahead. It is one evaluation of every system's `offline` hook with the skipped time at 50% income (`SKIP_INCOME` in `sim/offline.js`), then sets the clock exactly on the target. Never a loop over ticks. Past days and over-far days are refused.

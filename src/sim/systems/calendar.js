@@ -5,6 +5,7 @@
 import { SEASONS, SOUND_WEATHER, WEATHER, dateOfDay, dayIndexOf, dayLengthS, hourOfDays, lightAt, monthDaysOf, nextSeed,
   pickWeather, unitOf, weatherSpanS } from '../../core/calendar.js';
 import { HOLIDAYS, MARKET, holidayOn, holidaysBetween, marketOn } from '../../core/holidays.js';
+import { eventOn } from '../../core/events.js';
 
 const SNOW_SEASON = SEASONS.indexOf('winter');
 const FIRST_SNOW = HOLIDAYS.find((h) => h.weather);
@@ -31,6 +32,8 @@ function view(state, opts) {
 //   state.year, state.month (0 to 11, January is 0), state.dayOfMonth (from 1): today's date
 //   state.holiday      the id of today's festival ('' on an ordinary day; see core/holidays.js)
 //   state.market       1 on a market day
+//   state.event        the seasonal event under way ('' if none; see core/events.js), state.eventCover 0 to 1 (the share
+//                      of buildings dressed up today), state.eventPeak 1 on its big day, state.fireworks 1 on a fireworks night
 export function refreshCalendar(ctx) {
   const { state, sim } = ctx;
   const v = view(state, sim.calendarOptions);
@@ -48,6 +51,11 @@ export function refreshCalendar(ctx) {
   const fest = holidayOn(v.date.dayIdx, v.date.monthDays);
   state.holiday = fest ? fest.id : (state.snowDay === v.date.dayIdx ? FIRST_SNOW.id : '');
   state.market = marketOn(v.date.dayIdx) ? 1 : 0;
+  const ev = eventOn(v.date.dayIdx, v.date.monthDays);
+  state.event = ev ? ev.id : '';
+  state.eventCover = ev ? ev.cover : 0;
+  state.eventPeak = ev && ev.peak ? 1 : 0;
+  state.fireworks = ev && ev.fireworks ? 1 : 0;
 }
 
 // Rolls a new weather when the current one has run out. A snowfall in a winter the town has not seen snow in yet
@@ -76,6 +84,8 @@ function newDay(ctx) {
   const fest = holidayOn(state.dayIdx, md);
   if (fest) emit({ type: 'holiday', id: fest.id, title: fest.name, text: fest.text });
   if (marketOn(state.dayIdx)) emit({ type: 'market', id: 'market', text: MARKET.text });
+  const ev = eventOn(state.dayIdx, md);
+  if (ev && ev.day === 0) emit({ type: 'eventStart', id: ev.id, title: ev.event.name + ' season', text: ev.event.start, tint: ev.event.accent });
 }
 
 function advance(ctx, quiet) {
@@ -112,7 +122,7 @@ export default {
     snowYear: -1,         // the season-year (March to February) the first-snow event last fired for
     snowDay: -1,          // the day number the last first snow fell on (derived, not saved)
     // Derived, recomputed by refreshCalendar and never saved: what the player sees.
-    dayIdx: 0, year: 1, month: 2, dayOfMonth: 1, holiday: '', market: 0,
+    dayIdx: 0, year: 1, month: 2, dayOfMonth: 1, holiday: '', market: 0, event: '', eventCover: 0, eventPeak: 0, fireworks: 0,
     hour: 8, routineHour: 8, season: 'spring', weather: 'clear', weatherKind: 'clear', night: 0,
   }),
   commands: {

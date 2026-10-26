@@ -9,15 +9,18 @@ export const HOLIDAYS = [
   { id: 'thaw', name: 'Thaw Day', month: 1, at: 'last', text: 'Icicles drip and the river runs again. Spring is close.' },
   { id: 'blossom', name: 'Blossom Fair', month: 3, at: 'mid', text: 'Petals on the breeze, and stalls down the high street. The Blossom Fair is on.' },
   { id: 'midsummer', name: 'Midsummer Fete', month: 5, at: 'mid', text: 'The longest light of the year. The whole town is out on the green.' },
-  { id: 'harvest', name: 'Harvest Feast', month: 9, at: 'mid', text: 'The fields are in. Long tables, warm bread and a lot of thank-yous.' },
+  { id: 'july4', name: 'Fourth of July', month: 6, at: 'mid', text: 'Flags on every porch, a picnic on the green, and fireworks once it gets dark.' },
+  { id: 'harvest', name: 'Harvest Feast', month: 8, at: 'mid', text: 'The fields are in. Long tables, warm bread and a lot of thank-yous.' },
+  { id: 'halloween', name: 'Halloween', month: 9, at: 'last', text: 'Pumpkins grin on every step, and little ghosts and witches go door to door.' },
   { id: 'lantern', name: 'Lantern Night', month: 10, at: 'first', text: 'Paper lanterns glow in every window tonight.' },
-  { id: 'hearth', name: 'Hearth Eve', month: 11, at: 'last', text: 'Chimneys smoke and the town stays in, close and warm.' },
+  { id: 'christmas', name: 'Christmas', month: 11, at: 'mid', text: 'Snowy roofs, twinkling lights and a tree in the square. Merry Christmas, mayor.' },
+  { id: 'nye', name: "New Year's Eve", month: 11, at: 'last', text: 'The whole town stays up late. Fireworks at midnight!' },
   { id: 'firstsnow', name: 'First Snow', weather: true, text: 'The first snow dusts the rooftops. The town goes quiet and bright.' },
 ];
 export const MARKET = { every: 3, phase: 2, name: 'Market day', text: 'Stalls are up in the square. Market day!' };
 
 const dated = HOLIDAYS.filter((h) => !h.weather);
-const posOf = (h, md) => (h.at === 'first' ? 0 : h.at === 'last' ? md - 1 : Math.floor((md - 1) / 2));
+export const posOf = (h, md) => (h.at === 'first' ? 0 : h.at === 'last' ? md - 1 : Math.floor((md - 1) / 2));
 
 export function holidayOn(dayIdx, monthDays) {
   const d = dateOfDay(dayIdx, monthDays);
