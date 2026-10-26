@@ -10,16 +10,16 @@ import { dateOfDay } from './calendar.js';
 import { HOLIDAYS, posOf } from './holidays.js';
 
 // One row per event. `months` it covers, `peak` the holiday it builds to, `nights` the holidays with fireworks.
-// `lights` are the string-light colours the town hangs (render picks them in turn along a string), `accent` tints the
+// `trees` is the share of trees that get lights wound round them by the big day. `lights` are the string-light colours the town hangs (render picks them in turn along a string), `accent` tints the
 // calendar. `start` is the postcard the morning the decorations start to go up.
 export const EVENTS = [
-  { id: 'july4', name: 'Fourth of July', months: [6], peak: 'july4', fireworks: ['july4'],
+  { id: 'july4', name: 'Fourth of July', months: [6], peak: 'july4', fireworks: ['july4'], trees: 0.15,
     lights: [0xE0533F, 0xF7F1E3, 0x4E7FC4], accent: '#4E7FC4',
     start: 'Bunting goes up along the high street. The Fourth of July is coming.' },
-  { id: 'halloween', name: 'Halloween', months: [9], peak: 'halloween', fireworks: [],
+  { id: 'halloween', name: 'Halloween', months: [9], peak: 'halloween', fireworks: [], trees: 0.25,
     lights: [0xF08A3C, 0x9A63C4, 0xF3C04F], accent: '#E07B39',
     start: 'The first pumpkins appear on doorsteps. Halloween is on its way.' },
-  { id: 'christmas', name: 'Christmas', months: [11], peak: 'christmas', fireworks: ['nye'],
+  { id: 'christmas', name: 'Christmas', months: [11], peak: 'christmas', fireworks: ['nye'], trees: 0.6,
     lights: [0xF6D27A, 0xE0533F, 0x5FA86A, 0x6FA0DC], accent: '#C2483A',
     start: 'Someone hung the first string of lights. The Christmas season has begun.' },
 ];
