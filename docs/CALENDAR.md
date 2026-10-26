@@ -41,3 +41,11 @@ and 48% at Christmas, 16% on the Fourth). Every costume shape is merged into one
 has an instanced `aKind` and the shader shows only the matching part. The layer shares the crowd's instance matrices, so
 it costs one draw call per crowd (pavement walkers in `render/townsfolk.js`, and the life pools in `render/life/pools.js`),
 and only while an event is on. Who wears what is a hash of the person, so a resident keeps the same costume.
+
+## Music
+
+`EVENT_COLOUR` in `src/audio/composer.js` dresses each tune written during an event (the sound module passes
+`state.event` in the moment): Christmas is ionian on music box and harp with sleigh bells on every beat (a whisper of
+them at night too); Halloween uses a harmonic-minor mode on harp and pad with wood-block knocks; the Fourth is a brisk
+ionian march on flute and piano with a brushed snare. Each has its own tune names. Percussion voices `sleigh`, `block`
+and `snare` live in `src/audio/engine.js`. A new event shortens the gap so its first tune comes soon.

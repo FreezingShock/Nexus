@@ -103,7 +103,7 @@ export default {
         const pop = sim.population;
         const people = pop && typeof pop.people === 'function' ? pop.people() : null;
         engine.setLevels(layersFor({ night, season: st.season, weather: st.weather, market, festival, people }));
-        engine.setMoment({ hour: st.hour, night, season: st.season, weather: st.weather, festival });
+        engine.setMoment({ hour: st.hour, night, season: st.season, weather: st.weather, festival, event: st.event || '' });
         const cam = scene.camera;
         if (cam) engine.setSources(sourceGains(listenerOf({ mode: cam.mode, view: cam.view, free: cam.free })));
       },

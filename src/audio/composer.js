@@ -10,10 +10,23 @@ export const MODES = {
   mixolydian: [0, 2, 4, 5, 7, 9, 10],
   dorian: [0, 2, 3, 5, 7, 9, 10],
   aeolian: [0, 2, 3, 5, 7, 8, 10],
+  harmonic: [0, 2, 3, 5, 7, 8, 11], // minor with a raised seventh: a playful, spooky lean for Halloween
 };
 
 // Every instrument the engine knows (engine.js VOICES). Tests check each style only names these.
-export const VOICES = ['piano', 'harp', 'musicbox', 'flute', 'pad', 'bass'];
+export const VOICES = ['piano', 'harp', 'musicbox', 'flute', 'pad', 'bass', 'sleigh', 'block', 'snare'];
+
+// The festive seasons (core/events.js) dress the music too: a mode, the voices, a nudge to the tempo, a light
+// percussion part (beats in a bar) and their own tune names. Night keeps its hush: no percussion after dark, except a
+// whisper of sleigh bells at Christmas.
+export const EVENT_COLOUR = {
+  christmas: { mode: 'ionian', lead: 'musicbox', leadB: 'flute', comp: 'harp', tempo: 1, perc: 'sleigh', beats: [0, 1, 2, 3], night: true,
+    words: ['Sleigh Bells', 'Snow on the Square', 'Wreaths and Ribbons', 'Twinkle Street', 'Cocoa by the Window', 'Under the Big Tree', 'Mittens and Carols'] },
+  halloween: { mode: 'harmonic', lead: 'harp', leadB: 'musicbox', comp: 'pad', tempo: 0.94, perc: 'block', beats: [1, 3, 3.5],
+    words: ['Pumpkin Lane', 'Little Ghosts', 'Lantern Grin', 'Tricks and Treats', 'Broomstick Waltz', 'Creaky Gate'] },
+  july4: { mode: 'ionian', lead: 'flute', leadB: 'piano', comp: 'piano', tempo: 1.15, perc: 'snare', beats: [0, 1, 1.5, 2, 3],
+    words: ['Picnic on the Green', 'Bandstand March', 'Sparkler Street', 'Lemonade Stand', 'Stars over the Square'] },
+};
 
 // Between tunes there is a quiet stretch of town sound (nate's choice: tunes with gaps, no setting). The music slider
 // at zero is the way to have no music.
@@ -171,16 +184,17 @@ function compBar(voice, root, r, busy) {
   return [{ at: 0, d: [a, c], dur: 2, vel: 0.5 }, { at: 1, d: [b], dur: 1, vel: 0.35 }, { at: 2, d: [a, b, c], dur: 2, vel: 0.4 + r.next() * 0.1 }];
 }
 
-export function titleFor(r, { phase, season, weather, festival }) {
+export function titleFor(r, { phase, season, weather, festival, event }) {
   let pool = WORDS[phase];
-  if (festival && phase !== 'night') pool = WORDS.festival;
+  if (EVENT_COLOUR[event]) pool = EVENT_COLOUR[event].words;
+  else if (festival && phase !== 'night') pool = WORDS.festival;
   else if (weather === 'rain' || weather === 'snow') pool = weather === 'rain' ? WORDS.rain : WORDS.winter;
   else if (season === 'winter' && r.next() < 0.5) pool = WORDS.winter;
   const word = r.pick(pool);
   return r.next() < 0.55 && !/ the | on | over /.test(word) ? `${word} ${r.pick(PLACES)}` : word;
 }
 
-// Writes one tune. `seed` picks every choice; `moment` is { hour, night, season, weather, festival }.
+// Writes one tune. `seed` picks every choice; `moment` is { hour, night, season, weather, festival, event }.
 // Returns { title, phase, bpm, beats, level, events } where each event is { at (beats), midi: [..], dur (beats), vel, voice }.
 export function composeTune(seed, moment = {}) {
   const r = rng(seed);
@@ -198,9 +212,12 @@ export function composeTune(seed, moment = {}) {
   let bpm = r.range(style.bpm[0], style.bpm[1]) * colour.tempo * (wet ? 0.9 : 1) * (festival ? 1.12 : 1);
   bpm = Math.round(bpm);
   const density = Math.min(1, style.density * (wet ? 0.75 : 1) + (festival ? 0.2 : 0));
-  const comp = wet ? 'pad' : style.comp;
-  const lead = wet && style.lead === 'flute' ? 'piano' : style.lead;
-  const leadB = colour.voice === lead ? (lead === 'piano' ? 'musicbox' : 'piano') : colour.voice;
+  let comp = wet ? 'pad' : style.comp;
+  let lead = wet && style.lead === 'flute' ? 'piano' : style.lead;
+  let leadB = colour.voice === lead ? (lead === 'piano' ? 'musicbox' : 'piano') : colour.voice;
+  const ev = EVENT_COLOUR[moment.event] || null;
+  if (ev) { mode = ev.mode; lead = ev.lead; leadB = ev.leadB; comp = wet ? 'pad' : ev.comp; bpm = Math.round(bpm * ev.tempo); }
+  const perc = ev && (phase !== 'night' || ev.night) ? ev : null;
 
   const prog = r.pick(style.progs), alt = r.pick(style.alt);
   // Form: intro (2 bars), A, A', B, A', outro (2 bars). Each section is four bars.
@@ -241,6 +258,12 @@ export function composeTune(seed, moment = {}) {
         events.push({ at: at + 2, midi: [noteOf(key, mode, root + 4) - 12], dur: 2, vel: 0.5, voice: 'bass' });
       }
     });
+    if (perc && sec.melody && sec.melody !== 'end') {
+      const soft = phase === 'night' ? 0.4 : 1;
+      for (let i = 0; i < sec.chords.length; i++) for (const b of perc.beats) {
+        events.push({ at: barAt + i * BAR + b, midi: [84], dur: 0.25, vel: (b === 0 || b === 2 ? 0.75 : 0.5) * soft, voice: perc.perc });
+      }
+    }
     if (sec.melody) {
       const voice = sec.name === 'B' ? leadB : lead;
       for (const n of melodyOf[sec.melody]) events.push({ at: barAt + n.at, midi: [lead12(n.d)], dur: n.dur, vel: n.vel, voice });
@@ -249,7 +272,7 @@ export function composeTune(seed, moment = {}) {
   }
   events.sort((a, b) => a.at - b.at);
   const beats = barAt + 2; // a little tail for the last chord to ring
-  return { title: titleFor(r, { phase, season, weather: moment.weather, festival }), phase, mode, key, bpm, beats, level: style.level, events };
+  return { title: titleFor(r, { phase, season, weather: moment.weather, festival, event: moment.event }), phase, mode, key, bpm, beats, level: style.level, events };
 }
 
 // The quiet after a tune, in seconds.
