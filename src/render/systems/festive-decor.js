@@ -8,6 +8,7 @@ import { kindOf } from '../life/rules.js';
 import { luck } from '../festive/strings.js';
 import { mergeProps, propsFor } from '../festive/props.js';
 import { createLandWatch } from '../land-watch.js';
+import { dressShare, isDark } from '../../core/festive.js';
 
 // Which buildings put props out: homes, shops and the civic ones. Workshops and offices keep to their lights.
 const DOORS = new Set(['home', 'shop', 'service', 'school', 'landmark', 'farm']);
@@ -21,14 +22,14 @@ export default {
     body.castShadow = true; body.frustumCulled = hull.frustumCulled = false; body.visible = hull.visible = false;
     world.add(body, hull);
     const land = createLandWatch();
-    let key = '';
+    let key = '', seenFestive = null;
     const swap = (mesh, geo) => { mesh.geometry.dispose(); mesh.geometry = geo; };
 
-    function build(event, cover) {
-      const lots = sys('lots'), list = [];
+    function build(event, cover, festive) {
+      const lots = sys('lots'), list = [], share = dressShare(event, cover, festive).buildings;
       for (const e of town.lifeEntries().concat(lots ? lots.lifeEntries() : [])) {
         const k = kindOf(e.b), sites = e.parts.sites;
-        if (!DOORS.has(k) || !sites || !sites.doors.length || !dressedToday(e.b.seed, cover)) continue;
+        if (!DOORS.has(k) || !sites || !sites.doors.length || !dressedToday(e.b.seed, share) || isDark(festive, e.b.id)) continue;
         const parts = propsFor(event, sites.doors[0], sites.bodies[0], e.b.seed | 0);
         if (parts.length) list.push({ parts, world: e.world });
       }
@@ -45,9 +46,9 @@ export default {
         const rev = town.lifeRev() + (sys('lots') ? sys('lots').lifeRev() : 0);
         const k = s.event + ':' + s.eventCover + ':' + rev;
         if (land.poll()) key = '';
-        if (k === key) return;
-        key = k;
-        build(s.event, s.eventCover);
+        if (k === key && s.festive === seenFestive) return;
+        key = k; seenFestive = s.festive;
+        build(s.event, s.eventCover, s.festive);
       },
     };
   },

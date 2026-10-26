@@ -6,6 +6,7 @@
 import * as THREE from '../../../vendor/three/three.module.min.js';
 import { heightAt } from '../../world/terrain.js';
 import { eventById } from '../../core/events.js';
+import { dressShare, isDark, lightsFor } from '../../core/festive.js';
 import { kindOf } from '../life/rules.js';
 import { bodyStrings, luck, spiral } from '../festive/strings.js';
 import { allocInstanceColors } from '../geom.js';
@@ -90,21 +91,21 @@ export default {
     // per bulb: its group (a building or a tree) and its place along the string (for the pop-in stagger)
     const group = new Uint16Array(MAX_BULBS), along = new Float32Array(MAX_BULBS), pal = new Uint8Array(MAX_BULBS);
     // per group: its luck (decorates once the cover passes it), whether it is a tree, its eased reveal
-    const gLuck = new Float32Array(MAX_GROUPS), gTree = new Uint8Array(MAX_GROUPS), gWant = new Uint8Array(MAX_GROUPS), gT = new Float32Array(MAX_GROUPS);
+    const gLuck = new Float32Array(MAX_GROUPS), gTree = new Uint8Array(MAX_GROUPS), gDark = new Uint8Array(MAX_GROUPS), gWant = new Uint8Array(MAX_GROUPS), gT = new Float32Array(MAX_GROUPS);
     // the cable: full positions per segment, and the group each belongs to
     const wireFull = new Float32Array(MAX_BULBS * 6), wireGroup = new Uint16Array(MAX_BULBS);
     let count = 0, groups = 0, segs = 0;
-    let seenRev = -1, seenTrees = null, seenEvent = '', seenCover = -1, effects = 1, settling = false;
+    let seenRev = -1, seenTrees = null, seenEvent = '', seenCover = -1, seenFestive = null, effects = 1, settling = false;
     const land = createLandWatch();
     const m = new THREE.Matrix4(), v = new THREE.Vector3(), w0 = new THREE.Vector3(), c = new THREE.Color();
 
     // a rebuild (a new house, a felled tree) keeps every lit group lit: only new ones pop in
-    let keys = [], before = new Map();
+    let keys = [], ids = [], before = new Map();
     function addGroup(l, tree, key) {
       if (groups >= MAX_GROUPS) return -1;
       const was = before.get(key) || 0;
       gLuck[groups] = l; gTree[groups] = tree ? 1 : 0; gWant[groups] = was > 0 ? 1 : 0; gT[groups] = Math.max(0, was);
-      keys[groups] = key;
+      keys[groups] = key; ids[groups] = '';
       return groups++;
     }
     const putter = (g, xf, offset) => (x, y, z, i) => {
@@ -127,13 +128,14 @@ export default {
     function build(state) {
       before = new Map();
       for (let g = 0; g < groups; g++) before.set(keys[g], gT[g]);
-      count = 0; groups = 0; segs = 0; keys = [];
+      count = 0; groups = 0; segs = 0; keys = []; ids = [];
       const lots = sys('lots');
       for (const e of town.lifeEntries().concat(lots ? lots.lifeEntries() : [])) {
         const k = kindOf(e.b), sites = e.parts.sites;
         if (!k || !sites || !sites.bodies.length) continue;
         const g = addGroup(luck(e.b.seed | 0, 11), false, 'b' + (e.b.id ?? e.b.seed));
         if (g < 0) break;
+        ids[g] = typeof e.b.id === 'string' ? e.b.id : '';
         const offset = Math.floor(luck(e.b.seed | 0, 12) * 8);
         for (const body of sites.bodies) bodyStrings(body, putter(g, e.world, offset), wirer(g, e.world), true);
       }
@@ -156,16 +158,16 @@ export default {
       wirePos.fill(0);
     }
 
-    function recolour(ev) {
-      const L = ev.lights;
+    function recolour(L) {
       for (let i = 0; i < count; i++) bulbs.setColorAt(i, c.setHex(L[pal[i] % L.length]));
       if (bulbs.instanceColor) bulbs.instanceColor.needsUpdate = true;
     }
 
-    // Who is dressed today: a building once the cover passes its luck, a tree once the cover times the event's tree share does.
-    function reread(ev, cover) {
+    // Who is dressed today: a building once the day's share passes its luck (unless its owner switched it off), a tree
+    // once the trees' share does. Shares come from the month's build-up and the town's festive amount (core/festive.js).
+    function reread(share, festive) {
       for (let g = 0; g < groups; g++) {
-        const want = gLuck[g] < cover * (gTree[g] ? ev.trees : 1) ? 1 : 0;
+        const want = gLuck[g] < (gTree[g] ? share.trees : share.buildings) && !(ids[g] && isDark(festive, ids[g])) ? 1 : 0;
         // a group that goes up waits its turn first (up to a few seconds), so the street lights up house by house
         if (want && !gWant[g] && gT[g] <= 0) gT[g] = -STAGGER * luck(g, 5);
         gWant[g] = want;
@@ -189,8 +191,11 @@ export default {
         if (!ev) { if (bulbs.visible) hide(); seenRev = -1; seenTrees = null; groups = 0; return; }
         const rev = town.lifeRev() + (sys('lots') ? sys('lots').lifeRev() : 0);
         if (land.poll() || rev !== seenRev || state.trees !== seenTrees) { seenRev = rev; seenTrees = state.trees; build(state); settling = true; }
-        if (ev.id !== seenEvent) { seenEvent = ev.id; recolour(ev); seenCover = -1; }
-        if (state.eventCover !== seenCover) { seenCover = state.eventCover; reread(ev, seenCover); }
+        if (ev.id !== seenEvent || state.festive !== seenFestive) { seenEvent = ev.id; recolour(lightsFor(ev.id, state.festive)); seenCover = -1; }
+        if (state.eventCover !== seenCover || state.festive !== seenFestive) {
+          seenCover = state.eventCover; seenFestive = state.festive;
+          reread(dressShare(ev.id, seenCover, state.festive), state.festive);
+        }
         const night = f.sky ? f.sky.night : 0;
         u.uTime.value = f.t; u.uNight.value = night;
         u.uGain.value = 0.6 * effects;

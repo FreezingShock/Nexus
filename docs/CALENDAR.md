@@ -49,3 +49,12 @@ and only while an event is on. Who wears what is a hash of the person, so a resi
 them at night too); Halloween uses a harmonic-minor mode on harp and pad with wood-block knocks; the Fourth is a brisk
 ionian march on flute and piano with a brushed snare. Each has its own tune names. Percussion voices `sleigh`, `block`
 and `snare` live in `src/audio/engine.js`. A new event shortens the gap so its first tune comes soon.
+
+## The town's festive style
+
+`src/core/festive.js` (pure) and `src/sim/systems/festive.js` keep `state.festive` (saved; old saves get the default):
+`amount` ('none', 'light', 'cozy' default, 'all'), `palette` per event (keys in `PALETTES`, 'classic' is the event's
+own lights) and `dark` (placed record ids whose lights are off). Commands, all free: `setFestive { amount?, event?,
+palette? }` and `festiveLights { id, on }`. A change replaces the object, so render notices by identity.
+`dressShare` turns the month's cover and the amount into the share of buildings and trees dressed; `lightsFor` gives the
+colours. The calendar panel (K) has a Decorations section; a placed building's card has an on/off switch while an event is on.
