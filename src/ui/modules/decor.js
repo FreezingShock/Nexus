@@ -2,7 +2,7 @@
 // to clear pieces the same way. Rarer kinds show their Parts price on the tile; one click spends it for good, then Coins buy each copy.
 // A see-through preview shows every tile (green fits, red does not), and a label follows the cursor with the price or the reason.
 // Reads the sim and sends placeDecor, clearDecor and unlockDecor. Rules and prices live in src/world/decor.js and src/sim/systems/decor.js.
-import { DECOR_CATS, MAX_DECOR, MAX_DRAG, decorById, decorCost, decorIn, decorRefund, isOpen, problemAt, problemText, takenSet } from '../../world/decor.js';
+import { DECOR_CATS, MAX_DECOR, MAX_DRAG, decorById, decorCost, decorIn, decorRefund, isOpen, offSale, problemAt, problemText, takenSet } from '../../world/decor.js';
 import { rectTiles, worldToTile } from '../../world/grid.js';
 import { $, fmt } from '../format.js';
 import { categoryIcon, coins, esc, tileCard } from '../cards.js';
@@ -29,7 +29,7 @@ const BROOM = `<svg viewBox="0 0 24 24" aria-hidden="true" ${P}><path d="M14 4L1
 
 export default {
   id: 'decor',
-  create({ sim, send, scene }) {
+  create({ sim, send, scene, toast }) {
     const fly = $('fly');
     const stage = scene.canvas.parentElement;
     const tag = document.createElement('div');
@@ -44,7 +44,8 @@ export default {
     const owned = () => sim.state.decor.length;
     function tiles() {
       const cards = decorIn(cat).map((d) => {
-        const open = isOpen(d, sim.state.decorUnlocks), price = decorCost(d, owned());
+        const open = isOpen(d, sim.state.decorUnlocks), price = decorCost(d, owned()), shut = offSale(d, sim.state);
+        if (shut) return tileCard({ pic: pic(d.id), title: d.name, tip: d.sub + ' · ' + shut, price: '', unlock: d.keepsake ? 'Keepsake' : 'Seasonal', locked: true, short: true, pressed: false, data: { dk: d.id } });
         return tileCard({
           pic: pic(d.id), title: d.name, tip: d.sub + (open ? '' : ' · ' + d.parts + ' Parts opens it for good'),
           price: open ? coins(price) : '', unlock: open ? '' : d.parts + ' Parts', locked: !open, short: open ? sim.state.coins < price : sim.state.parts < d.parts,
@@ -55,7 +56,7 @@ export default {
       return cards.join('');
     }
     // What the tiles show right now; the flyout is redrawn only when this changes, so the strip keeps its scroll.
-    const sigOf = () => cat + '|' + kind + '|' + owned() + '|' + sim.state.decorUnlocks.join() + '|' + decorIn(cat).map((d) => (isOpen(d, sim.state.decorUnlocks) ? sim.state.coins < decorCost(d, owned()) : sim.state.parts < d.parts) ? 1 : 0).join('');
+    const sigOf = () => cat + '|' + kind + '|' + owned() + '|' + sim.state.decorUnlocks.join() + '|' + sim.state.event + (sim.state.keepsakes || []).join() + '|' + decorIn(cat).map((d) => (isOpen(d, sim.state.decorUnlocks) ? sim.state.coins < decorCost(d, owned()) : sim.state.parts < d.parts) ? 1 : 0).join('');
     let flySig = '';
     function render() {
       flySig = sigOf();
@@ -82,6 +83,8 @@ export default {
       if (t.dataset.dcat) { cat = t.dataset.dcat; if (!erasing()) kind = decorIn(cat)[0].id; render(); dirty = true; return; }
       const k = t.dataset.dk;
       const def = decorById(k);
+      const shut = def && offSale(def, sim.state);
+      if (shut) { toast(shut); return; }
       if (def && !isOpen(def, sim.state.decorUnlocks)) { send({ type: 'unlockDecor', k }); if (sim.state.parts >= def.parts) kind = k; render(); return; }
       kind = k; render(); dirty = true;
     }, true);

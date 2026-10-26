@@ -8,6 +8,7 @@ const TYPES = {
   milestone: { title: 'A milestone', icon: 'medal' },
   holiday: { title: 'A festival', icon: 'flag' },
   eventStart: { title: 'A festive season', icon: 'star' },
+  keepsake: { title: 'A keepsake', icon: 'medal' },
   skipped: { title: 'Days drift by', icon: 'sun' },
 };
 

@@ -28,6 +28,8 @@ export const CHANGELOG = [
       { k: 'sound', t: 'Festive tunes: music-box carols with sleigh bells at Christmas, a playful spooky waltz with wood-block knocks at Halloween, and a bright bandstand march with a brushed snare on the Fourth of July.' },
       { k: 'new', t: 'Make the festivities yours: in the calendar (K) pick how much the town dresses up (None, A little, Cozy or All out) and the colours of its lights for each season, like warm white, icicle or candy cane.' },
       { k: 'new', t: "A building's card can switch its festive lights and decorations off, and on again." },
+      { k: 'new', t: 'Festive decorations to buy in season: a town Christmas tree and a gingerbread stall, a pumpkin patch and a scarecrow, a bandstand and a picnic table. Once placed they stay all year.' },
+      { k: 'new', t: "Keepsakes: play during a real October, December or Fourth of July week and the town gets a keepsake to place any time: a Jack-o'-lantern post, a snow globe or a summer bell." },
       { k: 'look', t: 'The calendar (K) shows the festive season under way with how dressed the town is, or the next one coming, and the date plaque wears the event\'s badge.' },
       { k: 'look', t: 'Nexus has a new hand-drawn emblem: a little hilltop town by the river, on the title screen, the loading screen and the browser tab.' },
       { k: 'new', t: 'Ideas & feedback: a note in the title screen\'s corner where you can send ideas, bugs or a hello straight to the maker. Written offline? It waits and goes next time.' },

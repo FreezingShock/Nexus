@@ -15,6 +15,7 @@ export const DECOR_CATS = [
   { id: 'street', name: 'Street' },
   { id: 'plaza', name: 'Plaza' },
   { id: 'landmark', name: 'Landmark' },
+  { id: 'festive', name: 'Festive' },
 ];
 
 export const DECOR = [
@@ -27,6 +28,17 @@ export const DECOR = [
   { id: 'fountain', cat: 'plaza',  name: 'Fountain',     sub: 'Stone basin, tinkling water',          cost: 900,   parts: 240 },
   { id: 'statue', cat: 'landmark',    name: 'Statue',       sub: 'Somebody important, in bronze green',  cost: 1500,  parts: 450 },
   { id: 'gazebo', cat: 'landmark',    name: 'Gazebo',       sub: 'Six posts and a terracotta roof',      cost: 3600,  parts: 900 },
+  // Festive extras (core/events.js): on sale only while their season is on, and yours for good once placed.
+  { id: 'xmastree', cat: 'festive', event: 'christmas', name: 'Town Christmas tree', sub: 'A tall fir with a gold star and baubles', cost: 1200, parts: 0 },
+  { id: 'gingerbread', cat: 'festive', event: 'christmas', name: 'Gingerbread stall', sub: 'Iced biscuits and hot cocoa', cost: 600, parts: 0 },
+  { id: 'pumpkins', cat: 'festive', event: 'halloween', name: 'Pumpkin patch', sub: 'Big, small and a bit lumpy', cost: 300, parts: 0 },
+  { id: 'scarecrow', cat: 'festive', event: 'halloween', name: 'Scarecrow', sub: 'Straw hat, patched coat, friendly face', cost: 240, parts: 0 },
+  { id: 'bandstand', cat: 'festive', event: 'july4', name: 'Bandstand', sub: 'Bunting round a little round stage', cost: 900, parts: 0 },
+  { id: 'picnic', cat: 'festive', event: 'july4', name: 'Picnic table', sub: 'A checked cloth and a pie', cost: 150, parts: 0 },
+  // Keepsakes: a gift for playing on the real holiday (core/keepsakes.js). Once yours, on sale all year.
+  { id: 'snowglobe', cat: 'festive', keepsake: 'christmas', name: 'Snow globe', sub: 'A keepsake from a real December', cost: 400, parts: 0 },
+  { id: 'lanternpost', cat: 'festive', keepsake: 'halloween', name: "Jack-o'-lantern post", sub: 'A keepsake from a real October', cost: 300, parts: 0 },
+  { id: 'summerbell', cat: 'festive', keepsake: 'july4', name: 'Summer bell', sub: 'A keepsake from a real Fourth of July week', cost: 400, parts: 0 },
 ].map((d) => Object.freeze(d));
 
 const byId = new Map(DECOR.map((d) => [d.id, d]));
@@ -38,6 +50,15 @@ export const GROWTH = 0.01;
 export const decorCost = (def, owned) => Math.round(def.cost * (1 + GROWTH * Math.max(0, owned | 0)));
 export const decorRefund = (def) => Math.floor(def.cost * REFUND);
 export const isOpen = (def, unlocks) => !def.parts || unlocks.includes(def.id);
+
+// Whether a piece is on sale right now: Parts unlocks as above, a festive extra only in its season, a keepsake only once
+// it is the town's. state needs decorUnlocks, event and keepsakes. Returns null when it is, or why not (a short line).
+const SEASON_MONTH = { christmas: 'December', halloween: 'October', july4: 'July' };
+export function offSale(def, state) {
+  if (def.event && state.event !== def.event) return 'Back in ' + SEASON_MONTH[def.event];
+  if (def.keepsake && !(state.keepsakes || []).includes(def.id)) return 'A keepsake: play in a real ' + (def.keepsake === 'july4' ? 'Fourth of July week' : SEASON_MONTH[def.keepsake]) + ' to keep it';
+  return null;
+}
 
 // Why a tile cannot take a decoration, or null when it can. `taken` is a Set of tile indexes that already hold one.
 export function problemAt(grid, gx, gz, taken) {

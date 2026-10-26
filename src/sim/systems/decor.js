@@ -4,7 +4,7 @@
 // Undo: placing and clearing push onto sim.undoStack. Rules and prices live in src/world/decor.js.
 import { GRID_N, BASE } from '../../world/grid.js';
 import {
-  MAX_DECOR, MAX_DRAG, decorById, decorCost, decorRefund, isOpen, problemAt, problemText, sanitizeDecor, sanitizeUnlocks, takenSet,
+  MAX_DECOR, MAX_DRAG, decorById, decorCost, decorRefund, isOpen, offSale, problemAt, problemText, sanitizeDecor, sanitizeUnlocks, takenSet,
 } from '../../world/decor.js';
 
 // Drops pieces whose tile is no longer open. Returns the coins to give back (full base price).
@@ -57,6 +57,8 @@ export default {
       for (const it of items) {
         const def = it && decorById(it.k);
         if (!def || !isOpen(def, state.decorUnlocks)) continue;
+        const shut = offSale(def, state);
+        if (shut) { problem = problem || { text: shut }; continue; }
         if (state.decor.length >= MAX_DECOR) { problem = 'full'; break; }
         const bad = problemAt(grid, it.gx, it.gz, taken);
         if (bad) { problem = problem || bad; continue; }
@@ -71,7 +73,7 @@ export default {
       if (!ids.length) {
         if (short) charge(Infinity); // toasts "Not enough coins yet", takes nothing
         else if (problem === 'full') emit({ type: 'toast', text: 'The town has all the decorations it can hold' });
-        else if (problem) emit({ type: 'toast', text: problemText(problem) });
+        else if (problem) emit({ type: 'toast', text: problem.text || problemText(problem) });
         return;
       }
       state.decor = state.decor.slice(); // a new array tells the renderer to rebuild

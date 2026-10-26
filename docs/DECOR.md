@@ -9,3 +9,13 @@ Looks-only pieces for open land: hedge, bench, flower bed, street lamp, topiary,
 - Render: all pieces merged into one mesh plus one ink-outline mesh (two draw calls), rebuilt only when the list changes. The preview under the cursor is a third mesh.
 - Menu: pieces are grouped Greenery, Street, Plaza and Landmark; tiles show the real model through `decorThumb` in `src/render/thumbs.js` (hand-drawn icons only when there is no WebGL).
 - Not browser-run: the look of each piece, the preview tint and the flyout need a check on localhost.
+
+## Festive extras and keepsakes
+
+The Festive group holds seasonal extras (`event` on the row: on sale only while that event is on, see
+`src/core/events.js`) and keepsakes (`keepsake` on the row: on sale once `state.keepsakes` holds the id). `offSale(def,
+state)` in `src/world/decor.js` says why a piece cannot be bought now; `placeDecor` refuses it with that line, and the
+menu shows the tile locked as Seasonal or Keepsake. Placed pieces stay all year like any other decoration.
+Keepsakes (`src/core/keepsakes.js`): the festive sim system looks at the real date (`sim.now()`, local time) a moment
+after load and every minute after; inside a window (October, December, 1 to 7 July) it adds the keepsake and sends a
+postcard. No network.
