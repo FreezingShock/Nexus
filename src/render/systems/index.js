@@ -4,6 +4,7 @@
 import cars from './cars.js';
 import decor from './decor.js';
 import districts from './districts.js';
+import festiveDecor from './festive-decor.js';
 import festiveLights from './festive-lights.js';
 import gridOverlay from './grid-overlay.js';
 import happyFx from './happy-fx.js';
@@ -29,6 +30,7 @@ export const renderSystems = [
   cars,
   decor,
   districts,
+  festiveDecor,
   festiveLights,
   gridOverlay,
   happyFx,
