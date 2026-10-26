@@ -2,13 +2,33 @@
 // placed buildings keep their lights off. All free: the town decorates itself. A change makes a new state.festive object,
 // so render notices by identity.
 import { AMOUNTS, PALETTES, freshFestive, sanitizeFestive } from '../../core/festive.js';
+import { keepsakesOn, sanitizeKeepsakes } from '../../core/keepsakes.js';
+
+const CHECK_EVERY = 60; // ticks between looks at the real date (a keepsake can arrive while playing past midnight)
+
+// Playing on a real holiday: the keepsakes in season become the town's, with a postcard. `quiet` skips the postcard.
+function gather({ state, sim, emit }, quiet) {
+  const fresh = keepsakesOn(sim.now()).filter((k) => !state.keepsakes.includes(k.id));
+  if (!fresh.length) return;
+  state.keepsakes = [...state.keepsakes, ...fresh.map((k) => k.id)];
+  if (!quiet) for (const k of fresh) {
+    emit({ type: 'keepsake', id: k.id, title: 'A keepsake', text: 'Thanks for visiting in ' + k.when + '. The ' + k.name + ' is yours to place from the Festive decorations, any time of year.' });
+  }
+}
 
 export default {
   id: 'festive',
-  state: () => ({ festive: freshFestive() }),
-  sanitize: (raw) => ({ festive: sanitizeFestive(raw.festive) }),
-  init({ sim, state }) {
+  state: () => ({ festive: freshFestive(), keepsakes: [] }),
+  sanitize: (raw) => ({ festive: sanitizeFestive(raw.festive), keepsakes: sanitizeKeepsakes(raw.keepsakes) }),
+  init(ctx) {
+    const { sim, state } = ctx;
     sim.festiveLightsOn = (id) => !state.festive.dark.includes(id);
+    ctx.keepsakeClock = CHECK_EVERY - 3; // a first look a moment after load, once the postcards are listening
+  },
+  tick(ctx) {
+    if (++ctx.keepsakeClock < CHECK_EVERY) return;
+    ctx.keepsakeClock = 0;
+    gather(ctx, false);
   },
   commands: {
     // { amount?, event?, palette? }
