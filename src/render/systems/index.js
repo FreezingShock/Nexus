@@ -6,6 +6,7 @@ import decor from './decor.js';
 import districts from './districts.js';
 import festiveDecor from './festive-decor.js';
 import festiveLights from './festive-lights.js';
+import fireworks from './fireworks.js';
 import gridOverlay from './grid-overlay.js';
 import happyFx from './happy-fx.js';
 import landBrush from './land-brush.js';
@@ -32,6 +33,7 @@ export const renderSystems = [
   districts,
   festiveDecor,
   festiveLights,
+  fireworks,
   gridOverlay,
   happyFx,
   landBrush,

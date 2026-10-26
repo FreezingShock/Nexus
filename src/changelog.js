@@ -22,6 +22,8 @@ export const CHANGELOG = [
       { k: 'new', t: 'Seasonal events: the Fourth of July, Halloween and Christmas each fill their month. Decorations go up a few houses at a time and the whole town is dressed by the big day.' },
       { k: 'new', t: "New Year's Eve closes the year, and the Harvest Feast moves to September to make room for Halloween." },
       { k: 'look', t: 'Doorstep decorations: pumpkins and the odd little ghost for Halloween, wreaths, snowmen and potted firs for Christmas, and flags and bunting for the Fourth of July.' },
+      { k: 'new', t: "Fireworks on the Fourth of July and New Year's Eve: after dark rockets climb from the middle of town and burst into rings, gold willows and crackles, with a big finale at midnight." },
+      { k: 'sound', t: 'Fireworks whistle up and boom softly from across town.' },
       { k: 'look', t: 'The calendar (K) shows the festive season under way with how dressed the town is, or the next one coming, and the date plaque wears the event\'s badge.' },
     ],
   },
