@@ -4,6 +4,8 @@
 import { MONTH_NAMES, MONTH_SHORT, SEASONS, monthDaysOf, seasonOfMonth } from '../../core/calendar.js';
 import { MARKET } from '../../core/holidays.js';
 import { iconFor } from '../holiday-icons.js';
+import { AMOUNTS, PALETTES, lightsFor } from '../../core/festive.js';
+import { eventById } from '../../core/events.js';
 import { $ } from '../format.js';
 import { clockText, coverText, dateOf, eventInfo, inDaysText, longDate, monthCells, nextMonthSkip, seasonName, shortDate, todayLine, townDays, upcoming, yearLine, yearRibbon } from '../date-text.js';
 
@@ -41,6 +43,11 @@ export default {
           <div class="dskips"><button class="btn" id="dptomorrow" type="button"></button><button class="btn primary" id="dpnextmonth" type="button"></button></div>
         </section>
         <div class="dyear" id="dyear" aria-label="The year"></div>
+        <section class="gsec dfest" id="dpfest"><h3>Decorations</h3>
+          <div class="seg" id="dpamount" role="radiogroup" aria-label="How much the town dresses up"></div>
+          <div class="dpal" id="dppal"></div>
+          <p class="sub dnote">The town decorates itself for free. Switch a building's lights off from its card.</p>
+        </section>
         <section class="gsec"><h3>Coming up</h3><ul class="glist" id="dpnext"></ul></section>
         <p class="sub dnote">Skipped days pay half of what the same time away would. The weather, seasons and festivals carry on as if you had waited.</p>
       </div>`;
@@ -61,6 +68,7 @@ export default {
       today.innerHTML = t ? iconFor(s.holiday || 'market', 18) + '<span>Today: ' + t + '</span>' : '<span>A quiet day in the ' + seasonName(s).toLowerCase() + '.</span>';
       set('dpmonthname', MONTH_NAMES[s.month]);
       paintEvent();
+      paintFestive();
 
       const cells = monthCells(s, mdv);
       const grid = $('dmonth');
@@ -119,6 +127,24 @@ export default {
           : `<small>Decorations go up ${ev.inDays === 1 ? 'tomorrow' : 'in ' + ev.inDays + ' days'}</small>`) + '</div>';
     }
 
+    // The town's festive style: how much it dresses up, and the colours of its lights for the season on (or next).
+    function paintFestive() {
+      const f = s.festive, ev = eventInfo(s, md());
+      const id = ev ? ev.id : '';
+      const sig = f.amount + JSON.stringify(f.palette) + id;
+      const box = $('dpfest');
+      if (box.dataset.sig === sig) return;
+      box.dataset.sig = sig;
+      $('dpamount').innerHTML = AMOUNTS.map((a) => `<button type="button" class="segb" role="radio" data-amount="${a.id}" aria-checked="${a.id === f.amount}" title="${a.line}">${a.name}</button>`).join('');
+      const list = PALETTES[id] || [];
+      const hx = (n) => '#' + n.toString(16).padStart(6, '0');
+      $('dppal').innerHTML = list.length ? `<span class="dpalh">${eventById(id).name} lights</span>` + list.map((p) => {
+        const cols = lightsFor(id, { palette: { [id]: p.id } });
+        const on = (f.palette[id] || 'classic') === p.id;
+        return `<button type="button" class="dpalb" data-ev="${id}" data-pal="${p.id}" aria-pressed="${on}" title="${p.name}">${cols.map((c) => `<i style="background:${hx(c)}"></i>`).join('')}<small>${p.name}</small></button>`;
+      }).join('') : '';
+    }
+
     function paintTip() {
       const up = upcoming(s, md(), 1)[0], t = todayLine(s), ev = eventInfo(s, md());
       tip.innerHTML = `<b class="h-disp">${longDate(s)}</b><span>${townDays(s)}</span>` +
@@ -162,6 +188,9 @@ export default {
     plaque.addEventListener('focus', () => showTip(true));
     plaque.addEventListener('blur', () => showTip(false));
     panel.addEventListener('click', (e) => {
+      const am = e.target.closest('button[data-amount]'), pal = e.target.closest('button[data-pal]');
+      if (am) { send({ type: 'setFestive', amount: am.dataset.amount }); paintFestive(); return; }
+      if (pal) { send({ type: 'setFestive', event: pal.dataset.ev, palette: pal.dataset.pal }); paintFestive(); return; }
       const b = e.target.closest('button[data-day]');
       if (!b || !b.dataset.day) return;
       send({ type: 'skipToDay', day: Number(b.dataset.day) });
