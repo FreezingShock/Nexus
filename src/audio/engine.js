@@ -397,8 +397,17 @@ export function createEngine({ win = globalThis } = {}) {
     },
     // A round upright bass: one plucked triangle with a short glow.
     bass: (t, hz, dur, peak) => partials(t, hz, dur, peak, [[1, 1], [2, 0.18, 0.5]], 1.4, 'triangle', 0.2),
+    // Festive percussion (pitch is ignored). Sleigh bells: a shake of bright noise and two tiny bells.
+    sleigh: (t, hz, dur, peak) => {
+      for (let i = 0; i < 3; i++) noiseBurst(t + i * 0.018, 'highpass', 6500, 0.05, peak * (1 - i * 0.25), musicIn);
+      partials(t, 2350, 0.12, peak * 0.35, [[1, 1], [1.51, 0.5]], 0.25, 'sine', 0.1);
+    },
+    // A hollow wooden block: a short knock with a little pitch.
+    block: (t, hz, dur, peak) => { partials(t, 820, 0.05, peak, [[1, 1], [2.7, 0.3, 0.4]], 0.09, 'sine', 0.04); },
+    // A brushed snare from the bandstand: a soft burst of mid noise.
+    snare: (t, hz, dur, peak) => { noiseBurst(t, 'bandpass', 2400, 0.09, peak, musicIn); partials(t, 190, 0.05, peak * 0.4, [[1, 1]], 0.06, 'triangle', 0.03); },
   };
-  const PEAK = { piano: 0.075, harp: 0.045, musicbox: 0.05, flute: 0.05, pad: 0.03, bass: 0.07 };
+  const PEAK = { piano: 0.075, harp: 0.045, musicbox: 0.05, flute: 0.05, pad: 0.03, bass: 0.07, sleigh: 0.03, block: 0.06, snare: 0.035 };
 
   function playEvent(ev, t, spb, level) {
     const play = VOICES[ev.voice];
@@ -496,9 +505,11 @@ export function createEngine({ win = globalThis } = {}) {
     // What the next tune is written for: { hour, night, season, weather, festival }. When day turns to night (or back)
     // during a gap, the next tune comes sooner, to greet the change.
     setMoment(m) {
+      const evWas = moment.event || '';
       moment = { ...m };
       const n = !!m.night;
-      if (ctx && !tune && momentNight !== null && n !== momentNight) {
+      // a turn of day or night, or a festive season beginning, greets the change with a tune soon
+      if (ctx && !tune && ((momentNight !== null && n !== momentNight) || (m.event && m.event !== evWas))) {
         nextTuneAt = Math.min(nextTuneAt, ctx.currentTime + REGREET_S);
       }
       momentNight = n;
