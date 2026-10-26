@@ -33,3 +33,11 @@ wears the event's glyph. Render and sound read the state fields; nothing here to
 In the UI: click the date plaque, or press K.
 
 Not browser-run. Unit tests: `tests/calendar-dates.test.js`, `tests/date-text.test.js`.
+
+## Costumes
+
+`src/render/festive/costumes.js`: during an event some townsfolk wear a costume (`WARDROBE`: about 40% at Halloween
+and 48% at Christmas, 16% on the Fourth). Every costume shape is merged into one geometry tagged by `aPart`; each person
+has an instanced `aKind` and the shader shows only the matching part. The layer shares the crowd's instance matrices, so
+it costs one draw call per crowd (pavement walkers in `render/townsfolk.js`, and the life pools in `render/life/pools.js`),
+and only while an event is on. Who wears what is a hash of the person, so a resident keeps the same costume.

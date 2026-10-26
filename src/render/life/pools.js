@@ -7,6 +7,7 @@ import * as THREE from '../../../vendor/three/three.module.min.js';
 import { allocInstanceColors } from '../geom.js';
 import { groundY } from '../road-mesh.js';
 import { clothGeometry, personGeometry, tintToon } from './figures.js';
+import { costumeLayer } from '../festive/costumes.js';
 
 const m4 = new THREE.Matrix4(), qa = new THREE.Quaternion(), p3 = new THREE.Vector3(), s3 = new THREE.Vector3(), eul = new THREE.Euler(), col = new THREE.Color();
 export const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
@@ -32,8 +33,10 @@ export function createActors(world, max = 128) {
     leg: new Uint8Array(max), t: new Float32Array(max), len: new Float32Array(max), speed: new Float32Array(max),
     stand: new Float32Array(max), standing: new Float32Array(max), size: new Float32Array(max), yaw: new Float32Array(max),
     face: new Float32Array(max), phase: new Float32Array(max), dist: new Float32Array(max), sit: new Uint8Array(max),
-    fadeIn: new Float32Array(max), fadeOut: new Float32Array(max),
+    fadeIn: new Float32Array(max), fadeOut: new Float32Array(max), who: new Int32Array(max),
   };
+  const costume = costumeLayer(world, mesh, max); // festive costumes on the same matrices
+  let event = '';
   let next = 0, top = 0;
 
   function setLeg(a, leg) {
@@ -62,6 +65,7 @@ export function createActors(world, max = 128) {
       A.stand[a] = o.stand || 0; A.sit[a] = o.sit ? 1 : 0; A.face[a] = o.face || 0;
       A.fadeIn[a] = o.fadeIn || 0.25; A.fadeOut[a] = o.fadeOut || 0.25;
       mesh.setColorAt(a, col.setHex(o.color ?? 0xFAF3E4));
+      A.who[a] = (Math.random() * 1e6) | 0; costume.dress(a, event, A.who[a]);
       mesh.instanceColor.needsUpdate = true;
       setLeg(a, 0);
       return true;
@@ -100,7 +104,15 @@ export function createActors(world, max = 128) {
       mesh.count = hi;
       mesh.instanceMatrix.needsUpdate = true;
       mesh.visible = hi > 0;
+      costume.sync();
     },
+    // The festive event under way ('' for none): everyone out now changes into (or out of) costume.
+    setEvent(ev) {
+      if (ev === event) return;
+      event = ev;
+      for (let a = 0; a < max; a++) costume.dress(a, event, A.who[a]);
+    },
+    syncCostume: () => costume.sync(),
     active: () => top,
   };
 }

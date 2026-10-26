@@ -37,9 +37,10 @@ export default {
         c.fill = live ? live.fill : 0.5; c.happy = live ? live.happy : 0.4; c.rain = f.sky ? f.sky.rain || 0 : 0;
         c.effects = effects; c.crowd = crowd; c.vx = v.tx; c.vz = v.tz; c.r2 = r * r;
         for (const d of directors) d.frame(c);
+        pools.folk.setEvent(f.state.event || '');
         pools.folk.step(f.dt, f.t);
         pools.cloth.mesh.visible = effects > 0 && pools.cloth.count > 0;
-        if (effects <= 0) pools.folk.mesh.visible = false;
+        if (effects <= 0) { pools.folk.mesh.visible = false; pools.folk.syncCostume(); }
       },
     };
   },

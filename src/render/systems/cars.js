@@ -9,7 +9,7 @@ export default {
     const cars = buildCars(world, grid, camera);
     const folk = buildTownsfolk(world, grid, camera);
     return {
-      frame: (f) => { cars.update(f.simDt, f.state.roads, f.state.pop, f.state.popLive, f.state.routineHour, dayIndexOf(f.state.days || 0)); folk.update(f.simDt, f.state.roads, f.state.pop, f.state.popLive, f.state.routineHour, dayIndexOf(f.state.days || 0)); },
+      frame: (f) => { cars.update(f.simDt, f.state.roads, f.state.pop, f.state.popLive, f.state.routineHour, dayIndexOf(f.state.days || 0)); folk.update(f.simDt, f.state.roads, f.state.pop, f.state.popLive, f.state.routineHour, dayIndexOf(f.state.days || 0), f.state.event || ''); },
       count: cars.count,
       folk: folk.count,
       // Graphics settings: crowd size and vehicle ink edges.
