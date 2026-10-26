@@ -5,7 +5,7 @@ import { MONTH_NAMES, MONTH_SHORT, SEASONS, monthDaysOf, seasonOfMonth } from '.
 import { MARKET } from '../../core/holidays.js';
 import { iconFor } from '../holiday-icons.js';
 import { $ } from '../format.js';
-import { clockText, dateOf, inDaysText, longDate, monthCells, nextMonthSkip, seasonName, shortDate, todayLine, townDays, upcoming, yearLine, yearRibbon } from '../date-text.js';
+import { clockText, coverText, dateOf, eventInfo, inDaysText, longDate, monthCells, nextMonthSkip, seasonName, shortDate, todayLine, townDays, upcoming, yearLine, yearRibbon } from '../date-text.js';
 
 const CLOSE_SVG = '<svg width="16" height="16" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2L12 12M12 2L2 12" stroke="#2B2620" stroke-width="2.2" stroke-linecap="round"/></svg>';
 const CAL_SVG = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2B2620" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" fill="#FBF6EA"/><path d="M3.5 10H20.5M8 3V7M16 3V7"/></svg>';
@@ -34,6 +34,7 @@ export default {
           <div><h2 class="h-disp" id="dpd"></h2><div class="sub" id="dps"></div></div></div>
         <p class="dtoday" id="dptoday"></p>
       </div>
+      <div class="devent" id="dpevent" hidden></div>
       <div class="pad">
         <section class="gsec"><h3 id="dpmonthname"></h3>
           <div class="dmonth" id="dmonth"></div>
@@ -59,6 +60,7 @@ export default {
       const today = $('dptoday');
       today.innerHTML = t ? iconFor(s.holiday || 'market', 18) + '<span>Today: ' + t + '</span>' : '<span>A quiet day in the ' + seasonName(s).toLowerCase() + '.</span>';
       set('dpmonthname', MONTH_NAMES[s.month]);
+      paintEvent();
 
       const cells = monthCells(s, mdv);
       const grid = $('dmonth');
@@ -89,7 +91,7 @@ export default {
       const yr = $('dyear');
       if (yr.dataset.sig !== rsig) {
         yr.dataset.sig = rsig;
-        yr.innerHTML = ribbon.map((m) => `<span class="dmo" data-season="${m.season}"${m.current ? ' data-current="1" aria-current="date"' : ''} title="${MONTH_NAMES[m.month]}${m.name ? ': ' + m.name : ''}"><em>${m.short}</em>${m.holiday ? iconFor(m.holiday, 14) : '<i></i>'}</span>`).join('');
+        yr.innerHTML = ribbon.map((m) => `<span class="dmo" data-season="${m.season}"${m.event ? ` data-event="${m.event}"` : ''}${m.current ? ' data-current="1" aria-current="date"' : ''} title="${MONTH_NAMES[m.month]}${m.name ? ': ' + m.name : ''}"><em>${m.short}</em>${m.holiday ? iconFor(m.holiday, 14) : '<i></i>'}</span>`).join('');
       }
 
       const up = upcoming(s, mdv, 3);
@@ -102,10 +104,26 @@ export default {
       }
     }
 
+    // The festive strip under the band: the season under way with how dressed the town is, or the next one coming.
+    function paintEvent() {
+      const ev = eventInfo(s, md()), box = $('dpevent');
+      const sig = ev ? ev.id + ev.line + (ev.now ? Math.round(ev.cover * 100) : '') : '';
+      if (box.dataset.sig === sig) return;
+      box.dataset.sig = sig;
+      box.hidden = !ev;
+      if (!ev) return;
+      box.dataset.event = ev.id;
+      box.dataset.now = ev.now ? '1' : '';
+      box.innerHTML = `<span class="deico">${iconFor(ev.id, 26)}</span><div><b class="h-disp">${ev.now ? ev.line : 'Next: ' + ev.name}</b>` +
+        (ev.now ? `<span class="dcover"><i style="width:${Math.round(ev.cover * 100)}%"></i></span><small>${coverText(ev.cover)}</small>`
+          : `<small>Decorations go up ${ev.inDays === 1 ? 'tomorrow' : 'in ' + ev.inDays + ' days'}</small>`) + '</div>';
+    }
+
     function paintTip() {
-      const up = upcoming(s, md(), 1)[0], t = todayLine(s);
+      const up = upcoming(s, md(), 1)[0], t = todayLine(s), ev = eventInfo(s, md());
       tip.innerHTML = `<b class="h-disp">${longDate(s)}</b><span>${townDays(s)}</span>` +
         (t ? `<span class="tnow">Today: ${t}</span>` : '') +
+        (ev && ev.now ? `<span class="tev">${ev.line}</span>` : '') +
         (up ? `<span>Next: ${up.name}, ${inDaysText(up.inDays)}</span>` : '');
     }
 
@@ -113,6 +131,12 @@ export default {
       set('dchd', shortDate(s));
       set('dchs', yearLine(s));
       plaque.dataset.season = SEASONS[seasonOfMonth(s.month)];
+      // in a festive season the badge wears the event's glyph and colour
+      const badge = plaque.querySelector('.dbadge');
+      if (plaque.dataset.event !== s.event) {
+        plaque.dataset.event = s.event;
+        badge.innerHTML = s.event ? iconFor(s.event, 26) : CAL_SVG;
+      }
       const flag = $('dchf');
       const kind = s.holiday ? 'festival' : s.market ? 'market' : '';
       flag.hidden = !kind;
@@ -150,7 +174,7 @@ export default {
     return {
       frame() {
         // Cheap per-frame check: repaint only when the day, the festival or the settings change.
-        const k = s.dayIdx + ':' + s.holiday + ':' + s.market + ':' + md();
+        const k = s.dayIdx + ':' + s.holiday + ':' + s.market + ':' + s.event + ':' + md();
         if (k !== key) { key = k; paintPlaque(); if (open) paintPanel(); else if (hover) paintTip(); }
         else if (open) set('dps', townDays(s) + ' · ' + clockText(s.routineHour ?? s.hour));
       },

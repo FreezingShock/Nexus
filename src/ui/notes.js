@@ -7,6 +7,7 @@ const TYPES = {
   firstSnow: { title: 'First snow', icon: 'sprout' },
   milestone: { title: 'A milestone', icon: 'medal' },
   holiday: { title: 'A festival', icon: 'flag' },
+  eventStart: { title: 'A festive season', icon: 'star' },
   skipped: { title: 'Days drift by', icon: 'sun' },
 };
 

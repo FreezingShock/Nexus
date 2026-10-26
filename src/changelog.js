@@ -16,6 +16,15 @@ export const KINDS = {
 
 export const CHANGELOG = [
   {
+    v: '0.12.0', date: '2026-10-26', name: 'Deck the streets',
+    blurb: 'The calendar comes alive: the town now dresses up for the Fourth of July, Halloween and Christmas.',
+    items: [
+      { k: 'new', t: 'Seasonal events: the Fourth of July, Halloween and Christmas each fill their month. Decorations go up a few houses at a time and the whole town is dressed by the big day.' },
+      { k: 'new', t: "New Year's Eve closes the year, and the Harvest Feast moves to September to make room for Halloween." },
+      { k: 'look', t: 'The calendar (K) shows the festive season under way with how dressed the town is, or the next one coming, and the date plaque wears the event\'s badge.' },
+    ],
+  },
+  {
     v: '0.11.0', date: '2026-10-25', name: 'Tunes on the breeze',
     blurb: 'Little tunes now drift over the town, and the streets, gardens and river have more to say.',
     items: [

@@ -75,6 +75,9 @@
 :root[data-theme="dark"] :is(.datepanel .band,.dmo)[data-season="summer"]{--sn:#F3D894}
 :root[data-theme="dark"] :is(.datepanel .band,.dmo)[data-season="autumn"]{--sn:#EBBE98}
 :root[data-theme="dark"] :is(.datepanel .band,.dmo)[data-season="winter"]{--sn:#DCE8EC}
+:root[data-theme="dark"] .devent[data-now="1"]{background-color:color-mix(in oklab,var(--evb,#F6DDD6) 22%,var(--paper))}
+:root[data-theme="dark"] .devent[data-event="halloween"]{--evb:#F6D9B5}
+:root[data-theme="dark"] .devent[data-event="july4"]{--evb:#DCE6F5}
 
 /* ---- notebook pages ---- */
 :root[data-theme="dark"] .nb-sheet::after,

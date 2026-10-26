@@ -1,6 +1,7 @@
 // Words and choices for the date plaque and the skip panel. Pure (no DOM), so the node tests cover them.
 import { MONTH_NAMES, MONTH_SHORT, SEASONS, clockText, seasonOfMonth } from '../core/calendar.js';
 import { HOLIDAYS, MARKET, holidayOn, marketOn, nextHolidayDay } from '../core/holidays.js';
+import { EVENTS, eventLine, eventOn, nextEventStart } from '../core/events.js';
 
 const cap = (w) => w.charAt(0).toUpperCase() + w.slice(1);
 export const seasonName = (state) => cap(SEASONS[seasonOfMonth(state.month)]);
@@ -59,8 +60,10 @@ export function monthCells(state, monthDays) {
 // The year ribbon: twelve months of this calendar year, each with its season and any festival it holds.
 export function yearRibbon(state, monthDays) {
   return MONTH_SHORT.map((short, m) => {
-    const h = HOLIDAYS.find((x) => !x.weather && x.month === m);
-    return { month: m, short, season: SEASONS[seasonOfMonth(m)], current: m === state.month, holiday: h ? h.id : '', name: h ? h.name : '' };
+    const h = HOLIDAYS.find((x) => !x.weather && x.month === m), ev = EVENTS.find((e) => e.months.includes(m));
+    // an event month shows the event (its peak holiday's glyph); other months their festival
+    const id = ev ? ev.peak : h ? h.id : '', name = ev ? ev.name + ' season' : h ? h.name : '';
+    return { month: m, short, season: SEASONS[seasonOfMonth(m)], current: m === state.month, holiday: id, name, event: ev ? ev.id : '' };
   });
 }
 
@@ -69,4 +72,15 @@ export function nextMonthSkip(state, monthDays) {
   const day = state.dayIdx - (state.dayOfMonth - 1) + monthDays;
   return { day, inDays: day - state.dayIdx, month: (state.month + 1) % 12 };
 }
+// The festive season for the calendar: the event under way (with how dressed the town is), or the next one to come.
+//   { now: true, id, name, line, cover, accent }  or  { now: false, id, name, inDays, line }  or null
+export function eventInfo(state, monthDays) {
+  const ev = eventOn(state.dayIdx, monthDays);
+  if (ev) return { now: true, id: ev.id, name: ev.event.name, line: eventLine(ev), cover: ev.cover, accent: ev.event.accent };
+  const nx = nextEventStart(state.dayIdx, monthDays);
+  if (!nx) return null;
+  const inDays = nx.dayIdx - state.dayIdx;
+  return { now: false, id: nx.id, name: nx.name, inDays, line: nx.name + ' season ' + inDaysText(inDays) };
+}
+export const coverText = (cover) => (cover >= 1 ? 'Every street is dressed up' : 'Decorations up on ' + Math.round(cover * 100) + '% of the town');
 export { clockText };
