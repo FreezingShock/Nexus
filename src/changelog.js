@@ -22,6 +22,8 @@ export const CHANGELOG = [
       { k: 'new', t: 'Seasonal events: the Fourth of July, Halloween and Christmas each fill their month. Decorations go up a few houses at a time and the whole town is dressed by the big day.' },
       { k: 'new', t: "New Year's Eve closes the year, and the Harvest Feast moves to September to make room for Halloween." },
       { k: 'look', t: 'The calendar (K) shows the festive season under way with how dressed the town is, or the next one coming, and the date plaque wears the event\'s badge.' },
+      { k: 'look', t: 'Nexus has a new hand-drawn emblem: a little hilltop town by the river, on the title screen, the loading screen and the browser tab.' },
+      { k: 'new', t: 'Ideas & feedback: a note in the title screen\'s corner where you can send ideas, bugs or a hello straight to the maker. Written offline? It waits and goes next time.' },
     ],
   },
   {

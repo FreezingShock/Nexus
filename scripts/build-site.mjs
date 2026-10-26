@@ -16,7 +16,7 @@ const MINIFY_DIRS = ['src', 'css']; // our own code; vendor/three is already min
 // Top-level names that are not part of the site. Everything else at the root is published.
 export const EXCLUDE = new Set([
   '.git', '.github', '.gitattributes', '.gitignore', 'node_modules', 'dist',
-  'tests', 'scripts', 'docs', 'package.json', 'package-lock.json', 'wrangler.jsonc', '.wrangler', 'README.md', 'CONTRIBUTING.md',
+  'tests', 'scripts', 'docs', 'worker', 'feedback-local.jsonl', 'package.json', 'package-lock.json', 'wrangler.jsonc', '.wrangler', 'README.md', 'CONTRIBUTING.md',
 ]);
 
 if (OUT === ROOT || ROOT.startsWith(OUT + '/')) throw new Error('outDir must be a separate folder');

@@ -1,0 +1,46 @@
+/* The feedback box in the title screen's bottom-right corner (src/ui/feedback-box.js): a paper tab that unfolds upward
+   into a taped note. It sits under the notebook sheet (z 3-4) so an open page always covers it. */
+.fb{position:absolute;right:max(20px,3vw);bottom:18px;z-index:2;display:flex;flex-direction:column;align-items:flex-end;gap:12px;pointer-events:none}
+.fb>*{pointer-events:auto}
+.fb-tab{display:flex;align-items:center;gap:8px;height:44px;padding:0 16px 0 10px;border:2.5px solid var(--ink);border-radius:14px 16px 13px 15px;background:var(--paper);box-shadow:0 4px 0 var(--ink);font:800 14px/1 var(--body);color:var(--text);position:relative;rotate:-1deg;transition:transform .22s cubic-bezier(.3,1.7,.5,1),box-shadow .12s,background .2s}
+.fb-tab svg{width:26px;height:26px;flex:none;transition:rotate .3s cubic-bezier(.3,1.7,.5,1)}
+.fb-tab:hover{transform:translateY(-2px)}
+.fb-tab:hover svg{rotate:-10deg}
+.fb-tab:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.fb-tab.on{background:var(--mustard)}
+.fb-dot{position:absolute;top:-5px;right:-5px;width:13px;height:13px;border:2px solid var(--ink);border-radius:50%;background:var(--coral)}
+
+.fb-card{position:relative;width:min(340px,calc(100vw - 40px));padding:20px 20px 16px;transform-origin:100% 100%}
+.fb-tape{position:absolute;left:50%;top:-12px;width:84px;height:24px;margin-left:-42px;rotate:2deg;z-index:2}
+.fb-x{position:absolute;right:10px;top:8px;width:30px;height:30px;border:0;border-radius:50%;background:none;font:700 22px/1 var(--body);color:var(--ink-soft)}
+.fb-x:hover{background:rgb(var(--line) / .08);color:var(--text)}
+.fb-title{font-size:22px;margin:0 0 2px}
+.fb-sub{margin:0 0 12px;font-size:13px;color:var(--ink-soft)}
+.fb-kinds{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.fb-kind input{position:absolute;opacity:0;pointer-events:none}
+.fb-kind span{display:flex;align-items:center;gap:5px;padding:4px 10px 4px 6px;border:2px solid rgb(var(--line) / .35);border-radius:11px;background:var(--paper);font-size:12.5px;font-weight:700;cursor:pointer;transition:background .15s,border-color .15s,translate .15s}
+.fb-kind svg{width:18px;height:18px}
+.fb-kind:hover span{translate:0 -1px}
+.fb-kind input:checked+span{border-color:var(--ink);background:var(--c);box-shadow:0 2px 0 var(--ink)}
+.fb-kind input:focus-visible+span{outline:2.5px solid var(--action);outline-offset:2px}
+.fb-field{display:block;margin-bottom:10px;position:relative}
+.fb-lab{display:block;margin-bottom:4px;font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--terra)}
+.fb-lab i{font-style:normal;font-weight:600;letter-spacing:0;text-transform:none;color:var(--ink-soft)}
+.fb-field textarea,.fb-field input{display:block;width:100%;box-sizing:border-box;padding:8px 10px;border:2px solid var(--ink);border-radius:10px;background:var(--paper);color:var(--text);font:14px/1.45 var(--body);resize:vertical}
+/* ruled notebook lines in the note */
+.fb-field textarea{min-height:110px;max-height:260px;background-image:repeating-linear-gradient(transparent 0 calc(1.45em - 1px),rgb(var(--line) / .12) calc(1.45em - 1px) 1.45em);background-position:0 8px;background-attachment:local}
+.fb-field textarea:focus,.fb-field input:focus{outline:none;border-color:var(--action);box-shadow:0 0 0 3px rgba(184,71,46,.15)}
+.fb-count{position:absolute;right:8px;bottom:5px;font-size:11px;color:var(--ink-soft);font-variant-numeric:tabular-nums;pointer-events:none}
+.fb-hp{position:absolute!important;left:-9999px;width:1px;height:1px;overflow:hidden}
+.fb-foot{display:flex;align-items:center;gap:10px;margin-top:4px}
+.fb-status{flex:1;margin:0;font-size:12.5px;color:var(--ink-soft);min-height:1.2em}
+.fb-send{display:flex;align-items:center;gap:7px;height:42px;padding:0 16px 0 10px;font-size:15px}
+.fb-send svg{width:24px;height:24px}
+.fb-send:disabled{opacity:.6}
+.fb-done{text-align:center;padding:6px 0 4px}
+.fb-stamp{display:grid;place-items:center;width:64px;height:64px;margin:0 auto 8px;border:2.5px dashed var(--action);border-radius:50%;rotate:-8deg;animation:fb-stamp .5s cubic-bezier(.3,1.6,.5,1) both}
+.fb-stamp svg{width:38px;height:38px}
+@keyframes fb-stamp{from{scale:1.6;opacity:0;rotate:-24deg}}
+.fb-again{height:40px;font-size:14px;margin-top:2px}
+
+@media (max-width:900px){.fb{right:16px;bottom:14px}}
