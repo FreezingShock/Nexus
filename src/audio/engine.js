@@ -15,7 +15,7 @@ const MUSIC_TONE = 2600;   // the music's soft lowpass, so nothing in a tune is 
 const TRIM = { murmur: 0.35, traffic: 0.3, water: 0.3, wind: 0.45, rain: 0.35, hush: 0.4, rustle: 0.2, birds: 0.7, owls: 0.8, crickets: 0.7, cicadas: 0.6,
   dogs: 0.7, cuckoo: 0.8, frogs: 0.7, thunder: 0.9, hearth: 0.5 };
 const WATER_CAP = 0.3;     // the river is never loud; distance decides how close it comes (attenuation.js)
-const MIN_GAP = { hover: 0.11, tick: 0.05, 'road-grow': 0.055, click: 0.04, select: 0.04, note: 2, arrive: 4, sparkle: 0.25, market: 8, festival: 8 }; // seconds between repeats
+const MIN_GAP = { hover: 0.11, tick: 0.05, 'road-grow': 0.055, click: 0.04, select: 0.04, note: 2, arrive: 4, sparkle: 0.25, market: 8, festival: 8, firework: 0.18, 'firework-launch': 0.35 }; // seconds between repeats
 const DRIFT_S = [6, 14];   // each layer wanders between these gaps, so the bed never settles into a loop
 const BIRD_PATTERNS = [[0, 0.09], [0, 0.09, 0.2], [0, 0.07, 0.14, 0.26], [0, 0.12]];
 
@@ -242,6 +242,17 @@ export function createEngine({ win = globalThis } = {}) {
     coin: (t, o) => { const f = 1318.5 * Math.pow(2, Math.min(o.n || 1, 16) / 24); blip(t, f, 0.09, 0.035, 'triangle', f * 1.02); blip(t + 0.02, f * 2, 0.06, 0.012, 'sine'); },
     part: (t, o) => { const f = 392 * Math.pow(2, Math.min(o.n || 1, 16) / 24); blip(t, f, 0.06, 0.05, 'square', f * 0.9); noiseBurst(t, 'bandpass', 900, 0.03, 0.03); },
     // A family arriving: two soft rising notes. A sparkle: one tiny high twinkle.
+    // Fireworks, heard from across town: a thin rising whistle, then a soft low boom and, now and then, a crackle.
+    'firework-launch': (t) => { if (Math.random() < 0.5) sweep(t, 'bandpass', 900, 2600, 0.9, 0.012); },
+    firework: (t, o) => {
+      const n = Math.max(1, Math.min(o.n || 1, 3));
+      for (let i = 0; i < n; i++) {
+        const tt = t + i * 0.07 + Math.random() * 0.05;
+        blip(tt, 95, 0.5, 0.08, 'sine', 38);
+        noiseBurst(tt, 'lowpass', 320, 0.45, 0.09);
+        if (Math.random() < 0.35) for (let k = 0; k < 6; k++) noiseBurst(tt + 0.35 + Math.random() * 0.5, 'highpass', 3500, 0.01, 0.012);
+      }
+    },
     arrive: (t) => { bell(t, 659.25, 1.1, 0.07, 0.5); bell(t + 0.16, 987.77, 1.4, 0.06, 0.5); },
     sparkle: (t) => { blip(t, 2093, 0.14, 0.02, 'sine', 2349); blip(t + 0.07, 3135.96, 0.12, 0.014, 'sine'); },
     deny: (t) => blip(t, 220, 0.1, 0.03, 'sine', 180),
