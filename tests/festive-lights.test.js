@@ -60,3 +60,27 @@ test('the lights system dresses the town for Christmas, a few houses at first an
   sim.state.event = ''; frame();
   assert.equal(bulbs.visible, false, 'down again after the season');
 });
+
+test('festive props: every event has its door decorations, and the town puts them out with its lights', async () => {
+  const { propsFor } = await import('../src/render/festive/props.js');
+  const decor = (await import('../src/render/systems/festive-decor.js')).default;
+  const body = { x: 0, z: 0, y0: 0.25, w: 3, d: 3, floors: 2 };
+  for (const ev of ['halloween', 'christmas', 'july4']) assert.ok(propsFor(ev, [0, 1.6], body, 5).length >= 3, ev);
+  assert.equal(propsFor('', [0, 1.6], body, 5).length, 0);
+  const sim = createSim({ state: freshState(), layout: getLayout() });
+  const world = new THREE.Group();
+  const town = createTown(world, {});
+  town.setState(sim.state);
+  const sys = decor.create({ THREE, world, town, sys: () => null });
+  const mesh = world.children.find((o) => o.isMesh && !o.isInstancedMesh);
+  const tris = () => (mesh.visible ? mesh.geometry.attributes.position.count / 3 : 0);
+  sim.state.event = 'halloween'; sim.state.eventCover = 0.35;
+  sys.frame({ dt: 0.03, t: 1, state: sim.state });
+  const few = tris();
+  sim.state.eventCover = 1;
+  sys.frame({ dt: 0.03, t: 1, state: sim.state });
+  assert.ok(tris() > few && few >= 0, few + ' then ' + tris());
+  sim.state.event = '';
+  sys.frame({ dt: 0.03, t: 1, state: sim.state });
+  assert.equal(mesh.visible, false);
+});
