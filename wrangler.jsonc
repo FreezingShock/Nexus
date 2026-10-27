@@ -13,8 +13,9 @@
     "binding": "ASSETS",
     "not_found_handling": "404-page",
     "run_worker_first": ["/api/*", "/admin/*"]
-  }
-  // Feedback storage. Create the database once (docs/FEEDBACK.md), then replace this comment with:
-  // ,"d1_databases": [{ "binding": "FEEDBACK_DB", "database_name": "nexus-feedback", "database_id": "<id from the dashboard>" }]
-  // Until then the feedback route answers 503 and players' notes wait in their browser.
+  },
+  // Player feedback (docs/FEEDBACK.md). The id is not a secret; the admin password is the FEEDBACK_ADMIN_KEY secret.
+  "d1_databases": [
+    { "binding": "FEEDBACK_DB", "database_name": "nexus-feedback", "database_id": "14fdc2a7-f5dd-4f45-b7d2-f71651c7c7f4" }
+  ]
 }
