@@ -173,7 +173,7 @@ const B = {
     k.disc(0.15, -k.w * 0.1, k.top - 0.42, k.dep / 2 + 0.14, C.gold, { thick: 0.06, edge: false });                      // the loaf
     k.chimneyAt(k.w * 0.3, -k.dep * 0.2, 1.0, C.brick);
     for (let i = 0; i < 2; i++) k.box(0.34, 0.26, 0.3, -k.w * 0.38 + i * 0.4, PLINTH, k.dep / 2 + 0.3, C.wood, { edge: false });   // bread crates
-    decorate(k, { skip: ['boxes', 'garden', 'chimney', 'lamp', 'cornice'] });
+    decorate(k, { skip: ['boxes', 'garden', 'chimney', 'lamp', 'cornice', 'bunting'] });   // no bunting: it would hide the signboard
     if (k.level >= 2) k.windowBoxes(1);
     if (k.level >= 4) k.lamp(k.w * 0.45, k.dep / 2 + 0.55);
   },
@@ -199,7 +199,6 @@ const B = {
     if (k.level >= 3) for (const sx of [-1, 1]) k.flag(sx * (k.w / 2 - 0.5), k.top + 0.5, k.dep / 2 - 0.4);
     decorate(k, { skip: ['boxes', 'cornice', 'gableWindow', 'garden', 'chimney', 'crown', 'bunting'] });
     if (k.level >= 2) k.windowBoxes(1);
-    if (k.level >= 5) k.bunting(7);
   },
 
   cafe(k) {
