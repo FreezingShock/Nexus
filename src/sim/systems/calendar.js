@@ -51,7 +51,7 @@ export function refreshCalendar(ctx) {
   const fest = holidayOn(v.date.dayIdx, v.date.monthDays);
   state.holiday = fest ? fest.id : (state.snowDay === v.date.dayIdx ? FIRST_SNOW.id : '');
   state.market = marketOn(v.date.dayIdx) ? 1 : 0;
-  const ev = eventOn(v.date.dayIdx, v.date.monthDays);
+  const ev = eventOn(v.date.dayIdx, v.date.monthDays, state.festive && state.festive.optIn);
   state.event = ev ? ev.id : '';
   state.eventCover = ev ? ev.cover : 0;
   state.eventPeak = ev && ev.peak ? 1 : 0;
@@ -84,7 +84,7 @@ function newDay(ctx) {
   const fest = holidayOn(state.dayIdx, md);
   if (fest) emit({ type: 'holiday', id: fest.id, title: fest.name, text: fest.text });
   if (marketOn(state.dayIdx)) emit({ type: 'market', id: 'market', text: MARKET.text });
-  const ev = eventOn(state.dayIdx, md);
+  const ev = eventOn(state.dayIdx, md, state.festive && state.festive.optIn);
   if (ev && ev.day === 0) emit({ type: 'eventStart', id: ev.id, title: ev.event.name + ' season', text: ev.event.start, tint: ev.event.accent });
 }
 

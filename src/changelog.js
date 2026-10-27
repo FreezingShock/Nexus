@@ -16,6 +16,17 @@ export const KINDS = {
 
 export const CHANGELOG = [
   {
+    v: '0.14.0', date: '2026-10-27', name: 'Kite weather',
+    blurb: 'An optional spring season for a certain beagle: red doghouses, kites and a lazy piano.',
+    items: [
+      { k: 'new', t: 'Snoopy Days, a spring season you switch on yourself in the calendar\'s Decorations section. It is off until you do, and builds up to the Blossom Fair.' },
+      { k: 'look', t: 'During Snoopy Days a red doghouse sits by many front doors with a white beagle asleep on the roof, and kites fly over the rooftops on thin strings.' },
+      { k: 'look', t: 'Townsfolk come out as white beagles with long black ears, and a few as flying aces in a brown cap and red scarf.' },
+      { k: 'new', t: 'A red doghouse and a kite post to place in your garden while the season is on.' },
+      { k: 'sound', t: 'The music turns lazy and swinging, with a soft piano and its own tune names.' },
+    ],
+  },
+  {
     v: '0.13.0', date: '2026-10-27', name: 'Soft rain on the roofs',
     blurb: 'The town sounds like a real place now: what you hear follows the camera, and every sound is softer and warmer.',
     items: [

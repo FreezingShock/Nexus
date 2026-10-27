@@ -26,6 +26,9 @@ export const EVENT_COLOUR = {
     words: ['Pumpkin Lane', 'Little Ghosts', 'Lantern Grin', 'Tricks and Treats', 'Broomstick Waltz', 'Creaky Gate'] },
   july4: { mode: 'ionian', lead: 'flute', leadB: 'piano', comp: 'piano', tempo: 1.15, perc: 'snare', beats: [0, 1, 1.5, 2, 3],
     words: ['Picnic on the Green', 'Bandstand March', 'Sparkler Street', 'Lemonade Stand', 'Stars over the Square'] },
+  // Snoopy Days: a lazy, swinging piano and a soft block on the off-beat, nothing at night.
+  snoopy: { mode: 'mixolydian', lead: 'piano', leadB: 'musicbox', comp: 'bass', tempo: 0.97, perc: 'block', beats: [1.5, 3.5],
+    words: ['Kite Weather', 'Doghouse Roof', 'Little Red Doghouse', 'Supper Dish Waltz', 'Dancing on the Lawn', 'Flying Ace Rag', 'String and Sky'] },
 };
 
 // Between tunes there is a quiet stretch of town sound (nate's choice: tunes with gaps, no setting). The music slider
