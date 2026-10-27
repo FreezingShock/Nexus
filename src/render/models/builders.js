@@ -14,6 +14,8 @@ const { FLOOR_H: FH, PLINTH } = LANG;
 const awn = (k, i = 0) => AWNINGS[(Math.floor(k.t[5] * AWNINGS.length) + i) % AWNINGS.length];
 const units = (k) => Math.max(1, k.d.cw);
 const clampRise = (w, lo, hi, f) => Math.max(lo, Math.min(hi, w * f));
+// Which of n looks this building wears, from a fixed trait slot: the same seed always gives the same variant.
+const look = (k, n) => Math.floor(k.t[7] * n);
 
 // Flat upward quads merged into one geometry: q is [x0, z0, x1, z1, y, ...] for each quad.
 function quadsGeo(q) {
@@ -31,35 +33,40 @@ function quadsGeo(q) {
 }
 
 const B = {
+  // Three roofs: hipped, gable end to the street, or long eaves to the street.
   cottage(k) {
     k.body(); k.door();
-    k.hipRoof(clampRise(k.w, 1.0, 1.5, 0.5));
+    const v = look(k, 3), rise = clampRise(k.w, 1.0, 1.5, 0.5);
+    if (v === 0) k.hipRoof(rise); else if (v === 1) k.gableRoof(rise + 0.1, 'z'); else k.gableRoof(rise, 'x');
     k.box(1.3, 0.1, 0.7, k.doorX, PLINTH + 1.2, k.dep / 2 + 0.3, k.P.accent, { rx: 0.2 }); // porch hood
     decorate(k, { hearth: true });
   },
 
   terrace(k) {
-    const n = units(k), uw = k.w / n;
+    const n = units(k), uw = k.w / n, v = look(k, 3);   // v: a gable per house, one long eave roof with dormers, or a mansard cap
     k.body();
     const rises = [];
     for (let i = 0; i < n; i++) {
       const x = -k.w / 2 + (i + 0.5) * uw, rise = 1.3 + k.t[(i + 2) % 12] * 0.4;  // each gable a touch different
-      k.part(prismGeo([[-uw / 2 - 0.05, 0], [uw / 2 + 0.05, 0], [0, rise]], k.dep + 0.3), k.P.roof, x, k.top, 0);
+      if (v === 0) k.part(prismGeo([[-uw / 2 - 0.05, 0], [uw / 2 + 0.05, 0], [0, rise]], k.dep + 0.3), k.P.roof, x, k.top, 0);
       rises.push({ x, rise });
     }
-    k.roof = { kind: 'gable', rise: rises[0].rise, along: 'z', y: k.top, span: uw, len: k.dep };
+    if (v === 0) k.roof = { kind: 'gable', rise: rises[0].rise, along: 'z', y: k.top, span: uw, len: k.dep };
+    else if (v === 1) { k.gableRoof(1.3, 'x'); k.dormers(Math.min(4, n + 1)); }
+    else { k.mansardRoof(1.2, 0.5); k.dormers(Math.min(4, n + 1)); }
     for (let i = 0; i < n; i++) {
       const x = n === 1 ? k.doorX : -k.w / 2 + (i + 0.5) * uw + (k.t[4] - 0.5) * uw * 0.25;
       k.door(x, k.dep / 2, i % 2 ? k.P.accent : awn(k, i));
       if (n > 1) k.box(0.9, 0.08, 0.5, x, PLINTH + 1.2, k.dep / 2 + 0.25, awn(k, i + 1), { rx: 0.2 });
     }
-    decorate(k, { units: rises, hearth: true });
+    decorate(k, v === 0 ? { units: rises, hearth: true } : { hearth: true, skip: ['dormers'] });
   },
 
+  // Crown: a slate mansard, or a steep hip roof with dormers.
   mansard(k) {
     k.body(); k.door();
     if (k.t[5] > 0.35) k.awning(k.doorX, k.dep / 2, Math.min(k.w - 0.6, 2.2), awn(k));
-    k.mansardRoof(1.5, 0.55);
+    if (look(k, 3) === 2) k.hipRoof(1.7); else k.mansardRoof(1.5, 0.55);
     k.dormers(k.w > 4.5 ? 3 : 2);
     k.bay(3, k.bayX(Math.floor((k.bx - 1) / 2)));   // one oriel above the balconies, so it never clashes with them
     if (k.level >= 4) for (let i = 0; i < Math.min(2, k.bx); i++) k.balcony(2, k.bayX(i === 0 ? 0 : k.bx - 1));
@@ -69,12 +76,19 @@ const B = {
   tower(k) {
     k.body(); k.door();
     k.awning(k.doorX, k.dep / 2, Math.min(k.w - 0.6, 2.2), awn(k));
-    k.flatRoof(0.4);
+    const v = look(k, 3);   // crown: flat roof with a stair house, a stepped penthouse, or a pointed cap
+    if (v === 2) k.hipRoof(1.5, C.slate); else k.flatRoof(0.4);
     k.bay(5, k.bayX(Math.floor((k.bx - 1) / 2)), 1.0);   // an oriel up the tower, above the floor-3 balcony
-    // stair house and water tank: the little things every flat roof has
-    k.box(k.w * 0.35, 0.8, k.dep * 0.35, k.w * 0.15, k.top + 0.4, -k.dep * 0.1, C.stone);
-    if (k.level >= 3) k.cyl(0.3, 0.3, 0.7, 8, -k.w * 0.25, k.top + 0.4, k.dep * 0.15, C.wood);
-    if (k.level >= 4) for (const sx of [-1, 1]) k.box(k.w * 0.22, 0.28, 0.4, sx * k.w * 0.28, k.top + 0.4, k.dep * 0.32, C.leaf, { edge: false });
+    if (v === 0) {   // stair house and water tank: the little things every flat roof has
+      k.box(k.w * 0.35, 0.8, k.dep * 0.35, k.w * 0.15, k.top + 0.4, -k.dep * 0.1, C.stone);
+      if (k.level >= 3) k.cyl(0.3, 0.3, 0.7, 8, -k.w * 0.25, k.top + 0.4, k.dep * 0.15, C.wood);
+    } else if (v === 1) {   // one smaller storey set back, with its own cap
+      const cw = k.w * 0.62, cd = k.dep * 0.62;
+      k.body(cw, cd, 1, 0, -k.dep * 0.08, k.top + 0.4, C.stone);
+      k.box(cw + 0.12, 0.16, cd + 0.12, 0, k.top + 0.4 + FH, -k.dep * 0.08, C.charcoal);
+      k.roof = { kind: 'flat', rise: 0.4 + FH + 0.16, along: 'z', y: k.top + 0.4 + FH + 0.16 };
+    }
+    if (k.level >= 4 && v < 2) for (const sx of [-1, 1]) k.box(k.w * 0.22, 0.28, 0.4, sx * k.w * 0.28, k.top + 0.4, k.dep * 0.32, C.leaf, { edge: false });
     if (k.level >= 4 && k.floors >= 8) k.balcony(3, k.bayX(0), 1.2);
     decorate(k, { skip: ['cornice', 'gableWindow'] });
   },
@@ -159,17 +173,39 @@ const B = {
     if (k.level >= 2) k.windowBoxes(1);
   },
 
+  // Three roofs, picked by the seed: a flat parapet with skylights and chimney pots, a row of small terracotta gables, or a slate
+  // mansard cap with dormers. The shopfronts below are the same in every case.
   'shop-row'(k) {
-    const n = units(k), uw = k.w / n;
-    k.body(); k.flatRoof(0.5, C.paper);
+    const n = units(k), uw = k.w / n, v = Math.floor(k.t[3] * 3);
+    k.body();
+    const xs = Array.from({ length: n }, (_, i) => -k.w / 2 + (i + 0.5) * uw);
+    let roofUnits = null;
+    if (v === 0) {
+      k.flatRoof(0.5, C.paper);
+      const ry = k.top + 0.5;
+      xs.forEach((x, i) => {
+        k.box(0.95, 0.12, 0.7, x, ry, -k.dep * 0.08, C.cream);
+        k.box(0.75, 0.05, 0.5, x, ry + 0.12, -k.dep * 0.08, C.glass, { edge: false });                    // a skylight
+        if (i % 2 === (k.t[4] < 0.5 ? 0 : 1)) { k.box(0.3, 0.55, 0.3, x + uw * 0.28, ry, -k.dep * 0.3, C.brick); k.box(0.4, 0.07, 0.4, x + uw * 0.28, ry + 0.55, -k.dep * 0.3, C.stone, { edge: false }); k.sites.chimneys.push([x + uw * 0.28, ry + 0.62, -k.dep * 0.3]); }
+      });
+    } else if (v === 1) {
+      const rise = 0.85 + k.t[5] * 0.3;
+      roofUnits = xs.map((x) => ({ x, rise }));
+      for (const x of xs) k.part(prismGeo([[-uw / 2 - 0.05, 0], [uw / 2 + 0.05, 0], [0, rise]], k.dep + 0.3), k.P.roof, x, k.top, 0);
+      k.roof = { kind: 'gable', rise, along: 'z', y: k.top, span: uw, len: k.dep };
+      xs.forEach((x, i) => { if (i % 2 === (k.t[4] < 0.5 ? 0 : 1)) k.chimneyAt(x + uw * 0.25, -k.dep * 0.2, rise); });
+    } else {
+      k.mansardRoof(1.1, 0.5, C.slate);
+      k.dormers(Math.min(3, n + 1));
+    }
     for (let i = 0; i < n; i++) {
-      const x = -k.w / 2 + (i + 0.5) * uw, col = awn(k, i);
+      const x = xs[i], col = awn(k, i);
       k.shopfront(uw, k.dep / 2, col, x);
       k.door(x + uw * 0.28, k.dep / 2, k.P.accent, 0.55, 1.0);   // taller than the glass beside it, so their tops differ
       k.box(Math.min(uw - 0.5, 1.5), 0.26, 0.1, x, k.top - 0.55, k.dep / 2 + 0.06, col, { edge: false }); // a sign board, no lettering
       if (k.level >= 2) { k.box(0.4, 0.3, 0.4, x - uw * 0.38, PLINTH, k.dep / 2 + 0.35, C.wood, { edge: false }); k.box(0.32, 0.22, 0.32, x - uw * 0.38, PLINTH + 0.3, k.dep / 2 + 0.35, C.leaf, { edge: false }); }
     }
-    decorate(k, { skip: ['boxes', 'cornice', 'gableWindow', 'garden'] });
+    decorate(k, { skip: ['boxes', 'cornice', 'gableWindow', 'garden', 'dormers', 'chimney'], units: roofUnits || undefined });
     if (k.level >= 2) k.windowBoxes(1);
   },
 
@@ -190,16 +226,18 @@ const B = {
 
   // The big shop: an arcade of awnings, a signboard with a gold medallion, flagpoles and a glass dome on the roof.
   department(k) {
-    const n = Math.max(2, Math.round(k.w / 2.4)), uw = k.w / n;
+    const n = 3, uw = k.w / n;
     k.body(); k.flatRoof(0.5, C.paper);
     for (let i = 0; i < n; i++) {
       const x = -k.w / 2 + (i + 0.5) * uw, col = awn(k, i);
+      if (i === 1) continue;                                                                           // the middle bay is the entrance
       k.shopfront(uw, k.dep / 2, col, x);
-      k.box(Math.min(uw - 0.5, 1.7), 0.26, 0.1, x, k.top - 0.55, k.dep / 2 + 0.06, col, { edge: false });
+      k.box(Math.min(uw - 0.5, 1.3), 0.26, 0.1, x, k.top - 0.55, k.dep / 2 + 0.06, col, { edge: false });
     }
     k.doorX = 0;
-    k.door(0, k.dep / 2, C.glass, 1.0, 1.1);
-    k.box(1.6, 0.12, 0.5, 0, PLINTH + 1.4, k.dep / 2 + 0.25, C.cream, { rx: 0.15 });                  // entrance canopy
+    k.door(0, k.dep / 2, C.glass, 1.1, 1.15);
+    for (const sx of [-1, 1]) k.box(0.18, 1.5, 0.16, sx * 0.78, PLINTH, k.dep / 2 + 0.08, C.cream, { edge: false });   // pilasters
+    k.box(1.7, 0.12, 0.5, 0, PLINTH + 1.55, k.dep / 2 + 0.25, C.cream, { rx: 0.15 });                  // entrance canopy, clear of the awnings
     k.disc(0.3, 0, k.top - 0.4, k.dep / 2 + 0.1, C.gold, { thick: 0.06, edge: false });               // sign medallion
     // glass dome on a drum, over the middle of the roof
     const dr = Math.min(k.w, k.dep) * 0.2;
@@ -213,7 +251,8 @@ const B = {
 
   cafe(k) {
     k.body(); k.door();
-    k.hipRoof(clampRise(k.w, 1.1, 1.5, 0.5));
+    const v = look(k, 3), rise = clampRise(k.w, 1.1, 1.5, 0.5);   // hipped, long-eave gable, or slate mansard cap
+    if (v === 0) k.hipRoof(rise); else if (v === 1) k.gableRoof(rise, 'x'); else k.mansardRoof(1.0, 0.45);
     k.shopfront(k.w - 0.2, k.dep / 2, awn(k), 0);
     // terrace: a stone patio, two round tables, four stools
     k.box(k.w - 0.4, 0.06, 0.55, 0, 0, k.dep / 2 + 0.45, C.stone, { edge: false });
@@ -254,9 +293,12 @@ const B = {
     k.awning(k.doorX, k.dep / 2, 1.5, C.cream);
     k.flatRoof(0.3, C.stone);
     k.bay(2, k.bayX(Math.floor((k.bx - 1) / 2)), 1.1);   // a glass oriel on the middle bay
-    // stepped crown: one smaller storey on top
+    // crown: a smaller storey stepped back, or (one look in three) a glass penthouse with roof units
     const cw = k.w * 0.58, cd = k.dep * 0.58;
-    k.body(cw, cd, 1, 0, -k.dep * 0.08, k.top + 0.3, C.charcoal);
+    if (look(k, 3) === 2) {
+      k.box(cw, FH, cd, 0, k.top + 0.3, -k.dep * 0.08, C.glass);
+      for (const sx of [-1, 1]) k.box(0.5, 0.3, 0.5, sx * k.w * 0.3, k.top + 0.3, -k.dep * 0.3, C.charcoal, { edge: false });
+    } else k.body(cw, cd, 1, 0, -k.dep * 0.08, k.top + 0.3, C.charcoal);
     k.box(cw + 0.12, 0.2, cd + 0.12, 0, k.top + 0.3 + FH, -k.dep * 0.08, C.charcoal);
     k.cyl(0.03, 0.03, 0.9, 5, k.w * 0.15, k.top + 0.3 + FH + 0.2, -k.dep * 0.08, C.slate, { edge: false });
     if (k.level >= 3) for (const sx of [-1, 1]) k.box(0.5, 0.25, 0.5, sx * k.w * 0.36, k.top + 0.3, k.dep * 0.28, C.leaf, { edge: false });
