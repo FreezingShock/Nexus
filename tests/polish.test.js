@@ -5,7 +5,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { TOOL_KEYS, SHORTCUT_GROUPS } from '../src/ui/shortcuts.js';
 import { HOVER_TIPS } from '../src/ui/hovers.js';
-import { isNoteEvent, noteFor, NOTE_ICONS } from '../src/ui/notes.js';
+import { isNoteEvent, noteFor, NOTE_ICONS, KINDS, toastKind, toastNote, chipAmount } from '../src/ui/notes.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (f) => readFileSync(join(ROOT, f), 'utf8');
@@ -72,17 +72,55 @@ test('every note icon exists', () => {
   for (const t of ['goalDone', 'renewed', 'boosted', 'milestone']) assert.ok(NOTE_ICONS[noteFor({ type: t, text: 'x' }).icon]);
 });
 
-test('a milestone gets a postcard with its own title and the colour of its stage, and a bad colour is ignored', () => {
-  const n = noteFor({ type: 'milestone', title: 'Gold · Builder', tint: '#E6BC62', text: '40 buildings placed · +20,000 coins' });
+test('a milestone gets a strip with its own title and the colour of its stage, and a bad colour is ignored', () => {
+  const n = noteFor({ type: 'milestone', title: 'Gold · Builder', tint: '#E6BC62', text: '40 buildings placed · +20,000 coins', sub: 'You reached 40 buildings placed', coins: 20000, parts: 150.7, extra: 'Avenue opens' });
   assert.equal(n.title, 'Gold · Builder');
-  assert.equal(n.tint, '#E6BC62');
+  assert.equal(n.color, '#E6BC62');
   assert.equal(n.icon, 'medal');
-  assert.equal(noteFor({ type: 'milestone', tint: 'red; background:url(x)', text: 'x' }).tint, null);
+  assert.equal(n.text, 'You reached 40 buildings placed', 'the strip says what happened; the rewards go on chips');
+  assert.deepEqual([n.coins, n.parts, n.extra], [20000, 150, 'Avenue opens']);
+  assert.equal(noteFor({ type: 'milestone', tint: 'red; background:url(x)', text: 'x' }).color, KINDS.milestone.color);
   assert.equal(noteFor({ type: 'milestone', text: 'x' }).title, 'A milestone');
+  assert.equal(noteFor({ type: 'goalDone', kind: 'daily', text: 'x' }).kind, 'daily');
 });
 
-test('the toast is skipped only for note events in ui.js', () => {
+test('every kind has a colour, an icon and a life', () => {
+  for (const [k, d] of Object.entries(KINDS)) {
+    assert.match(d.color, /^#[0-9A-F]{6}$/i, k);
+    assert.ok(NOTE_ICONS[d.icon], k + ' icon');
+    assert.ok(d.life >= 2000 && d.life <= 8000, k + ' life');
+  }
+});
+
+test('plain toasts are sorted by what they say', () => {
+  assert.equal(toastKind('Not enough coins yet'), 'warn');
+  assert.equal(toastKind('Needs 40 Parts'), 'warn');
+  assert.equal(toastKind('Nothing to undo'), 'warn');
+  assert.equal(toastKind('Already painted'), 'warn');
+  assert.equal(toastKind('Avenue unlocked'), 'unlock');
+  assert.equal(toastKind('Saved nexus-photo.png'), 'photo');
+  assert.equal(toastKind('Oak tree cleared · Ctrl+Z brings it back'), 'done');
+  assert.equal(toastKind('Home: the classic town view.'), 'info');
+  assert.equal(toastNote('Avenue unlocked', 'warn').kind, 'warn', 'an event can say its kind');
+  assert.equal(toastNote('x', 'house').kind, 'info', 'an unknown kind falls back to the words');
+  assert.equal(toastNote('x').short, true);
+});
+
+test('reward chips keep big numbers short', () => {
+  assert.equal(chipAmount(240), '+240');
+  assert.equal(chipAmount(3000), '+3,000');
+  assert.equal(chipAmount(13500), '+13.5k');
+  assert.equal(chipAmount(150000), '+150k');
+  assert.equal(chipAmount(1000000), '+1M');
+  assert.equal(chipAmount(2500000), '+2.5M');
+});
+
+test('every toast goes through the notes module, and note events skip the plain toast', () => {
   assert.match(read('src/ui/ui.js'), /if \(e\.text && !isNoteEvent\(e\)\) hud\.toast/);
+  assert.match(read('src/ui/hud.js'), /useToasts\(fn\)/);
+  assert.match(read('src/ui/modules/notes.js'), /hud\.useToasts\(/);
+  assert.match(read('src/ui/modules/notes.js'), /burst\(gains, kinds\)/, 'rewards fly into the counters like the postcard');
+  assert.doesNotMatch(html, /id="toast"/, 'the old single toast is gone');
 });
 
 test('the bottom-left chip says "/ for shortcuts" and / opens the page', () => {

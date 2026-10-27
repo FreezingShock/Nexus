@@ -6,7 +6,7 @@ import { coinsCard, partsCard, townSnap } from './hud-detail.js';
 import { plaqueLine, townHoverHtml } from './town-view.js';
 
 export function createHud({ sim, send, onSettings, calendar }) {
-  let acc = 0, toastTimer = 0;
+  let acc = 0;
   const s = sim.state;
   // Amounts already in the sim but still flying in from the postcard (collect-fx.js). The counters leave them out until
   // each icon lands, so the number climbs as they arrive.
@@ -19,12 +19,9 @@ export function createHud({ sim, send, onSettings, calendar }) {
   }
   function restart(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
 
-  function toast(text) {
-    const el = $('toast');
-    el.textContent = text; el.hidden = false;
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { el.hidden = true; }, 1800);
-  }
+  // Toasts are drawn by the notes module (src/ui/modules/notes.js), which plugs itself in with useToasts.
+  let toastSink = null;
+  function toast(text, kind) { if (toastSink) toastSink(text, kind); }
 
   $('pause').onclick = () => send({ type: 'togglePause' });
   $('speed').onclick = () => send({ type: 'cycleSpeed' });
@@ -106,8 +103,10 @@ export function createHud({ sim, send, onSettings, calendar }) {
 
   return {
     toast, sync,
+    useToasts(fn) { toastSink = fn; },
     // Hold an amount back from a counter; land(key, share) lets part of it in, with a squish, and `tag` pops "+amount".
-    hold(key, amount) { held[key] = Math.max(0, amount || 0); paintRes(); },
+    // Holds add up, so a reward strip and the postcard can fly at once.
+    hold(key, amount) { held[key] += Math.max(0, amount || 0); paintRes(); },
     land(key, share, tag) {
       held[key] = tag ? 0 : Math.max(0, held[key] - share);
       paintRes();

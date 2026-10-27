@@ -15,14 +15,14 @@ test('motion sheet is linked and the global hidden rule leaves animated surfaces
 
 test('static panels carry data-mo in index.html', () => {
   const html = read('index.html');
-  for (const id of ['inspect', 'fly', 'toast', 'hp-panel', 'offline']) {
+  for (const id of ['inspect', 'fly', 'hp-panel', 'offline']) {
     assert.match(html, new RegExp(`id="${id}"[^>]*data-mo`), id);
   }
 });
 
 test('script-built surfaces set data-mo', () => {
   assert.match(read('src/ui/notebook.js'), /data-mo="flip"/, 'the pages flip open (Goals, Settings, Shortcuts, Paint town)');
-  const files = ['tooltips', 'zoning', 'districts', 'placement', 'road-tool', 'frame-stats'];
+  const files = ['tooltips', 'zoning', 'districts', 'placement', 'road-tool', 'frame-stats', 'notes'];
   for (const f of files) assert.match(read(`src/ui/modules/${f}.js`), /data(set)?[.-]?mo|dataset\.mo/, f);
 });
 
