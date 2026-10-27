@@ -55,6 +55,7 @@ export const SHORTCUT_GROUPS = [
   ] },
   { title: 'Town', rows: [
     { keys: ['G'], text: 'Goals: Charge, today\'s goals and Renewal', file: 'src/ui/modules/progress.js', needle: "e.key === 'g'" },
+    { keys: ['J'], text: 'Journal: the mayor\'s diary and the neighbours\' stories', file: 'src/ui/modules/journal.js', needle: "toLowerCase() === 'j'" },
     { keys: ['K'], text: 'Calendar: the date, festivals and skipping days', file: 'src/ui/modules/date.js', needle: "toLowerCase() !== 'k'" },
     { keys: ['M'], text: 'Milestones: every goal, its stages and rewards', file: 'src/ui/modules/progress.js', needle: "e.key === 'm'" },
     { keys: ['Esc'], text: 'Close a page, leave a tool, or close a card', file: 'src/ui/ui.js', needle: "e.key === 'Escape'" },

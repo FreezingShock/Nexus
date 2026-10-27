@@ -20,7 +20,7 @@
 #menubtn svg path{stroke:var(--action-ink)}
 #menubtn[aria-expanded="true"]{--tc:var(--action-hi);transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
 /* a small dot on the menu button when the menu holds something new (a milestone to look at) */
-.top:has(#goalsbtn .dot:not([hidden])) #menubtn::after{content:"";position:absolute;top:-5px;right:-5px;width:14px;height:14px;border-radius:50%;background:var(--mustard);border:2.5px solid var(--ink)}
+.top:has(#goalsbtn .dot:not([hidden])) #menubtn::after,.top:has(#journalbtn .dot:not([hidden])) #menubtn::after{content:"";position:absolute;top:-5px;right:-5px;width:14px;height:14px;border-radius:50%;background:var(--mustard);border:2.5px solid var(--ink)}
 
 /* The menu drops under the bar, right-aligned, and is the only thing open in the top-right corner (slot.js). It is drawn
    like the title screen's left card: rows with a coloured icon tile, the name, a live line and the key, in small groups
