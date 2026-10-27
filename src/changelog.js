@@ -33,6 +33,8 @@ export const CHANGELOG = [
       { k: 'new', t: 'Five new buildings: a stepped-gable Townhouse, a turreted Manor house (2x2 or 2x3), Garden flats with balconies and roof planters (2x2 or 2x3), a Bakery with a smoking oven, and a Department store with a glass dome (2x2 or 2x3). Townhouses and bakeries also grow on zoned lots.' },
       { k: 'look', t: 'More variety: cottages, terraces, mansard blocks, towers, cafes, offices and shop rows now come in two or three roof looks each (hipped, gabled, mansard, flat with skylights, stepped or pointed crowns, a glass penthouse), picked by each building, so a street no longer repeats.' },
       { k: 'look', t: 'The Department store has a proper entrance bay with pilasters and a canopy clear of its awnings.' },
+      { k: 'look', t: 'Notifications are slim coloured strips in the top-left corner that slide in, and rewards fly into your counters.' },
+      { k: 'fix', t: 'The feedback box reads clearly in dark mode, and its open note stays anchored in the corner.' },
       { k: 'fix', t: 'Building details no longer flicker where two faces used to share a plane: cornices over doors, shop doors against their glass, bunting beside oriel windows, the church front and the clinic cross.' },
     ],
   },
