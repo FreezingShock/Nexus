@@ -14,6 +14,7 @@ export const PAGE_CHIMES = {
   pass: [[880, 0], [1108.73, 0.1], [1318.51, 0.2], [1760, 0.32]],   // a lantern lighting
   new: [[440, 0], [392, 0.12]],                                     // a gentle "are you sure?"
   // the town's pages (src/ui/book.js)
+  firstdays: [[523.25, 0], [659.25, 0.09], [880, 0.18]],            // a friendly "hello, mayor"
   goals: [[523.25, 0], [659.25, 0.1], [783.99, 0.2], [1046.5, 0.3]], // a pennant going up
   milestones: [[659.25, 0], [830.61, 0.09], [987.77, 0.18]],          // a small medal ring
   sky: [[880, 0], [783.99, 0.12], [1046.5, 0.24]],                     // a breeze changing

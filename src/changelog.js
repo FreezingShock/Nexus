@@ -20,6 +20,7 @@ export const CHANGELOG = [
     blurb: 'The town sounds like a real place now: what you hear follows the camera, and every sound is softer and warmer.',
     items: [
       { k: 'new', t: 'The town journal: press J for a diary of what happened, from festivals and new seasons to the first home you built, plus little stories from named neighbours and a line about the time you were away.' },
+      { k: 'new', t: 'Your first days: a new town opens a gentle list of six things to try (a road, a home zone, a shop, a park, a service, an upgrade). Each ticks itself off with a small cheer, "Show me" picks the tool, and the whole list is optional, can be hidden, and waits on the Goals page.' },
       { k: 'sound', t: 'Sounds come from where they are: hover over the river and you hear water, over the high street footsteps and wheels, over the fields a cow, hens and the odd sheep. In free-fly the streets sound right beside you.' },
       { k: 'sound', t: 'Zoom out and the town blends into a soft, muffled hum; zoom in and each place comes forward, clear and close.' },
       { k: 'sound', t: 'Gentle stereo: a sound to the left of the screen leans left, and turning the camera turns the sound with it.' },
@@ -27,6 +28,7 @@ export const CHANGELOG = [
       { k: 'sound', t: 'Warmer town sounds: the river babbles, crickets chirp instead of whining, cicadas shimmer and fade, and workshops knock away quietly by day.' },
       { k: 'sound', t: 'Buttons, hovers and building clicks are quieter and rounder, like paper and wood, and the rooster and dogs are further off.' },
       { k: 'sound', t: 'New sound settings start at full master volume, music and effects at half, and ambience at a quarter.' },
+      { k: 'fix', t: 'Building details no longer flicker where two faces used to share a plane: cornices over doors, shop doors against their glass, bunting beside oriel windows, the church front and the clinic cross.' },
     ],
   },
   {

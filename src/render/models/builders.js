@@ -92,7 +92,7 @@ const B = {
     for (let i = 0; i < n; i++) {
       const x = -k.w / 2 + (i + 0.5) * uw, col = awn(k, i);
       k.shopfront(uw, k.dep / 2, col, x);
-      k.door(x + uw * 0.28, k.dep / 2, k.P.accent, 0.55, 0.95);
+      k.door(x + uw * 0.28, k.dep / 2, k.P.accent, 0.55, 1.0);   // taller than the glass beside it, so their tops differ
       k.box(Math.min(uw - 0.5, 1.5), 0.26, 0.1, x, k.top - 0.55, k.dep / 2 + 0.06, col, { edge: false }); // a sign board, no lettering
       if (k.level >= 2) { k.box(0.4, 0.3, 0.4, x - uw * 0.38, PLINTH, k.dep / 2 + 0.35, C.wood, { edge: false }); k.box(0.32, 0.22, 0.32, x - uw * 0.38, PLINTH + 0.3, k.dep / 2 + 0.35, C.leaf, { edge: false }); }
     }
@@ -182,10 +182,10 @@ const B = {
     k.body(); k.door();
     k.gableRoof(clampRise(k.dep, 1.0, 1.5, 0.45), 'x');
     // a calm green cross on a cream plaque above the door
-    const y = k.floorY(1) + 0.5, x = k.doorX;
+    const y = k.floorY(1) + 0.62, x = k.doorX;   // above the porch hood, so the cross never touches it
     k.disc(0.36, x, y, k.dep / 2 + 0.12, C.cream, { thick: 0.08 });
     k.box(0.5, 0.14, 0.05, x, y - 0.07, k.dep / 2 + 0.2, C.leaf, { edge: false });
-    k.box(0.14, 0.5, 0.05, x, y - 0.25, k.dep / 2 + 0.2, C.leaf, { edge: false });
+    k.box(0.14, 0.5, 0.06, x, y - 0.25, k.dep / 2 + 0.2, C.leaf, { edge: false });   // a hair deeper than the bar, so the cross has no shared face
     k.box(1.1, 0.1, 0.6, x, PLINTH + 1.25, k.dep / 2 + 0.3, C.leaf, { rx: 0.2 });
     decorate(k);
   },
@@ -199,9 +199,10 @@ const B = {
     k.box(0.5, 0.4, 0.06, tx, ty + 0.4, 0.46, C.glass, { edge: false });
     k.spire(0.75, 0.9, tx, ty + 1.1, 0, C.slate);
     // a small yard fence line
-    k.box(k.w * 0.7, 0.3, 0.06, 0, PLINTH, k.dep / 2 + 0.4, C.wood, { edge: false });
-    decorate(k, { skip: ['chimney', 'garden'] });
+    k.box(k.w * 0.7, 0.3, 0.06, 0, PLINTH, k.dep / 2 + 0.43, C.wood, { edge: false });
+    decorate(k, { skip: ['chimney', 'garden', 'crown'] });
     if (k.level >= 3) k.flag(-k.w * 0.4, k.top + 0.2, 0);
+    if (k.level >= 5) k.weathervane(tx, ty + 1.95, 0);   // on the bell tower's spire, not buried in it
   },
 
   'fire-station'(k) {
@@ -226,7 +227,7 @@ const B = {
     k.hipRoof(clampRise(k.w, 1.1, 1.5, 0.48), C.charcoal);
     const x = k.doorX;
     k.box(0.3, 0.3, 0.3, x, PLINTH + 1.2, k.dep / 2 + 0.2, C.water);   // the blue lamp
-    k.box(1.1, 0.1, 0.6, x, PLINTH + 1.4, k.dep / 2 + 0.3, C.slate, { rx: 0.2, edge: false });
+    k.box(1.16, 0.1, 0.6, x, PLINTH + 1.4, k.dep / 2 + 0.3, C.slate, { rx: 0.2, edge: false });
     decorate(k, { skip: ['chimney'] });
     if (k.level >= 3) k.flag(k.w * 0.38, k.top + 0.1, k.dep * 0.1);
   },
@@ -243,7 +244,7 @@ const B = {
     k.spire(tw * 0.8, 2.6, 0, top + 4.2, 0, C.slate);
     // steps up to the door
     k.box(2.2, 0.12, 0.5, 0, 0, k.dep / 2 + 0.2, C.stone, { edge: false });
-    k.box(1.8, 0.12, 0.4, 0, 0.12, k.dep / 2 + 0.18, C.stone, { edge: false });
+    k.box(1.8, 0.11, 0.4, 0, 0.11, k.dep / 2 + 0.18, C.stone, { edge: false });   // top at 0.22, under the door pots' rims
     k.roof = { kind: 'mansard', rise: 1.5, along: 'x', y: top, inset: 0.55 };
     decorate(k, { skip: ['chimney', 'dormers', 'cornice'] });
     if (k.level >= 5) k.weathervane(0, top + 6.8, 0);
@@ -251,14 +252,14 @@ const B = {
 
   church(k) {
     const tw = Math.min(1.9, k.w * 0.62);
-    const tz = k.dep / 2 - tw / 2 + 0.15, th = 7.4;
+    const tz = k.dep / 2 - tw / 2 + 0.19, th = 7.4;   // front 0.19 out: the gable end is at 0.15, and a shared plane would flicker
     k.body(); 
     k.gableRoof(clampRise(k.w, 1.4, 1.9, 0.5), 'z');
     // west tower with a spire; it reaches for the sky
     k.box(tw, th, tw, 0, PLINTH, tz, k.P.wallHex);
     k.spire(tw * 0.8, 3.6, 0, PLINTH + th, tz, k.P.roof);
     k.box(0.06, 0.55, 0.06, 0, PLINTH + th + 3.6, tz, C.gold, { edge: false });
-    k.box(0.3, 0.06, 0.06, 0, PLINTH + th + 3.95, tz, C.gold, { edge: false });
+    k.box(0.3, 0.06, 0.07, 0, PLINTH + th + 3.95, tz, C.gold, { edge: false });
     k.disc(0.5, 0, k.top + 1.4, tz + tw / 2 + 0.02, C.glass, { thick: 0.1 });
     k.box(0.9, 1.5, 0.14, 0, PLINTH, tz + tw / 2 + 0.03, C.wood);                  // great door
     k.roof = { kind: 'gable', rise: k.roof.rise, along: 'z', y: k.top, span: k.w, len: k.dep };
@@ -362,7 +363,7 @@ const B = {
     const r = k.w * 0.36;
     lawn(k);
     k.cyl(r + 0.14, r + 0.14, 0.14, 16, 0, PLINTH, 0, C.stone);                                  // stone rim
-    k.cyl(r, r, 0.04, 16, 0, PLINTH + 0.1, 0, C.water, { edge: false });
+    k.cyl(r, r, 0.04, 16, 0, PLINTH + 0.12, 0, C.water, { edge: false });   // proud of the rim's top by 0.02
     for (const [fx, fz] of [[-0.7, 0.3], [0.55, -0.45], [0.2, 0.7]]) k.cyl(0.03, 0.03, 0.5, 4, fx * r, PLINTH + 0.14, fz * r, C.leaf, { edge: false });
     k.box(0.9, 0.08, 0.3, 0, PLINTH + 0.3, k.dep / 2 - 0.3, C.wood, { edge: false });               // a bench by the water
   },

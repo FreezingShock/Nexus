@@ -8,6 +8,7 @@ import { dayKey, goalDef, pendingPoints, pointsMult } from '../../sim/progress.j
 import { $, fmt, fmtDuration } from '../format.js';
 import { book } from '../book.js';
 import { PAGE_ICONS } from '../page-icons.js';
+import { countLine, isComplete, live as firstLive } from '../first-days.js';
 import { milestonesHtml, paintMilestones, openGoal, nearHtml, pct } from '../milestone-list.js';
 
 const CH = BALANCE.charge, GOALS = BALANCE.goals;
@@ -34,8 +35,16 @@ export default {
     $('settingsbtn').before(btn);
 
     const isOpen = () => book.current() === 'goals';
+    // "Your first days" waits at the top of Today until every step is ticked or the player hides it (modules/first-days.js).
+    const firstBox = () => {
+      const f = firstLive.data;
+      if (!f || f.hidden || isComplete(f)) return '';
+      return `<section class="pg-box gl-first"><h3 class="h-disp">Your first days <small>${countLine(f)}</small></h3>
+            <p class="pg-soft">A few gentle things to try. Optional, and never timed.</p>
+            <button class="btn" type="button" data-act="first">Open the list</button></section>`;
+    };
     const today = () => `<div class="pg-cols">
-        <div class="pg-col">
+        <div class="pg-col">${firstBox()}
           <section class="pg-box gl-charge"><h3 class="h-disp">Charge <small id="gch"></small></h3>
             <div class="meter wide gl-bar" role="img" aria-label="Charge"><i id="gchbar"></i></div>
             <p class="pg-soft">Building and painting add Charge. Spend ${CH.boostCost} for double coins for a minute. Nothing needs it; it is a bonus for playing.</p>
@@ -66,6 +75,7 @@ export default {
         if (head) { const more = head.closest('.ag').querySelector('.ag-more'), on = more.hidden; more.hidden = !on; head.setAttribute('aria-expanded', String(on)); return; }
         const act = e.target.closest('[data-act]');
         if (!act || tab !== 'today') return;
+        if (act.dataset.act === 'first') return book.open('firstdays');
         if (act.dataset.act === 'boost') send({ type: 'boost' });
         if (act.dataset.act === 'all') book.pickTab('milestones');
         if (act.dataset.act === 'renew') renew();
