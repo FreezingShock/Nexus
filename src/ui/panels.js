@@ -42,11 +42,19 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
     <div class="band"><h2 class="h-disp">${b.name}</h2><div class="sub">${park ? 'Park' : b.cat === 'farm' ? b.fw * b.fd + ' tiles of fields' : b.floors + ' floors'} · ${PAL[(sim.paintOf(id) || b).pal].name} palette</div></div>
     <div class="pad"><div class="lvl">Level ${dots}</div>
     <div class="stats"><div class="stat">Income<b>${b.income ?? income(b.floors, lv)}/s</b></div><div class="stat">Traffic<b>${trafficOf(b.floors)}/min</b></div><div class="stat info">Next level<b>${maxed ? 'Max' : '+' + nextLevelGain(lv) + '%'}</b></div></div>
-    <div class="row"><button class="btn primary grow" id="up" ${maxed || s.coins < cost ? 'disabled' : ''}>${park ? 'Finished' : maxed ? 'Top level' : 'Upgrade · ' + fmt(cost) + ' coins'}</button><button class="btn" id="mv">Move</button></div>${paintHtml(id)}</div>`;
+    <div class="row"><button class="btn primary grow" id="up" ${maxed || s.coins < cost ? 'disabled' : ''}>${park ? 'Finished' : maxed ? 'Top level' : 'Upgrade · ' + fmt(cost) + ' coins'}</button><button class="btn" id="mv">Move</button></div>${festiveHtml(id)}${paintHtml(id)}</div>`;
     $('ix').onclick = onClose;
     box.querySelectorAll('[data-paint]').forEach((el) => { el.onclick = () => paint(id, el.dataset.paint, el.dataset.key); });
     $('up').onclick = () => send({ type: 'upgrade', id });
     $('mv').onclick = () => toast('Move mode comes with the placement grid');
+    const fl = $('fl');
+    if (fl) fl.onclick = () => { send({ type: 'festiveLights', id, on: fl.getAttribute('aria-checked') !== 'true' }); showInspect(id); };
+  }
+  // ---- festive lights: a placed building can sit out the decorations ----
+  function festiveHtml(id) {
+    if (!sim.festiveLightsOn || !s.event || !s.placed.some((r) => r.id === id)) return '';
+    const on = sim.festiveLightsOn(id);
+    return `<div class="row festrow"><span class="grow">Festive lights and decorations</span><button type="button" class="tog" id="fl" role="switch" aria-checked="${on}">${on ? 'On' : 'Off'}</button></div>`;
   }
   // ---- paint: wall, trim and roof swatches for a placed building ----
   const hex = (n) => '#' + n.toString(16).padStart(6, '0');

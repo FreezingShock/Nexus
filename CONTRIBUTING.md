@@ -54,7 +54,7 @@ Write words in `color:var(--text)`, not `var(--ink)` (outlines and hard shadows)
 
 ## Budgets and project rules
 
-16.7 ms frame, sim tick under 2 ms, under 100 draw calls, JS under 300 KB gzipped, measured on a phone before claiming a budget is met. No new dependency, bundler or framework without asking nate. No network calls after load, no monetization, no copied LightsOn names, icons, art or text. Say in the PR what you ran and what you did not measure.
+16.7 ms frame, sim tick under 2 ms, under 100 draw calls, JS under 300 KB gzipped, measured on a phone before claiming a budget is met. No new dependency, bundler or framework without asking nate. No network calls after load (the one exception is the feedback box, which posts only when a player presses Send; see docs/FEEDBACK.md), no monetization, no copied LightsOn names, icons, art or text. Say in the PR what you ran and what you did not measure.
 
 ## Plan and memory
 

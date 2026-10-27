@@ -7,7 +7,7 @@
 <!-- Paper theme before the first paint (src/core/theme.js owns it after load; keep this copy of resolve() in step) -->
 <script>try{var m=(JSON.parse(localStorage.getItem('nexus.theme.v1')||'{}')||{}).mode;var d=m==='dark'||(m==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.dataset.theme=d?'dark':'light'}catch(e){}</script>
 <meta name="description" content="A cozy offline city builder.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Cpath d='M3 15L15 4L27 15' fill='%2397553E' stroke='%232B2620' stroke-width='2' stroke-linejoin='round'/%3E%3Crect x='6' y='15' width='18' height='12' fill='%23EAE1D5' stroke='%232B2620' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preload" href="vendor/fonts/fraunces-latin-full-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="vendor/fonts/capriola-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="css/fonts.css">
@@ -37,6 +37,7 @@
 <link rel="stylesheet" href="css/motion.css">
 <link rel="stylesheet" href="css/toolbar.css">
 <link rel="stylesheet" href="css/feedback.css">
+<link rel="stylesheet" href="css/feedback-box.css">
 <link rel="stylesheet" href="css/photo.css">
 <link rel="stylesheet" href="css/notebook.css">
 <link rel="stylesheet" href="css/pages.css">
@@ -108,7 +109,7 @@
     <i class="tt-curtain" id="tt-curtain" aria-hidden="true"></i>
     <div class="tt-card card" id="tt-card">
       <span class="tape tt-tape" aria-hidden="true"></span>
-      <div class="tt-logo"><span class="tt-crest"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M3 15L15 4L27 15" fill="#97553E" stroke="#2B2620" stroke-width="2" stroke-linejoin="round"/><rect x="6" y="15" width="18" height="12" fill="#EAE1D5" stroke="#2B2620" stroke-width="2"/><rect x="13" y="19" width="4.5" height="8" fill="#B8472E" stroke="#2B2620" stroke-width="1.6"/></svg></span><span><h1 class="tt-name h-disp" id="tt-name">Nexus</h1><small class="tt-tagline">a cozy town builder</small></span></div>
+      <div class="tt-logo"><span class="tt-crest"><svg class="emblem" aria-hidden="true" viewBox="0 0 64 64" fill="none" stroke="#2B2620" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><circle cx="32" cy="32" r="29" fill="#FBEBC4" stroke="none"/><circle cx="45.5" cy="17" r="6" fill="#F2C45A" stroke-width="1.6"/><path d="M45.5 7.5V9M53 10L52 11M55 17H53.5M38 10L39 11" stroke="#C08A2E" stroke-width="1.6"/><path d="M9 19.5Q11 17.5 13.5 19Q15.5 16.5 18.5 18.5Q20.5 18.5 20.5 20.5H8.5Q7.5 19.5 9 19.5Z" fill="#FFF8EA" stroke-width="1.4"/><path d="M3.6 39Q14 30 27 35.5T60.4 39A29 29 0 0 1 3.6 39Z" fill="#8FA65A"/><path d="M27.5 41V21.5H36.5V41" fill="#EAE1D5"/><path d="M25.5 22L32 10.5L38.5 22Z" fill="#B8472E"/><path d="M32 10.5V5"/><path d="M32 5L37 6.5L32 8" fill="#E6BC62" stroke-width="1.5"/><path d="M30 31V27.5Q32 25 34 27.5V31Z" fill="#35566A" stroke-width="1.5"/><path d="M11.5 43V33H24V43" fill="#F3E7D3"/><path d="M20.5 28V24.5H23.5V31" fill="#97553E" stroke-width="1.6"/><path d="M9.5 34L17.75 25.5L26 34Z" fill="#C96F4F"/><path d="M16 43V38H19.5V43" fill="#B8472E" stroke-width="1.5"/><path d="M22 22.5Q19.5 20 22 18Q24.5 16 22 13.5" stroke="#8A8173" stroke-width="1.5"/><path d="M39.5 43V35H50.5V43" fill="#EAE1D5"/><path d="M37.5 36L45 28.5L52.5 36Z" fill="#97553E"/><path d="M43 41.5V38.5H47V41.5Z" fill="#F2D27A" stroke-width="1.4"/><circle cx="56" cy="38.5" r="3.5" fill="#5F7A3E" stroke-width="1.6"/><path d="M56 42V44.5" stroke-width="1.6"/><path d="M4.4 46Q19 39.5 33 43.5T59.6 46A29 29 0 0 1 4.4 46Z" fill="#A8C179"/><path d="M16 56Q25 49 36 49.5Q45 50 51 47.5L54 50Q46 54 37 53.5Q28 53 21 59Z" fill="#9CC3D5" stroke-width="1.6"/><circle cx="32" cy="32" r="29" stroke-width="2.6"/></svg><i class="tt-spark" aria-hidden="true"></i><i class="tt-spark" aria-hidden="true"></i></span><span><h1 class="tt-name h-disp" id="tt-name">Nexus</h1><small class="tt-tagline">a cozy town builder</small></span></div>
       <div class="tt-box" id="tt-box">
         <span class="tt-eyebrow" id="tt-eyebrow">Your town</span>
         <h2 class="h-disp tt-await" id="tt-await">Your town awaits</h2>
@@ -121,12 +122,11 @@
       <p class="tt-tip" id="tt-tip"></p>
       <footer class="tt-cardfoot"><span id="tt-made"></span><button class="tt-ver" id="tt-ver" type="button" title="What is new"></button></footer>
     </div>
-    <p class="tt-credit" id="tt-credit"></p>
   </section>
 
   <section id="boot" class="boot" data-mo="fade" hidden aria-live="polite" aria-label="Opening your town">
     <div class="bt-wrap">
-      <div class="bt-crest"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M3 15L15 4L27 15" fill="#97553E" stroke="#2B2620" stroke-width="2" stroke-linejoin="round"/><rect x="6" y="15" width="18" height="12" fill="#EAE1D5" stroke="#2B2620" stroke-width="2"/><rect x="13" y="19" width="4.5" height="8" fill="#B8472E" stroke="#2B2620" stroke-width="1.6"/></svg></div>
+      <div class="bt-crest"><svg class="emblem" aria-hidden="true" viewBox="0 0 64 64" fill="none" stroke="#2B2620" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><circle cx="32" cy="32" r="29" fill="#FBEBC4" stroke="none"/><circle cx="45.5" cy="17" r="6" fill="#F2C45A" stroke-width="1.6"/><path d="M45.5 7.5V9M53 10L52 11M55 17H53.5M38 10L39 11" stroke="#C08A2E" stroke-width="1.6"/><path d="M9 19.5Q11 17.5 13.5 19Q15.5 16.5 18.5 18.5Q20.5 18.5 20.5 20.5H8.5Q7.5 19.5 9 19.5Z" fill="#FFF8EA" stroke-width="1.4"/><path d="M3.6 39Q14 30 27 35.5T60.4 39A29 29 0 0 1 3.6 39Z" fill="#8FA65A"/><path d="M27.5 41V21.5H36.5V41" fill="#EAE1D5"/><path d="M25.5 22L32 10.5L38.5 22Z" fill="#B8472E"/><path d="M32 10.5V5"/><path d="M32 5L37 6.5L32 8" fill="#E6BC62" stroke-width="1.5"/><path d="M30 31V27.5Q32 25 34 27.5V31Z" fill="#35566A" stroke-width="1.5"/><path d="M11.5 43V33H24V43" fill="#F3E7D3"/><path d="M20.5 28V24.5H23.5V31" fill="#97553E" stroke-width="1.6"/><path d="M9.5 34L17.75 25.5L26 34Z" fill="#C96F4F"/><path d="M16 43V38H19.5V43" fill="#B8472E" stroke-width="1.5"/><path d="M22 22.5Q19.5 20 22 18Q24.5 16 22 13.5" stroke="#8A8173" stroke-width="1.5"/><path d="M39.5 43V35H50.5V43" fill="#EAE1D5"/><path d="M37.5 36L45 28.5L52.5 36Z" fill="#97553E"/><path d="M43 41.5V38.5H47V41.5Z" fill="#F2D27A" stroke-width="1.4"/><circle cx="56" cy="38.5" r="3.5" fill="#5F7A3E" stroke-width="1.6"/><path d="M56 42V44.5" stroke-width="1.6"/><path d="M4.4 46Q19 39.5 33 43.5T59.6 46A29 29 0 0 1 4.4 46Z" fill="#A8C179"/><path d="M16 56Q25 49 36 49.5Q45 50 51 47.5L54 50Q46 54 37 53.5Q28 53 21 59Z" fill="#9CC3D5" stroke-width="1.6"/><circle cx="32" cy="32" r="29" stroke-width="2.6"/></svg></div>
       <h2 class="bt-title h-disp">Opening your town</h2>
       <div class="bt-track" id="bt-track" role="progressbar" aria-valuemin="0" aria-valuemax="100"><i id="bt-fill"></i><b id="bt-house"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M3 15L15 4L27 15" fill="#97553E" stroke="#2B2620" stroke-width="2" stroke-linejoin="round"/><rect x="6" y="15" width="18" height="12" fill="#EAE1D5" stroke="#2B2620" stroke-width="2"/><rect x="13" y="19" width="4.5" height="8" fill="#B8472E" stroke="#2B2620" stroke-width="1.6"/></svg></b></div>
       <p class="bt-cap" id="bt-cap">&nbsp;</p>
@@ -143,29 +143,30 @@
         <span class="tape env-tape" aria-hidden="true"></span>
         <div class="env-addr"><b>For the mayor</b><i></i><i></i><span>From your town, with love</span></div>
         <div class="stampw"><div class="stamp"><canvas id="stamp1" width="140" height="160"></canvas><span>NEXUS</span></div><span class="pm-host"></span></div>
-        <button class="btn primary openbtn" id="openmail" style="height:56px;font-size:18px" tabindex="-1">Open the postcard</button>
       </div>
+      <p class="env-hint" aria-hidden="true">Click the envelope to open it</p>
       <article class="postcard" id="postcard" aria-labelledby="pctitle">
         <span class="tape sage pc-tape" aria-hidden="true"></span>
-        <div class="pc-photo"><figure class="photo"><span class="tape t1" aria-hidden="true"></span><span class="tape rose t2" aria-hidden="true"></span><canvas id="snap" width="480" height="360" role="img" aria-label="Snapshot of your town"></canvas><figcaption id="photocap">Our town this evening</figcaption></figure></div>
-        <div class="pc-text">
-          <div class="pc-head"><h2 class="h-disp" id="pctitle">Welcome<br>back</h2><div class="stampw"><div class="stamp"><canvas id="stamp2" width="140" height="160"></canvas><span>NEXUS</span></div><span class="pm-host"></span></div></div>
+        <div class="pc-front"><canvas id="snap" width="480" height="360" role="img" aria-label="Snapshot of your town"></canvas><h2 class="pc-greet" id="pctitle"><small>Greetings from</small><b id="pctown">Nexus</b></h2><span class="pc-cap" id="photocap">Our town this evening</span></div>
+        <div class="pc-back">
           <p class="pc-msg" id="pcmsg"></p>
-          <div class="away"><span>Time away</span><b id="awaytime">6 h 40 min</b></div>
-          <div class="bars" id="bars" role="img"><i id="bar-full" style="flex:1;background:repeating-linear-gradient(135deg,#A8C179 0 8px,#B9D08C 8px 16px)"></i><i id="bar-ease" style="flex:0;background:linear-gradient(90deg,#C9C48A,#E4DAC0)"></i></div>
-          <div class="cap"><span id="cap-full"></span><span id="cap-ease"></span></div>
-          <div class="gain">
-            <div><span class="badge" style="background:#E6BC62"><svg width="24" height="24" viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="9" fill="#F3D58A" stroke="#2B2620" stroke-width="2"/><circle cx="13" cy="13" r="4.5" fill="none" stroke="#2B2620" stroke-width="1.8"/></svg></span><span><b id="gain-coins">+0</b><small>Coins</small></span></div>
-            <div><span class="badge" style="background:#E3A08E"><svg width="24" height="24" viewBox="0 0 26 26" aria-hidden="true"><rect x="3" y="7" width="20" height="13" rx="2" fill="#C98A6E" stroke="#2B2620" stroke-width="2"/><path d="M3 13.5H23M11 7V13.5M17 13.5V20" stroke="#2B2620" stroke-width="1.6" fill="none"/></svg></span><span><b id="gain-parts">+0</b><small>Parts</small></span></div>
+          <div class="pc-right">
+            <div class="stampw"><div class="stamp"><canvas id="stamp2" width="140" height="160"></canvas><span>NEXUS</span></div><span class="pm-host"></span></div>
+            <ul class="pc-addr">
+              <li class="pc-to">To the mayor</li>
+              <li><span>Away</span><b id="awaytime">6 h 40 min</b></li>
+              <li id="gain-c"><span class="mini coin" aria-hidden="true"><svg viewBox="0 0 26 26"><circle cx="13" cy="13" r="9" fill="#F3D58A" stroke="#2B2620" stroke-width="2"/><circle cx="13" cy="13" r="4.5" fill="none" stroke="#2B2620" stroke-width="1.8"/></svg></span><span>Coins</span><b id="gain-coins">+0</b></li>
+              <li id="gain-p"><span class="mini part" aria-hidden="true"><svg viewBox="0 0 26 26"><rect x="3" y="7" width="20" height="13" rx="2" fill="#C98A6E" stroke="#2B2620" stroke-width="2"/><path d="M3 13.5H23M11 7V13.5M17 13.5V20" stroke="#2B2620" stroke-width="1.6" fill="none"/></svg></span><span>Parts</span><b id="gain-parts">+0</b></li>
+            </ul>
           </div>
-          <p class="ps">P.S. Nothing broke and nothing was lost. Income eases off after 4 hours away, up to 24 hours.</p>
-          <button class="btn primary collect" id="collect"><span>Collect and continue</span><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11H17M12 5.5L17.5 11L12 16.5"/></svg></button>
+          <p class="ps" id="pcps"></p>
         </div>
       </article>
+      <button class="btn primary collect" id="collect"><span>Collect and continue</span><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11H17M12 5.5L17.5 11L12 16.5"/></svg></button>
     </div>
   </div>
 </div>
 <input type="file" id="importfile" class="sr" accept="application/json,.json" tabindex="-1" aria-hidden="true">
-<script type="module" src="src/main.js?v=0.11.0"></script>
+<script type="module" src="src/main.js?v=0.12.0"></script>
 </body>
 </html>

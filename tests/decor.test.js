@@ -121,3 +121,40 @@ test('every kind sits in one menu group, and every group has pieces', async () =
   assert.equal(DECOR_CATS.reduce((n, c) => n + decorIn(c.id).length, 0), DECOR.length);
   for (const c of DECOR_CATS) assert.ok(decorIn(c.id).length > 0, c.id);
 });
+
+test('festive extras are on sale only in their season, and stay once placed', async () => {
+  const { offSale } = await import('../src/world/decor.js');
+  const sim = mk();
+  sim.state.event = '';
+  place(sim, 'xmastree', T[0], T[1]);
+  assert.equal(sim.state.decor.length, 0, 'not in July');
+  assert.match(offSale(decorById('xmastree'), sim.state), /December/);
+  sim.state.event = 'christmas';
+  place(sim, 'xmastree', T[0], T[1]);
+  assert.equal(sim.state.decor.length, 1);
+  sim.state.event = '';
+  const kept = sanitizeDecor(sim.state.decor);
+  assert.equal(kept.length, 1, 'yours for good');
+});
+
+test('keepsakes come from playing on the real holiday, then sell all year', async () => {
+  const { keepsakesOn } = await import('../src/core/keepsakes.js');
+  const at = (y, m, d) => new Date(y, m, d, 12).getTime();
+  assert.deepEqual(keepsakesOn(at(2026, 9, 26)).map((k) => k.id), ['lanternpost']);
+  assert.deepEqual(keepsakesOn(at(2026, 6, 4)).map((k) => k.id), ['summerbell']);
+  assert.deepEqual(keepsakesOn(at(2026, 6, 20)), []);
+  assert.deepEqual(keepsakesOn(at(2026, 11, 24)).map((k) => k.id), ['snowglobe']);
+  const state = freshState(); state.coins = 100000;
+  const sim = createSim({ state, now: () => at(2026, 9, 31) });
+  const notes = [];
+  sim.subscribe((e) => { if (e.type === 'keepsake') notes.push(e); });
+  place(sim, 'lanternpost', T[0], T[1]);
+  assert.equal(sim.state.decor.length, 0, 'not yet the town\'s');
+  for (let i = 0; i < 5; i++) sim.tick();
+  assert.deepEqual(sim.state.keepsakes, ['lanternpost']);
+  assert.equal(notes.length, 1, 'with a postcard');
+  for (let i = 0; i < 130; i++) sim.tick();
+  assert.equal(notes.length, 1, 'once');
+  place(sim, 'lanternpost', T[0], T[1]);
+  assert.equal(sim.state.decor.length, 1);
+});

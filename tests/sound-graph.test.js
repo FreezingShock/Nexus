@@ -36,7 +36,7 @@ function engineWith(stub) {
 }
 
 const CUE_NAMES = ['hover', 'select', 'open', 'close', 'tool', 'place', 'road', 'undo', 'zone', 'erase', 'bulldoze',
-  'upgrade', 'goal', 'renew', 'charge', 'postcard', 'deny', 'dusk', 'dawn', 'market', 'festival', 'click', 'tick', 'note', 'road-grow', 'road', 'zone'];
+  'upgrade', 'goal', 'renew', 'charge', 'postcard', 'deny', 'dusk', 'dawn', 'market', 'festival', 'click', 'tick', 'note', 'road-grow', 'road', 'zone', 'burst', 'coin', 'part'];
 
 test('unlock builds the graph once, and every cue plays without throwing', () => {
   const stub = stubContext();

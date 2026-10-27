@@ -1,13 +1,21 @@
 {
-  // Cloudflare Workers static assets: no worker script, just the files in dist/ (built by scripts/build-site.mjs).
-  // `npx wrangler deploy` reads this. See docs/DEPLOY.md.
+  // Cloudflare Worker with static assets: dist/ (built by scripts/build-site.mjs) is served as it is, and only /api/* and
+  // /admin/* run the small script in worker/ (player feedback, docs/FEEDBACK.md). `npx wrangler deploy` reads this.
+  // See docs/DEPLOY.md.
   "name": "nexus",
   "compatibility_date": "2026-10-01",
+  "main": "worker/index.js",
   // The site is served from playnexus.dev (attached in the dashboard), so no workers.dev address or preview URLs.
   "workers_dev": false,
   "preview_urls": false,
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "404-page"
-  }
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*", "/admin/*"]
+  },
+  // Player feedback (docs/FEEDBACK.md). The id is not a secret; the admin password is the FEEDBACK_ADMIN_KEY secret.
+  "d1_databases": [
+    { "binding": "FEEDBACK_DB", "database_name": "nexus-feedback", "database_id": "14fdc2a7-f5dd-4f45-b7d2-f71651c7c7f4" }
+  ]
 }

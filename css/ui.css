@@ -77,6 +77,9 @@ button:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
 .tog{height:44px;padding:0 16px;border-radius:13px;border:2.5px solid var(--ink);background:var(--paper);font-weight:700;font-size:15px}
 .tog[aria-pressed="true"]{background:var(--sky-soft);box-shadow:inset 0 0 0 2px var(--sky)}
 .tog:disabled{opacity:.6;border-style:dashed;cursor:not-allowed}
+.festrow{align-items:center;font-size:14px;font-weight:700}
+.festrow .tog{height:34px;min-width:58px}
+.festrow .tog[aria-checked="true"]{background:var(--action);color:var(--action-ink);box-shadow:0 2px 0 var(--ink)}
 
 /* toolbar */
 .bar2{position:absolute;bottom:max(18px,env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);display:flex;gap:8px;padding:12px 14px 10px;max-width:calc(100% - 24px);overflow-x:auto;overflow-y:visible}

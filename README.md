@@ -1,6 +1,6 @@
 # Nexus
 
-A cozy, offline city builder with idle progression. Static site: Three.js (vendored, r128), plain ES modules, no bundler, no network calls after load.
+A cozy, offline city builder with idle progression. Static site: Three.js (vendored, r128), plain ES modules, no bundler, no network calls after load (except a feedback note, when a player sends one).
 
 ## Run locally
 

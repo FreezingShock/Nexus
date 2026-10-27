@@ -43,6 +43,7 @@ const ICON_SHAPES = {
   street: '<path d="M11 19V8" stroke="#2B2620" stroke-width="2" stroke-linecap="round"/><rect x="7.5" y="2.5" width="7" height="7" rx="1.5" fill="#F2D27A" stroke="#2B2620" stroke-width="1.8"/><path d="M7 19h8" stroke="#2B2620" stroke-width="2" stroke-linecap="round"/>',
   plaza: '<path d="M3 16h16l-2 3H5z" fill="#CFC7B6" stroke="#2B2620" stroke-width="1.8" stroke-linejoin="round"/><path d="M11 16V8M11 8c-3 0-4 3-5 5M11 8c3 0 4 3 5 5" fill="none" stroke="#2B2620" stroke-width="1.8" stroke-linecap="round"/><ellipse cx="11" cy="16" rx="7" ry="1.6" fill="#8FC4D8" stroke="#2B2620" stroke-width="1.4"/>',
   park: '<circle cx="11" cy="8" r="5" fill="#A8C179" stroke="#2B2620" stroke-width="1.8"/><path d="M11 13v6" stroke="#2B2620" stroke-width="2"/>',
+  festive: '<path d="M11 2.5l1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.4z" fill="#E6BC62" stroke="#2B2620" stroke-width="1.3" stroke-linejoin="round"/><path d="M11 9l4 4.5h-2l3.5 4.5h-11L9 13.5H7z" fill="#5FA86A" stroke="#2B2620" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 18v2h2v-2" stroke="#2B2620" stroke-width="1.6"/>',
 };
 export const categoryIcon = (id) => `<svg viewBox="0 0 22 22" aria-hidden="true">${ICON_SHAPES[id] || ICON_SHAPES.home}</svg>`;
 

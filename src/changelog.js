@@ -16,6 +16,29 @@ export const KINDS = {
 
 export const CHANGELOG = [
   {
+    v: '0.12.0', date: '2026-10-26', name: 'Deck the streets',
+    blurb: 'The calendar comes alive: the town now dresses up for the Fourth of July, Halloween and Christmas.',
+    items: [
+      { k: 'new', t: 'Seasonal events: the Fourth of July, Halloween and Christmas each fill their month. Decorations go up a few houses at a time and the whole town is dressed by the big day.' },
+      { k: 'new', t: "New Year's Eve closes the year, and the Harvest Feast moves to September to make room for Halloween." },
+      { k: 'look', t: 'Doorstep decorations: pumpkins and the odd little ghost for Halloween, wreaths, snowmen and potted firs for Christmas, and flags and bunting for the Fourth of July.' },
+      { k: 'new', t: "Fireworks on the Fourth of July and New Year's Eve: after dark rockets climb from the middle of town and burst into rings, gold willows and crackles, with a big finale at midnight." },
+      { k: 'sound', t: 'Fireworks whistle up and boom softly from across town.' },
+      { k: 'look', t: 'Townsfolk dress up: witch hats, bedsheet ghosts and pumpkin heads at Halloween, Santa and elf hats and reindeer antlers at Christmas, and tall striped hats on the Fourth of July.' },
+      { k: 'sound', t: 'Festive tunes: music-box carols with sleigh bells at Christmas, a playful spooky waltz with wood-block knocks at Halloween, and a bright bandstand march with a brushed snare on the Fourth of July.' },
+      { k: 'new', t: 'Make the festivities yours: in the calendar (K) pick how much the town dresses up (None, A little, Cozy or All out) and the colours of its lights for each season, like warm white, icicle or candy cane.' },
+      { k: 'new', t: "A building's card can switch its festive lights and decorations off, and on again." },
+      { k: 'new', t: 'Festive decorations to buy in season: a town Christmas tree and a gingerbread stall, a pumpkin patch and a scarecrow, a bandstand and a picnic table. Once placed they stay all year.' },
+      { k: 'new', t: "Keepsakes: play during a real October, December or Fourth of July week and the town gets a keepsake to place any time: a Jack-o'-lantern post, a snow globe or a summer bell." },
+      { k: 'look', t: 'The calendar (K) shows the festive season under way with how dressed the town is, or the next one coming, and the date plaque wears the event\'s badge.' },
+      { k: 'look', t: 'Nexus has a new hand-drawn emblem: a little hilltop town by the river, on the title screen, the loading screen and the browser tab.' },
+      { k: 'new', t: 'Ideas & feedback: a note in the title screen\'s corner where you can send ideas, bugs or a hello straight to the maker. Written offline? It waits and goes next time.' },
+      { k: 'look', t: 'The welcome-back postcard is a real postcard now: a short landscape card with your town on the picture side, a little note, a stamp and your takings on the address lines.' },
+      { k: 'better', t: 'Click the envelope to open it (the button that sent it sliding away is gone), and the envelope and card stay centred.' },
+      { k: 'new', t: 'Collecting your takings bursts coins and parts out of the button and sends them flying into your counters, which climb as each one lands.' },
+    ],
+  },
+  {
     v: '0.11.0', date: '2026-10-25', name: 'Tunes on the breeze',
     blurb: 'Little tunes now drift over the town, and the streets, gardens and river have more to say.',
     items: [

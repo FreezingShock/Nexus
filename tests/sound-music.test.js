@@ -101,3 +101,18 @@ test('the now-playing line names the tune or the quiet between tunes, and escape
   assert.match(playingLine(null), /Between tunes/);
   assert.ok(!playingLine('<i>').includes('<i>'));
 });
+
+test('festive seasons dress the music: their mode, voices, percussion and tune names', async () => {
+  const { EVENT_COLOUR } = await import('../src/audio/composer.js');
+  for (const [id, ev] of Object.entries(EVENT_COLOUR)) {
+    assert.ok(MODES[ev.mode] && VOICES.includes(ev.lead) && VOICES.includes(ev.leadB) && VOICES.includes(ev.comp) && VOICES.includes(ev.perc), id);
+    const t = composeTune(7, { hour: 12, night: false, season: 'winter', weather: 'clear', event: id });
+    assert.equal(t.mode, ev.mode);
+    assert.ok(t.events.some((e) => e.voice === ev.perc), id + ' has its percussion');
+    assert.ok(ev.words.includes(t.title) || ev.words.some((w) => t.title.startsWith(w)), t.title);
+    const night = composeTune(7, { hour: 1, night: true, season: 'winter', event: id });
+    assert.equal(night.events.some((e) => e.voice === ev.perc), !!ev.night, id + ' at night');
+  }
+  const plain = composeTune(7, { hour: 12, night: false, season: 'winter' });
+  assert.ok(!plain.events.some((e) => ['sleigh', 'block', 'snare'].includes(e.voice)), 'no percussion on an ordinary day');
+});

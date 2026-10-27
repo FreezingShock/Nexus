@@ -15,7 +15,7 @@ const MUSIC_TONE = 2600;   // the music's soft lowpass, so nothing in a tune is 
 const TRIM = { murmur: 0.35, traffic: 0.3, water: 0.3, wind: 0.45, rain: 0.35, hush: 0.4, rustle: 0.2, birds: 0.7, owls: 0.8, crickets: 0.7, cicadas: 0.6,
   dogs: 0.7, cuckoo: 0.8, frogs: 0.7, thunder: 0.9, hearth: 0.5 };
 const WATER_CAP = 0.3;     // the river is never loud; distance decides how close it comes (attenuation.js)
-const MIN_GAP = { hover: 0.11, tick: 0.05, 'road-grow': 0.055, click: 0.04, select: 0.04, note: 2, arrive: 4, sparkle: 0.25, market: 8, festival: 8 }; // seconds between repeats
+const MIN_GAP = { hover: 0.11, tick: 0.05, 'road-grow': 0.055, click: 0.04, select: 0.04, note: 2, arrive: 4, sparkle: 0.25, market: 8, festival: 8, firework: 0.18, 'firework-launch': 0.35 }; // seconds between repeats
 const DRIFT_S = [6, 14];   // each layer wanders between these gaps, so the bed never settles into a loop
 const BIRD_PATTERNS = [[0, 0.09], [0, 0.09, 0.2], [0, 0.07, 0.14, 0.26], [0, 0.12]];
 
@@ -236,7 +236,23 @@ export function createEngine({ win = globalThis } = {}) {
     renew: (t) => [523.25, 783.99, 1046.5].forEach((f, i) => bell(t + i * 0.14, f, 2.8, 0.18)),
     charge: (t) => { sweep(t, 'lowpass', 300, 2600, 0.7, 0.12); blip(t, 260, 0.7, 0.04, 'sine', 620); },
     postcard: (t) => { noiseBurst(t, 'highpass', 3000, 0.22, 0.07); blip(t + 0.3, 120, 0.05, 0.16); },
+    // Collecting the postcard: a soft pop as the icons burst out, then a clink per coin and a wooden tock per part as
+    // they land, each a step higher than the last.
+    burst: (t) => { noiseBurst(t, 'bandpass', 1400, 0.12, 0.07); blip(t, 330, 0.14, 0.06, 'sine', 660); },
+    coin: (t, o) => { const f = 1318.5 * Math.pow(2, Math.min(o.n || 1, 16) / 24); blip(t, f, 0.09, 0.035, 'triangle', f * 1.02); blip(t + 0.02, f * 2, 0.06, 0.012, 'sine'); },
+    part: (t, o) => { const f = 392 * Math.pow(2, Math.min(o.n || 1, 16) / 24); blip(t, f, 0.06, 0.05, 'square', f * 0.9); noiseBurst(t, 'bandpass', 900, 0.03, 0.03); },
     // A family arriving: two soft rising notes. A sparkle: one tiny high twinkle.
+    // Fireworks, heard from across town: a thin rising whistle, then a soft low boom and, now and then, a crackle.
+    'firework-launch': (t) => { if (Math.random() < 0.5) sweep(t, 'bandpass', 900, 2600, 0.9, 0.012); },
+    firework: (t, o) => {
+      const n = Math.max(1, Math.min(o.n || 1, 3));
+      for (let i = 0; i < n; i++) {
+        const tt = t + i * 0.07 + Math.random() * 0.05;
+        blip(tt, 95, 0.5, 0.08, 'sine', 38);
+        noiseBurst(tt, 'lowpass', 320, 0.45, 0.09);
+        if (Math.random() < 0.35) for (let k = 0; k < 6; k++) noiseBurst(tt + 0.35 + Math.random() * 0.5, 'highpass', 3500, 0.01, 0.012);
+      }
+    },
     arrive: (t) => { bell(t, 659.25, 1.1, 0.07, 0.5); bell(t + 0.16, 987.77, 1.4, 0.06, 0.5); },
     sparkle: (t) => { blip(t, 2093, 0.14, 0.02, 'sine', 2349); blip(t + 0.07, 3135.96, 0.12, 0.014, 'sine'); },
     deny: (t) => blip(t, 220, 0.1, 0.03, 'sine', 180),
@@ -381,8 +397,17 @@ export function createEngine({ win = globalThis } = {}) {
     },
     // A round upright bass: one plucked triangle with a short glow.
     bass: (t, hz, dur, peak) => partials(t, hz, dur, peak, [[1, 1], [2, 0.18, 0.5]], 1.4, 'triangle', 0.2),
+    // Festive percussion (pitch is ignored). Sleigh bells: a shake of bright noise and two tiny bells.
+    sleigh: (t, hz, dur, peak) => {
+      for (let i = 0; i < 3; i++) noiseBurst(t + i * 0.018, 'highpass', 6500, 0.05, peak * (1 - i * 0.25), musicIn);
+      partials(t, 2350, 0.12, peak * 0.35, [[1, 1], [1.51, 0.5]], 0.25, 'sine', 0.1);
+    },
+    // A hollow wooden block: a short knock with a little pitch.
+    block: (t, hz, dur, peak) => { partials(t, 820, 0.05, peak, [[1, 1], [2.7, 0.3, 0.4]], 0.09, 'sine', 0.04); },
+    // A brushed snare from the bandstand: a soft burst of mid noise.
+    snare: (t, hz, dur, peak) => { noiseBurst(t, 'bandpass', 2400, 0.09, peak, musicIn); partials(t, 190, 0.05, peak * 0.4, [[1, 1]], 0.06, 'triangle', 0.03); },
   };
-  const PEAK = { piano: 0.075, harp: 0.045, musicbox: 0.05, flute: 0.05, pad: 0.03, bass: 0.07 };
+  const PEAK = { piano: 0.075, harp: 0.045, musicbox: 0.05, flute: 0.05, pad: 0.03, bass: 0.07, sleigh: 0.03, block: 0.06, snare: 0.035 };
 
   function playEvent(ev, t, spb, level) {
     const play = VOICES[ev.voice];
@@ -480,9 +505,11 @@ export function createEngine({ win = globalThis } = {}) {
     // What the next tune is written for: { hour, night, season, weather, festival }. When day turns to night (or back)
     // during a gap, the next tune comes sooner, to greet the change.
     setMoment(m) {
+      const evWas = moment.event || '';
       moment = { ...m };
       const n = !!m.night;
-      if (ctx && !tune && momentNight !== null && n !== momentNight) {
+      // a turn of day or night, or a festive season beginning, greets the change with a tune soon
+      if (ctx && !tune && ((momentNight !== null && n !== momentNight) || (m.event && m.event !== evWas))) {
         nextTuneAt = Math.min(nextTuneAt, ctx.currentTime + REGREET_S);
       }
       momentNight = n;

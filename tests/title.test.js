@@ -121,7 +121,7 @@ test('before Play every HUD piece is hidden, and the pages open as a centred she
   assert.match(html, /css\/notebook\.css/);
   const js0 = read('src/ui/title.js');
   assert.match(js0, /createNotebook\(/, 'the title uses the shared notebook sheet');
-  assert.match(js0, /\.tt-credit'\)\.insertAdjacentHTML\('beforebegin', notebookMarkup\('tt'\)\)/, 'the sheet sits beside the card, not inside it');
+  assert.match(js0, /title\.insertAdjacentHTML\('beforeend', notebookMarkup\('tt'\)\)/, 'the sheet sits beside the card, not inside it');
   const js = read('src/ui/title.js');
   for (const name of ['howto', 'changes', 'credits', 'settings', 'new']) assert.ok(new RegExp('\\b' + name + ': \\(\\) =>').test(js), name);
   assert.match(read('src/main.js'), /title\.failed\('Something went wrong/);
@@ -141,5 +141,6 @@ test('the author name is written once, in src/version.js, and the title screen r
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   assert.doesNotMatch(html, new RegExp('Made (with care )?by[^<]*' + AUTHOR), 'no name typed into index.html');
   const js = readFileSync(new URL('../src/ui/title.js', import.meta.url), 'utf8');
-  assert.match(js, /\$\('tt-made'\)/); assert.match(js, /\$\('tt-credit'\)/);
+  assert.match(js, /\$\('tt-made'\)\.textContent = 'Made by ' \+ AUTHOR;/);
+  assert.doesNotMatch(html + js, /tt-credit/, 'the corner credit is gone; the feedback box has that corner');
 });
