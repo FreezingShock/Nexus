@@ -1,7 +1,7 @@
 // The Web Audio engine: buses, ambience layers, one-shot cues and the music. Browser only, and entirely procedural: no
 // audio files are fetched, so nothing leaves the page after load. Nothing is created until unlock() runs from a user
 // gesture (browsers block audio before one). Without Web Audio the engine does nothing, and the game carries on.
-import { BUSES, busGain } from './mix.js';
+import { BUSES, DEFAULTS, busGain } from './mix.js';
 import { LAYERS, LAYER_NAMES, PLACES } from './soundscape.js';
 import { composeTune, gapAfter, hzOf, FIRST_TUNE_S, REGREET_S } from './composer.js';
 import { setNowPlaying, setMusicCommand } from './cuehub.js';
@@ -571,7 +571,7 @@ export function createEngine({ win = globalThis } = {}) {
       try {
         if (!ctx) {
           ctx = new AC();
-          build(settings || { master: 0.8, music: 0.5, effects: 0.7, ambience: 0.6, muted: false });
+          build(settings || DEFAULTS);
           refreshLayers();
         }
         if (ctx.state === 'suspended') ctx.resume();

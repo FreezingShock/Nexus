@@ -8,7 +8,7 @@ test('the Sound section has a mute switch and one slider per volume', () => {
   const html = soundMarkup(DEFAULTS);
   assert.match(html, /role="switch" data-mute aria-checked="false"/);
   for (const k of VOLUMES) assert.match(html, new RegExp(`data-vol="${k}"`));
-  assert.match(html, /value="70" data-vol="master"/);
+  assert.match(html, /value="100" data-vol="master"/);
 });
 
 test('muted sound shows the switch on and disables the sliders', () => {
