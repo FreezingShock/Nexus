@@ -4,6 +4,7 @@
 import * as THREE from '../../../vendor/three/three.module.min.js';
 import { LANG } from '../../world/models.js';
 import { luck } from './strings.js';
+import { doghouse } from './beagle.js';
 
 const { PLINTH, FLOOR_H: FH } = LANG;
 const ORANGE = 0xE07B39, ORANGE2 = 0xC9662B, STEM = 0x4F6B34, FACE = 0x3A2418, GHOST = 0xF4EFE4;
@@ -54,17 +55,10 @@ export function propsFor(event, door, body, seed) {
       out.push([ball(0.04, 0), GOLD, dx - 0.7, PLINTH + 0.75, z]);
     }
   } else if (event === 'snoopy') {
-    // a red doghouse by the step with a white beagle asleep on the roof, and (on some houses) a kite up on a string
-    const hx = dx - 0.9, hz = z + 0.15;
-    out.push([box(0.5, 0.36, 0.5), RED, hx, PLINTH + 0.18, hz]);
-    out.push([box(0.2, 0.2, 0.04), FACE, hx, PLINTH + 0.12, hz + 0.26]);
-    out.push([new THREE.ConeGeometry(0.42, 0.26, 4), 0xA83A2D, hx, PLINTH + 0.49, hz, 1, 1, 1, 0, Math.PI / 4]);
-    if (luck(seed, 51) < 0.8) { // the beagle, lying along the ridge
-      out.push([ball(0.1), WHITE, hx, PLINTH + 0.68, hz]);
-      out.push([box(0.3, 0.1, 0.12), WHITE, hx - 0.14, PLINTH + 0.64, hz]);
-      out.push([box(0.04, 0.12, 0.06), FACE, hx + 0.08, PLINTH + 0.66, hz + 0.08]);
-      out.push([ball(0.03, 0), FACE, hx + 0.19, PLINTH + 0.7, hz]);
-    }
+    // a red doghouse by the step, usually with the beagle sitting up on the ridge (now and then as the flying ace),
+    // and (on some houses) a kite up on a string
+    const hx = dx - 0.9, hz = z + 0.2, pet = luck(seed, 51) < 0.8 && (luck(seed, 53) < 0.25 ? 'ace' : true);
+    for (const [geo, c, x, y, zz] of doghouse(0.5, pet)) out.push([geo, c, hx + x, PLINTH + y, hz + zz]);
     if (luck(seed, 52) < 0.6 && body) kite(body, seed, out);
   } else if (event === 'july4') {
     // a flag on a short pole leaning out from the wall by the door
