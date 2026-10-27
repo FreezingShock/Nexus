@@ -1,4 +1,4 @@
-// Notifications: slim paper strips that slide down under the header, newest on top, up to three at once.
+// Notifications: slim paper strips that slide in from the left under the town plaque, newest on top, up to three at once.
 // Plain toasts become a one-line notice with a coloured icon; milestones, goals and the town's little events become a
 // reward strip with a title, a line saying what happened, and coin and Parts chips. Those chips burst into the HUD
 // counters a beat after the strip lands, the same flight as the postcard's takings (collect-fx.js).

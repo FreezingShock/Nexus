@@ -48,7 +48,7 @@ export const CHANGELOG = [
       { k: 'look', t: 'The welcome-back postcard is a real postcard now: a short landscape card with your town on the picture side, a little note, a stamp and your takings on the address lines.' },
       { k: 'better', t: 'Click the envelope to open it (the button that sent it sliding away is gone), and the envelope and card stay centred.' },
       { k: 'new', t: 'Collecting your takings bursts coins and parts out of the button and sends them flying into your counters, which climb as each one lands.' },
-      { k: 'look', t: 'Notifications are slim paper strips now: they slide down under the header, newest on top, with a coloured icon for each kind (a warning, an unlock, a milestone, a festival) and a thin line that shows how long they stay.' },
+      { k: 'look', t: 'Notifications are slim paper strips now: they slide in at the top left under the town plaque, newest on top, with a coloured icon for each kind (a warning, an unlock, a milestone, a festival) and a thin line that shows how long they stay.' },
       { k: 'better', t: 'Notifications say what happened in plain words, show rewards as coin and Parts chips, pause while you hover them, and a repeated one counts up (×2) instead of piling on.' },
       { k: 'new', t: 'Milestone, goal and daily rewards burst out of their notification and fly into your Coins and Parts counters, just like the postcard.' },
       { k: 'fix', t: 'Ideas & feedback in dark mode: the chosen note type is easy to read again, and the open note now sits snugly in the bottom-right corner.' },
