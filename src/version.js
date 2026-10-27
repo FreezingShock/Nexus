@@ -1,5 +1,5 @@
 // The one place the game's version and author are written. The title screen reads them; tests check package.json and the newest
 // changelog entry (src/changelog.js) agree.
-export const VERSION = '0.12.0';
+export const VERSION = '0.13.0';
 export const AUTHOR = 'nate';
 export const AUTHOR_HANDLE = 'FreezingShock';
