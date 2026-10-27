@@ -134,3 +134,20 @@ test('a tune starts a few seconds after unlock, plays its instruments, and Next 
   engine.setMoment({ hour: 0, night: true, season: 'winter', weather: 'snow' });
   engine.stop();
 });
+
+test('with stereo panners, hearing pans and muffles place layers, and the new creatures play', async () => {
+  const stub = stubContext();
+  let panners = 0;
+  stub.ctx.createStereoPanner = () => { panners++; return audioNode({ pan: param(0) }); };
+  const engine = engineWith(stub);
+  engine.unlock();
+  assert.ok(panners > 0, 'place layers get a panner');
+  engine.setLevels({ crickets: 1, farmyard: 1, workshop: 1, drips: 1, rain: 0.7, water: 1 });
+  engine.setHearing({ gain: { wild: 1, farm: 1, work: 1, homes: 1, water: 0.5 }, pan: { water: 0.3, farm: -0.2 }, muffle: 0.6 });
+  engine.setHearing(null); // ignored
+  const before = stub.calls.oscillators + stub.calls.sources;
+  stub.ctx.currentTime = 40;
+  await new Promise((r) => setTimeout(r, 220));
+  assert.ok(stub.calls.oscillators + stub.calls.sources > before, 'drips, crickets and the farmyard were scheduled');
+  engine.stop();
+});

@@ -16,6 +16,29 @@ export const KINDS = {
 
 export const CHANGELOG = [
   {
+    v: '0.13.0', date: '2026-10-27', name: 'Soft rain on the roofs',
+    blurb: 'The town sounds like a real place now: what you hear follows the camera, and every sound is softer and warmer.',
+    items: [
+      { k: 'better', t: 'Bigger parks cheer the homes around them more: a three-tile-square park lifts happiness nearly twice as much as a one-tile pocket park.' },
+      { k: 'new', t: 'Parks and plazas, redrawn: greens, plazas, playgrounds and ponds come in more sizes (up to three tiles square) with paths, benches, fountains, ducks and a jetty, plus three new open spaces: the rose garden, the town square and the orchard.' },
+      { k: 'new', t: 'The town journal: press J for a diary of what happened, from festivals and new seasons to the first home you built, plus little stories from named neighbours and a line about the time you were away.' },
+      { k: 'new', t: 'A gentle start for new mayors: a skippable welcome postcard with three hints, then one toolbar tool glows softly to suggest where to start and moves on once you have tried it. "No hints, thanks" turns it off, and towns already being played never see it.' },
+      { k: 'sound', t: 'Sounds come from where they are: hover over the river and you hear water, over the high street footsteps and wheels, over the fields a cow, hens and the odd sheep. In free-fly the streets sound right beside you.' },
+      { k: 'sound', t: 'Zoom out and the town blends into a soft, muffled hum; zoom in and each place comes forward, clear and close.' },
+      { k: 'sound', t: 'Gentle stereo: a sound to the left of the screen leans left, and turning the camera turns the sound with it.' },
+      { k: 'sound', t: 'Rain is a soft, low patter instead of a hiss, with drips off roofs and gutters near the houses, and thunder rolls in slowly from far away.' },
+      { k: 'sound', t: 'Warmer town sounds: the river babbles, crickets chirp instead of whining, cicadas shimmer and fade, and workshops knock away quietly by day.' },
+      { k: 'sound', t: 'Buttons, hovers and building clicks are quieter and rounder, like paper and wood, and the rooster and dogs are further off.' },
+      { k: 'sound', t: 'New sound settings start at full master volume, music and effects at half, and ambience at a quarter.' },
+      { k: 'new', t: 'Five new buildings: a stepped-gable Townhouse, a turreted Manor house (2x2 or 2x3), Garden flats with balconies and roof planters (2x2 or 2x3), a Bakery with a smoking oven, and a Department store with a glass dome (2x2 or 2x3). Townhouses and bakeries also grow on zoned lots.' },
+      { k: 'look', t: 'More variety: cottages, terraces, mansard blocks, towers, cafes, offices and shop rows now come in two or three roof looks each (hipped, gabled, mansard, flat with skylights, stepped or pointed crowns, a glass penthouse), picked by each building, so a street no longer repeats.' },
+      { k: 'look', t: 'The Department store has a proper entrance bay with pilasters and a canopy clear of its awnings.' },
+      { k: 'look', t: 'Notifications are slim coloured strips in the top-left corner that slide in, and rewards fly into your counters.' },
+      { k: 'fix', t: 'The feedback box reads clearly in dark mode, and its open note stays anchored in the corner.' },
+      { k: 'fix', t: 'Building details no longer flicker where two faces used to share a plane: cornices over doors, shop doors against their glass, bunting beside oriel windows, the church front and the clinic cross.' },
+    ],
+  },
+  {
     v: '0.12.0', date: '2026-10-26', name: 'Deck the streets',
     blurb: 'The calendar comes alive: the town now dresses up for the Fourth of July, Halloween and Christmas.',
     items: [
@@ -36,6 +59,10 @@ export const CHANGELOG = [
       { k: 'look', t: 'The welcome-back postcard is a real postcard now: a short landscape card with your town on the picture side, a little note, a stamp and your takings on the address lines.' },
       { k: 'better', t: 'Click the envelope to open it (the button that sent it sliding away is gone), and the envelope and card stay centred.' },
       { k: 'new', t: 'Collecting your takings bursts coins and parts out of the button and sends them flying into your counters, which climb as each one lands.' },
+      { k: 'look', t: 'Notifications are slim paper strips now: they slide in at the top left under the town plaque, newest on top, with a coloured icon for each kind (a warning, an unlock, a milestone, a festival) and a thin line that shows how long they stay.' },
+      { k: 'better', t: 'Notifications say what happened in plain words, show rewards as coin and Parts chips, pause while you hover them, and a repeated one counts up (×2) instead of piling on.' },
+      { k: 'new', t: 'Milestone, goal and daily rewards burst out of their notification and fly into your Coins and Parts counters, just like the postcard.' },
+      { k: 'fix', t: 'Ideas & feedback in dark mode: the chosen note type is easy to read again, and the open note now sits snugly in the bottom-right corner.' },
     ],
   },
   {

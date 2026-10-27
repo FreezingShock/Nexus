@@ -57,7 +57,7 @@ function completeGoal(ctx, i, def) {
   const next = pickGoal(g.seq, g.slots.filter((_, j) => j !== i).map((s) => s.k));
   g.seq = next.seq;
   g.slots[i] = { k: next.k, p: 0 };
-  emit({ type: 'goalDone', kind: 'goal', text: 'Goal done: ' + def.name + ' · ' + rewardText(def.reward) });
+  emit({ type: 'goalDone', kind: 'goal', title: 'Goal done', text: 'Goal done: ' + def.name + ' · ' + rewardText(def.reward), sub: def.name, coins: def.reward.coins || 0, parts: def.reward.parts || 0 });
   if (g.doneToday >= GOALS.open && g.bonusDay !== dayKey(ctx.sim.now())) dailyBonus(ctx);
 }
 
@@ -69,7 +69,8 @@ function dailyBonus(ctx) {
   const b = GOALS.dailyBonus;
   const parts = b.parts + b.perStreakDay * Math.min(g.streak - 1, b.maxStreakDays);
   state.parts += parts; ctx.syncDisplay();
-  emit({ type: 'goalDone', kind: 'daily', text: 'Daily set done · +' + parts + ' Parts · ' + g.streak + '-day streak' });
+  emit({ type: 'goalDone', kind: 'daily', title: 'Daily set done', text: 'Daily set done · +' + parts + ' Parts · ' + g.streak + '-day streak',
+    sub: g.streak > 1 ? g.streak + ' days in a row. Come back tomorrow to keep it going.' : 'Every goal for today is done.', parts });
 }
 
 const addCharge = (state, n) => { state.charge = Math.min(CH.max, state.charge + n); };
@@ -117,17 +118,17 @@ export default {
       if (state.boostS > 0) return emit({ type: 'toast', text: 'A boost is already running' });
       if (state.charge < CH.boostCost) return emit({ type: 'toast', text: 'Charge ' + Math.floor(state.charge) + ' of ' + CH.boostCost + ' · Charge builds as you build' });
       state.charge -= CH.boostCost; state.boostS = CH.boostS; refresh();
-      emit({ type: 'boosted', text: 'Charged up: coins ×' + CH.boostMult + ' for a minute' });
+      emit({ type: 'boosted', text: 'Charged up: coins ×' + CH.boostMult + ' for a minute', sub: 'Every coin counts ×' + CH.boostMult + ' for the next minute' });
     },
 
-    // Starts the town over. Keeps points, renewals, unlocked road tiers, milestones (state.ach), goals, Charge, settings, the town's name and badge, and lifetime coins.
+    // Starts the town over. Keeps points, renewals, unlocked road tiers, milestones (state.ach), the journal, goals, Charge, settings, the town's name and badge, and lifetime coins.
     renew(ctx) {
       const { sim, state, grid, emit, refresh, syncDisplay, rebuild } = ctx;
       const gain = pendingPoints(state.runEarned);
       if (gain < 1) return emit({ type: 'toast', text: 'Renewal opens after ' + BALANCE.renewal.divisor.toLocaleString('en-US') + ' coins in one run' });
       const keep = {
         earned: state.earned, points: state.points + gain, renewals: state.renewals + 1,
-        charge: state.charge, stats: state.stats, ach: state.ach, goals: state.goals, town: state.town,
+        charge: state.charge, stats: state.stats, ach: state.ach, goals: state.goals, town: state.town, journal: state.journal,
         roadUnlocks: state.roadUnlocks, night: state.night, speed: state.speed, paused: state.paused,
       };
       const fresh = freshState();
@@ -141,7 +142,9 @@ export default {
       grid.zone.fill(0); grid.road.fill(0); grid.lot.fill(0);
       rebuild();
       syncDisplay(); refresh();
-      emit({ type: 'renewed', text: 'Renewed: +' + gain + (gain > 1 ? ' points' : ' point') + ' · income +' + Math.round((pointsMult(state.points) - 1) * 100) + '% for good' });
+      const more = Math.round((pointsMult(state.points) - 1) * 100);
+      emit({ type: 'renewed', text: 'Renewed: +' + gain + (gain > 1 ? ' points' : ' point') + ' · income +' + more + '% for good',
+        sub: 'A new town begins with +' + gain + (gain > 1 ? ' points' : ' point') + ', and income is up ' + more + '% for good' });
     },
   },
 

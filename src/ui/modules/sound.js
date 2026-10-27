@@ -3,12 +3,15 @@
 // camera. Reads the sim, the camera and the DOM; changes none of them. Nothing plays until the first click or key press.
 import { createEngine } from '../../audio/engine.js';
 import { layersFor, cueFor, countOf, transitionCue, clockCue } from '../../audio/soundscape.js';
-import { listenerOf, sourceGains } from '../../audio/attenuation.js';
+import { listenerOf } from '../../audio/attenuation.js';
+import { buildSoundMap, hear, headingOf } from '../../audio/soundmap.js';
 import { setCueSink } from '../../audio/cuehub.js';
 import { interactiveAnchor } from '../sound-targets.js';
 
 const GESTURES = ['pointerdown', 'keydown'];
 const LEVEL_EVERY_S = 0.25; // how often the ambience and its distances are refreshed
+const MAP_EVERY_S = 3;      // how often the map of where sounds come from is redrawn from the town (and after any build)
+const REMAP = new Set(['placed', 'bulldozed', 'roadsChanged', 'zonePainted', 'zoneCleared', 'renewed']);
 const styleOf = (el) => {
   try { return getComputedStyle(el).cursor; }
   catch { return ''; }
@@ -57,8 +60,8 @@ export default {
       if (a) engine.cue('hover');
     });
 
-    // Cards, modals and the toast open and close by their hidden attribute. One observer covers them all, present and
-    // future. The tool flyout has its own cue (onTool), and the postcard has its own.
+    // Cards and modals open and close by their hidden attribute. One observer covers them all, present and
+    // future. The tool flyout has its own cue (onTool), the postcard has its own, and so do the notifications (notes.js).
     const menus = new MutationObserver((muts) => {
       for (const m of muts) {
         const el = m.target;
@@ -66,20 +69,28 @@ export default {
         if (el.id === 'fly') continue;
         const wasHidden = m.oldValue !== null;
         if (wasHidden === el.hidden) continue; // the attribute did not change state
-        if (el.id === 'toast') { if (!el.hidden && !/Not enough/.test(el.textContent || '')) engine.cue('note'); continue; }
         if (el.id === 'offline') { if (!el.hidden) engine.cue('postcard'); continue; }
         engine.cue(el.hidden ? 'close' : 'open');
       }
     });
     menus.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['hidden'], attributeOldValue: true });
 
-    let lastNight = null, lastHour = null, acc = 0;
+    let lastNight = null, lastHour = null, acc = 0, mapAge = Infinity, soundMap = null;
+    const remap = () => {
+      soundMap = buildSoundMap({
+        grid: sim.grid,
+        placed: typeof sim.placedRecords === 'function' ? sim.placedRecords() : [],
+        trees: sim.state.trees || [],
+      });
+      mapAge = 0;
+    };
 
     return {
       // Each sim event that has a cue. The mapping lives in audio/soundscape.js (cueFor and countOf).
       onEvent(e) {
         const name = cueFor(e);
         if (name) engine.cue(name, { n: countOf(e) });
+        if (e && REMAP.has(e.type)) mapAge = Infinity;
       },
       onTool(tool) { engine.cue(tool ? 'tool' : 'close'); },
       frame(dt) {
@@ -96,7 +107,7 @@ export default {
         const bell = clockCue(lastHour, st.hour, { market, festival });
         lastHour = st.hour;
         if (bell) engine.cue(bell);
-        acc += dt;
+        acc += dt; mapAge += dt;
         if (acc < LEVEL_EVERY_S) return;
         acc = 0;
         // Season and weather come from the sim's calendar state (state.season, state.weather), read here, never written.
@@ -104,8 +115,13 @@ export default {
         const people = pop && typeof pop.people === 'function' ? pop.people() : null;
         engine.setLevels(layersFor({ night, season: st.season, weather: st.weather, market, festival, people }));
         engine.setMoment({ hour: st.hour, night, season: st.season, weather: st.weather, festival, event: st.event || '' });
+        // Where the camera is (orbit eye or free-fly eye) decides which places are heard, how loud and from which side.
         const cam = scene.camera;
-        if (cam) engine.setSources(sourceGains(listenerOf({ mode: cam.mode, view: cam.view, free: cam.free })));
+        if (cam && sim.grid) {
+          if (mapAge >= MAP_EVERY_S) remap();
+          const at = { mode: cam.mode, view: cam.view, free: cam.free };
+          engine.setHearing(hear(soundMap, listenerOf(at), headingOf(at)));
+        }
       },
     };
   },

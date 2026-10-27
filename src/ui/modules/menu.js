@@ -14,6 +14,7 @@ import { PAGE_ICONS } from '../page-icons.js';
 // Top to bottom. gap draws a dashed rule above a row; page is the notebook page the row opens.
 export const MENU_ROWS = [
   { id: 'goalsbtn', label: 'Goals and milestones', key: 'G', c: '#D3E4C4', page: 'goals', icon: PAGE_ICONS.goals },
+  { id: 'journalbtn', label: 'Town journal', key: 'J', c: '#F6DDA0', page: 'journal', icon: PAGE_ICONS.journal, sub: 'A diary and the neighbours\' stories' },
   { id: 'night', label: 'Time of day', c: '#F6DDA0', icon: PAGE_ICONS.sky, gap: true },
   { id: 'paintbtn', label: 'Paint town', c: '#F2D9A6', page: 'paint', icon: PAGE_ICONS.paint, sub: 'One brush for every wall and roof' },
   { id: 'photobtn', label: 'Photo mode', key: 'O', c: '#E8D9EC', icon: PAGE_ICONS.photo, sub: 'Filters, viewpoints and a slow camera' },

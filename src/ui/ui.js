@@ -25,7 +25,7 @@ export function createUi({ sim, scene, actions }) {
     setTool: (t) => setTool(t),
   });
   const postcard = createPostcard({ sim, send, scene, hud });
-  const mods = registryOf('ui modules', uiModules).list().map((d) => d.create({ sim, send, scene, toast: hud.toast, tool: () => tool, setTool: (t) => setTool(t), quality: actions.quality, sound: actions.sound, calendar: actions.calendar, profile: () => actions.profile }) || {});
+  const mods = registryOf('ui modules', uiModules).list().map((d) => d.create({ sim, send, scene, hud, toast: hud.toast, tool: () => tool, setTool: (t) => setTool(t), quality: actions.quality, sound: actions.sound, calendar: actions.calendar, profile: () => actions.profile }) || {});
 
   function select(id) {
     if (id && !sim.alive(id)) id = null; // only a standing building can be inspected
@@ -90,7 +90,7 @@ export function createUi({ sim, scene, actions }) {
 
   // sim events -> feedback
   sim.subscribe((e) => {
-    if (e.text && !isNoteEvent(e)) hud.toast(e.text); // milestones and rewards get a postcard note instead
+    if (e.text && !isNoteEvent(e)) hud.toast(e.text, e.kind); // milestones and rewards get a reward strip instead
     for (const m of mods) if (m.onEvent) m.onEvent(e);
     if (e.type === 'upgraded') { scene.pop(e.id); if (panels.ui.selected === e.id) panels.showInspect(e.id); }
     else if (e.type === 'bulldozed') { if (panels.ui.selected === e.id) select(null); }

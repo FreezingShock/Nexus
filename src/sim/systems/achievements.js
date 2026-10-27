@@ -50,16 +50,23 @@ function pay(ctx, paid) {
   if (paid.length > MAX_NOTES) {
     const goals = new Set(paid.map((p) => p.goal.id)).size;
     const top = paid.reduce((a, p) => (p.stage > a ? p.stage : a), 1);
+    // One strip for the lot, naming the first few goals so it still says what happened.
+    const names = [...new Set(paid.map((p) => p.goal.name))];
+    const named = names.slice(0, 2).join(', ') + (names.length > 2 ? ' and ' + (names.length - 2) + ' more' : '');
+    const opens = paid.filter((p) => p.unlock).map((p) => roadName(p.unlock));
     emit({
-      type: 'milestone', title: 'A bundle of milestones', tint: STAGES[top - 1].color,
+      type: 'milestone', title: paid.length + ' milestones reached', tint: STAGES[top - 1].color,
       text: paid.length + ' stages across ' + goals + (goals === 1 ? ' goal' : ' goals') + ' · ' + rewardLine({ coins, parts }, null),
+      sub: (goals === 1 ? 'All in ' : 'Across ') + named, coins, parts, extra: opens.length ? opens[0] + ' opens' : '',
     });
     return;
   }
   for (const p of paid) {
+    const target = fmtTarget(p.goal, p.goal.tiers[p.stage - 1]);
     emit({
       type: 'milestone', title: STAGES[p.stage - 1].name + ' · ' + p.goal.name, tint: STAGES[p.stage - 1].color,
-      text: fmtTarget(p.goal, p.goal.tiers[p.stage - 1]) + ' · ' + rewardLine(p.reward, p.unlock, roadName),
+      text: target + ' · ' + rewardLine(p.reward, p.unlock, roadName),
+      sub: 'You reached ' + target, coins: p.reward.coins, parts: p.reward.parts, extra: p.unlock ? roadName(p.unlock) + ' opens' : '',
     });
   }
 }

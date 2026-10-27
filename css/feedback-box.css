@@ -1,6 +1,7 @@
 /* The feedback box in the title screen's bottom-right corner (src/ui/feedback-box.js): a paper tab that unfolds upward
-   into a taped note. It sits under the notebook sheet (z 3-4) so an open page always covers it. */
-.fb{position:absolute;right:max(20px,3vw);bottom:18px;z-index:2;display:flex;flex-direction:column;align-items:flex-end;gap:12px;pointer-events:none}
+   into a taped note. The open note takes the tab's place, anchored in the corner. It sits under the notebook sheet
+   (z 3-4) so an open page always covers it. */
+.fb{position:absolute;right:16px;bottom:16px;z-index:2;display:flex;flex-direction:column;align-items:flex-end;gap:12px;pointer-events:none}
 .fb>*{pointer-events:auto}
 .fb-tab{display:flex;align-items:center;gap:8px;height:44px;padding:0 16px 0 10px;border:2.5px solid var(--ink);border-radius:14px 16px 13px 15px;background:var(--paper);box-shadow:0 4px 0 var(--ink);font:800 14px/1 var(--body);color:var(--text);position:relative;rotate:-1deg;transition:transform .22s cubic-bezier(.3,1.7,.5,1),box-shadow .12s,background .2s}
 .fb-tab svg{width:26px;height:26px;flex:none;transition:rotate .3s cubic-bezier(.3,1.7,.5,1)}
@@ -8,6 +9,7 @@
 .fb-tab:hover svg{rotate:-10deg}
 .fb-tab:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
 .fb-tab.on{background:var(--mustard)}
+.fb.open .fb-tab{display:none}
 .fb-dot{position:absolute;top:-5px;right:-5px;width:13px;height:13px;border:2px solid var(--ink);border-radius:50%;background:var(--coral)}
 
 .fb-card{position:relative;width:min(340px,calc(100vw - 40px));padding:20px 20px 16px;transform-origin:100% 100%}
@@ -43,4 +45,3 @@
 @keyframes fb-stamp{from{scale:1.6;opacity:0;rotate:-24deg}}
 .fb-again{height:40px;font-size:14px;margin-top:2px}
 
-@media (max-width:900px){.fb{right:16px;bottom:14px}}

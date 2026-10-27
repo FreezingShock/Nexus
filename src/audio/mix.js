@@ -7,8 +7,8 @@ const VERSION = 1;
 
 export const VOLUMES = ['master', 'music', 'effects', 'ambience'];
 export const BUSES = ['music', 'effects', 'ambience'];
-// Quieter than the first pass: the bed of ambience sits low, so the town feels cozy rather than busy.
-export const DEFAULTS = { master: 0.7, music: 0.4, effects: 0.6, ambience: 0.35, muted: false };
+// New players start at full master with music and effects at half and a low ambience bed (nate's pick, 2026-10-27).
+export const DEFAULTS = { master: 1, music: 0.5, effects: 0.5, ambience: 0.25, muted: false };
 
 // Keeps a number in 0..1 to two decimals. Anything that is not a finite number is rejected (null).
 export function cleanVolume(v) {

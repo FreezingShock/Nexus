@@ -8,8 +8,10 @@ import date from './date.js';
 import decor from './decor.js';
 import districts from './districts.js';
 import feedback from './feedback.js';
+import firstDays from './first-days.js';
 import frameStats from './frame-stats.js';
 import happiness from './happiness.js';
+import journal from './journal.js';
 import menu from './menu.js';
 import notes from './notes.js';
 import paintTown from './paint-town.js';
@@ -35,8 +37,10 @@ export const uiModules = [
   decor,
   districts,
   feedback,
+  firstDays,
   frameStats,
   happiness,
+  journal,
   menu,
   notes,
   paintTown,
