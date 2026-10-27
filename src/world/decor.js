@@ -35,6 +35,8 @@ export const DECOR = [
   { id: 'scarecrow', cat: 'festive', event: 'halloween', name: 'Scarecrow', sub: 'Straw hat, patched coat, friendly face', cost: 240, parts: 0 },
   { id: 'bandstand', cat: 'festive', event: 'july4', name: 'Bandstand', sub: 'Bunting round a little round stage', cost: 900, parts: 0 },
   { id: 'picnic', cat: 'festive', event: 'july4', name: 'Picnic table', sub: 'A checked cloth and a pie', cost: 150, parts: 0 },
+  { id: 'doghouse', cat: 'festive', event: 'snoopy', name: 'Red doghouse', sub: 'A cosy roof for a very good beagle', cost: 350, parts: 0 },
+  { id: 'kitepost', cat: 'festive', event: 'snoopy', name: 'Kite post', sub: 'A red kite on a long string', cost: 280, parts: 0 },
   // Keepsakes: a gift for playing on the real holiday (core/keepsakes.js). Once yours, on sale all year.
   { id: 'snowglobe', cat: 'festive', keepsake: 'christmas', name: 'Snow globe', sub: 'A keepsake from a real December', cost: 400, parts: 0 },
   { id: 'lanternpost', cat: 'festive', keepsake: 'halloween', name: "Jack-o'-lantern post", sub: 'A keepsake from a real October', cost: 300, parts: 0 },
@@ -53,7 +55,7 @@ export const isOpen = (def, unlocks) => !def.parts || unlocks.includes(def.id);
 
 // Whether a piece is on sale right now: Parts unlocks as above, a festive extra only in its season, a keepsake only once
 // it is the town's. state needs decorUnlocks, event and keepsakes. Returns null when it is, or why not (a short line).
-const SEASON_MONTH = { christmas: 'December', halloween: 'October', july4: 'July' };
+const SEASON_MONTH = { christmas: 'December', halloween: 'October', july4: 'July', snoopy: 'April' };
 export function offSale(def, state) {
   if (def.event && state.event !== def.event) return 'Back in ' + SEASON_MONTH[def.event];
   if (def.keepsake && !(state.keepsakes || []).includes(def.id)) return 'A keepsake: play in a real ' + (def.keepsake === 'july4' ? 'Fourth of July week' : SEASON_MONTH[def.keepsake]) + ' to keep it';

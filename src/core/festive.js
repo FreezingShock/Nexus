@@ -2,8 +2,9 @@
 // Pure (no DOM, no Three.js). Saved on state.festive by sim/systems/festive.js; render reads it with the event fields.
 //   amount    'none' | 'light' | 'cozy' | 'all'   ('cozy' is the default: decorations build up through the month)
 //   palette   { [event id]: palette key }         (missing means 'classic')
+//   optIn     [event ids]                         opt-in events the town switched on (core/events.js `optIn`)
 //   dark      [record ids]                        placed buildings whose owner switched their lights off
-import { eventById } from './events.js';
+import { OPT_IN_EVENTS, eventById } from './events.js';
 
 export const AMOUNTS = [
   { id: 'none', name: 'None', line: 'No decorations this year' },
@@ -26,6 +27,11 @@ export const PALETTES = {
     { id: 'pumpkin', name: 'Pumpkin', lights: [0xF08A3C, 0xF3C04F] },
     { id: 'potion', name: 'Potion', lights: [0x9A63C4, 0x7DD36B] },
   ],
+  snoopy: [
+    { id: 'classic', name: 'Doghouse red' },
+    { id: 'kites', name: 'Kite colours', lights: [0xE0533F, 0xF3C04F, 0x6FA0DC, 0x5FA86A] },
+    { id: 'cream', name: 'Supper dish', lights: [0xFFF4D6, 0xF2D27A] },
+  ],
   july4: [
     { id: 'classic', name: 'Stars and stripes' },
     { id: 'sparkle', name: 'Sparkler', lights: [0xFFF4D6, 0xF2D27A] },
@@ -33,7 +39,7 @@ export const PALETTES = {
   ],
 };
 
-export const freshFestive = () => ({ amount: 'cozy', palette: {}, dark: [] });
+export const freshFestive = () => ({ amount: 'cozy', palette: {}, dark: [], optIn: [] });
 
 export function sanitizeFestive(raw) {
   const out = freshFestive();
@@ -42,6 +48,7 @@ export function sanitizeFestive(raw) {
   if (raw.palette && typeof raw.palette === 'object') {
     for (const [ev, list] of Object.entries(PALETTES)) if (list.some((p) => p.id === raw.palette[ev])) out.palette[ev] = raw.palette[ev];
   }
+  if (Array.isArray(raw.optIn)) out.optIn = OPT_IN_EVENTS.map((e) => e.id).filter((id) => raw.optIn.includes(id));
   if (Array.isArray(raw.dark)) out.dark = [...new Set(raw.dark.filter((x) => typeof x === 'string' && /^b\d+$/.test(x)))].slice(0, 2000);
   return out;
 }

@@ -43,3 +43,9 @@ test('a crowd changes into costume when the event starts, sharing its matrices, 
   lone.dress(0, 'july4', 3); lone.sync();
   assert.equal(lone.mesh.count, actors.mesh.count);
 });
+
+test('Snoopy Days dresses a few townsfolk as white beagles and flying aces', () => {
+  const worn = Array.from({ length: 1000 }, (_, i) => costumeFor('snoopy', i)).filter(Boolean);
+  assert.ok(worn.some((w) => PARTS[w.kind] === 'beagle') && worn.some((w) => PARTS[w.kind] === 'ace'));
+  assert.ok(worn.length > 200 && worn.length < 450);
+});

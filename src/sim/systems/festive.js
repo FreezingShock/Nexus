@@ -2,6 +2,8 @@
 // placed buildings keep their lights off. All free: the town decorates itself. A change makes a new state.festive object,
 // so render notices by identity.
 import { AMOUNTS, PALETTES, freshFestive, sanitizeFestive } from '../../core/festive.js';
+import { OPT_IN_EVENTS } from '../../core/events.js';
+import { refreshCalendar } from './calendar.js';
 import { keepsakesOn, sanitizeKeepsakes } from '../../core/keepsakes.js';
 
 const CHECK_EVERY = 60; // ticks between looks at the real date (a keepsake can arrive while playing past midnight)
@@ -42,6 +44,17 @@ export default {
       if (!changed) return;
       state.festive = f;
       note('festive', cmd.amount || cmd.palette);
+    },
+    // { event, on }: switch an opt-in event (Snoopy Days) on or off; the calendar is read again at once
+    setEventOptIn(ctx, cmd) {
+      const { state, note } = ctx;
+      if (!OPT_IN_EVENTS.some((e) => e.id === cmd.event)) return;
+      const has = state.festive.optIn.includes(cmd.event), on = !!cmd.on;
+      if (has === on) return;
+      const optIn = on ? [...state.festive.optIn, cmd.event] : state.festive.optIn.filter((x) => x !== cmd.event);
+      state.festive = { ...state.festive, optIn };
+      refreshCalendar(ctx);
+      note('festive', cmd.event);
     },
     // { id, on }: a placed building's festive lights
     festiveLights({ state, emit }, cmd) {

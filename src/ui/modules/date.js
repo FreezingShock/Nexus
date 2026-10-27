@@ -5,7 +5,7 @@ import { MONTH_NAMES, MONTH_SHORT, SEASONS, monthDaysOf, seasonOfMonth } from '.
 import { MARKET } from '../../core/holidays.js';
 import { iconFor } from '../holiday-icons.js';
 import { AMOUNTS, PALETTES, lightsFor } from '../../core/festive.js';
-import { eventById } from '../../core/events.js';
+import { OPT_IN_EVENTS, eventById } from '../../core/events.js';
 import { $ } from '../format.js';
 import { clockText, coverText, dateOf, eventInfo, inDaysText, longDate, monthCells, nextMonthSkip, seasonName, shortDate, todayLine, townDays, upcoming, yearLine, yearRibbon } from '../date-text.js';
 
@@ -46,6 +46,7 @@ export default {
         <section class="gsec dfest" id="dpfest"><h3>Decorations</h3>
           <div class="seg" id="dpamount" role="radiogroup" aria-label="How much the town dresses up"></div>
           <div class="dpal" id="dppal"></div>
+          <div class="dpal" id="dpopt"></div>
           <p class="sub dnote">The town decorates itself for free. Switch a building's lights off from its card.</p>
         </section>
         <section class="gsec"><h3>Coming up</h3><ul class="glist" id="dpnext"></ul></section>
@@ -131,11 +132,13 @@ export default {
     function paintFestive() {
       const f = s.festive, ev = eventInfo(s, md());
       const id = ev ? ev.id : '';
-      const sig = f.amount + JSON.stringify(f.palette) + id;
+      const sig = f.amount + JSON.stringify(f.palette) + f.optIn.join() + id;
       const box = $('dpfest');
       if (box.dataset.sig === sig) return;
       box.dataset.sig = sig;
       $('dpamount').innerHTML = AMOUNTS.map((a) => `<button type="button" class="segb" role="radio" data-amount="${a.id}" aria-checked="${a.id === f.amount}" title="${a.line}">${a.name}</button>`).join('');
+      // opt-in seasons (Snoopy Days): off until the town switches them on
+      $('dpopt').innerHTML = OPT_IN_EVENTS.map((e) => `<button type="button" class="dpalb" data-optin="${e.id}" aria-pressed="${f.optIn.includes(e.id)}" title="Switch ${e.name} on or off">${iconFor(e.id, 20)}<small>${e.name}</small></button>`).join('');
       const list = PALETTES[id] || [];
       const hx = (n) => '#' + n.toString(16).padStart(6, '0');
       $('dppal').innerHTML = list.length ? `<span class="dpalh">${eventById(id).name} lights</span>` + list.map((p) => {
@@ -188,6 +191,8 @@ export default {
     plaque.addEventListener('focus', () => showTip(true));
     plaque.addEventListener('blur', () => showTip(false));
     panel.addEventListener('click', (e) => {
+      const opt = e.target.closest('button[data-optin]');
+      if (opt) { send({ type: 'setEventOptIn', event: opt.dataset.optin, on: opt.getAttribute('aria-pressed') !== 'true' }); paintFestive(); return; }
       const am = e.target.closest('button[data-amount]'), pal = e.target.closest('button[data-pal]');
       if (am) { send({ type: 'setFestive', amount: am.dataset.amount }); paintFestive(); return; }
       if (pal) { send({ type: 'setFestive', event: pal.dataset.ev, palette: pal.dataset.pal }); paintFestive(); return; }

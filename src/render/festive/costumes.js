@@ -7,7 +7,7 @@ import * as THREE from '../../../vendor/three/three.module.min.js';
 import { mergeParts, tintToon } from '../life/figures.js';
 import { unit } from '../../sim/schedule.js';
 
-export const PARTS = ['witch', 'santa', 'tophat', 'ghost', 'pumpkin', 'antlers'];
+export const PARTS = ['witch', 'santa', 'tophat', 'ghost', 'pumpkin', 'antlers', 'beagle', 'ace'];
 const P = Object.fromEntries(PARTS.map((k, i) => [k, i]));
 const WHITE = 0xF7F1E3, SHEET = 0xF4EFE4, INK = 0x2B2620, ORANGE = 0xE07B39, STEM = 0x4F6B34, ANTLER = 0x8A6744;
 
@@ -17,6 +17,8 @@ export const WARDROBE = {
   halloween: [['witch', 0.2, [0x2E2A33, 0x5B3F7A, 0x2F4A3A]], ['ghost', 0.12, [SHEET]], ['pumpkin', 0.1, [ORANGE]]],
   christmas: [['santa', 0.28, [0xC2483A]], ['santa', 0.1, [0x3F8455]], ['antlers', 0.1, [ANTLER]]],
   july4: [['tophat', 0.16, [0x3F6FB0, 0xC2483A, WHITE]]],
+  // Snoopy Days: a white beagle head with black ears, and a few flying aces in a brown helmet and red scarf
+  snoopy: [['beagle', 0.24, [WHITE]], ['ace', 0.08, [0x8A6744]]],
 };
 
 const tag = (geo, part) => { geo.userData.part = part; return geo; };
@@ -48,6 +50,18 @@ export function costumeGeometry() {
     { geo: tag(at(new THREE.BoxGeometry(0.02, 0.04, 0.04), 0.19, 0.9, -0.06), P.pumpkin), color: INK, tint: false },
     { geo: tag(at(new THREE.BoxGeometry(0.02, 0.04, 0.04), 0.19, 0.9, 0.06), P.pumpkin), color: INK, tint: false },
     { geo: tag(at(new THREE.BoxGeometry(0.02, 0.03, 0.12), 0.195, 0.8, 0), P.pumpkin), color: INK, tint: false },
+    // beagle: a white head over the real one, a black nose on a short snout and long black ears hanging at the sides
+    { geo: tag(at(new THREE.SphereGeometry(0.2, 8, 6), 0, 0.85, 0), P.beagle), color: WHITE, tint: false },
+    { geo: tag(at(new THREE.SphereGeometry(0.1, 6, 5).scale(1.3, 0.8, 0.9), 0.2, 0.8, 0), P.beagle), color: WHITE, tint: false },
+    { geo: tag(at(new THREE.SphereGeometry(0.045, 5, 4), 0.32, 0.82, 0), P.beagle), color: INK, tint: false },
+    { geo: tag(at(new THREE.BoxGeometry(0.02, 0.05, 0.04), 0.17, 0.9, -0.07), P.beagle), color: INK, tint: false },
+    { geo: tag(at(new THREE.BoxGeometry(0.02, 0.05, 0.04), 0.17, 0.9, 0.07), P.beagle), color: INK, tint: false },
+    ...[-1, 1].map((s) => ({ geo: tag(at(new THREE.BoxGeometry(0.09, 0.26, 0.05).rotateX(s * 0.2), -0.02, 0.8, s * 0.2), P.beagle), color: INK, tint: false })),
+    // flying ace: a brown leather cap with goggles on the brow and a red scarf streaming behind
+    { geo: tag(at(new THREE.SphereGeometry(0.19, 8, 6, 0, Math.PI * 2, 0, Math.PI * 0.55), 0, 0.84, 0), P.ace), color: 0xffffff, tint: true },
+    { geo: tag(at(new THREE.BoxGeometry(0.05, 0.07, 0.24), 0.16, 0.9, 0), P.ace), color: 0xCFE6F2, tint: false },
+    { geo: tag(at(new THREE.BoxGeometry(0.34, 0.05, 0.05).rotateZ(0.2), -0.24, 0.6, 0), P.ace), color: 0xC2483A, tint: false },
+    { geo: tag(at(new THREE.CylinderGeometry(0.15, 0.15, 0.05, 8), 0, 0.58, 0), P.ace), color: 0xC2483A, tint: false },
     // reindeer antlers
     ...[-1, 1].flatMap((s) => [
       { geo: tag(at(new THREE.BoxGeometry(0.03, 0.2, 0.03).rotateX(s * 0.35), 0, 1.03, s * 0.09), P.antlers), color: ANTLER, tint: false },
