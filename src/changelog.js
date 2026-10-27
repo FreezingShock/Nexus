@@ -36,6 +36,7 @@ export const CHANGELOG = [
       { k: 'look', t: 'The welcome-back postcard is a real postcard now: a short landscape card with your town on the picture side, a little note, a stamp and your takings on the address lines.' },
       { k: 'better', t: 'Click the envelope to open it (the button that sent it sliding away is gone), and the envelope and card stay centred.' },
       { k: 'new', t: 'Collecting your takings bursts coins and parts out of the button and sends them flying into your counters, which climb as each one lands.' },
+      { k: 'fix', t: 'Ideas & feedback in dark mode: the chosen note type is easy to read again, and the open note now sits snugly in the bottom-right corner.' },
     ],
   },
   {
