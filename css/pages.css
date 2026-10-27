@@ -59,3 +59,18 @@
 .pp-sw{flex:none;width:18px;height:18px;border:2px solid var(--ink);border-radius:50%;background:#FBF6EA}
 .pp-dark{background:#2B3638}
 .pp-auto{background:linear-gradient(135deg,#FBF6EA 50%,#2B3638 50%)}
+
+/* Your first days (modules/first-days.js) and its reminder box on the Goals page */
+.fd-list{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:10px}
+.fd-step{display:flex;align-items:center;gap:12px;padding:10px 14px;border:2px solid var(--ink);border-radius:14px;background:var(--paper);box-shadow:0 3px 0 rgba(43,38,32,.25)}
+.fd-step:nth-child(odd){rotate:-.4deg}.fd-step:nth-child(even){rotate:.4deg}
+.fd-tick{flex:none;display:grid;place-items:center;width:30px;height:30px;border:2px solid var(--ink);border-radius:50%;background:var(--paper-2);font-weight:800}
+.fd-ok .fd-tick{background:var(--sage);color:var(--text)}
+.fd-text{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+.fd-text b{font-size:17px}
+.fd-text small{font-size:13.5px;color:var(--ink-soft)}
+.fd-ok .fd-text b{text-decoration:line-through;text-decoration-thickness:2px;opacity:.7}
+.fd-show{flex:none;height:38px;font-size:14px;padding:0 12px}
+.fd-foot{display:flex;align-items:center;gap:16px;margin-top:6px}
+.gl-first{background:var(--paper-2)}
+.gl-first small{font-size:13px;color:var(--ink-soft);font-weight:700}

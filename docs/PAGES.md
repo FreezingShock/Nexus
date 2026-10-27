@@ -11,6 +11,9 @@ coloured bookmark tabs down its right edge. A paper rustle and a chime of its ow
 - **Town**: `src/ui/book.js` builds the sheet (prefix `pg`) on a stage over the town and keeps a page registry. Pages:
   - `goals` (`modules/progress.js`): tabs Today (Charge, today's goals, almost there, Renewal) and Milestones
     (`milestone-list.js`). G opens Today, M opens Milestones.
+  - `firstdays` (`modules/first-days.js`, rules in `src/ui/first-days.js`): six optional, self-ticking steps for a new town. Opens
+    once, a moment after Play, only when nothing has been built; later it waits as a box on Goals, Today until finished or hidden.
+    Kept per browser under `nexus.firstdays.v1`, so it is not part of the save.
   - `settings` (`panels.js`): tabs Sky, Graphics, Sound, Town. Restore, Start over and Import ask on the page.
   - `shortcuts` (`modules/shortcut-sheet.js`, key / or ?) and `paint` (`modules/paint-town.js`).
   - `mytown` (`modules/town-page.js`, words in `src/ui/town-view.js`): opened by clicking the town plaque. Tabs Overview
