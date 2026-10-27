@@ -1,7 +1,7 @@
 // Services, parks, landmarks, shops and industry as plain rules: which records give coverage, how far, and what the tiles feel.
 // Pure: no DOM, no THREE. The sim system (systems/services.js) keeps the results current; the UI reads them.
 import { GRID_N } from '../world/grid.js';
-import { SERVICES, PARKS, LANDMARKS, SHOPS, INDUSTRY, SHOP_LOT, INDUSTRY_LOT, LOT_LEVEL_SCALE, MOOD } from './services-config.js';
+import { SERVICES, PARKS, PARK_SIZE, LANDMARKS, SHOPS, INDUSTRY, SHOP_LOT, INDUSTRY_LOT, LOT_LEVEL_SCALE, MOOD } from './services-config.js';
 
 const AREA = GRID_N * GRID_N;
 
@@ -21,12 +21,12 @@ const configOf = (model) => SERVICES[model] || PARKS[model] || LANDMARKS[model] 
 export function sourceOf(rec) {
   const kind = kindOf(rec && rec.model);
   if (!kind) return null;
-  const cfg = configOf(rec.model);
+  const cfg = configOf(rec.model), area = Math.max(1, rec.fw * rec.fd), park = kind === 'park';
   return {
     id: rec.id, model: rec.model, kind,
     gx: rec.gx, gz: rec.gz, fw: rec.fw, fd: rec.fd,
-    radius: cfg.radius, strength: cfg.strength,
-    upkeep: cfg.upkeep || 0, coins: cfg.coins || 0,
+    radius: cfg.radius, strength: park ? cfg.strength * Math.min(PARK_SIZE.cap, 1 + PARK_SIZE.perTile * (area - 1)) : cfg.strength,
+    upkeep: (cfg.upkeep || 0) * (park ? Math.sqrt(area) : 1), coins: cfg.coins || 0,
   };
 }
 

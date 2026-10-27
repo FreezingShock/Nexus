@@ -159,3 +159,12 @@ test('the overlay writes covered tiles and hides when cleared', () => {
   sys.clear();
   assert.equal(world.children[0].visible, false);
 });
+
+test('a bigger park cheers homes more, and costs less per tile to keep', () => {
+  const src = (fw, fd) => sourceOf({ id: 'b1', model: 'green', gx: 5, gz: 5, fw, fd });
+  assert.equal(src(1, 1).strength, PARKS.green.strength);
+  assert.ok(src(2, 2).strength > src(1, 1).strength);
+  assert.ok(Math.abs(src(3, 3).strength - PARKS.green.strength * 1.48) < 1e-9);
+  assert.ok(src(3, 3).upkeep / 9 < src(1, 1).upkeep);
+  assert.equal(sourceOf({ id: 'b2', model: 'clinic', gx: 5, gz: 5, fw: 2, fd: 2 }).strength, SERVICES.clinic.strength);
+});
