@@ -20,8 +20,9 @@ export const CHANGELOG = [
     blurb: 'An optional spring season for a certain beagle: red doghouses, kites and a lazy piano.',
     items: [
       { k: 'new', t: 'Snoopy Days, a spring season you switch on yourself in the calendar\'s Decorations section. It is off until you do, and builds up to the Blossom Fair.' },
-      { k: 'look', t: 'During Snoopy Days a red doghouse sits by many front doors with a white beagle asleep on the roof, and kites fly over the rooftops on thin strings.' },
+      { k: 'look', t: 'During Snoopy Days a red doghouse sits by many front doors with the beagle sitting up on the roof (now and then as the flying ace), and kites fly over the rooftops on thin strings.' },
       { k: 'look', t: 'Townsfolk come out as white beagles with long black ears, and a few as flying aces in a brown cap and red scarf.' },
+      { k: 'look', t: 'The beagle has a new look: a big round head with a long muzzle, a little smile, a black collar and a gabled red doghouse to sit on, and the flying ace wears a leather cap with gold goggles.' },
       { k: 'new', t: 'A red doghouse and a kite post to place in your garden while the season is on.' },
       { k: 'sound', t: 'The music turns lazy and swinging, with a soft piano and its own tune names.' },
     ],

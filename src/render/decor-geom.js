@@ -3,6 +3,7 @@
 import * as THREE from '../../vendor/three/three.module.min.js';
 import { heightAt } from '../world/terrain.js';
 import { tileCenter } from '../world/grid.js';
+import { doghouse } from './festive/beagle.js';
 
 const WOOD = 0x9A6B43, DARK = 0x4A3F36, STONE = 0xCFC7B6, STONE2 = 0xB5AC9A, LEAF = 0x5E8C4E, LEAF2 = 0x7BA25C, WATER = 0x8FC4D8;
 const BRONZE = 0x7A9A8A, TERRA = 0xB8472E, CREAM = 0xF3E9D2, GOLD = 0xF2D27A, SOIL = 0x6B4E3A, POST = 0x3F4A3A;
@@ -42,9 +43,7 @@ const PARTS = {
     [cone(1.7, 0.8, 8), RED, 0, 2.45, 0], [cyl(1.7, 1.7, 0.18, 8), WHITE, 0, 2.0, 0], [cyl(1.72, 1.72, 0.08, 8), BLUE, 0, 1.9, 0], [ball(0.12), GOLD, 0, 2.95, 0]],
   picnic: () => [[box(1.4, 0.08, 0.8), RED, 0, 0.72, 0], [box(1.42, 0.04, 0.82), WHITE, 0, 0.75, 0], [box(0.1, 0.7, 0.7), WOOD, -0.55, 0.35, 0], [box(0.1, 0.7, 0.7), WOOD, 0.55, 0.35, 0],
     [box(1.4, 0.06, 0.25), WOOD, 0, 0.42, 0.6], [box(1.4, 0.06, 0.25), WOOD, 0, 0.42, -0.6], [cyl(0.22, 0.18, 0.1, 10), GINGER, 0.2, 0.82, 0], [cyl(0.05, 0.05, 0.25, 6), 0x8FC4D8, -0.3, 0.88, 0.1]],
-  doghouse: () => [[box(1.3, 0.9, 1.3), RED, 0, 0.45, 0], [box(0.5, 0.6, 0.08), DARK, 0, 0.32, 0.65], [cone(1.15, 0.7, 4).rotateY(Math.PI / 4), 0xA83A2D, 0, 1.25, 0],
-    [box(1.4, 0.06, 0.9), CREAM, 0, 0.03, 0.95], [cyl(0.2, 0.22, 0.1, 8), GOLD, 0.6, 0.05, 1.0],
-    [ball(0.2), WHITE, 0, 1.75, 0], [box(0.7, 0.25, 0.3), WHITE, -0.4, 1.65, 0], [box(0.1, 0.3, 0.12), DARK, 0.1, 1.7, 0.1], [ball(0.07), DARK, 0.33, 1.78, 0]],
+  doghouse: () => [...doghouse(1.3), [box(1.4, 0.06, 0.9), CREAM, 0, 0.03, 1.15], [cyl(0.2, 0.22, 0.1, 8), GOLD, 0.6, 0.05, 1.2]],
   kitepost: () => [[cyl(0.1, 0.14, 2.6, 6), WOOD, 0, 1.3, 0], [cyl(0.4, 0.45, 0.15, 8), STONE2, 0, 0.07, 0], [cyl(0.015, 0.015, 1.6, 4).rotateZ(-0.35), WHITE, 0.3, 3.3, 0],
     [box(0.65, 0.65, 0.06).rotateZ(Math.PI / 4), RED, 0.6, 4.0, 0], [box(0.05, 0.9, 0.07), WHITE, 0.6, 4.0, 0], [box(0.2, 0.12, 0.05), WHITE, 0.42, 3.4, 0], [box(0.2, 0.12, 0.05), RED, 0.3, 3.2, 0]],
   snowglobe: () => [[cyl(0.75, 0.9, 0.45, 12), GINGER, 0, 0.23, 0], [cyl(0.8, 0.8, 0.08, 12), GOLD, 0, 0.48, 0], [ball(0.85), GLASS, 0, 1.25, 0], [box(0.4, 0.35, 0.35), WHITE, 0, 0.75, 0], [cone(0.3, 0.25, 4), RED, 0, 1.05, 0],
