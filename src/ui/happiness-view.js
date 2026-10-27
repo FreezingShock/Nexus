@@ -26,7 +26,7 @@ export const pipsHtml = (step) => Array.from({ length: ADVICE.levels.length }, (
 export const FACTORS = [
   { k: 'service', name: 'Services', what: 'clinics, schools, fire stations and police', c: '#CFE0E8', one: 'service', many: 'services',
     icon: '<path d="M5 9h16v13H5Z" fill="#FBF6EA"/><path d="M3.5 9.5L13 4l9.5 5.5Z" fill="#9CC3D5"/><path d="M13 12.5v6.5M9.8 15.8h6.4" stroke="#C96F4F" stroke-width="2.6"/>' },
-  { k: 'park', name: 'Green space', what: 'greens, plazas, playgrounds and ponds', c: '#D3E4C4', one: 'park', many: 'parks',
+  { k: 'park', name: 'Green space', what: 'greens, plazas, playgrounds, ponds, gardens, squares and orchards', c: '#D3E4C4', one: 'park', many: 'parks',
     icon: '<path d="M11.8 15.5h2.4V22h-2.4Z" fill="#9A6B45"/><circle cx="13" cy="10.5" r="6.5" fill="#8FB06A"/><path d="M4 22.5h18"/>' },
   { k: 'shop', name: 'Shops', what: 'shop rows, cafés, markets and grown shops', c: '#F6DDA0', one: 'shop', many: 'shops',
     icon: '<path d="M5 12h16v10H5Z" fill="#FBF6EA"/><path d="M4 7.5h18l-1.5 4.5H5.5Z" fill="#E6BC62"/><path d="M8 7.5L7 12M13 7.5V12M18 7.5l1 4.5" stroke-width="1.4"/><path d="M11 22v-5h4v5" fill="#C96F4F"/>' },

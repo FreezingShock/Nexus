@@ -1,6 +1,6 @@
 # Services, parks and happiness
 
-Services (clinic, school, fire station, police), parks (green, plaza, playground, pond), landmarks (town hall, church) and shops (shop row, cafe, market) cover the homes around them. Those homes get happier, happy built tiles earn a little more, and every service and park costs a small upkeep. Industry (workshop, warehouse, and grown Industrial lots) eases the homes around it a little. Nothing here can fail, close or punish a player.
+Services (clinic, school, fire station, police), parks (green, plaza, playground, pond, rose garden, town square, orchard), landmarks (town hall, church) and shops (shop row, cafe, market) cover the homes around them. Those homes get happier, happy built tiles earn a little more, and every service and park costs a small upkeep. Industry (workshop, warehouse, and grown Industrial lots) eases the homes around it a little. Nothing here can fail, close or punish a player.
 
 ## Where things live
 

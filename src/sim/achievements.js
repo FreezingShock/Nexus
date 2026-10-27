@@ -52,7 +52,7 @@ export const GOALS = [
   // Services
   { id: 'services', group: 'services', name: 'Town services', blurb: 'Clinics, schools, fire and police stations.', metric: 'services', unit: 'services', tiers: [1, 3, 6, 10, 20] },
   { id: 'serviceKinds', group: 'services', name: 'A full set', blurb: 'Different kinds of service: clinic, school, fire station and police.', metric: 'serviceKinds', unit: 'kinds of service', tiers: [1, 2, 3, 4], w: 1.5 },
-  { id: 'parks', group: 'services', name: 'Green corners', blurb: 'Parks, greens, plazas and ponds.', metric: 'parks', unit: 'parks', tiers: [1, 4, 10, 20, 40] },
+  { id: 'parks', group: 'services', name: 'Green corners', blurb: 'Parks, greens, plazas, gardens and ponds.', metric: 'parks', unit: 'parks', tiers: [1, 4, 10, 20, 40] },
   { id: 'landmarks', group: 'services', name: 'Landmarks', blurb: 'Town halls and churches that everyone can see from afar.', metric: 'landmarks', unit: 'landmarks', tiers: [1, 2, 4], w: 2 },
   // Farms
   { id: 'farms', group: 'farms', name: 'Farmers', blurb: 'Farms you have placed.', metric: 'farms', unit: 'farms', tiers: [1, 3, 6, 12, 24] },
