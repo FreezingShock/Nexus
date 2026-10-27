@@ -57,8 +57,8 @@ export default {
       if (a) engine.cue('hover');
     });
 
-    // Cards, modals and the toast open and close by their hidden attribute. One observer covers them all, present and
-    // future. The tool flyout has its own cue (onTool), and the postcard has its own.
+    // Cards and modals open and close by their hidden attribute. One observer covers them all, present and
+    // future. The tool flyout has its own cue (onTool), the postcard has its own, and so do the notifications (notes.js).
     const menus = new MutationObserver((muts) => {
       for (const m of muts) {
         const el = m.target;
@@ -66,7 +66,6 @@ export default {
         if (el.id === 'fly') continue;
         const wasHidden = m.oldValue !== null;
         if (wasHidden === el.hidden) continue; // the attribute did not change state
-        if (el.id === 'toast') { if (!el.hidden && !/Not enough/.test(el.textContent || '')) engine.cue('note'); continue; }
         if (el.id === 'offline') { if (!el.hidden) engine.cue('postcard'); continue; }
         engine.cue(el.hidden ? 'close' : 'open');
       }

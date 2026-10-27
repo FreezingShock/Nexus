@@ -134,6 +134,9 @@ test('several stages at once arrive as one bundled postcard, but are all paid', 
   assert.equal(sim.state.ach.done.painted, 2);
   assert.equal(notes.length, 1);
   assert.match(notes[0].text, /^7 stages across 2 goals/);
+  assert.equal(notes[0].title, '7 milestones reached');
+  assert.match(notes[0].sub, /^Across /, 'the strip names the goals');
+  assert.ok(notes[0].coins > 0 && notes[0].parts > 0, 'the rewards ride along as numbers for the coin burst');
   let want = 0;
   for (let s = 1; s <= 5; s++) want += rewardFor(goalById('placed'), s).coins;
   for (let s = 1; s <= 2; s++) want += rewardFor(goalById('painted'), s).coins;
