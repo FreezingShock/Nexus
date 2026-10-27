@@ -95,8 +95,6 @@ test('new cues exist and an unknown name is still ignored, with no audio context
   assert.doesNotThrow(() => engine.cue('nope', {}));
 });
 
-test('the defaults are quieter than the first pass', () => {
-  assert.ok(DEFAULTS.ambience <= 0.4);
-  assert.ok(DEFAULTS.music <= 0.4);
-  assert.ok(DEFAULTS.master <= 0.7);
+test('new players start at full master, half music and effects, and a low ambience bed', () => {
+  assert.deepEqual(DEFAULTS, { master: 1, music: 0.5, effects: 0.5, ambience: 0.25, muted: false });
 });

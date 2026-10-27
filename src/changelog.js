@@ -25,6 +25,7 @@ export const CHANGELOG = [
       { k: 'sound', t: 'Rain is a soft, low patter instead of a hiss, with drips off roofs and gutters near the houses, and thunder rolls in slowly from far away.' },
       { k: 'sound', t: 'Warmer town sounds: the river babbles, crickets chirp instead of whining, cicadas shimmer and fade, and workshops knock away quietly by day.' },
       { k: 'sound', t: 'Buttons, hovers and building clicks are quieter and rounder, like paper and wood, and the rooster and dogs are further off.' },
+      { k: 'sound', t: 'New sound settings start at full master volume, music and effects at half, and ambience at a quarter.' },
     ],
   },
   {
