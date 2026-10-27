@@ -48,6 +48,7 @@ export function createFeedbackBox(host, { storage = safeStorage(), fetchFn = glo
     card.hidden = !on;
     tab.setAttribute('aria-expanded', String(on));
     tab.classList.toggle('on', on);
+    host.querySelector('#fb').classList.toggle('open', on);
     if (on) setTimeout(() => (q('fb-done').hidden ? msg : q('fb-again')).focus(), 60);
   }
   tab.addEventListener('click', () => open(card.hidden));

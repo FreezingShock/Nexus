@@ -16,6 +16,18 @@ export const KINDS = {
 
 export const CHANGELOG = [
   {
+    v: '0.13.0', date: '2026-10-27', name: 'Soft rain on the roofs',
+    blurb: 'The town sounds like a real place now: what you hear follows the camera, and every sound is softer and warmer.',
+    items: [
+      { k: 'sound', t: 'Sounds come from where they are: hover over the river and you hear water, over the high street footsteps and wheels, over the fields a cow, hens and the odd sheep. In free-fly the streets sound right beside you.' },
+      { k: 'sound', t: 'Zoom out and the town blends into a soft, muffled hum; zoom in and each place comes forward, clear and close.' },
+      { k: 'sound', t: 'Gentle stereo: a sound to the left of the screen leans left, and turning the camera turns the sound with it.' },
+      { k: 'sound', t: 'Rain is a soft, low patter instead of a hiss, with drips off roofs and gutters near the houses, and thunder rolls in slowly from far away.' },
+      { k: 'sound', t: 'Warmer town sounds: the river babbles, crickets chirp instead of whining, cicadas shimmer and fade, and workshops knock away quietly by day.' },
+      { k: 'sound', t: 'Buttons, hovers and building clicks are quieter and rounder, like paper and wood, and the rooster and dogs are further off.' },
+    ],
+  },
+  {
     v: '0.12.0', date: '2026-10-26', name: 'Deck the streets',
     blurb: 'The calendar comes alive: the town now dresses up for the Fourth of July, Halloween and Christmas.',
     items: [
@@ -39,6 +51,7 @@ export const CHANGELOG = [
       { k: 'look', t: 'Notifications are slim paper strips now: they slide down under the header, newest on top, with a coloured icon for each kind (a warning, an unlock, a milestone, a festival) and a thin line that shows how long they stay.' },
       { k: 'better', t: 'Notifications say what happened in plain words, show rewards as coin and Parts chips, pause while you hover them, and a repeated one counts up (×2) instead of piling on.' },
       { k: 'new', t: 'Milestone, goal and daily rewards burst out of their notification and fly into your Coins and Parts counters, just like the postcard.' },
+      { k: 'fix', t: 'Ideas & feedback in dark mode: the chosen note type is easy to read again, and the open note now sits snugly in the bottom-right corner.' },
     ],
   },
   {
