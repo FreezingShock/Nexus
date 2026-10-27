@@ -5,14 +5,16 @@
 /* hover tip: one floating bubble, placed by JS */
 .tipbubble{position:fixed;top:0;left:0;z-index:30;max-width:250px;padding:7px 12px;border:2px solid var(--ink);border-radius:12px;background:var(--paper);color:var(--text);font-size:13.5px;font-weight:700;line-height:1.3;box-shadow:0 3px 0 var(--ink);pointer-events:none}
 
-/* notifications (src/ui/modules/notes.js): slim paper strips under the header, newest on top. Each row folds open and
+/* notifications (src/ui/modules/notes.js): slim paper strips in the top-left corner under the town plaque, newest on top. Each row folds open and
    shut (grid rows 0fr to 1fr) so the others glide; the strip itself tweens in and out with data-mo (motion.css).
    --c is the kind's colour: the round icon sticker and a soft wash at the strip's left end. */
-.notes{position:absolute;top:calc(var(--hud-bottom,108px) + 10px);left:50%;transform:translateX(-50%);width:min(400px,calc(100% - 32px));display:flex;flex-direction:column;align-items:center;z-index:8;pointer-events:none}
+.notes{position:absolute;top:calc(var(--hud-bottom,108px) + 12px);left:max(16px,env(safe-area-inset-left,0px));width:min(380px,calc(100% - 32px));display:flex;flex-direction:column;align-items:flex-start;z-index:8;pointer-events:none}
 .nt-row{display:grid;grid-template-rows:0fr;width:100%;transition:grid-template-rows .28s cubic-bezier(.2,.8,.3,1)}
 .nt-row.open{grid-template-rows:1fr}
-.nt-clip{min-height:0;display:flex;justify-content:center}
-.nt[data-mo]{--mo-y:-12px;--mo-r:-1.5deg;--mo-s:.97}
+.nt-clip{min-height:0;display:flex;justify-content:flex-start}
+.nt[data-mo]{--mo-y:0px;--mo-r:-1.5deg;--mo-s:.97}
+/* slides in from the left edge and back out the same way */
+.nt[data-mo][hidden]{translate:-48px 0}
 .nt{pointer-events:auto;cursor:pointer;position:relative;display:flex;align-items:center;gap:10px;box-sizing:border-box;max-width:100%;margin-bottom:8px;padding:7px 12px 8px 7px;overflow:hidden;
   background:linear-gradient(90deg,color-mix(in oklab,var(--c) 26%,var(--paper)),var(--paper) 58%);border:2px solid var(--ink);border-radius:16px 18px 15px 17px;box-shadow:0 3px 0 var(--ink),0 8px 16px rgba(43,38,32,.16);color:var(--text)}
 .nt:not(.short){width:100%;padding:8px 12px 10px 8px}
