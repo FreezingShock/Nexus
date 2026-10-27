@@ -27,6 +27,8 @@ export const LANDMARKS = {
 export const SHOPS = {
   'shop-row':      { radius: 3, strength: 0.3 },
   cafe:            { radius: 3, strength: 0.4 },
+  bakery:          { radius: 3, strength: 0.4 },
+  department:      { radius: 5, strength: 0.5 },
   market:          { radius: 4, strength: 0.45 },
 };
 export const SHOP_LOT = { radius: 2, strength: 0.25 };

@@ -30,13 +30,19 @@ export const CATEGORIES = [
 // tile: 'row' means the model repeats as side-by-side units along its long side (terraces, shop rows), so any 1 x n works.
 // floors: [min, max] storeys on a 1 x 1 lot; `grow` adds storeys per extra tile of area.
 // cost: coins for a 1 x 1 lot, multiplied by the lot's area.
+// styles: optional, window styles the seed picks from (the same four wall textures, so no new materials).
 export const MODELS = [
   { id: 'cottage',      name: 'Cottage',        cat: 'home',     sub: 'Hipped roof, window boxes',        foot: [[1, 1]],                 floors: [1, 2], grow: 0.5,  cost: 90,   style: 'shutter' },
   { id: 'terrace',      name: 'Terrace house',  cat: 'home',     sub: 'A row of narrow gables',           foot: [[1, 1], [1, 2]], tile: 'row', floors: [2, 3], grow: 0.4, cost: 120, style: 'sash' },
   { id: 'mansard',      name: 'Mansard block',  cat: 'home',     sub: 'Dormers and a slate crown',        foot: [[1, 1], [1, 2], [2, 2]], floors: [4, 6], grow: 0.8,  cost: 340,  style: 'arched' },
   { id: 'tower',        name: 'Tower block',    cat: 'home',     sub: 'Tall, with a rooftop garden',      foot: [[1, 1], [1, 2], [2, 2]], floors: [7, 9], grow: 1.2,  cost: 1200, style: 'ribbon' },
+  { id: 'townhouse',    name: 'Townhouse',      cat: 'home',     sub: 'Stepped gable, tall and narrow',   foot: [[1, 1], [1, 2]],         floors: [3, 4], grow: 0.4,  cost: 220,  style: 'shutter', styles: ['shutter', 'sash', 'arched'] },
+  { id: 'manor',        name: 'Manor house',    cat: 'home',     sub: 'Columns, corner turrets, a hip roof', foot: [[2, 2], [2, 3]],      floors: [3, 3], grow: 0.4,  cost: 700,  style: 'arched' },
+  { id: 'apartments',   name: 'Garden flats',   cat: 'home',     sub: 'Stair core, balconies, roof planters', foot: [[2, 2], [2, 3]],     floors: [4, 5], grow: 0.5,  cost: 520,  style: 'ribbon' },
   { id: 'shop-row',     name: 'Shop row',       cat: 'shop',     sub: 'Awnings and planters',             foot: [[1, 1], [1, 2]], tile: 'row', floors: [2, 3], grow: 0.3, cost: 200, style: 'sash' },
+  { id: 'bakery',       name: 'Bakery',         cat: 'shop',     sub: 'Warm oven chimney, a loaf sign',   foot: [[1, 1]],                 floors: [2, 2], grow: 0,    cost: 220,  style: 'sash', styles: ['sash', 'arched'] },
   { id: 'cafe',         name: 'Corner cafe',    cat: 'shop',     sub: 'Terrace tables and string lights', foot: [[1, 1]],                 floors: [2, 3], grow: 0,    cost: 260,  style: 'arched' },
+  { id: 'department',   name: 'Department store', cat: 'shop',   sub: 'Arcade awnings, a glass dome',     foot: [[2, 2], [2, 3]],         floors: [3, 4], grow: 0.3,  cost: 900,  style: 'arched' },
   { id: 'market',       name: 'Market hall',    cat: 'shop',     sub: 'Open arches, a lantern roof',      foot: [[2, 2], [1, 2]],         floors: [1, 1], grow: 0,    cost: 520,  style: 'arched' },
   // A farm is production, not housing: a farmhouse, a barn and fields that fill every tile it claims. It is the one model
   // with no fixed sizes: `free` lets the player drag any lot from min (across x deep, in the model's own frame, so the
@@ -165,7 +171,8 @@ export function describe(rec, level = 1) {
   const x = (rec.gx + (rec.fw - 1) / 2 - GRID_HALF) * TILE, z = (rec.gz + (rec.fd - 1) / 2 - GRID_HALF) * TILE;
   const { y } = standOn(x, z, rec.fw, rec.fd);
   return {
-    id: rec.id, model: def.id, name: def.name, cat: def.cat, style: def.style,
+    id: rec.id, model: def.id, name: def.name, cat: def.cat,
+    style: def.styles ? def.styles[Math.floor(t[2] * def.styles.length)] : def.style,   // a few models wear one of several window styles, picked by the seed
     seed, t, level, rot, floors, fw: rec.fw, fd: rec.fd, cw, cd,
     w: cw * TILE - LANG.MARGIN, d: cd * TILE - LANG.MARGIN,
     x, y, z,

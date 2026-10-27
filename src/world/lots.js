@@ -7,7 +7,7 @@ import { describe } from './models.js';
 
 const DIRS = [[0, 1, 0], [1, 0, 1], [0, -1, 2], [-1, 0, 3]]; // dx, dz, quarter turns that face it (front is +z at rot 0)
 // Models used per zone on a single tile. Workshops and warehouses were drawn for 1 x 2, here they stand on one tile.
-export const ZONE_MODELS = [null, ['cottage', 'terrace', 'cottage', 'mansard'], ['shop-row', 'cafe', 'shop-row'], ['workshop', 'warehouse'], ['clinic', 'police', 'clinic']];
+export const ZONE_MODELS = [null, ['cottage', 'terrace', 'cottage', 'mansard', 'townhouse'], ['shop-row', 'cafe', 'shop-row', 'bakery'], ['workshop', 'warehouse'], ['clinic', 'police', 'clinic']];
 
 // The building id of the grown lot on a tile index, and the tile index back from an id (null for any other id).
 export const lotId = (tile) => 'lot' + tile;

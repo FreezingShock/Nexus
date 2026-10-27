@@ -86,6 +86,69 @@ const B = {
     decorate(k, { skip: ['cornice', 'gableWindow'] });
   },
 
+  // Tall and narrow, with a stepped (Dutch) gable on the street and a hoist beam at the top. The steps are plain boxes in
+  // front of the roof's end, so they hide the triangle; the wall's own style and the seed's palette still dress the walls.
+  townhouse(k) {
+    k.body(); k.door();
+    const rise = clampRise(k.w, 1.1, 1.4, 0.5), span = k.w + 0.3, wall = k.P.wallHex;
+    k.gableRoof(rise, 'z');
+    const stepH = rise / 3 + 0.04;
+    [[1, 0], [0.72, 1], [0.44, 2]].forEach(([f, i]) => k.box(span * f, stepH, 0.2, 0, k.top + i * stepH * 0.92, k.dep / 2 + 0.07, wall));
+    k.box(span * 0.44 + 0.1, 0.07, 0.26, 0, k.top + 3 * stepH * 0.92 - 0.02 + 0.02, k.dep / 2 + 0.07, C.stone, { edge: false });   // coping on the top step
+    k.box(0.07, 0.07, 0.4, 0, k.top + 2 * stepH * 0.92 + stepH * 0.5, k.dep / 2 + 0.27, C.wood, { edge: false });                       // hoist beam
+    k.box(0.9, 0.1, 0.5, k.doorX, PLINTH + 1.2, k.dep / 2 + 0.25, awn(k), { rx: 0.2 });                                                  // door hood
+    if (k.floors >= 3) k.bay(2, k.bayX(k.bx - 1), 0.95);
+    decorate(k, { hearth: true, skip: ['gableWindow'], units: [{ x: 0, rise }] });
+  },
+
+  // A grand house: corner turrets, a hip roof and a two-column portico under a pediment.
+  manor(k) {
+    k.doorX = 0;
+    k.body(); k.door(0, k.dep / 2, k.P.accent, 1.0, 1.25);
+    k.hipRoof(clampRise(Math.min(k.w, k.dep), 1.5, 2.0, 0.34));
+    // turrets at the two front corners, taller than the eaves, each with a slate cone
+    const tr = 0.55, th = k.floors * FH + 0.55;
+    for (const sx of [-1, 1]) {
+      const tx = sx * (k.w / 2 - 0.05), tz = k.dep / 2 - 0.05;
+      k.cyl(tr, tr, th, 8, tx, PLINTH, tz, k.P.wallHex);
+      k.spire(tr * 1.35, 1.1, tx, PLINTH + th, tz, C.slate);
+    }
+    // portico: slab, two columns, pediment
+    const pz = k.dep / 2 + 0.3;
+    k.box(2.1, 0.1, 0.62, 0, PLINTH + 1.5, pz, C.cream);
+    for (const sx of [-1, 1]) k.cyl(0.1, 0.12, 1.5 - 0.0, 6, sx * 0.8, PLINTH, pz + 0.12, C.cream, { edge: false });
+    k.part(prismGeo([[-1.1, 0], [1.1, 0], [0, 0.5]], 0.62), C.cream, 0, PLINTH + 1.6, pz);
+    k.box(2.4, 0.14, 0.9, 0, 0, k.dep / 2 + 0.4, C.stone, { edge: false });   // wide step
+    k.sites.doors.push([0, k.dep / 2 + 0.12]);
+    decorate(k, { skip: ['boxes', 'lamp', 'chimney'], hearth: false });
+    if (k.level >= 2) k.windowBoxes(1);
+    // two tall chimneys on the ridge ends, from level 3
+    if (k.level >= 3) for (const sx of [-1, 1]) k.chimneyAt(sx * k.w * 0.3, 0);
+  },
+
+  // A long flat-roofed block: a stair core on the front, balconies on a few bays, planters and solar panels on the roof.
+  apartments(k) {
+    k.doorX = 0;
+    k.body();
+    k.flatRoof(0.35, C.stone);
+    const cw = 1.5, ch = k.floors * FH + 0.5;
+    k.box(cw, ch, 0.45, 0, PLINTH, k.dep / 2 + 0.2, k.P.wallHex);                                  // the stair core, front 0.42 out
+    k.box(0.5, ch * 0.62, 0.05, 0, PLINTH + ch * 0.3, k.dep / 2 + 0.45, C.glass, { edge: false });   // its tall window slit
+    k.box(cw + 0.2, 0.1, 0.12, 0, PLINTH + ch, k.dep / 2 + 0.2, C.charcoal);                       // its cap, a hair wider
+    k.door(0, k.dep / 2 + 0.43, C.glass, 0.8, 1.05);
+    k.box(1.1, 0.08, 0.4, 0, PLINTH + 1.3, k.dep / 2 + 0.6, awn(k), { rx: 0.2 });
+    // balconies: two bays either side of the core, on two storeys
+    const left = 0, right = k.bx - 1;
+    for (const f of [2, 3]) if (f < k.floors) for (const b of [left, right]) k.balcony(f, k.bayX(b), 1.0);
+    // the roof: planters, then solar panels
+    const roofY = k.top + 0.35;
+    if (k.level >= 2) for (const sx of [-1, 1]) k.box(0.9, 0.22, 0.4, sx * k.w * 0.32, roofY, -k.dep * 0.3, C.moss, { edge: false });
+    if (k.level >= 3) for (let i = 0; i < 3; i++) k.box(0.9, 0.06, 0.55, (i - 1) * 1.1, roofY + 0.18, -k.dep * 0.12, C.water, { rx: -0.45, edge: false });
+    k.roof = { kind: 'flat', rise: 0.35, along: 'z', y: roofY };
+    decorate(k, { skip: ['chimney', 'cornice', 'gableWindow', 'dormers', 'garden', 'lamp', 'boxes'] });
+    if (k.level >= 2) k.windowBoxes(1);
+  },
+
   'shop-row'(k) {
     const n = units(k), uw = k.w / n;
     k.body(); k.flatRoof(0.5, C.paper);
@@ -98,6 +161,45 @@ const B = {
     }
     decorate(k, { skip: ['boxes', 'cornice', 'gableWindow', 'garden'] });
     if (k.level >= 2) k.windowBoxes(1);
+  },
+
+  // A corner bakery: a striped awning, a loaf on the signboard and an oven chimney that smokes.
+  bakery(k) {
+    k.body();
+    k.gableRoof(clampRise(k.dep, 1.0, 1.3, 0.4), 'x');
+    k.shopfront(k.w - 0.2, k.dep / 2, awn(k), 0);
+    k.door(k.w * 0.28, k.dep / 2, k.P.accent, 0.55, 1.0);
+    k.box(Math.min(k.w - 0.6, 1.5), 0.26, 0.1, -k.w * 0.1, k.top - 0.55, k.dep / 2 + 0.06, awn(k, 1), { edge: false });   // signboard
+    k.disc(0.15, -k.w * 0.1, k.top - 0.42, k.dep / 2 + 0.14, C.gold, { thick: 0.06, edge: false });                      // the loaf
+    k.chimneyAt(k.w * 0.3, -k.dep * 0.2, 1.0, C.brick);
+    for (let i = 0; i < 2; i++) k.box(0.34, 0.26, 0.3, -k.w * 0.38 + i * 0.4, PLINTH, k.dep / 2 + 0.3, C.wood, { edge: false });   // bread crates
+    decorate(k, { skip: ['boxes', 'garden', 'chimney', 'lamp', 'cornice'] });
+    if (k.level >= 2) k.windowBoxes(1);
+    if (k.level >= 4) k.lamp(k.w * 0.45, k.dep / 2 + 0.55);
+  },
+
+  // The big shop: an arcade of awnings, a signboard with a gold medallion, flagpoles and a glass dome on the roof.
+  department(k) {
+    const n = Math.max(2, Math.round(k.w / 2.4)), uw = k.w / n;
+    k.body(); k.flatRoof(0.5, C.paper);
+    for (let i = 0; i < n; i++) {
+      const x = -k.w / 2 + (i + 0.5) * uw, col = awn(k, i);
+      k.shopfront(uw, k.dep / 2, col, x);
+      k.box(Math.min(uw - 0.5, 1.7), 0.26, 0.1, x, k.top - 0.55, k.dep / 2 + 0.06, col, { edge: false });
+    }
+    k.doorX = 0;
+    k.door(0, k.dep / 2, C.glass, 1.0, 1.1);
+    k.box(1.6, 0.12, 0.5, 0, PLINTH + 1.4, k.dep / 2 + 0.25, C.cream, { rx: 0.15 });                  // entrance canopy
+    k.disc(0.3, 0, k.top - 0.4, k.dep / 2 + 0.1, C.gold, { thick: 0.06, edge: false });               // sign medallion
+    // glass dome on a drum, over the middle of the roof
+    const dr = Math.min(k.w, k.dep) * 0.2;
+    k.cyl(dr, dr, 0.4, 10, 0, k.top + 0.5, 0, C.cream);
+    k.dome(dr * 0.9, 0, k.top + 0.9, 0, C.glass);
+    k.sites.chimneys.push([dr, k.top + 0.5, 0]);
+    if (k.level >= 3) for (const sx of [-1, 1]) k.flag(sx * (k.w / 2 - 0.5), k.top + 0.5, k.dep / 2 - 0.4);
+    decorate(k, { skip: ['boxes', 'cornice', 'gableWindow', 'garden', 'chimney', 'crown', 'bunting'] });
+    if (k.level >= 2) k.windowBoxes(1);
+    if (k.level >= 5) k.bunting(7);
   },
 
   cafe(k) {
