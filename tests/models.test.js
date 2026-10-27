@@ -132,3 +132,12 @@ test('placed buildings survive a save, and a tampered save is cleaned', () => {
   assert.equal(again.rate(), sim.rate());
   assert.equal(seedOf('b1000'), seedOf('b1000'));
 });
+
+test('townhouses vary their window style by seed and grown lots can use the new 1 x 1 models', async () => {
+  const styles = new Set();
+  for (let i = 0; i < 40; i++) styles.add(describe(rec('townhouse', 1, 1, { id: 'b' + (2000 + i) }), 1).style);
+  assert.ok(styles.size >= 2);
+  const { ZONE_MODELS } = await import('../src/world/lots.js');
+  assert.ok(ZONE_MODELS[1].includes('townhouse') && ZONE_MODELS[2].includes('bakery'));
+  for (const id of ['manor', 'apartments', 'department']) assert.ok(fitFootprint(modelById(id), 2, 3), id + ' fits a 2 x 3 lot');
+});
