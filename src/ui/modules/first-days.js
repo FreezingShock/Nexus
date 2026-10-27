@@ -1,79 +1,80 @@
-// "Your first days": a gentle, optional list for new players. A brand-new town opens it once, as a notebook page, a moment
-// after Play; it never floats over the HUD and Esc puts it away. After that it lives in the Goals page (G) until every step
-// is ticked or the player hides it. Reads the town, ticks steps by itself, cheers with a small toast, and sends nothing.
-// Rules and words are pure in src/ui/first-days.js.
+// First days for a brand-new town: a skippable welcome postcard once (a notebook page, never over the HUD), then a soft
+// glow on the toolbar tool that suggests the next thing to try. The glow moves on when the step is done or the tool is
+// picked up, and "No hints, thanks" turns it all off. Towns already being played get neither. Reads the town and sends
+// nothing. Rules and words are pure in src/ui/first-days.js.
 import { book } from '../book.js';
 import { PAGE_ICONS } from '../page-icons.js';
 import { $ } from '../format.js';
-import { STEPS, advance, countLine, isComplete, isVeteran, live, loadFirst, saveFirst, stepsDoneIn } from '../first-days.js';
+import { HINTS, advance, isVeteran, loadFirst, markSeen, nextPulse, saveFirst, stepsDoneIn } from '../first-days.js';
 
-const WELCOME_AFTER_S = 2.5, CHECK_S = 1;
+const WELCOME_AFTER_S = 2.5, PULSE_AFTER_S = 8, CHECK_S = 1;
 
 export default {
   id: 'first-days',
-  create({ sim, toast, setTool }) {
+  create({ sim }) {
     const storage = (() => { try { return localStorage; } catch { return null; } })();
     const s = sim.state;
     const first = !storage || storage.getItem('nexus.firstdays.v1') === null;
-    let data = storage ? loadFirst(storage) : { welcomed: true, hidden: true, done: [] };
+    let data = storage ? loadFirst(storage) : { welcomed: true, hidden: true, done: [], seen: [] };
     const save = () => { if (storage) saveFirst(storage, data); };
-    live.data = data;
-
-    // A town that is already being played skips the welcome and the list, and the steps it has done stay ticked.
     const now = () => stepsDoneIn(s, sim.grid);
+
+    // A town that is already being played skips the welcome and the glow.
     if (first) {
       const done = now();
       if (isVeteran(done)) data = { ...advance(data, done).data, welcomed: true, hidden: true };
       save();
     }
-    live.data = data;
-    let waited = 0, acc = CHECK_S, welcomePending = !data.welcomed && !data.hidden;
-
-    const rows = () => STEPS.map((st, i) => {
-      const ok = data.done.includes(st.id);
-      const show = !ok && st.tool ? `<button class="btn fd-show" type="button" data-tool="${st.tool}">Show me <kbd>${st.key}</kbd></button>` : '';
-      return `<li class="fd-step${ok ? ' fd-ok' : ''}" style="--i:${i}"><span class="fd-tick" aria-hidden="true">${ok ? '✓' : i + 1}</span>
-        <span class="fd-text"><b class="h-disp">${st.head}</b><small>${ok ? st.done : st.text}</small></span>${show}</li>`;
-    }).join('');
+    let waited = 0, acc = CHECK_S, welcomePending = !data.welcomed && !data.hidden, lit = null, litFrom = 0;
 
     book.register('firstdays', {
-      title: 'Your first days', c: '#A8C179', icon: PAGE_ICONS.goals,
-      sub: () => 'Six small things to try, in any order. Or none at all.',
-      render: () => `<ol class="fd-list">${rows()}</ol>
-        <p class="nb-promise">${isComplete(data) ? 'That is all of them. The town is yours now.' : countLine(data) + ' so far. Nothing here is timed, and nothing is lost if you skip it.'}</p>
-        <div class="fd-foot"><button class="btn primary" type="button" data-act="go">${isComplete(data) ? 'Thank you' : 'Let me explore'}</button>
-          ${isComplete(data) || data.hidden ? '' : '<button class="linkbtn" type="button" data-act="hide">Hide this list</button>'}</div>`,
+      title: 'Welcome, mayor', c: '#A8C179', icon: PAGE_ICONS.goals,
+      sub: () => 'A small village is waiting. Three little hints, and then it is yours.',
+      render: () => `<ol class="fd-hints">${HINTS.map((h, i) => `<li class="fd-hint" style="--i:${i}"><span class="fd-n" aria-hidden="true">${i + 1}</span><span class="fd-text"><b class="h-disp">${h.head}</b><small>${h.text}</small></span></li>`).join('')}</ol>
+        <p class="nb-promise">Nothing here is timed, and nothing is lost if you skip it.</p>
+        <div class="fd-foot"><button class="btn primary" type="button" data-act="go">Let's go</button>
+          <button class="linkbtn" type="button" data-act="hide">No hints, thanks</button></div>`,
       click(e) {
-        const tool = e.target.closest('[data-tool]');
-        if (tool) { book.close(); setTool(tool.dataset.tool); return; }
         const act = e.target.closest('[data-act]');
         if (!act) return;
-        if (act.dataset.act === 'hide') { data = { ...data, hidden: true }; live.data = data; save(); book.close(); toast('Hidden. It stays in your Goals page if you want it back.'); }
-        if (act.dataset.act === 'go') book.close();
+        if (act.dataset.act === 'hide') { data = { ...data, hidden: true }; save(); light(null); }
+        book.close();
       },
     });
 
+    function light(tool) {
+      if (lit === tool) return;
+      if (lit) { const old = document.querySelector('.tool[data-tool="' + lit + '"]'); if (old) old.classList.remove('hint-glow'); }
+      lit = tool;
+      if (tool) { const el = document.querySelector('.tool[data-tool="' + tool + '"]'); if (el) el.classList.add('hint-glow'); }
+    }
+
     return {
+      onTool(t) {
+        if (!t || data.hidden) return;
+        const next = markSeen(data, t);
+        if (next !== data) { data = next; save(); light(null); litFrom = 0; }
+      },
       frame(dt) {
         if (welcomePending) {
           waited += dt;
           // Wait for a quiet screen: no other page, no postcard.
           if (waited >= WELCOME_AFTER_S && !book.isOpen() && $('offline').hidden) {
             welcomePending = false;
-            data = { ...data, welcomed: true }; live.data = data; save();
+            data = { ...data, welcomed: true }; save();
             book.open('firstdays');
           }
         }
         acc += dt;
         if (acc < CHECK_S) return;
         acc = 0;
-        if (data.hidden || isComplete(data)) return;
+        if (data.hidden || welcomePending || book.isOpen()) return;
         const { data: next, fresh } = advance(data, now());
-        if (!fresh.length) return;
-        data = next; live.data = data; save();
-        toast('✓ ' + fresh[0].head + '. ' + fresh[0].done);
-        if (book.current() === 'firstdays') book.refresh();
-        if (isComplete(data)) setTimeout(() => toast('Every first-day step done. Well played, mayor.'), 2400);
+        if (fresh.length) { data = next; save(); light(null); litFrom = 0; }
+        const want = nextPulse(data);
+        if (want === null) { light(null); return; }
+        litFrom += CHECK_S;
+        if (litFrom >= PULSE_AFTER_S) light(want);
       },
     };
   },

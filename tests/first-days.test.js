@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { createSim } from '../src/sim/sim.js';
 import { getLayout } from '../src/world/layout.js';
 import { modelById } from '../src/world/models.js';
-import { STEPS, FIRST_KEY, advance, countLine, isComplete, isVeteran, loadFirst, sanitize, saveFirst, stepsDoneIn } from '../src/ui/first-days.js';
+import { HINTS, STEPS, markSeen, nextPulse, FIRST_KEY, advance, countLine, isComplete, isVeteran, loadFirst, sanitize, saveFirst, stepsDoneIn } from '../src/ui/first-days.js';
 
 const sim = () => createSim({ layout: getLayout(), now: () => Date.UTC(2026, 9, 27, 12) });
 const mem = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), m }; };
@@ -55,11 +55,29 @@ test('advance keeps ticked steps ticked and reports only the new ones', () => {
 });
 
 test('stored data is sanitised and storage failures are swallowed', () => {
-  assert.deepEqual(sanitize({ done: ['road', 'nope', 'road'], welcomed: 'yes', hidden: true }), { welcomed: false, hidden: true, done: ['road'] });
-  assert.deepEqual(loadFirst({ getItem() { throw new Error('blocked'); } }), { welcomed: false, hidden: false, done: [] });
+  assert.deepEqual(sanitize({ done: ['road', 'nope', 'road'], welcomed: 'yes', hidden: true }), { welcomed: false, hidden: true, done: ['road'], seen: [] });
+  assert.deepEqual(loadFirst({ getItem() { throw new Error('blocked'); } }), { welcomed: false, hidden: false, done: [], seen: [] });
   assert.doesNotThrow(() => saveFirst({ setItem() { throw new Error('full'); } }, {}));
   const st = mem();
-  saveFirst(st, { welcomed: true, hidden: false, done: ['park'] });
+  saveFirst(st, { welcomed: true, hidden: false, done: ['park'], seen: ['road'] });
   assert.ok(st.m.has(FIRST_KEY));
-  assert.deepEqual(loadFirst(st), { welcomed: true, hidden: false, done: ['park'] });
+  assert.deepEqual(loadFirst(st), { welcomed: true, hidden: false, done: ['park'], seen: ['road'] });
+});
+
+test('the glow points at the next untried tool and moves on', () => {
+  let d = sanitize({});
+  assert.equal(nextPulse(d), 'roads');
+  d = markSeen(d, 'roads');
+  assert.equal(nextPulse(d), 'zones');
+  d = advance(d, { home: true }).data;
+  assert.equal(nextPulse(d), 'build');
+  assert.equal(markSeen(d, 'nonsense'), d);
+  for (const t of ['build', 'parks', 'services']) d = markSeen(d, t);
+  assert.equal(nextPulse(d), null, 'the upgrade step has no tool, so the glow ends');
+  assert.equal(nextPulse({ ...sanitize({}), hidden: true }), null);
+});
+
+test('the welcome postcard has three short hints', () => {
+  assert.equal(HINTS.length, 3);
+  for (const h of HINTS) assert.ok(h.head && h.text.length < 120);
 });
