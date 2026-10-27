@@ -27,6 +27,7 @@ export const CHANGELOG = [
       { k: 'sound', t: 'Warmer town sounds: the river babbles, crickets chirp instead of whining, cicadas shimmer and fade, and workshops knock away quietly by day.' },
       { k: 'sound', t: 'Buttons, hovers and building clicks are quieter and rounder, like paper and wood, and the rooster and dogs are further off.' },
       { k: 'sound', t: 'New sound settings start at full master volume, music and effects at half, and ambience at a quarter.' },
+      { k: 'fix', t: 'Building details no longer flicker where two faces used to share a plane: cornices over doors, shop doors against their glass, bunting beside oriel windows, the church front and the clinic cross.' },
     ],
   },
   {
