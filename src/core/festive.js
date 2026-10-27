@@ -27,6 +27,11 @@ export const PALETTES = {
     { id: 'pumpkin', name: 'Pumpkin', lights: [0xF08A3C, 0xF3C04F] },
     { id: 'potion', name: 'Potion', lights: [0x9A63C4, 0x7DD36B] },
   ],
+  snoopy: [
+    { id: 'classic', name: 'Doghouse red' },
+    { id: 'kites', name: 'Kite colours', lights: [0xE0533F, 0xF3C04F, 0x6FA0DC, 0x5FA86A] },
+    { id: 'cream', name: 'Supper dish', lights: [0xFFF4D6, 0xF2D27A] },
+  ],
   july4: [
     { id: 'classic', name: 'Stars and stripes' },
     { id: 'sparkle', name: 'Sparkler', lights: [0xFFF4D6, 0xF2D27A] },

@@ -30,7 +30,7 @@ test('every event has palettes, classic first, each with real colours', () => {
 test('old saves and junk come back as the cozy default', () => {
   assert.deepEqual(sanitizeFestive(undefined), freshFestive());
   assert.deepEqual(sanitizeFestive({ amount: 'loud', palette: { christmas: 'neon', halloween: 'potion' }, dark: ['b3', 'x', 'b3', 7] }),
-    { amount: 'cozy', palette: { halloween: 'potion' }, dark: ['b3'] });
+    { amount: 'cozy', palette: { halloween: 'potion' }, dark: ['b3'], optIn: [] });
   const s = sanitize({ coins: 5 });
   assert.deepEqual(s.festive, freshFestive(), 'a save from before festive styles');
 });
