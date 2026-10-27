@@ -20,7 +20,7 @@ export const CHANGELOG = [
     blurb: 'The town sounds like a real place now: what you hear follows the camera, and every sound is softer and warmer.',
     items: [
       { k: 'new', t: 'The town journal: press J for a diary of what happened, from festivals and new seasons to the first home you built, plus little stories from named neighbours and a line about the time you were away.' },
-      { k: 'new', t: 'Your first days: a new town opens a gentle list of six things to try (a road, a home zone, a shop, a park, a service, an upgrade). Each ticks itself off with a small cheer, "Show me" picks the tool, and the whole list is optional, can be hidden, and waits on the Goals page.' },
+      { k: 'new', t: 'A gentle start for new mayors: a skippable welcome postcard with three hints, then one toolbar tool glows softly to suggest where to start and moves on once you have tried it. "No hints, thanks" turns it off, and towns already being played never see it.' },
       { k: 'sound', t: 'Sounds come from where they are: hover over the river and you hear water, over the high street footsteps and wheels, over the fields a cow, hens and the odd sheep. In free-fly the streets sound right beside you.' },
       { k: 'sound', t: 'Zoom out and the town blends into a soft, muffled hum; zoom in and each place comes forward, clear and close.' },
       { k: 'sound', t: 'Gentle stereo: a sound to the left of the screen leans left, and turning the camera turns the sound with it.' },

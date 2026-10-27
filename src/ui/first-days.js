@@ -1,13 +1,11 @@
-// "Your first days": six small, optional things to try in a new town. Pure rules and words (no DOM), so they are tested in
-// node. Each step is read from the town itself, and once ticked it stays ticked. Kept per browser under its own key (like
+// First days: a welcome postcard and a soft glow on the next useful toolbar tool, for a new town. Nothing is a task and
+// nothing is timed. Pure rules and words (no DOM), so they are tested in node. Six steps are read from the town itself,
+// and once done a step stays done; the glow only ever points at the next tool the player has not yet tried. Kept per browser under its own key (like
 // the mayor profile), so Start over shows it again only if the player asks.
 import { modelById } from '../world/models.js';
 import { starterStreetTiles } from '../world/starter.js';
 
 export const FIRST_KEY = 'nexus.firstdays.v1';
-
-// The list's current state, shared with the Goals page so it can show the same count. Set by modules/first-days.js.
-export const live = { data: null };
 
 // tool: the toolbar tool that "Show me" picks; key: its shortcut.
 export const STEPS = [
@@ -19,7 +17,7 @@ export const STEPS = [
   { id: 'upgrade', head: 'Upgrade a building', text: 'Click any building and press Upgrade. It grows, and so does its income.', tool: null, key: '', done: 'Taller, brighter and earning more.' },
 ];
 
-const empty = () => ({ welcomed: false, hidden: false, done: [] });
+const empty = () => ({ welcomed: false, hidden: false, done: [], seen: [] });
 
 export function sanitize(raw) {
   const r = raw && typeof raw === 'object' ? raw : {};
@@ -28,6 +26,7 @@ export function sanitize(raw) {
     welcomed: r.welcomed === true,
     hidden: r.hidden === true,
     done: Array.isArray(r.done) ? [...new Set(r.done.filter((d) => ids.has(d)))] : [],
+    seen: Array.isArray(r.seen) ? [...new Set(r.seen.filter((d) => ids.has(d)))] : [],
   };
 }
 
@@ -61,6 +60,26 @@ export function advance(data, nowDone) {
   const done = new Set(data.done), fresh = [];
   for (const s of STEPS) if (nowDone[s.id] && !done.has(s.id)) { done.add(s.id); fresh.push(s); }
   return { data: { ...data, done: STEPS.map((s) => s.id).filter((id) => done.has(id)) }, fresh };
+}
+
+// The three hints on the welcome postcard.
+export const HINTS = [
+  { head: 'Look around', text: 'Drag to move, scroll to zoom, Q and E to turn.' },
+  { head: 'Build as you like', text: 'The toolbar along the bottom has everything. One tool will glow softly to suggest where to start.' },
+  { head: 'Come back later', text: 'Coins keep arriving while you are away, and a postcard tells you what happened.' },
+];
+
+// The tool to glow: the first step with a tool that is not done and whose tool the player has not picked up yet.
+export function nextPulse(data) {
+  if (data.hidden) return null;
+  const s = STEPS.find((st) => st.tool && !data.done.includes(st.id) && !data.seen.includes(st.id));
+  return s ? s.tool : null;
+}
+
+// Picking a step's tool counts as having seen it, so the glow moves on instead of nagging.
+export function markSeen(data, tool) {
+  const ids = STEPS.filter((st) => st.tool === tool).map((st) => st.id);
+  return ids.length ? { ...data, seen: [...new Set([...data.seen, ...ids])] } : data;
 }
 
 export const isComplete = (data) => data.done.length >= STEPS.length;
