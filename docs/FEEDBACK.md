@@ -27,7 +27,7 @@ Nexus makes no network calls after load, with **one exception nate chose on 2026
 ## One-time setup (nate, in the Cloudflare dashboard)
 
 1. **Create the database:** Storage & Databases > D1 SQL Database > Create > name `nexus-feedback` > Create. Copy its **Database ID**.
-2. **Bind it in the repo:** in `wrangler.jsonc`, replace the comment under `assets` with
+2. **Bind it in the repo:** done 2026-10-27 (`d1_databases` in `wrangler.jsonc`, binding `FEEDBACK_DB`). For a new database, edit that entry:
    `,"d1_databases": [{ "binding": "FEEDBACK_DB", "database_name": "nexus-feedback", "database_id": "<that id>" }]`
    (or send Claude the ID). The ID is not a secret. A binding added only in the dashboard would be dropped by the next `wrangler deploy`, so it must live in this file.
 3. **Set the admin password:** Workers & Pages > `nexus` > Settings > Variables and Secrets > Add > type **Secret**, name `FEEDBACK_ADMIN_KEY`, a long password. (Secrets survive deploys.)
