@@ -76,17 +76,17 @@ const B = {
   tower(k) {
     k.body(); k.door();
     k.awning(k.doorX, k.dep / 2, Math.min(k.w - 0.6, 2.2), awn(k));
-    const v = look(k, 3);   // crown: flat roof with a stair house, a stepped penthouse, or a pointed cap
+    const v = look(k, 3);   // crown: flat roof with a stair house, a glass penthouse box, or a pointed cap
     if (v === 2) k.hipRoof(1.5, C.slate); else k.flatRoof(0.4);
     k.bay(5, k.bayX(Math.floor((k.bx - 1) / 2)), 1.0);   // an oriel up the tower, above the floor-3 balcony
     if (v === 0) {   // stair house and water tank: the little things every flat roof has
       k.box(k.w * 0.35, 0.8, k.dep * 0.35, k.w * 0.15, k.top + 0.4, -k.dep * 0.1, C.stone);
       if (k.level >= 3) k.cyl(0.3, 0.3, 0.7, 8, -k.w * 0.25, k.top + 0.4, k.dep * 0.15, C.wood);
-    } else if (v === 1) {   // one smaller storey set back, with its own cap
+    } else if (v === 1) {   // a glass box penthouse set back, with its own cap and two roof units
       const cw = k.w * 0.62, cd = k.dep * 0.62;
-      k.body(cw, cd, 1, 0, -k.dep * 0.08, k.top + 0.4, C.stone);
+      k.box(cw, FH, cd, 0, k.top + 0.4, -k.dep * 0.08, C.glass);
       k.box(cw + 0.12, 0.16, cd + 0.12, 0, k.top + 0.4 + FH, -k.dep * 0.08, C.charcoal);
-      k.roof = { kind: 'flat', rise: 0.4 + FH + 0.16, along: 'z', y: k.top + 0.4 + FH + 0.16 };
+      for (const sx of [-1, 1]) k.box(0.4, 0.26, 0.4, sx * k.w * 0.3, k.top + 0.4, k.dep * 0.3, C.charcoal, { edge: false });
     }
     if (k.level >= 4 && v < 2) for (const sx of [-1, 1]) k.box(k.w * 0.22, 0.28, 0.4, sx * k.w * 0.28, k.top + 0.4, k.dep * 0.32, C.leaf, { edge: false });
     if (k.level >= 4 && k.floors >= 8) k.balcony(3, k.bayX(0), 1.2);
@@ -302,8 +302,8 @@ const B = {
     k.box(cw + 0.12, 0.2, cd + 0.12, 0, k.top + 0.3 + FH, -k.dep * 0.08, C.charcoal);
     k.cyl(0.03, 0.03, 0.9, 5, k.w * 0.15, k.top + 0.3 + FH + 0.2, -k.dep * 0.08, C.slate, { edge: false });
     if (k.level >= 3) for (const sx of [-1, 1]) k.box(0.5, 0.25, 0.5, sx * k.w * 0.36, k.top + 0.3, k.dep * 0.28, C.leaf, { edge: false });
-    k.roof = { kind: 'flat', rise: 0.3 + FH + 0.2, along: 'z', y: k.top + 0.3 + FH + 0.2 };
-    decorate(k, { skip: ['cornice', 'gableWindow', 'chimney', 'boxes'] });
+    // k.roof stays the main roof (its coping and flag belong at that level, not floating at the crown's height)
+    decorate(k, { skip: ['cornice', 'gableWindow', 'chimney', 'boxes', 'crown'] });   // the crown has its own mast
   },
 
   workshop(k) {
