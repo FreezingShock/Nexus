@@ -2,26 +2,31 @@
 // sim event, the bell at a change of day, and the music mood. Pure: no Web Audio and no DOM. The engine fades toward
 // these levels, and the tests pin the rules down in node.
 
-// Every ambience layer, in the order the engine builds them. `place` says where a layer sits: 'town', 'river' (heard
-// from the water), or 'sky' for weather that fills the whole map and does not fade with distance.
+// Every ambience layer, in the order the engine builds them. `place` says what kind of place a layer comes from (see
+// soundmap.js): 'street', 'homes', 'shops', 'work', 'farm', 'green', 'water', the blends 'people' (homes and shops) and
+// 'wild' (green and farmland), or 'sky' for weather that fills the whole map and does not fade with distance.
 export const LAYERS = {
-  birds:    { place: 'town' },
-  murmur:   { place: 'town' },
-  traffic:  { place: 'town' },
-  water:    { place: 'river' },
-  crickets: { place: 'town' },
-  owls:     { place: 'town' },
-  cicadas:  { place: 'town' },
-  rustle:   { place: 'town' },
-  dogs:     { place: 'town' },
-  cuckoo:   { place: 'town' },
-  hearth:   { place: 'town' },
-  frogs:    { place: 'river' },
+  birds:    { place: 'green' },
+  murmur:   { place: 'people' },
+  traffic:  { place: 'street' },
+  water:    { place: 'water' },
+  crickets: { place: 'wild' },
+  owls:     { place: 'green' },
+  cicadas:  { place: 'wild' },
+  rustle:   { place: 'green' },
+  dogs:     { place: 'homes' },
+  cuckoo:   { place: 'green' },
+  hearth:   { place: 'homes' },
+  frogs:    { place: 'water' },
+  farmyard: { place: 'farm' },
+  workshop: { place: 'work' },
+  drips:    { place: 'homes' },
   thunder:  { place: 'sky' },
   rain:     { place: 'sky' },
   wind:     { place: 'sky' },
   hush:     { place: 'sky' },
 };
+export const PLACES = ['street', 'homes', 'shops', 'work', 'farm', 'green', 'water', 'people', 'wild', 'sky'];
 export const LAYER_NAMES = Object.keys(LAYERS);
 
 export const SEASONS = ['spring', 'summer', 'autumn', 'winter'];
@@ -56,18 +61,21 @@ export function layersFor({ night = false, season = null, weather = 'clear', mar
   if (s === 'autumn' && night) L.hearth = 0.4;
   if (!night && market) L.murmur += 0.2;
   if (!night && festival) L.murmur += 0.15;
+  // The farmyard (a cow, hens, a sheep) and the workshops (a mallet, a saw) keep daytime hours.
+  if (!night) { L.farmyard = s === 'winter' ? 0.3 : 0.6; L.workshop = festival ? 0.15 : 0.4; }
 
   const w = WEATHERS.includes(weather) ? weather : 'clear';
   if (w === 'rain') {
-    L.rain = 0.75; L.birds *= 0.5; L.murmur *= 0.8; L.crickets *= 0.3; L.dogs *= 0.4; L.cuckoo *= 0.3;
+    // A soft wash over everything, and drips off the roofs and gutters near the houses.
+    L.rain = 0.7; L.drips = 0.75; L.farmyard *= 0.4; L.workshop *= 0.6; L.birds *= 0.5; L.murmur *= 0.8; L.crickets *= 0.3; L.dogs *= 0.4; L.cuckoo *= 0.3;
     L.thunder = s === 'summer' ? 0.7 : 0.45;
     if (s === 'spring' || s === 'summer') L.frogs = Math.max(L.frogs * 1.3, 0.35); // frogs love the rain
   }
   if (w === 'wind') { L.wind = 0.55; L.rustle = Math.max(L.rustle, 0.35); L.birds *= 0.8; }
-  if (w === 'snow') { L.hush = Math.max(L.hush, 0.7); L.birds *= 0.3; L.murmur *= 0.7; L.crickets *= 0.2; L.hearth = Math.max(L.hearth, 0.5); }
+  if (w === 'snow') { L.hush = Math.max(L.hush, 0.7); L.birds *= 0.3; L.murmur *= 0.7; L.crickets *= 0.2; L.farmyard *= 0.5; L.hearth = Math.max(L.hearth, 0.5); }
 
   const busy = busyness(people);
-  L.murmur *= busy; L.traffic *= busy; L.dogs *= 0.5 + 0.5 * busy;
+  L.murmur *= busy; L.traffic *= busy; L.workshop *= busy; L.dogs *= 0.5 + 0.5 * busy;
 
   for (const k of LAYER_NAMES) L[k] = clamp01(L[k]);
   return L;

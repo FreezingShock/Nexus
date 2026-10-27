@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LAYERS, LAYER_NAMES, layersFor, transitionCue, cueFor, clockCue, busyness } from '../src/audio/soundscape.js';
+import { LAYERS, LAYER_NAMES, layersFor, transitionCue, cueFor, clockCue, busyness, PLACES } from '../src/audio/soundscape.js';
 
 const top = (L) => LAYER_NAMES.filter((k) => L[k] >= 0.5).sort();
 
 test('every layer has a place, and every level is within 0..1', () => {
-  for (const name of LAYER_NAMES) assert.ok(['town', 'river', 'sky'].includes(LAYERS[name].place), name);
+  for (const name of LAYER_NAMES) assert.ok(PLACES.includes(LAYERS[name].place), name);
   for (const night of [false, true]) for (const season of [null, 'spring', 'summer', 'autumn', 'winter', 'bogus'])
     for (const weather of ['clear', 'rain', 'wind', 'snow', 'bogus']) {
       const L = layersFor({ night, season, weather });
@@ -78,7 +78,7 @@ test('town creatures keep their hours and seasons: dogs by day, cuckoo in spring
   assert.equal(layersFor({ season: 'spring', night: true }).cuckoo, 0);
   assert.ok(layersFor({ season: 'summer', night: true }).frogs > 0.5);
   assert.equal(layersFor({ season: 'winter', night: true }).frogs, 0);
-  assert.equal(LAYERS.frogs.place, 'river', 'frogs are heard from the water');
+  assert.equal(LAYERS.frogs.place, 'water', 'frogs are heard from the water');
 });
 
 test('rain brings distant thunder (more in summer), and a winter night has a fire in the hearth', () => {
