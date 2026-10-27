@@ -191,8 +191,10 @@ export function createKit(d) {
           k.box(0.16, 0.24, 0.22, x, k.top - 0.46, z + 0.11, accent);
         }
       } else if (style === 1) {
+        // storey lines strictly below the eave (a band at the wall top would share a plane with the parapet); a one-storey
+        // building gets its band at half height
         const n = d.t[11] < 0.5 ? 2 : 3, lines = new Set();
-        for (let i = 1; i <= n; i++) lines.add(Math.max(1, Math.round((i * k.floors) / (n + 1))));
+        for (let i = 1; i <= n; i++) lines.add(k.floors < 2 ? 0.55 : Math.max(1, Math.min(k.floors - 1, Math.round((i * k.floors) / (n + 1)))));
         for (const f of lines) k.box(d.w + 0.06, 0.07, 0.06, 0, k.floorY(f), z + 0.03, accent);
       } else if (r.kind === 'flat') {
         k.box(d.w + 0.16, 0.1, d.d + 0.16, 0, r.y, 0, accent);
@@ -203,7 +205,7 @@ export function createKit(d) {
       }
     },
     balcony(floor, x, w = 1.1) {
-      k.box(w, 0.08, 0.5, x, k.floorY(floor), d.d / 2 + 0.25, C.stone, { edge: false });
+      k.box(w, 0.08, 0.5, x, k.floorY(floor), d.d / 2 + 0.23, C.stone, { edge: false });   // sunk 0.02 into the wall, off the string course's plane
       k.box(w, 0.28, 0.05, x, k.floorY(floor) + 0.08, d.d / 2 + 0.48, C.cream, { edge: false });
     },
     // dormers on the front slope of a mansard, hip or long-eave gable roof
@@ -224,7 +226,8 @@ export function createKit(d) {
       k.disc(0.2, x, k.top + rise * 0.32, d.d / 2 + 0.17, C.cream, { thick: 0.08 });
       k.disc(0.13, x, k.top + rise * 0.32, d.d / 2 + 0.2, C.glass, { thick: 0.06, edge: false });
     },
-    cornice(color = C.cream) { k.box(d.w + 0.24, 0.14, d.d + 0.24, 0, k.top - 0.12, 0, color, { edge: false }); },
+    // overhangs 0.14 a side: doors and window boxes front at 0.10 to 0.13, so none of them shares a plane with it
+    cornice(color = C.cream) { k.box(d.w + 0.28, 0.14, d.d + 0.28, 0, k.top - 0.12, 0, color, { edge: false }); },
     // two flower pots flanking the door
     pots(x = k.doorX) {
       for (const s of [-1, 1]) { k.cyl(0.14, 0.11, 0.24, 7, x + s * 0.62, 0, d.d / 2 + 0.28, C.terracotta, { edge: false }); k.box(0.3, 0.2, 0.3, x + s * 0.62, 0.24, d.d / 2 + 0.28, C.leaf, { edge: false }); }
@@ -258,6 +261,7 @@ export function createKit(d) {
     bunting(n = 5, y = k.top - 0.45, z = d.d / 2 + 0.16) {
       for (let i = 0; i < n; i++) {
         const x = -d.w / 2 + 0.3 + i * ((d.w - 0.6) / Math.max(1, n - 1));
+        if (bayXs.some((ox) => Math.abs(ox - x) < 0.75)) continue;   // an oriel's edge would share a plane with the flag
         k.box(0.3, 0.34, 0.04, x, y, z, BUNTING[(i + Math.floor(d.t[8] * 4)) % 4], { edge: false });
       }
     },
