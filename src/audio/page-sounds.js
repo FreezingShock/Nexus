@@ -20,6 +20,7 @@ export const PAGE_CHIMES = {
   sky: [[880, 0], [783.99, 0.12], [1046.5, 0.24]],                     // a breeze changing
   paint: [[587.33, 0], [698.46, 0.08], [880, 0.16]],                   // a brush stroke
   shortcuts: [[987.77, 0], [987.77, 0.1]],                             // two key taps
+  journal: [[440, 0], [554.37, 0.1], [659.25, 0.2], [554.37, 0.32]],      // a pen scratch and a soft close
   mytown: [[392, 0], [493.88, 0.1], [587.33, 0.2], [783.99, 0.32]],     // a little town bell
 };
 export const CLOSE_CHIME = [[659.25, 0], [523.25, 0.08]];

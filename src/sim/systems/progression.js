@@ -121,14 +121,14 @@ export default {
       emit({ type: 'boosted', text: 'Charged up: coins ×' + CH.boostMult + ' for a minute', sub: 'Every coin counts ×' + CH.boostMult + ' for the next minute' });
     },
 
-    // Starts the town over. Keeps points, renewals, unlocked road tiers, milestones (state.ach), goals, Charge, settings, the town's name and badge, and lifetime coins.
+    // Starts the town over. Keeps points, renewals, unlocked road tiers, milestones (state.ach), the journal, goals, Charge, settings, the town's name and badge, and lifetime coins.
     renew(ctx) {
       const { sim, state, grid, emit, refresh, syncDisplay, rebuild } = ctx;
       const gain = pendingPoints(state.runEarned);
       if (gain < 1) return emit({ type: 'toast', text: 'Renewal opens after ' + BALANCE.renewal.divisor.toLocaleString('en-US') + ' coins in one run' });
       const keep = {
         earned: state.earned, points: state.points + gain, renewals: state.renewals + 1,
-        charge: state.charge, stats: state.stats, ach: state.ach, goals: state.goals, town: state.town,
+        charge: state.charge, stats: state.stats, ach: state.ach, goals: state.goals, town: state.town, journal: state.journal,
         roadUnlocks: state.roadUnlocks, night: state.night, speed: state.speed, paused: state.paused,
       };
       const fresh = freshState();

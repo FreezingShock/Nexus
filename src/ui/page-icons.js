@@ -17,6 +17,8 @@ export const PAGE_ICONS = {
   photo: svg('<path d="M4.5 9.5h4l1.8-3h7.4l1.8 3h4a1.5 1.5 0 0 1 1.5 1.5v11a1.5 1.5 0 0 1-1.5 1.5h-19A1.5 1.5 0 0 1 3 22V11a1.5 1.5 0 0 1 1.5-1.5Z" fill="#E8D9EC"/><circle cx="14" cy="16" r="4.4" fill="#FBF6EA"/><circle cx="14" cy="16" r="1.8" fill="#35566A" stroke-width="1.2"/><rect x="5.5" y="11.5" width="3" height="2" rx=".5" fill="#E6BC62" stroke-width="1.2"/>'),
   // a key cap with a question mark
   shortcuts: svg('<rect x="4" y="5" width="20" height="18" rx="4" fill="#DCE8EC"/><path d="M4 18.5c0 2.5 1.8 4.5 4 4.5h12c2.2 0 4-2 4-4.5" fill="#B9CDD6"/><path d="M11.3 10.5a2.8 2.8 0 1 1 3.9 2.6c-.8.4-1.2 1-1.2 1.9" stroke-width="2.2"/><circle cx="14" cy="18" r=".6" fill="#2B2620" stroke-width="1.6"/>'),
+  // an open diary with a ribbon and a heart
+  journal: svg('<path d="M4 6.5c3.5-1.6 7-1.2 10 1.2 3-2.4 6.5-2.8 10-1.2V22c-3.5-1.4-7-1-10 1.4-3-2.4-6.5-2.8-10-1.4Z" fill="#F6E7BE"/><path d="M14 7.7v15.7"/><path d="M19 12.2l1.6 1.5 1.6-1.5a1.5 1.5 0 0 0-3.2 0Z" fill="#B8472E" stroke-width="1.2"/><path d="M7.5 12h3.5M7.5 15.3h3.5" stroke-width="1.5"/><path d="M20.5 4v6l1.6-1.3 1.6 1.3V4.8" fill="#C96F4F" stroke-width="1.4"/>'),
   settings: ICONS.settings,
   // a little picture frame (Graphics)
   gfx: svg('<rect x="4" y="5" width="20" height="17" rx="2" fill="#FBF6EA"/><path d="M4 18l5.5-5.5 4 4 3-3L24 21" fill="#A8C179"/><circle cx="18.5" cy="9.5" r="2" fill="#E6BC62"/>'),
