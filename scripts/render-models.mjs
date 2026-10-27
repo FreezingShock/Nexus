@@ -105,13 +105,26 @@ function render(parts, scale, cy, half = 3.2) {
 // wall colour for body parts, from the palette
 const parse = (hex) => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
 const files = [], sheet = [];
+// VARIANTS=1: one sheet per run with three seeds per model, chosen so the look slot (trait 7) falls in each third
+const variants = process.env.VARIANTS === '1';
+const seedFor = (m, third) => { for (let i = 0; i < 400; i++) { const id = 'b' + (1000 + i); if (Math.floor(describe({ id, model: m.id, gx: 10, gz: 10, fw: 1, fd: 1, rot: 0 }, 1).t[7] * 3) === third) return id; } return 'b1000'; };
 for (const m of MODELS) {
   if (only.length && !only.includes(m.id)) continue;
+  if (variants) {
+    const [fw, fd] = canonicalDims(m, footprintsOf(m)[0]);
+    for (const third of [0, 1, 2]) {
+      const desc = describe({ id: seedFor(m, third), model: m.id, gx: 10, gz: 10, fw, fd, rot: 0 }, 5), parts = buildParts(desc);
+      for (const p of parts) if (p.facadeMat) p.wallRgb = parse(PAL[desc.pal].wall);
+      const big = Math.max(desc.w, desc.d, desc.floors * 1.2 + 3);
+      sheet.push(render(parts, PW / (big * 1.7), desc.floors * 0.55, Math.max(desc.w, desc.d) / 2 + 0.6)); files.push(`${m.id}-look${third}`);
+    }
+    continue;
+  }
   const park = m.cat === 'park';   // parks have no levels, and every one of their sizes is worth a look
   const sizes = park ? footprintsOf(m) : footprintsOf(m).slice(0, 3);
   for (const [si, size] of sizes.entries()) for (const lv of park ? [1] : [1, 5]) {
     const [fw, fd] = canonicalDims(m, size);
-    const desc = describe({ id: 'b1001', model: m.id, gx: 10, gz: 10, fw, fd, rot: 0 }, lv);
+    const desc = describe({ id: process.env.SEED || 'b1001', model: m.id, gx: 10, gz: 10, fw, fd, rot: 0 }, lv);
     const parts = buildParts(desc);
     for (const p of parts) if (p.facadeMat) p.wallRgb = parse(PAL[desc.pal].wall);
     const big = Math.max(desc.w, desc.d, desc.floors * 1.2 + 3);
@@ -124,7 +137,7 @@ for (const m of MODELS) {
 }
 // one contact sheet: the level-5 look of every model (its smallest size; a park's largest), four to a row
 if (sheet.length) {
-  const cols = 4, rows = Math.ceil(sheet.length / cols), SW = W * cols, buf = Buffer.alloc(SW * H * rows * 3, 0xE0);
+  const cols = variants ? 3 : 4, rows = Math.ceil(sheet.length / cols), SW = W * cols, buf = Buffer.alloc(SW * H * rows * 3, 0xE0);
   sheet.forEach((img, i) => { const cx = (i % cols) * W, cy = Math.floor(i / cols) * H; for (let y = 0; y < H; y++) img.copy(buf, ((cy + y) * SW + cx) * 3, y * W * 3, (y + 1) * W * 3); });
   writeFileSync(`${out}/sheet.png`, png(SW, H * rows, buf));
   files.push('sheet.png');

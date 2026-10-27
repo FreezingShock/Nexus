@@ -165,3 +165,14 @@ test('a park looks the same at every level and bigger lots get more furniture', 
   assert.ok(count('plaza', 3, 3) > count('plaza', 1, 1));
   assert.ok(count('playground', 2, 2) > count('playground', 1, 1));
 });
+
+test('models with roof looks really produce different roofs across seeds', () => {
+  for (const id of ['cottage', 'terrace', 'mansard', 'tower', 'cafe', 'office', 'shop-row']) {
+    const sigs = new Set();
+    for (let i = 0; i < 60; i++) {
+      const parts = buildParts(describe(rec(id, id === 'terrace' || id === 'shop-row' ? 2 : 1, 1, { id: 'b' + (3000 + i) }), 3));
+      sigs.add(parts.length + ':' + trianglesOf(parts));
+    }
+    assert.ok(sigs.size >= 3, `${id}: only ${sigs.size} distinct builds over 60 seeds`);
+  }
+});
