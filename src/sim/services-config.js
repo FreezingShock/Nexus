@@ -20,6 +20,10 @@ export const PARKS = {
   orchard:         { radius: 3, strength: 0.35, upkeep: 0.05 },
 };
 
+// A bigger park cheers more: strength grows by this much per tile beyond the first, up to the cap (a 3 x 3 park is 1.48 x).
+// Its upkeep grows with the square root of its area, so a big park costs less per tile than a small one.
+export const PARK_SIZE = { perTile: 0.06, cap: 1.5 };
+
 // Landmarks add a flat income on top of their happiness. Their coins are never subtracted.
 export const LANDMARKS = {
   'town-hall':     { radius: 6, strength: 0.5, coins: 1.5 },
