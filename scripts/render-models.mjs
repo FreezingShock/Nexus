@@ -107,7 +107,9 @@ const parse = (hex) => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5),
 const files = [], sheet = [];
 for (const m of MODELS) {
   if (only.length && !only.includes(m.id)) continue;
-  for (const [si, size] of footprintsOf(m).slice(0, 3).entries()) for (const lv of [1, 5]) {
+  const park = m.cat === 'park';   // parks have no levels, and every one of their sizes is worth a look
+  const sizes = park ? footprintsOf(m) : footprintsOf(m).slice(0, 3);
+  for (const [si, size] of sizes.entries()) for (const lv of park ? [1] : [1, 5]) {
     const [fw, fd] = canonicalDims(m, size);
     const desc = describe({ id: 'b1001', model: m.id, gx: 10, gz: 10, fw, fd, rot: 0 }, lv);
     const parts = buildParts(desc);
@@ -117,10 +119,10 @@ for (const m of MODELS) {
     const name = `${m.id}-${fw}x${fd}-L${lv}.png`;
     writeFileSync(`${out}/${name}`, png(W, H, img));
     files.push(name);
-    if (lv === 5 && si === 0) sheet.push(img);
+    if (park ? si === sizes.length - 1 : lv === 5 && si === 0) sheet.push(img);
   }
 }
-// one contact sheet: the level-5 look of every model (its smallest size), four to a row
+// one contact sheet: the level-5 look of every model (its smallest size; a park's largest), four to a row
 if (sheet.length) {
   const cols = 4, rows = Math.ceil(sheet.length / cols), SW = W * cols, buf = Buffer.alloc(SW * H * rows * 3, 0xE0);
   sheet.forEach((img, i) => { const cx = (i % cols) * W, cy = Math.floor(i / cols) * H; for (let y = 0; y < H; y++) img.copy(buf, ((cy + y) * SW + cx) * 3, y * W * 3, (y + 1) * W * 3); });

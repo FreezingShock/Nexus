@@ -79,7 +79,7 @@ test('painting the town reaches every paintable building and every grown lot, pr
   const c0 = sim.state.coins;
   sim.dispatch({ type: 'paintTown', wall: 'cream', roof: 'umber', trim: 'forest' });
   for (const r of sim.state.placed) {
-    if (['green', 'plaza', 'playground', 'pond'].includes(r.model)) { assert.notEqual(r.roof, 'umber', 'a park has no walls to paint'); continue; }
+    if (['green', 'plaza', 'playground', 'pond', 'garden', 'square', 'orchard'].includes(r.model)) { assert.notEqual(r.roof, 'umber', 'a park has no walls to paint'); continue; }
     assert.equal(r.pal, 'cream'); assert.equal(r.roof, 'umber'); assert.equal(r.trim, 'forest');
   }
   assert.deepEqual(sim.state.townPaint, { wall: 'cream', trim: 'forest', roof: 'umber' });

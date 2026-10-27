@@ -8,6 +8,7 @@ import { quietSim as createSim } from './support/quiet.js';
 import { sanitize } from '../src/sim/save.js';
 import { tileIndex, TILE } from '../src/world/grid.js';
 import * as THREE from '../vendor/three/three.module.min.js';
+import { PARKS } from '../src/sim/services-config.js';
 
 const layout = getLayout();
 // The buildings the player placed (the starter village is in state.placed too).
@@ -43,7 +44,7 @@ test('every model builds at every size and level within the triangle budget', ()
     const [fw, fd] = canonicalDims(m, size);
     const parts = buildParts(describe(rec(m.id, fw, fd), lv));
     const tris = trianglesOf(parts);
-    const budget = m.tile === 'row' ? 520 + 220 * (fw - 1) : 650; // a row is several houses, so it gets more
+    const budget = m.tile === 'row' ? 520 + 220 * (fw - 1) : m.cat === 'park' ? 450 + 110 * fw * fd : 650; // a row is several houses, a park grows with its lot
     assert.ok(tris > 0 && tris <= budget, `${m.id} ${size} L${lv}: ${tris} triangles (budget ${budget})`);
     for (const p of parts) for (const g of p.splits ? p.splits.map((s) => s.geo) : [p.geo]) {
       assert.ok(g.attributes.position.array.every(Number.isFinite), `${m.id} has a NaN vertex`);
@@ -140,4 +141,27 @@ test('townhouses vary their window style by seed and grown lots can use the new 
   const { ZONE_MODELS } = await import('../src/world/lots.js');
   assert.ok(ZONE_MODELS[1].includes('townhouse') && ZONE_MODELS[2].includes('bakery'));
   for (const id of ['manor', 'apartments', 'department']) assert.ok(fitFootprint(modelById(id), 2, 3), id + ' fits a 2 x 3 lot');
+});
+
+test('every park is ground: no storeys, a service entry, and sizes from a pocket lot up to three tiles square', () => {
+  const parks = MODELS.filter((m) => m.cat === 'park');
+  assert.ok(parks.length >= 7, 'parks: ' + parks.map((m) => m.id).join(', '));
+  for (const m of parks) {
+    assert.deepEqual(m.floors, [0, 0], m.id);
+    assert.ok(PARKS[m.id], m.id + ' has no coverage entry');
+    const sizes = footprintsOf(m);
+    assert.ok(sizes.length >= 2, m.id + ' offers one size');
+    for (const [a, b] of sizes) assert.ok(a <= 3 && b <= 3, m.id + ' too big');
+  }
+  assert.ok(parks.some((m) => footprintsOf(m).some(([a, b]) => a === 1 && b === 1)), 'a one-tile park exists');
+  assert.ok(parks.some((m) => footprintsOf(m).some(([a, b]) => a === 3 && b === 3)), 'a three-tile park exists');
+});
+
+test('a park looks the same at every level and bigger lots get more furniture', () => {
+  const sig = (id, w, d, lv) => buildParts(describe(rec(id, w, d), lv)).map((p) => p.local.elements.join(',')).join('|');
+  for (const id of ['green', 'plaza', 'pond', 'garden', 'square', 'orchard']) assert.equal(sig(id, 2, 2, 1), sig(id, 2, 2, 5), id);
+  const count = (id, w, d) => buildParts(describe(rec(id, w, d), 1)).length;
+  assert.ok(count('green', 3, 3) > count('green', 1, 1));
+  assert.ok(count('plaza', 3, 3) > count('plaza', 1, 1));
+  assert.ok(count('playground', 2, 2) > count('playground', 1, 1));
 });

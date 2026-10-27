@@ -19,6 +19,7 @@ export const CHANGELOG = [
     v: '0.13.0', date: '2026-10-27', name: 'Soft rain on the roofs',
     blurb: 'The town sounds like a real place now: what you hear follows the camera, and every sound is softer and warmer.',
     items: [
+      { k: 'new', t: 'Parks and plazas, redrawn: greens, plazas, playgrounds and ponds come in more sizes (up to three tiles square) with paths, benches, fountains, ducks and a jetty, plus three new open spaces: the rose garden, the town square and the orchard.' },
       { k: 'new', t: 'The town journal: press J for a diary of what happened, from festivals and new seasons to the first home you built, plus little stories from named neighbours and a line about the time you were away.' },
       { k: 'new', t: 'A gentle start for new mayors: a skippable welcome postcard with three hints, then one toolbar tool glows softly to suggest where to start and moves on once you have tried it. "No hints, thanks" turns it off, and towns already being played never see it.' },
       { k: 'sound', t: 'Sounds come from where they are: hover over the river and you hear water, over the high street footsteps and wheels, over the fields a cow, hens and the odd sheep. In free-fly the streets sound right beside you.' },

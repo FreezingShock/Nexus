@@ -59,10 +59,13 @@ export const MODELS = [
   { id: 'town-hall',    name: 'Town hall',      cat: 'landmark', sub: 'Clock tower over the square',      foot: [[2, 1], [2, 2]],         floors: [3, 3], grow: 0,    cost: 1800, style: 'arched' },
   { id: 'church',       name: 'Church',         cat: 'landmark', sub: 'A spire you can see from afar',    foot: [[1, 2], [2, 2]],         floors: [2, 2], grow: 0,    cost: 1500, style: 'arched' },
   // Parks have no storeys (floors 0): they are ground, not buildings. Their upgrade is refused in the upgrades system.
-  { id: 'green',        name: 'Green',          cat: 'park',     sub: 'Lawn and trees',                   foot: [[1, 1], [2, 2]],         floors: [0, 0], grow: 0,    cost: 60,   style: 'sash' },
-  { id: 'plaza',        name: 'Plaza',          cat: 'park',     sub: 'Paving, lamps and a fountain',     foot: [[1, 1], [2, 2]],         floors: [0, 0], grow: 0,    cost: 90,   style: 'sash' },
-  { id: 'playground',   name: 'Playground',     cat: 'park',     sub: 'Swings and a little slide',        foot: [[1, 1], [1, 2]],         floors: [0, 0], grow: 0,    cost: 140,  style: 'sash' },
-  { id: 'pond',         name: 'Pond',           cat: 'park',     sub: 'Water, reeds and a bench',         foot: [[2, 2]],                 floors: [0, 0], grow: 0,    cost: 180,  style: 'sash' },
+  { id: 'green',        name: 'Green',          cat: 'park',     sub: 'Lawn, paths, trees and benches',   foot: [[1, 1], [1, 2], [2, 2], [2, 3], [3, 3]], floors: [0, 0], grow: 0, cost: 60,  style: 'sash' },
+  { id: 'plaza',        name: 'Plaza',          cat: 'park',     sub: 'Paving, lamps and a fountain',     foot: [[1, 1], [2, 2], [2, 3], [3, 3]],         floors: [0, 0], grow: 0, cost: 90,  style: 'sash' },
+  { id: 'playground',   name: 'Playground',     cat: 'park',     sub: 'Swings, a sandbox and a slide',    foot: [[1, 1], [1, 2], [2, 2]],                 floors: [0, 0], grow: 0, cost: 140, style: 'sash' },
+  { id: 'pond',         name: 'Pond',           cat: 'park',     sub: 'Water, reeds, ducks and a bench',  foot: [[1, 2], [2, 2], [2, 3], [3, 3]],         floors: [0, 0], grow: 0, cost: 180, style: 'sash' },
+  { id: 'garden',       name: 'Rose garden',    cat: 'park',     sub: 'Hedges, rose beds and a sundial',  foot: [[2, 2], [2, 3], [3, 3]],                 floors: [0, 0], grow: 0, cost: 160, style: 'sash' },
+  { id: 'square',       name: 'Town square',    cat: 'park',     sub: 'Open paving, a bandstand or clock', foot: [[2, 3], [3, 3]],                        floors: [0, 0], grow: 0, cost: 220, style: 'sash' },
+  { id: 'orchard',      name: 'Orchard',        cat: 'park',     sub: 'Rows of fruit trees and a beehive', foot: [[2, 2], [2, 3], [3, 3]],                floors: [0, 0], grow: 0, cost: 70,  style: 'sash' },
 ];
 
 // Prices are scaled once here, from BALANCE.priceMult (see balance.js).

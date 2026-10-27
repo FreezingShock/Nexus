@@ -42,7 +42,7 @@ test('kinds: services, parks and landmarks give coverage; homes and shops do not
 });
 
 test('every park and landmark has a config entry, and every service model is a service', () => {
-  for (const m of ['green', 'plaza', 'playground', 'pond']) assert.ok(PARKS[m], m);
+  for (const m of ['green', 'plaza', 'playground', 'pond', 'garden', 'square', 'orchard']) assert.ok(PARKS[m], m);
   for (const m of ['town-hall', 'church']) assert.ok(LANDMARKS[m], m);
   for (const m of ['clinic', 'school', 'fire-station', 'police']) assert.ok(SERVICES[m], m);
 });

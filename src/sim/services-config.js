@@ -15,6 +15,9 @@ export const PARKS = {
   plaza:           { radius: 3, strength: 0.3,  upkeep: 0.05 },
   playground:      { radius: 3, strength: 0.5,  upkeep: 0.1 },
   pond:            { radius: 3, strength: 0.4,  upkeep: 0.05 },
+  garden:          { radius: 3, strength: 0.45, upkeep: 0.08 },
+  square:          { radius: 4, strength: 0.4,  upkeep: 0.12 },
+  orchard:         { radius: 3, strength: 0.35, upkeep: 0.05 },
 };
 
 // Landmarks add a flat income on top of their happiness. Their coins are never subtracted.
