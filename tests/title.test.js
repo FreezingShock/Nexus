@@ -144,3 +144,45 @@ test('the author name is written once, in src/version.js, and the title screen r
   assert.match(js, /\$\('tt-made'\)\.textContent = 'Made by ' \+ AUTHOR;/);
   assert.doesNotMatch(html + js, /tt-credit/, 'the corner credit is gone; the feedback box has that corner');
 });
+
+test('the progress screen picks one wording per step from a larger pool, and the real steps stay behind them', async () => {
+  const { pickSteps, CAPTION_POOL } = await import('../src/core/boot.js');
+  for (const s of PLAY_STEPS) assert.ok(CAPTION_POOL[s.id].length >= 5 && CAPTION_POOL[s.id][0] === s.caption, s.id);
+  const lo = pickSteps(PLAY_STEPS, CAPTION_POOL, () => 0), hi = pickSteps(PLAY_STEPS, CAPTION_POOL, () => 0.999);
+  assert.deepEqual(lo.map((s) => s.id), PLAY_STEPS.map((s) => s.id));
+  assert.deepEqual(lo.map((s) => s.weight), PLAY_STEPS.map((s) => s.weight));
+  assert.notDeepEqual(lo.map((s) => s.caption), hi.map((s) => s.caption));
+  assert.deepEqual(pickSteps([{ id: 'x', caption: 'Plain', weight: 1 }])[0].caption, 'Plain');
+});
+
+test('a skip only hurries the waiting: waits end at once, and one asked early is remembered', async () => {
+  const { createSkip } = await import('../src/core/boot.js');
+  const skip = createSkip(() => new Promise(() => {})); // a sleep that never ends
+  const w = skip.wait(60000);
+  assert.equal(skip.asked(), false);
+  assert.equal(skip.request(), true);
+  await w; // resolves because of the skip
+  assert.equal(skip.request(), false);
+  await skip.wait(60000); // later waits are instant
+  assert.equal(skip.asked(), true);
+});
+
+test('the progress screen is skippable by click, shows the hint, and respects calm motion', () => {
+  const html = read('index.html'), js = read('src/ui/title.js'), main = read('src/main.js'), css = read('css/title.css');
+  assert.match(html, /id="bt-hinttext"[^>]*>Click anywhere to skip/);
+  assert.match(html, /<canvas class="bt-street" id="bt-street"/);
+  assert.match(js, /boot\.addEventListener\('click', skipAsk\)/);
+  assert.match(main, /title\.showBoot\(steps, \(\) => skip\.request\(\)\)/);
+  assert.ok(main.includes("}, skip.wait); };"), "held steps can be skipped, the work still awaited");
+  assert.match(read('src/ui/boot-scene.js'), /if \(calm\(\)\)/);
+  assert.match(css, /\.bt-pattern\{[^}]*mask-image/);
+  assert.ok(!/url\(["']?https?:/.test(css.slice(css.indexOf('progress screen'), css.indexOf('max-width:900px'))), 'no network images');
+});
+
+test('the street animation builds the same street for the same seed and lays out every lot', async () => {
+  const { streetOf, timeline } = await import('../src/ui/boot-scene.js');
+  assert.deepEqual(streetOf(3, 12), streetOf(3, 12));
+  assert.notDeepEqual(streetOf(3, 12), streetOf(4, 12));
+  const tl = timeline(21, 2000);
+  assert.ok(tl.total > tl.lastEnds && tl.lastEnds < 16);
+});

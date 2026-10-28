@@ -23,6 +23,41 @@ export const PLAY_STEPS = [
   { id: 'post', caption: 'Sorting the post', weight: 1 },
 ];
 
+// Each progress step has a few ways of saying itself; one is picked per load, so the chips are never quite the same twice.
+// The real work behind a step is the same whichever wording shows. Index 0 of each list is the plain original.
+export const CAPTION_POOL = {
+  away: ['Counting the hours you were away', 'Checking what happened while you slept', 'Reading the town clock', 'Asking the neighbours for news', 'Winding the town clock forward', 'Tallying the quiet hours'],
+  ui: ['Sharpening the pencils', 'Hanging up the street signs', 'Dusting the drawing board', 'Laying out the toolbox', 'Setting out the paint pots', 'Pinning the map to the wall'],
+  lamps: ['Lighting the lamps', 'Trimming the lamp wicks', 'Polishing the windows', 'Warming up the kettle', 'Hanging the evening lanterns', 'Fluffing the clouds'],
+  post: ['Sorting the post', 'Stamping the postcards', 'Walking the post round', 'Feeding the town cat', 'Watering the window boxes', 'Tying up the last ribbon'],
+};
+
+// The steps with one wording each picked from the pool. `rng` is Math.random by default; a fixed one makes a fixed pick.
+export function pickSteps(steps, pool = CAPTION_POOL, rng = Math.random) {
+  return steps.map((s) => {
+    const list = pool[s.id];
+    if (!list || !list.length) return { ...s };
+    const ix = Math.min(list.length - 1, Math.max(0, Math.floor(rng() * list.length)));
+    return { ...s, caption: list[ix] };
+  });
+}
+
+// The "click to skip" switch of the progress screen. Skipping only hurries the waiting (the held steps, the bar's walk,
+// the rest before the reveal); the real work still finishes first. `wait(ms)` resolves after ms, or at once if a skip
+// has been asked for; a skip asked for early is remembered, so the next waits are short.
+export function createSkip(sleep = (t) => new Promise((r) => setTimeout(r, t))) {
+  let asked = false;
+  const waiters = new Set();
+  return {
+    request() { if (asked) return false; asked = true; waiters.forEach((fn) => fn()); waiters.clear(); return true; },
+    asked: () => asked,
+    wait(ms) {
+      if (asked) return Promise.resolve();
+      return new Promise((resolve) => { waiters.add(resolve); sleep(ms).then(() => { waiters.delete(resolve); resolve(); }); });
+    },
+  };
+}
+
 // A step that finishes in a blink would flash its caption past unread. The progress screen holds each step at least this long.
 export const MIN_STEP_MS = 420;
 export const REVEAL_HOLD_MS = 380; // the full bar rests this long before the screen opens onto the town
