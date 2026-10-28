@@ -14,16 +14,18 @@
    changes the pressed tab and the card row. z-index stays 0: the flyout is no stacking context once its open
    tween ends, so a negative one would drop the tabs behind the map. */
 .fly:has(>.pbar>.ptabs){overflow:visible}
-.ptabs{position:absolute;right:100%;top:10px;bottom:10px;z-index:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
-.ptab{--tb:color-mix(in srgb,var(--tc) 68%,#FBF6EA);--te:color-mix(in srgb,var(--tb) 52%,#1b1713);--tt:#2B2620;display:flex;flex:1 1 0;min-height:34px;max-height:46px;align-items:center;gap:0;padding:0 7px 0 5px;border:2.5px solid var(--te);border-right:0;border-radius:16px 0 0 16px;background:var(--tb);color:var(--tt);font-weight:800;font-size:14px;box-shadow:0 3px 0 var(--te);translate:0 0;transition:translate .18s cubic-bezier(.2,.8,.3,1),background .15s}
+.ptabs{position:absolute;right:100%;top:10px;bottom:10px;z-index:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;clip-path:inset(-8px 0 -8px -400px)}
+.ptab{--tb:color-mix(in srgb,var(--tc) 68%,#FBF6EA);--te:color-mix(in srgb,var(--tb) 52%,#1b1713);--tt:#2B2620;display:flex;flex:1 1 0;min-height:34px;max-height:46px;align-items:center;gap:0;padding:0 7px 0 5px;border:2.5px solid var(--te);border-right:0;border-radius:16px 0 0 16px;background:var(--tb);color:var(--tt);font-weight:800;font-size:14px;box-shadow:0 3px 0 var(--te);translate:0 0;transition:translate .3s cubic-bezier(.2,.8,.3,1) calc(var(--i,0) * .04s),background .15s,padding .2s}
+/* the tabs slide out from behind the menu on open and back behind it on close (the container clips at the menu's edge) */
+.fly[hidden] .ptab{translate:105% 0}
 .ptab svg{flex:none;width:28px;height:28px;padding:2px;box-sizing:border-box;border-radius:50%;background:#FBF6EA;border:2px solid var(--te)}
 .ptab-name{display:block;max-width:0;overflow:hidden;white-space:nowrap;opacity:0;transition:max-width .2s cubic-bezier(.2,.8,.3,1),opacity .15s,margin .2s}
-.ptab:hover,.ptab:focus-visible{translate:-3px 0}
 .ptab:hover .ptab-name,.ptab:focus-visible .ptab-name,.ptab[aria-pressed="true"] .ptab-name{max-width:120px;opacity:1;margin:0 4px 0 8px}
-.ptab[aria-pressed="true"]{--tb:var(--tc);translate:-6px 0}
+.ptab:hover,.ptab:focus-visible,.ptab[aria-pressed="true"]{padding-left:9px}
+.ptab[aria-pressed="true"]{--tb:var(--tc)}
 .ptab:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
 .ptab:not([aria-pressed="true"]):not(:hover):not(:focus-visible) .ptab-name{display:none}
-@media (max-width:900px){.ptabs{position:static;flex-direction:row;flex-wrap:wrap;align-items:stretch;margin:0 0 8px}.ptab{translate:0 0!important;border:2.5px solid var(--te);border-radius:14px}.pbar{flex-wrap:wrap}}
+@media (max-width:900px){.ptabs{position:static;clip-path:none;flex-direction:row;flex-wrap:wrap;align-items:stretch;margin:0 0 8px}.ptab{translate:0 0!important;border:2.5px solid var(--te);border-radius:14px}.pbar{flex-wrap:wrap}}
 @media (prefers-reduced-motion:reduce){.ptab,.ptab-name{transition:none}}
 
 .strip{display:flex;gap:9px;overflow-x:auto;overscroll-behavior-x:contain;padding:4px 4px 10px;min-width:0;flex:1 1 auto}
