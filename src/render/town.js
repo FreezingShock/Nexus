@@ -65,6 +65,7 @@ function touches(r, tiles) {
 }
 
 // hooks.burst(x, z, radius, count): a dust puff when a building levels up (the puffs system).
+// hooks.arrows(x, y, z, count): the green level-up arrows rising from a roof (the arrows system).
 // hooks.scaffold(world, box, onReveal): scaffolding round a building the player upgraded (the scaffold system). The old
 // look stays inside it until onReveal, then the new level pops in. A null answer means no scaffolding: pop at once.
 export function createTown(root, hooks = {}) {
@@ -93,9 +94,10 @@ export function createTown(root, hooks = {}) {
   // Scaffolding up round a building the player just upgraded: its new look waits for the reveal.
   function raiseScaffold(e, level) {
     if (!hooks.scaffold) return false;
-    const id = e.b.id, parts = makeParts({ ...e.desc, level });
-    const h = hooks.scaffold(e.world, partsBox(parts), () => {
+    const id = e.b.id, parts = makeParts({ ...e.desc, level }), box = partsBox(parts);
+    const h = hooks.scaffold(e.world, box, () => {
       if (entries.get(id) !== e) return;
+      if (hooks.arrows) hooks.arrows(e.b.x, (e.b.y ?? 0) + box.max.y, e.b.z, 4);
       e.scaf = null; e.reveal = true; // this level change pops instead of scaffolding again
       wantPop.add(id); setTimeout(() => wantPop.delete(id), 1500); // the next setState swaps the look and pops it
     });

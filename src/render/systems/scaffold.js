@@ -41,6 +41,9 @@ export default {
     }
 
     return {
+      // Is scaffolding switched on, and how many slots are free right now (0 when effects are off).
+      enabled() { return effects > 0; },
+      free() { return effects ? slots.filter((x) => !x).length : 0; },
       raise(worldMatrix, box, onReveal) {
         if (!effects) return null;
         const k = slots.indexOf(null);
