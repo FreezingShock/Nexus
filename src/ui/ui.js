@@ -9,6 +9,7 @@ import { TOOL_KEYS } from './shortcuts.js';
 import { isNoteEvent } from './notes.js';
 import { topRight } from './slot.js';
 import { book } from './book.js';
+import { beginFlySwitch } from './fly-switch.js';
 
 // S is taken by the camera (WASD), so Services moves to C. Camera keys live in src/render/camera.js and modules/camera-modes.js.
 // TOOL_KEYS lives in shortcuts.js so the shortcut sheet lists the same keys.
@@ -43,8 +44,10 @@ export function createUi({ sim, scene, actions }) {
     const was = tool;
     tool = t;
     document.querySelectorAll('.tool').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tool === t)));
+    const done = beginFlySwitch($('fly'), was, t);
     panels.setFly(t);
     for (const m of mods) if (m.onTool) m.onTool(t, was);
+    done();
   }
   function toggleSettings() {
     if (panels.settingsOpen()) { panels.hideSettings(); return; }
