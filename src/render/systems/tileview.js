@@ -172,7 +172,7 @@ export default {
         flash = 1; writePreview();
       },
       frame(f) {
-        const zoning = f.tool === 'zones';
+        const zoning = f.tool === 'zones' || f.view === 'demand';
         if (land.poll()) refreshGroundPlane(mesh.geometry, 0.17); // the terrain tools moved the ground
         if (zoning !== showLots) { showLots = zoning; mat.uniforms.uLots.value = zoning ? 1 : 0; }
         const next = f.state.zoneRev + '|' + roadSum();

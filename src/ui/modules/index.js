@@ -3,7 +3,6 @@
 // Hook shapes are documented in docs/EXTENDING.md. Modules run in order of their optional `order` number, then file name.
 import bulldozeSweep from './bulldoze-sweep.js';
 import cameraModes from './camera-modes.js';
-import commute from './commute.js';
 import date from './date.js';
 import decor from './decor.js';
 import districts from './districts.js';
@@ -27,12 +26,12 @@ import terrain from './terrain.js';
 import toolbarFold from './toolbar-fold.js';
 import tooltips from './tooltips.js';
 import townPage from './town-page.js';
+import views from './views.js';
 import zoning from './zoning.js';
 
 export const uiModules = [
   bulldozeSweep,
   cameraModes,
-  commute,
   date,
   decor,
   districts,
@@ -56,5 +55,6 @@ export const uiModules = [
   toolbarFold,
   tooltips,
   townPage,
+  views,
   zoning,
 ];
