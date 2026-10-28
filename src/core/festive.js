@@ -1,6 +1,8 @@
 // The town's festive style: how much it dresses up and in which colours, and which buildings keep their lights off.
 // Pure (no DOM, no Three.js). Saved on state.festive by sim/systems/festive.js; render reads it with the event fields.
-//   amount    'none' | 'light' | 'cozy' | 'all'   ('cozy' is the default: decorations build up through the month)
+//   amount    'all' | 'none'                      decorations are a plain switch: all out, or none (old saves had a little / cozy: both become all)
+//   unlocked  [event ids]                         seasonal sets the town has earned (its holiday played through, or a keepsake)
+//   show      event id or ''                      an unlocked set the player dresses the town in whatever the date
 //   palette   { [event id]: palette key }         (missing means 'classic')
 //   optIn     [event ids]                         opt-in events that are switched on (core/events.js `optIn`)
 //   offered   [event ids]                         opt-in events the town has been given; each starts on once, then
@@ -8,13 +10,7 @@
 //   dark      [record ids]                        placed buildings whose owner switched their lights off
 import { OPT_IN_EVENTS, eventById } from './events.js';
 
-export const AMOUNTS = [
-  { id: 'none', name: 'None', line: 'No decorations this year' },
-  { id: 'light', name: 'A little', line: 'Some houses join in' },
-  { id: 'cozy', name: 'Cozy', line: 'Builds up through the month' },
-  { id: 'all', name: 'All out', line: 'Every street, from day one' },
-];
-const AMOUNT_IDS = AMOUNTS.map((a) => a.id);
+export const AMOUNT_IDS = ['all', 'none'];
 
 // Light colours per event. The first is the event's own (core/events.js `lights`).
 export const PALETTES = {
@@ -42,18 +38,22 @@ export const PALETTES = {
 };
 
 const OPT_IDS = OPT_IN_EVENTS.map((e) => e.id);
-export const freshFestive = () => ({ amount: 'cozy', palette: {}, dark: [], optIn: [...OPT_IDS], offered: [...OPT_IDS] });
+export const freshFestive = () => ({ amount: 'all', palette: {}, dark: [], optIn: [...OPT_IDS], offered: [...OPT_IDS], unlocked: [...OPT_IDS], show: '' });
 
 export function sanitizeFestive(raw) {
   const out = freshFestive();
   if (!raw || typeof raw !== 'object') return out;
-  if (AMOUNT_IDS.includes(raw.amount)) out.amount = raw.amount;
+  if (raw.amount === 'none') out.amount = 'none';
   if (raw.palette && typeof raw.palette === 'object') {
     for (const [ev, list] of Object.entries(PALETTES)) if (list.some((p) => p.id === raw.palette[ev])) out.palette[ev] = raw.palette[ev];
   }
   // an opt-in event the save has not been given yet arrives switched on; one it has keeps the player's choice
   const offered = Array.isArray(raw.offered) ? raw.offered : [], on = Array.isArray(raw.optIn) ? raw.optIn : [];
   out.optIn = OPT_IDS.filter((id) => !offered.includes(id) || on.includes(id));
+  // opt-in sets are given to every town; the others are earned
+  const earned = Array.isArray(raw.unlocked) ? raw.unlocked.filter((id) => eventById(id)) : [];
+  out.unlocked = [...new Set([...OPT_IDS, ...earned])];
+  out.show = typeof raw.show === 'string' && out.unlocked.includes(raw.show) ? raw.show : '';
   if (Array.isArray(raw.dark)) out.dark = [...new Set(raw.dark.filter((x) => typeof x === 'string' && /^b\d+$/.test(x)))].slice(0, 2000);
   return out;
 }
@@ -67,16 +67,11 @@ export function lightsFor(eventId, festive) {
   return p && p.lights ? p.lights : ev.lights;
 }
 
-// The share of buildings dressed today, and of trees by the big day, after the town's amount.
-//   cover   0 to 1 (state.eventCover, the month's build-up)
+// The share of buildings and trees dressed while an event is on: all of them, or none when the town has decorations off.
 export function dressShare(eventId, cover, festive) {
   const ev = eventById(eventId);
-  if (!ev) return { buildings: 0, trees: 0 };
-  const amount = festive && AMOUNT_IDS.includes(festive.amount) ? festive.amount : 'cozy';
-  if (amount === 'none') return { buildings: 0, trees: 0 };
-  if (amount === 'all') return { buildings: 1, trees: Math.min(0.9, ev.trees * 1.5) };
-  const k = amount === 'light' ? 0.45 : 1;
-  return { buildings: cover * k, trees: cover * ev.trees * k };
+  if (!ev || (festive && festive.amount === 'none')) return { buildings: 0, trees: 0 };
+  return { buildings: 1, trees: Math.min(0.9, ev.trees * 1.5) };
 }
 
 // Whether a building keeps its lights off (placed records only; grown lots follow the town).

@@ -13,7 +13,7 @@
 .ptab svg{width:22px;height:22px;display:block}
 .ptab[aria-pressed="true"]{background:var(--sky-soft)}
 
-.strip{display:flex;gap:9px;overflow-x:auto;overscroll-behavior-x:contain;padding:4px 4px 10px;min-width:0;flex:1 1 auto;scrollbar-width:thin}
+.strip{display:flex;gap:9px;overflow-x:auto;overscroll-behavior-x:contain;padding:4px 4px 10px;min-width:0;flex:1 1 auto}
 .strip>*{flex:0 0 auto}
 
 .tile{width:118px;display:flex;flex-direction:column;gap:5px;padding:6px 6px 7px;border-radius:14px 15px 12px 14px;border:2.5px solid var(--ink);background:var(--paper);box-shadow:0 3px 0 var(--ink);text-align:left;transition:transform .08s,box-shadow .08s}

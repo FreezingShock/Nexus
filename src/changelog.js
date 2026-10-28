@@ -16,6 +16,17 @@ export const KINDS = {
 
 export const CHANGELOG = [
   {
+    v: '0.15.0', date: '2026-10-28', name: 'A calmer calendar',
+    blurb: 'The calendar is split into Month, Year and Decorations, and any season you have earned can be put up whenever you like.',
+    items: [
+      { k: 'better', t: 'The calendar panel has a big month name, a Month, Year and Decorations tab, and a strip showing last month, this one and next.' },
+      { k: 'new', t: 'The Year tab lays the twelve months out by season with their festivals, marks where you are, and a click on any month fast-forwards to its first day.' },
+      { k: 'new', t: 'Seasonal decoration sets unlock when your town reaches their big day (or on a keepsake week), and you can put one up in the Decorations tab at any time of year, then put it away again.' },
+      { k: 'better', t: 'Decorations are a simple on or off now, and on means all out. Towns that had a little or cozy are now on.' },
+      { k: 'look', t: 'Scrollbars across the game are slim paper tracks with a rounded, outlined thumb, in both light and dark paper.' },
+    ],
+  },
+  {
     v: '0.14.0', date: '2026-10-27', name: 'Kite weather',
     blurb: 'An optional spring season for a certain beagle: red doghouses, kites and a lazy piano.',
     items: [

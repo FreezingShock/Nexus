@@ -53,3 +53,23 @@ test('festivals and skips come out as postcard notes', () => {
   assert.equal(n.title, 'Blossom Fair');
   assert.equal(noteFor({ type: 'skipped', text: '3 days slip by.' }).title, 'Days drift by');
 });
+
+test('the year ribbon says where each month is, and a click lands on its first day', async () => {
+  const { dateOfDay } = await import('../src/core/calendar.js');
+  const { decorSets } = await import('../src/ui/date-text.js');
+  const md = 3, s = { dayIdx: 40, ...dateOfDay(40, md), month: dateOfDay(40, md).month, dayOfMonth: dateOfDay(40, md).day };
+  const r = yearRibbon(s, md);
+  assert.equal(r.length, 12);
+  assert.equal(r.filter((m) => m.current).length, 1);
+  for (const m of r) {
+    if (m.current) { assert.equal(m.inDays, 0); continue; }
+    const d = dateOfDay(m.day, md);
+    assert.equal(d.month, m.month, m.short + ' lands in its own month');
+    assert.equal(d.day, 1, 'on its first day');
+    assert.ok(m.inDays > 0 && m.inDays <= 12 * md, 'within a year ahead');
+  }
+  const sets = decorSets({ dayIdx: 0, festive: { unlocked: ['snoopy', 'christmas'], show: 'christmas', optIn: ['snoopy'] } }, md);
+  assert.deepEqual(sets.map((x) => x.id), ['snoopy', 'july4', 'halloween', 'christmas']);
+  assert.deepEqual(sets.map((x) => x.state), ['ready', 'locked', 'locked', 'showing']);
+  assert.match(sets[1].how, /Fourth of July/);
+});

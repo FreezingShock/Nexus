@@ -4,10 +4,10 @@
 import { MONTH_NAMES, MONTH_SHORT, SEASONS, monthDaysOf, seasonOfMonth } from '../../core/calendar.js';
 import { MARKET } from '../../core/holidays.js';
 import { iconFor } from '../holiday-icons.js';
-import { AMOUNTS, PALETTES, lightsFor } from '../../core/festive.js';
-import { OPT_IN_EVENTS, eventById } from '../../core/events.js';
+import { PALETTES, lightsFor } from '../../core/festive.js';
+import { eventById } from '../../core/events.js';
 import { $ } from '../format.js';
-import { clockText, coverText, dateOf, eventInfo, inDaysText, longDate, monthCells, nextMonthSkip, seasonName, shortDate, todayLine, townDays, upcoming, yearLine, yearRibbon } from '../date-text.js';
+import { clockText, coverText, dateOf, decorSets, eventInfo, inDaysText, longDate, monthCells, nextMonthSkip, seasonName, shortDate, todayLine, townDays, upcoming, yearLine, yearRibbon } from '../date-text.js';
 
 const CLOSE_SVG = '<svg width="16" height="16" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2L12 12M12 2L2 12" stroke="#2B2620" stroke-width="2.2" stroke-linecap="round"/></svg>';
 const CAL_SVG = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2B2620" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" fill="#FBF6EA"/><path d="M3.5 10H20.5M8 3V7M16 3V7"/></svg>';
@@ -16,7 +16,7 @@ export default {
   id: 'date',
   create({ sim, send }) {
     const s = sim.state;
-    let open = false, key = '', hover = false, pickKey = '';
+    let open = false, key = '', hover = false, tab = 'month', picked = '';
 
     const plaque = document.createElement('button');
     plaque.id = 'datechip'; plaque.className = 'card datechip'; plaque.type = 'button';
@@ -33,23 +33,31 @@ export default {
     panel.innerHTML = `<button class="x" id="datex" aria-label="Close">${CLOSE_SVG}</button>
       <div class="band" id="dpband">
         <div class="dbig"><b class="h-disp" id="dpnum"></b>
-          <div><h2 class="h-disp" id="dpd"></h2><div class="sub" id="dps"></div></div></div>
+          <div><h2 class="h-disp" id="dpd"></h2><div class="sub" id="dpy"></div><div class="sub" id="dps"></div></div></div>
         <p class="dtoday" id="dptoday"></p>
       </div>
       <div class="devent" id="dpevent" hidden></div>
+      <div class="dtabs" role="tablist" aria-label="Calendar views">
+        <button type="button" class="dtab" role="tab" data-tab="month" id="dtab-month">Month</button>
+        <button type="button" class="dtab" role="tab" data-tab="year" id="dtab-year">Year</button>
+        <button type="button" class="dtab" role="tab" data-tab="decor" id="dtab-decor">Decorations</button>
+      </div>
       <div class="pad">
-        <section class="gsec"><h3 id="dpmonthname"></h3>
+        <section class="dpane" data-pane="month" role="tabpanel" aria-labelledby="dtab-month">
+          <div class="dmstrip" id="dmstrip"></div>
           <div class="dmonth" id="dmonth"></div>
           <div class="dskips"><button class="btn" id="dptomorrow" type="button"></button><button class="btn primary" id="dpnextmonth" type="button"></button></div>
+          <h3 class="dh">Coming up</h3><ul class="glist" id="dpnext"></ul>
         </section>
-        <div class="dyear" id="dyear" aria-label="The year"></div>
-        <section class="gsec dfest" id="dpfest"><h3>Decorations</h3>
-          <div class="seg" id="dpamount" role="radiogroup" aria-label="How much the town dresses up"></div>
+        <section class="dpane" data-pane="year" role="tabpanel" aria-labelledby="dtab-year">
+          <p class="sub dnote">Click a month to fast-forward to its first day.</p>
+          <div class="dyear" id="dyear" aria-label="The year"></div>
+        </section>
+        <section class="dpane dfest" data-pane="decor" role="tabpanel" aria-labelledby="dtab-decor" id="dpfest">
+          <button type="button" class="dswitch" id="dpswitch" role="switch"></button>
+          <div class="dsets" id="dpsets"></div>
           <div class="dpal" id="dppal"></div>
-          <div class="dpal" id="dpopt"></div>
-          <p class="sub dnote">The town decorates itself for free. Switch a building's lights off from its card.</p>
         </section>
-        <section class="gsec"><h3>Coming up</h3><ul class="glist" id="dpnext"></ul></section>
         <p class="sub dnote">Skipped days pay half of what the same time away would. The weather, seasons and festivals carry on as if you had waited.</p>
       </div>`;
     const app = $('app');
@@ -61,13 +69,14 @@ export default {
     function paintPanel() {
       const mdv = md();
       set('dpnum', String(s.dayOfMonth));
-      set('dpd', MONTH_NAMES[s.month] + ', Year ' + s.year);
+      set('dpd', MONTH_NAMES[s.month]);
+      set('dpy', 'Year ' + s.year + ' · ' + seasonName(s) + ' · day ' + s.dayOfMonth + ' of ' + mdv);
       set('dps', townDays(s) + ' · ' + clockText(s.routineHour ?? s.hour));
       $('dpband').dataset.season = SEASONS[seasonOfMonth(s.month)];
       const t = todayLine(s);
       const today = $('dptoday');
       today.innerHTML = t ? iconFor(s.holiday || 'market', 18) + '<span>Today: ' + t + '</span>' : '<span>A quiet day in the ' + seasonName(s).toLowerCase() + '.</span>';
-      set('dpmonthname', MONTH_NAMES[s.month]);
+      paintTabs();
       paintEvent();
       paintFestive();
 
@@ -96,11 +105,23 @@ export default {
       tom.hidden = lastDay; // on the last day tomorrow is next month
 
       const ribbon = yearRibbon(s, mdv);
-      const rsig = ribbon.map((m) => (m.current ? '*' : '') + m.holiday).join();
+      // the month strip: last month, this one, next (next fast-forwards to its first day)
+      const prev = (s.month + 11) % 12;
+      const strip = $('dmstrip');
+      const ssig = s.month + ':' + next.day;
+      if (strip.dataset.sig !== ssig) {
+        strip.dataset.sig = ssig;
+        strip.innerHTML = `<span class="dms" data-past="1">${MONTH_SHORT[prev]}</span><span class="dms" data-current="1" aria-current="date">${MONTH_NAMES[s.month]}</span><button type="button" class="dms" data-day="${next.day}" title="Fast-forward to ${MONTH_NAMES[next.month]}">${MONTH_SHORT[next.month]}</button>`;
+      }
+      const rsig = ribbon.map((m) => (m.current ? '*' : m.inDays) + m.holiday + m.event).join();
       const yr = $('dyear');
       if (yr.dataset.sig !== rsig) {
         yr.dataset.sig = rsig;
-        yr.innerHTML = ribbon.map((m) => `<span class="dmo" data-season="${m.season}"${m.event ? ` data-event="${m.event}"` : ''}${m.current ? ' data-current="1" aria-current="date"' : ''} title="${MONTH_NAMES[m.month]}${m.name ? ': ' + m.name : ''}"><em>${m.short}</em>${m.holiday ? iconFor(m.holiday, 14) : '<i></i>'}</span>`).join('');
+        const bySeason = SEASONS.map((sn) => ribbon.filter((m) => m.season === sn).sort((a, b) => ((a.month + 1) % 12) - ((b.month + 1) % 12)));
+        yr.innerHTML = bySeason.map((row) => `<div class="dseason" data-season="${row[0].season}"><h4>${seasonLabel(row[0].season)}</h4><div class="dsrow">` + row.map((m) => {
+          const tag = m.current ? 'div' : 'button', go = m.current ? '' : ` type="button" data-day="${m.day}" title="Fast-forward to ${MONTH_NAMES[m.month]}, ${m.inDays} days away"`;
+          return `<${tag} class="dmo" data-season="${m.season}"${m.event ? ` data-event="${m.event}"` : ''}${m.current ? ' data-current="1" aria-current="date"' : ''}${go}><b>${MONTH_NAMES[m.month]}</b><span class="dmi">${m.holiday ? iconFor(m.holiday, 18) : ''}<small>${m.name || ''}</small></span><em>${m.current ? 'You are here' : 'in ' + m.inDays + ' days'}</em></${tag}>`;
+        }).join('') + '</div></div>').join('');
       }
 
       const up = upcoming(s, mdv, 3);
@@ -113,10 +134,17 @@ export default {
       }
     }
 
-    // The festive strip under the band: the season under way with how dressed the town is, or the next one coming.
+    const seasonLabel = (sn) => sn.charAt(0).toUpperCase() + sn.slice(1);
+
+    function paintTabs() {
+      for (const b of panel.querySelectorAll('.dtab')) { const on = b.dataset.tab === tab; b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1; }
+      for (const p of panel.querySelectorAll('.dpane')) p.hidden = p.dataset.pane !== tab;
+    }
+
+    // The festive strip under the band: the season under way, or the next one coming.
     function paintEvent() {
       const ev = eventInfo(s, md()), box = $('dpevent');
-      const sig = ev ? ev.id + ev.line + (ev.now ? Math.round(ev.cover * 100) : '') : '';
+      const sig = ev ? ev.id + ev.line + (ev.now ? 'n' : '') : '';
       if (box.dataset.sig === sig) return;
       box.dataset.sig = sig;
       box.hidden = !ev;
@@ -124,27 +152,36 @@ export default {
       box.dataset.event = ev.id;
       box.dataset.now = ev.now ? '1' : '';
       box.innerHTML = `<span class="deico">${iconFor(ev.id, 26)}</span><div><b class="h-disp">${ev.now ? ev.line : 'Next: ' + ev.name}</b>` +
-        (ev.now ? `<span class="dcover"><i style="width:${Math.round(ev.cover * 100)}%"></i></span><small>${coverText(ev.cover)}</small>`
-          : `<small>Decorations go up ${ev.inDays === 1 ? 'tomorrow' : 'in ' + ev.inDays + ' days'}</small>`) + '</div>';
+        (ev.now ? '' : `<small>Decorations go up ${ev.inDays === 1 ? 'tomorrow' : 'in ' + ev.inDays + ' days'}</small>`) + '</div>';
     }
 
-    // The town's festive style: how much it dresses up, and the colours of its lights for the season on (or next).
+    // The Decorations tab: one switch (all out, or none), the seasonal sets with how to unlock each, and light colours.
     function paintFestive() {
-      const f = s.festive, ev = eventInfo(s, md());
-      const id = ev ? ev.id : '';
-      const sig = f.amount + JSON.stringify(f.palette) + f.optIn.join() + id;
+      const f = s.festive, sets = decorSets(s, md());
+      if (!picked || !sets.some((x) => x.id === picked && x.state !== 'locked')) picked = (sets.find((x) => x.state === 'showing' || x.state === 'season') || sets.find((x) => x.state !== 'locked') || {}).id || '';
+      const sig = f.amount + JSON.stringify(f.palette) + f.optIn.join() + f.unlocked.join() + f.show + sets.map((x) => x.state).join() + picked;
       const box = $('dpfest');
       if (box.dataset.sig === sig) return;
       box.dataset.sig = sig;
-      $('dpamount').innerHTML = AMOUNTS.map((a) => `<button type="button" class="segb" role="radio" data-amount="${a.id}" aria-checked="${a.id === f.amount}" title="${a.line}">${a.name}</button>`).join('');
-      // opt-in seasons (Snoopy Days): on by default, the town can switch them off
-      $('dpopt').innerHTML = OPT_IN_EVENTS.map((e) => `<button type="button" class="dpalb" data-optin="${e.id}" aria-pressed="${f.optIn.includes(e.id)}" title="Switch ${e.name} on or off">${iconFor(e.id, 20)}<small>${e.name}</small></button>`).join('');
-      const list = PALETTES[id] || [];
+      const on = f.amount !== 'none';
+      const sw = $('dpswitch');
+      sw.setAttribute('aria-checked', String(on));
+      sw.innerHTML = `<span class="dsw-t"><b class="h-disp">Decorations</b><small>${on ? 'On: the town goes all out' : 'Off: no lights or props'}</small></span><i class="dsw-knob"></i>`;
+      $('dpsets').dataset.off = on ? '' : '1';
+      $('dpsets').innerHTML = sets.map((x) => {
+        const act = x.state === 'ready' ? `<button type="button" class="btn small primary" data-show="${x.id}">Show now</button>`
+          : x.state === 'showing' ? `<button type="button" class="btn small" data-show="">Put away</button>`
+          : x.state === 'season' ? '<span class="dtag">In season</span>'
+          : '<span class="dtag" data-lock="1">Locked</span>';
+        const extra = x.optIn && x.state !== 'locked' ? `<label class="dauto"><input type="checkbox" data-optin="${x.id}"${f.optIn.includes(x.id) ? ' checked' : ''}> Every ${x.months}</label>` : '';
+        return `<div class="dset" data-state="${x.state}" data-pick="${x.id}" data-picked="${x.id === picked ? '1' : ''}"><span class="deico">${iconFor(x.id, 24)}</span><div class="dsi"><b class="h-disp">${x.name}</b><small>${x.state === 'locked' ? x.how : x.months}</small>${extra}</div>${act}</div>`;
+      }).join('');
+      const list = PALETTES[picked] || [];
       const hx = (n) => '#' + n.toString(16).padStart(6, '0');
-      $('dppal').innerHTML = list.length ? `<span class="dpalh">${eventById(id).name} lights</span>` + list.map((p) => {
-        const cols = lightsFor(id, { palette: { [id]: p.id } });
-        const on = (f.palette[id] || 'classic') === p.id;
-        return `<button type="button" class="dpalb" data-ev="${id}" data-pal="${p.id}" aria-pressed="${on}" title="${p.name}">${cols.map((c) => `<i style="background:${hx(c)}"></i>`).join('')}<small>${p.name}</small></button>`;
+      $('dppal').innerHTML = list.length ? `<span class="dpalh">${eventById(picked).name} lights</span>` + list.map((p) => {
+        const cols = lightsFor(picked, { palette: { [picked]: p.id } });
+        const sel = (f.palette[picked] || 'classic') === p.id;
+        return `<button type="button" class="dpalb" data-ev="${picked}" data-pal="${p.id}" aria-pressed="${sel}" title="${p.name}">${cols.map((c) => `<i style="background:${hx(c)}"></i>`).join('')}<small>${p.name}</small></button>`;
       }).join('') : '';
     }
 
@@ -191,10 +228,16 @@ export default {
     plaque.addEventListener('focus', () => showTip(true));
     plaque.addEventListener('blur', () => showTip(false));
     panel.addEventListener('click', (e) => {
-      const opt = e.target.closest('button[data-optin]');
-      if (opt) { send({ type: 'setEventOptIn', event: opt.dataset.optin, on: opt.getAttribute('aria-pressed') !== 'true' }); paintFestive(); return; }
-      const am = e.target.closest('button[data-amount]'), pal = e.target.closest('button[data-pal]');
-      if (am) { send({ type: 'setFestive', amount: am.dataset.amount }); paintFestive(); return; }
+      const tb = e.target.closest('button[data-tab]');
+      if (tb) { tab = tb.dataset.tab; paintTabs(); return; }
+      if (e.target.closest('#dpswitch')) { send({ type: 'setFestive', amount: s.festive.amount === 'none' ? 'all' : 'none' }); paintFestive(); return; }
+      const opt = e.target.closest('input[data-optin]');
+      if (opt) { send({ type: 'setEventOptIn', event: opt.dataset.optin, on: opt.checked }); paintFestive(); return; }
+      const sh = e.target.closest('button[data-show]');
+      if (sh) { picked = sh.dataset.show || picked; send({ type: 'setEventShow', event: sh.dataset.show }); paintPanel(); return; }
+      const pick = e.target.closest('.dset[data-pick]');
+      if (pick && pick.dataset.state !== 'locked' && !e.target.closest('button,label,input')) { picked = pick.dataset.pick; paintFestive(); return; }
+      const pal = e.target.closest('button[data-pal]');
       if (pal) { send({ type: 'setFestive', event: pal.dataset.ev, palette: pal.dataset.pal }); paintFestive(); return; }
       const b = e.target.closest('button[data-day]');
       if (!b || !b.dataset.day) return;
@@ -208,7 +251,7 @@ export default {
     return {
       frame() {
         // Cheap per-frame check: repaint only when the day, the festival or the settings change.
-        const k = s.dayIdx + ':' + s.holiday + ':' + s.market + ':' + s.event + ':' + md();
+        const k = s.dayIdx + ':' + s.holiday + ':' + s.market + ':' + s.event + ':' + md() + ':' + s.festive.show + s.festive.unlocked.length + s.festive.amount;
         if (k !== key) { key = k; paintPlaque(); if (open) paintPanel(); else if (hover) paintTip(); }
         else if (open) set('dps', townDays(s) + ' · ' + clockText(s.routineHour ?? s.hour));
       },
