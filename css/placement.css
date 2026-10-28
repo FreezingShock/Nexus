@@ -1,5 +1,4 @@
 /* placement flyout: category tabs sit above the model cards */
-.ptabs{display:flex;gap:8px;margin:0 0 12px;flex-wrap:wrap}
 
 /* the price label that follows the cursor while placing (same look as the road label) */
 #placelabel{position:fixed;left:0;top:0;z-index:20;display:flex;align-items:center;gap:8px;padding:6px 14px 6px 8px;border:2.5px solid var(--ink);border-radius:999px;background:var(--paper);box-shadow:0 3px 0 var(--ink),0 10px 18px rgba(43,38,32,.2);font-weight:800;font-size:15px;white-space:nowrap;pointer-events:none;font-variant-numeric:tabular-nums}

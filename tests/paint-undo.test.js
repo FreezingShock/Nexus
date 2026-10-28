@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createSim } from '../src/sim/sim.js';
 import { getLayout } from '../src/world/layout.js';
 import { tileIndex } from '../src/world/grid.js';
+import { roadBesideTiles } from './support/road.js';
 
 const layout = getLayout();
 
@@ -17,6 +18,7 @@ test('undo takes back a zone paint and refunds what it cost', () => {
   sim.state.coins = 1000;
   const [x, z] = openTile(sim), i = tileIndex(x, z);
   const c0 = sim.state.coins;
+  roadBesideTiles(sim, [[x, z]]);
   sim.dispatch({ type: 'paintZone', zone: 1, a: [x, z], b: [x, z] });
   assert.equal(sim.grid.zone[i], 1);
   assert.ok(sim.state.coins < c0);
@@ -29,6 +31,7 @@ test('undo takes back an erase, and the paint comes back', () => {
   const sim = createSim({ layout });
   sim.state.coins = 1000;
   const [x, z] = openTile(sim), i = tileIndex(x, z);
+  roadBesideTiles(sim, [[x, z]]);
   sim.dispatch({ type: 'paintZone', zone: 2, a: [x, z], b: [x, z] });
   sim.dispatch({ type: 'clearZone', a: [x, z], b: [x, z] });
   assert.equal(sim.grid.zone[i], 0);

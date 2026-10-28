@@ -150,14 +150,18 @@ export default {
       showGrid(on) { gridOn = !!on; mat.uniforms.uGrid.value = gridOn ? 1 : 0; },
       // Rectangle brush. Returns how many tiles would change and how many are refused.
       preview({ a, b, mode, zone }) {
-        const tiles = []; let n = 0, blocked = 0;
+        const tiles = []; let n = 0, blocked = 0, noRoad = 0;
         for (const [gx, gz] of rectTiles(a, b)) {
           const i = tileIndex(gx, gz);
           if (mode === 'erase') { if (grid.zone[i]) { tiles.push([i, 3]); n++; } continue; }
-          if (!grid.isOpen(gx, gz)) { tiles.push([i, 2]); blocked++; } else if (grid.zone[i] !== zone) { tiles.push([i, 1]); n++; } else tiles.push([i, 1]);
+          // rose = refused: not open ground, or no road right beside it (paint there could never grow, so it is not placed)
+          if (!grid.isOpen(gx, gz)) { tiles.push([i, 2]); blocked++; }
+          else if (grid.zone[i] === zone) tiles.push([i, 1]);
+          else if (!grid.roadBeside(gx, gz)) { tiles.push([i, 2]); noRoad++; }
+          else { tiles.push([i, 1]); n++; }
         }
         setPreview(tiles, 1, zone);
-        return { n, blocked, total: tiles.length };
+        return { n, blocked, noRoad, total: tiles.length };
       },
       hover(tile, zone) {
         if (!tile || !inBounds(tile[0], tile[1])) { setPreview([], 4, 0); return; }
@@ -172,7 +176,7 @@ export default {
         flash = 1; writePreview();
       },
       frame(f) {
-        const zoning = f.tool === 'zones';
+        const zoning = f.tool === 'zones' || f.view === 'demand';
         if (land.poll()) refreshGroundPlane(mesh.geometry, 0.17); // the terrain tools moved the ground
         if (zoning !== showLots) { showLots = zoning; mat.uniforms.uLots.value = zoning ? 1 : 0; }
         const next = f.state.zoneRev + '|' + roadSum();

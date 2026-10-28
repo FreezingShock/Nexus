@@ -83,8 +83,8 @@ export function createGrid(layout) {
     districtAt: (gx, gz) => (inBounds(gx, gz) ? district[tileIndex(gx, gz)] : 0),
     // Open ground: land, nothing built on it. Roads and zoning both ask this before taking a tile.
     isOpen: (gx, gz) => inBounds(gx, gz) && base[tileIndex(gx, gz)] === BASE.LAND && road[tileIndex(gx, gz)] === 0 && lot[tileIndex(gx, gz)] === 0,
-    // Roads may take open land, and may paint over a zone (the zone clears). They never take a grown lot.
-    canRoad: (gx, gz) => inBounds(gx, gz) && base[tileIndex(gx, gz)] === BASE.LAND && lot[tileIndex(gx, gz)] === 0,
+    // Roads may take open land, paint over a zone (it clears) and a grown house (it goes). They never take a placed building.
+    canRoad: (gx, gz) => inBounds(gx, gz) && base[tileIndex(gx, gz)] === BASE.LAND && lot[tileIndex(gx, gz)] < 40000,
     // A road tile sits next to this tile (4-neighborhood).
     roadNeighbors: (gx, gz) => NEIGH.filter(([dx, dz]) => inBounds(gx + dx, gz + dz) && road[tileIndex(gx + dx, gz + dz)] !== 0).length,
     // A road tile is directly beside this tile (4-neighborhood): the one rule for where zoned buildings may grow.

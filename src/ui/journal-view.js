@@ -21,7 +21,7 @@ export function journalHtml(entries, tab = 'diary') {
       <p class="pg-soft">${tab === 'folk' ? 'Neighbours tell the mayor things now and then. Give the town a few days.' : 'Things the town does will be written here: festivals, new seasons, the people who move in, and what happened while you were away.'}</p></section>`;
   }
   let n = 0;
-  return `<div class="jr-book">${list.map((g) => `<section class="pg-box jr-month"><h3 class="h-disp">${esc(g.label)} <small>${g.items.length} ${g.items.length === 1 ? 'entry' : 'entries'}</small></h3>
+  return `<div class="jr-book">${list.map((g) => `<section class="jr-month"><h3 class="h-disp">${esc(g.label)} <small>${g.items.length} ${g.items.length === 1 ? 'entry' : 'entries'}</small></h3>
     <ul class="jr-list">${g.items.map((e) => entryHtml(e, n++)).join('')}</ul></section>`).join('')}</div>`;
 }
 

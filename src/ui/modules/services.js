@@ -11,7 +11,7 @@ import { describeModel, reachOf, sourceOf } from '../../sim/services.js';
 const KINDS_OF_TOOL = { build: ['shop', 'landmark'], services: ['service'], parks: ['park'] };
 const MIN_WEIGHT = 0.02;
 const signed = (v) => (v < 0 ? '−' : '+') + Math.abs(v).toFixed(1) + '/s';
-const calmer = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+import { calmer } from '../../core/access.js';
 
 export default {
   id: 'services',

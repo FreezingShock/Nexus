@@ -38,6 +38,7 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
   // Dust puffs come from the puffs system, which is created below: look it up when a building pops, not here.
   const town = createTown(world, {
     burst: (x, z, r, n) => byId.get('puffs')?.burst(x, z, r, n),
+    arrows: (x, y, z, n) => byId.get('arrows')?.burst(x, y, z, n),
     scaffold: (m, box, onReveal) => byId.get('scaffold')?.raise(m, box, onReveal) ?? null,
   });
   const sysDefs = registryOf('render systems', renderSystems).list();
@@ -92,7 +93,7 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
   return {
     canvas, renderer, camera,
     // Per-frame. `simDt` is wall dt scaled by game speed (0 when paused).
-    frame(dt, t, simDt, s, tool) {
+    frame(dt, t, simDt, s, tool, view = 'normal') {
       camera.step(dt, drag && drag.moved > 5);
       // The sky eases towards the sim's hour, season and weather; the lights and the shader follow the eased values.
       const hour = hourOverride ?? s.hour;
@@ -102,7 +103,7 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
       }
       const look = sky.update(dt, targets);
       applySeason(look);
-      const f = { dt, t, simDt, state: s, tool, sky: look };
+      const f = { dt, t, simDt, state: s, tool, view, sky: look };
       ground.follow(); // the terrain tools: lift the ground mesh where it moved
       for (const m of mods) if (m.frame) m.frame(f);
       const night = lighting.update(dt, look);
@@ -162,6 +163,11 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
       resize();
       for (const m of mods) if (m.quality) m.quality(rs);
     },
+
+    // Access settings (core/access.js), applied live to every system with an access(a) hook.
+    setAccess(a) { for (const m of mods) if (m.access) m.access(a); },
+    // Controls settings (core/controls.js): camera speeds and the wheel direction.
+    setControls(c) { camera.setTuning({ pan: c.panSpeed, zoom: c.zoomSpeed, turn: c.turnSpeed, invert: c.invertZoom }); },
 
     // Renders the town to a 4:3 target and copies it into `dest` (the postcard photo).
     snapshot(dest) {

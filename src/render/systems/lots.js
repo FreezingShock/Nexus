@@ -11,13 +11,16 @@ import { lotDescription, lotId, lotTileOf } from '../../world/lots.js';
 import { createLandWatch } from '../land-watch.js';
 
 const POP_S = 0.62;
+const START_GAP_S = 0.22;   // a calendar skip starts its scaffolds one after another, this far apart
+const MAX_QUEUE = 14;       // more waiting upgrades than this just pop at once, so a big skip never drags on
+const SEEN_PAD = 4;         // a lot this many units outside the view still counts as in view
 const REBUILD_GAP_S = 0.3;
 const UNIT = new THREE.Vector3(1, 1, 1);
 const easeOutBack = (k) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(k - 1, 3) + c1 * Math.pow(k - 1, 2); };
 
 export default {
   id: 'lots',
-  create({ world, grid, sys, town }) {
+  create({ world, grid, sys, town, camera }) {
     const buildings = town?.buildings || createBuildingBatch(world); // own meshes only when run without a town
     const popRoot = new THREE.Group(); world.add(popRoot);
     const selGroup = new THREE.Group(); world.add(selGroup); // the selection outline, like town.js
@@ -28,6 +31,9 @@ export default {
     let selected = null;           // id of the lot with an outline
     const upgrading = new Set();   // tiles a player upgrade just touched: they throw dust when they pop
     const held = new Map();        // tile -> { lot, h }: under upgrade scaffolding, still drawn as the old lot until the reveal
+    const queue = [];              // { tile, lot } upgrades waiting for a free scaffold; their old look stays drawn meanwhile
+    let startIn = 0;
+    const frustum = new THREE.Frustum(), pv = new THREE.Matrix4(), sphere = new THREE.Sphere(new THREE.Vector3(), SEEN_PAD);
     let rev = -1, dirty = false, since = 1, night = false, first = true;
     let lifeRev = 0, lifeList = []; // for render/systems/life-*.js: the grown lots standing in the merged meshes
     const m = new THREE.Matrix4();
@@ -124,20 +130,50 @@ export default {
       pops.push({ key: e.key, tile: l[0], group: g, t: 0, grow });
     }
 
-    // A player upgrade: scaffolding goes up round the old lot (`was` is its key), and the new one pops in at the reveal.
-    function raiseScaffold(l, was) {
+    // Is this lot inside (or near) the camera's view? Upgrades out of sight finish without any show.
+    function inView(l) {
+      const cam = camera?.cam;
+      if (!cam) return true;
+      cam.updateMatrixWorld();
+      frustum.setFromProjectionMatrix(pv.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse));
+      const e = entryFor(l);
+      sphere.center.set(e.b.x, e.b.y ?? 0, e.b.z);
+      return frustum.intersectsSphere(sphere);
+    }
+
+    // An upgrade, by the player or by growth or a calendar skip: scaffolding goes up round the old lot, the new one pops
+    // in at the reveal with a few green arrows. Returns false when no scaffolding can start (effects off).
+    function raiseScaffold(l) {
       const scaffold = sys('scaffold');
-      if (!scaffold) return false;
-      const tile = l[0], e = entryFor(l);
-      const h = scaffold.raise(e.world, partsBox(e.parts), () => {
+      if (!scaffold?.enabled()) return false;
+      const tile = l[0], e = entryFor(l), box = partsBox(e.parts);
+      const hd = held.get(tile);
+      const h = scaffold.raise(e.world, box, () => {
         held.delete(tile);
         const now = liveLots.find((x) => x[0] === tile);
-        if (now) startPop(now, false, true);
+        if (now) {
+          startPop(now, false, true);
+          const ne = entryFor(now);
+          sys('arrows')?.burst(ne.b.x, (ne.b.y ?? 0) + partsBox(ne.parts).max.y, ne.b.z, 4);
+        }
         dirty = true;
       });
       if (!h) return false;
-      held.set(tile, { lot: was.split(':').slice(0, 3).map(Number), h });
+      if (hd) hd.h = h;
       return true;
+    }
+    // Starts queued upgrades as scaffold slots free up, a little apart so a skip builds up like a wave.
+    function drainQueue(dt) {
+      startIn -= dt;
+      if (!queue.length || startIn > 0) return;
+      const scaffold = sys('scaffold');
+      if (scaffold?.enabled() && scaffold.free() === 0) return;
+      const job = queue.shift(), hd = held.get(job.tile);
+      if (!hd || hd.h) return;                                       // bulldozed meanwhile
+      const now = liveLots.find((x) => x[0] === job.tile);
+      if (!now) { held.delete(job.tile); return; }
+      if (!raiseScaffold(now)) { held.delete(job.tile); startPop(now, false, true); dirty = true; }
+      startIn = START_GAP_S;
     }
 
     let liveLots = [];
@@ -152,11 +188,20 @@ export default {
         for (const l of state.lots) {
           const was = prev.get(l[0]), key = current.get(l[0]);
           if (was === key || held.has(l[0])) continue; // under scaffolding: the reveal shows whatever the lot is by then
-          if (was && upgrading.has(l[0]) && raiseScaffold(l, was)) { upgrading.delete(l[0]); continue; }
+          const [oldTile, oldLevel, oldSeed] = was ? was.split(':').map(Number) : [];
+          if (was && l[1] > oldLevel) {                         // a level-up, however it came about
+            const manual = upgrading.delete(l[0]);
+            if (!manual && !inView(l)) continue;                // out of sight: just becomes the new level
+            if (!manual && queue.length >= MAX_QUEUE) { startPop(l, false, true); continue; }
+            held.set(l[0], { lot: [oldTile, oldLevel, oldSeed], h: null });
+            const job = { tile: l[0] };
+            if (manual) queue.unshift(job); else queue.push(job);
+            continue;
+          }
           startPop(l, !was);
         }
       }
-      for (const [tile, hd] of held) if (!current.has(tile)) { hd.h.cancel(); held.delete(tile); } // bulldozed mid-build
+      for (const [tile, hd] of held) if (!current.has(tile)) { hd.h?.cancel(); held.delete(tile); } // bulldozed mid-build
       first = false; dirty = true;
       if (selected) select(selected); // the outline follows a new level, and clears when the lot is gone
     }
@@ -180,6 +225,7 @@ export default {
         const moved = land.poll();
         if (moved) for (const l of liveLots) if (moved.all || moved.tiles.has(l[0])) { dropEntry(keyOf(l)); dirty = true; }
         since += f.dt;
+        drainQueue(f.dt);
         const lotPop = selected ? pops.find((p) => p.tile === lotTileOf(selected)) : null;
         for (const p of pops) {
           p.t += f.dt;

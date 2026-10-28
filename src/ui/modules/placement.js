@@ -10,7 +10,7 @@ import { checkLot, freeRect, frontRoadCount, frontRoadDistance, planPlacement, p
 import { buildCost, income } from '../../sim/economy.js';
 import { $, fmt } from '../format.js';
 import { thumbFor } from '../../render/thumbs.js';
-import { categoryIcon, coins, detailText, effectOf, esc, tileCard } from '../cards.js';
+import { bookmarkTabs, coins, paintFly, detailText, effectOf, esc, tileCard } from '../cards.js';
 
 const TOOLS = { build: 'Buildings', services: 'Services', parks: 'Parks' };
 const COIN = '<i class="coin"></i>';
@@ -38,29 +38,29 @@ export default {
     }
 
     // ---- flyout ----
-    function pick(model) {
+    function pick(model, swap = false) {
       ui.model = model; ui.size = 0; ui.auto = true;
-      render(); dirty = true;
+      render(swap); dirty = true;
     }
     // The compact strip: category icons, one tile per model with its real price at the chosen size, and a slim footer
     // with the size, turn, what the selected model is and what it costs. Tiles keep data-pm; the services module reads it.
     const picOf = (id) => { const url = thumbFor(id); return url ? `<img src="${url}" alt="" width="96" height="72" decoding="async">` : '<span class="pic-ph"></span>'; };
     const footprintOf = (m) => { const s = footprintsOf(m); return s[Math.min(ui.size, s.length - 1)]; };
     const modelPrice = (m) => { const [a, b] = footprintOf(m); return sim.placeCost(m, a, b); };
-    function render() {
+    function render(swap = false) {
       const d = def(), c = cats();
       const sizes = footprintsOf(d), [a, b] = size();
-      const tabs = c.length > 1 ? `<div class="ptabs" role="group" aria-label="Category">${c.map((x) => `<button type="button" class="tog ptab" data-pcat="${x.id}" aria-pressed="${x.id === ui.cat}" title="${esc(x.name)}" aria-label="${esc(x.name)}">${categoryIcon(x.id)}</button>`).join('')}</div>` : '';
+      const tabs = c.length > 1 ? bookmarkTabs(c, ui.cat, 'data-pcat') : '';
       const tiles = modelsIn(ui.cat).map((m) => tileCard({
         pic: picOf(m.id), title: m.name, price: coins(modelPrice(m)), short: sim.state.coins < modelPrice(m),
         tip: m.sub + (effectOf(m) ? ' · ' + effectOf(m) : ''), pressed: m.id === ui.model, data: { pm: m.id },
       })).join('');
-      fly.innerHTML = `<div class="pbar">${tabs}<div class="strip">${tiles}</div></div>` +
-        `<div class="pfoot"><b class="ptitle">${TOOLS[ui.tool]}</b>` +
+      const foot = `<b class="ptitle">${TOOLS[ui.tool]}</b>` +
         (d.free ? `<span class="psize hint">Drag to size</span>` : `<span class="psize" role="group" aria-label="Size">${sizes.map((s, i) => `<button type="button" class="tog" data-psize="${i}" aria-pressed="${i === ui.size}">${s[0]} × ${s[1]}</button>`).join('')}</span>`) +
         `<button type="button" class="tog" id="pturn" title="Turn the building (V)">Turn · V</button>` +
         `<span class="pdetail" title="${esc(detailText(d))}">${esc(detailText(d))}</span>` +
-        `<b class="pprice">${coins(sim.placeCost(d, a, b))}</b></div>`;
+        `<b class="pprice">${coins(sim.placeCost(d, a, b))}</b>`;
+      paintFly(fly, 'p:' + ui.tool + ':' + c.map((x) => x.id).join(), { tabs, strip: tiles, foot, attr: 'data-pcat', active: ui.cat }, swap);
       fly.hidden = false;
     }
     fly.addEventListener('click', (e) => {
@@ -69,7 +69,7 @@ export default {
       if (!t || !fly.contains(t)) return;
       e.stopPropagation();
       if (t.dataset.pm) pick(t.dataset.pm);
-      else if (t.dataset.pcat) { ui.cat = t.dataset.pcat; pick(modelsIn(ui.cat)[0].id); }
+      else if (t.dataset.pcat) { ui.cat = t.dataset.pcat; pick(modelsIn(ui.cat)[0].id, true); }
       else if (t.dataset.psize !== undefined) { ui.size = Number(t.dataset.psize); render(); dirty = true; }
       else turn();
     }, true);
@@ -221,7 +221,8 @@ export default {
       if (ui.tool === tool) return;
       const had = ui.tool;
       ui.tool = tool;
-      if (!cats().some((c) => c.id === ui.cat)) { ui.cat = cats()[0].id; ui.model = modelsIn(ui.cat)[0].id; ui.size = 0; }
+      // every open starts on the first section
+      ui.cat = cats()[0].id; ui.model = modelsIn(ui.cat)[0].id; ui.size = 0;
       render();
       if (!had) {
         stage.addEventListener('pointermove', onMove, true); stage.addEventListener('pointerdown', onDown, true);

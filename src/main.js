@@ -7,7 +7,7 @@ import { loadGame, writeSave, clearSave, exportText, importText, restoreBackup, 
 import { createQualityStore, detectEnv } from './core/quality.js';
 import { createCalendarStore } from './core/calendar.js';
 import { createSoundStore } from './audio/mix.js';
-import { createProgress, chase, atLeast, shotAt, WARM_STEPS, PLAY_STEPS, MIN_STEP_MS, REVEAL_HOLD_MS } from './core/boot.js';
+import { createProgress, chase, atLeast, shotAt, pickSteps, createSkip, WARM_STEPS, PLAY_STEPS, MIN_STEP_MS, REVEAL_HOLD_MS } from './core/boot.js';
 import { cinePose, LOW_TILT } from './render/photo-math.js';
 import { ISO } from './render/camera-math.js';
 import { createTitle } from './ui/title.js';
@@ -17,6 +17,8 @@ import { shortDate } from './ui/date-text.js';
 import { summary as milestoneSummary } from './sim/achievements.js';
 import { createProfileStore } from './core/profile.js';
 import { createThemeStore } from './core/theme.js';
+import { createControlsStore } from './core/controls.js';
+import { createAccessStore, applyAccess } from './core/access.js';
 
 const AUTOSAVE_MS = 45000;
 const SKIP_KEY = 'nexus.skiptitle';
@@ -34,10 +36,16 @@ const takeSkip = () => { try { const v = sessionStorage.getItem(SKIP_KEY); sessi
 const skipTitle = takeSkip() || params.get('title') === '0';
 
 let phase = 'title'; // 'title' (warm-up, then waiting), 'boot' (progress screen), 'play'
-let sim, state, scene, ui = null, loaded, quality, calendar, sound, profile;
+let sim, state, scene, ui = null, loaded, quality, calendar, sound, profile, controls;
 // Light or dark paper for the UI. Made first, before the title, so nothing is ever drawn in the wrong colours.
+// Access settings repaint the page before the first frame, so text size and colours never flash.
+const access = createAccessStore({ storage: browserStorage, onChange: (a) => { applyAccess(a, document.documentElement); scene && scene.setAccess(a); } });
+applyAccess(access.get(), document.documentElement);
 const theme = createThemeStore({ storage: browserStorage, root: document.documentElement, media: typeof matchMedia === 'function' ? (q) => matchMedia(q) : null });
 let saveBlocked = false, lastSaved = null, saveFailing = false;
+
+// The controls that live in the page rather than the camera: the shortcut hint.
+const applyControls = (c) => { document.documentElement.dataset.hint = c.keyHint ? 'on' : 'off'; };
 
 // ---- saving ----
 const save = () => {
@@ -52,6 +60,8 @@ const actions = {
   get sound() { return sound; },
   get profile() { return profile; },
   get theme() { return theme; },
+  get access() { return access; },
+  get controls() { return controls; },
   exportSave() {
     const blob = new Blob([exportText(sim.prepareSave(), Date.now())], { type: 'application/json' });
     const a = document.createElement('a');
@@ -63,7 +73,11 @@ const actions = {
   importPick() { $('importfile').click(); },
   previewPostcard() { ui.previewPostcard(); },
   // Start over moves the town into the backup slot first, so Settings can restore it.
-  reset() { saveBlocked = true; if (profile) profile.newTown(); clearSave(); reloadIntoTown(); },
+  reset() {
+    saveBlocked = true; if (profile) profile.newTown(); clearSave();
+    try { localStorage.removeItem('nexus.firstdays.v1'); } catch { /* a blocked store just keeps the old answer */ } // a new town gets its welcome again
+    reloadIntoTown();
+  },
   restore() {
     saveBlocked = true;
     if (restoreBackup(undefined, Date.now())) reloadIntoTown();
@@ -117,6 +131,9 @@ async function warmUp() {
     calendar = createCalendarStore({ storage: browserStorage, onChange: (o) => sim.setCalendar(o) });
     sim.setCalendar(calendar.get());
     sound = createSoundStore({ storage: browserStorage });
+    controls = createControlsStore({ storage: browserStorage, onChange: (c) => { scene.setControls(c); applyControls(c); } });
+    scene.setControls(controls.get()); applyControls(controls.get());
+    scene.setAccess(access.get());
     profile = createProfileStore({ storage: browserStorage }); // the mayor: kept per browser, outlasts any one town
     profile.firstTown();
     noteBests();
@@ -140,7 +157,7 @@ function noteBests() {
 const PROFILE_EVERY_MS = 15000; // time played is counted in these steps, only while the tab is showing
 
 // ---- play: the progress screen, then the town ----
-let bootP = null, shown = 0, base = null;
+let bootP = null, shown = 0, base = null, skip = null;
 let titleT = 0, shotIx = -1, shotBase = null;
 // A cut: the camera jumps to the next shot's viewpoint while the paper curtain covers the town.
 function cutTo(sh) {
@@ -157,9 +174,11 @@ async function play() {
   phase = 'boot';
   title.hideTitle();
   await sleep(260); // the title card has gone before the progress screen arrives
-  bootP = createProgress(PLAY_STEPS);
-  title.showBoot(PLAY_STEPS);
-  const run = (id, fn) => { bootP.begin(id); return atLeast(MIN_STEP_MS, async () => { const r = await fn(); bootP.done(id); return r; }); };
+  const steps = pickSteps(PLAY_STEPS); // one wording per step, picked at random this load
+  bootP = createProgress(steps);
+  skip = createSkip();
+  title.showBoot(steps, () => skip.request()); // a skip only hurries the waiting; every step still finishes first
+  const run = (id, fn) => { bootP.begin(id); return atLeast(MIN_STEP_MS, async () => { const r = await fn(); bootP.done(id); return r; }, skip.wait); };
 
   await run('away', async () => {
     // ?away=<seconds> forces an offline return for testing
@@ -182,8 +201,8 @@ async function play() {
     if (params.has('debug')) window.__nexus = { sim, scene, ui, layout: sim.layout };
   });
 
-  while (shown < 0.999) await sleep(40); // the bar finishes its walk
-  await sleep(REVEAL_HOLD_MS);
+  while (shown < 0.999 && !skip.asked()) await sleep(40); // the bar finishes its walk
+  if (skip.asked()) { shown = 1; await sleep(160); } else await skip.wait(REVEAL_HOLD_MS);
   open();
 }
 
@@ -234,7 +253,7 @@ function frame(now) {
   if (phase === 'play') {
     const alpha = sim.advance(dt);
     const simDt = state.paused ? 0 : dt * state.speed;
-    scene.frame(dt, t, simDt, state, ui.tool());
+    scene.frame(dt, t, simDt, state, ui.tool(), ui.view());
     ui.frame(dt, t, alpha);
     if (ui.postcard.isOpen()) { duskAcc += dt; if (duskAcc > 0.06) { duskAcc = 0; ui.postcard.frame(t); } }
   } else {
@@ -246,7 +265,7 @@ function frame(now) {
     v.ttx = p.tx; v.ttz = p.tz; v.taz = p.az; v.telev = Math.max(p.elev, LOW_TILT);
     title.curtain(sh.curtain);
     scene.frame(dt, t, dt, state, null);
-    if (phase === 'boot' && bootP) { shown = chase(shown, bootP.fraction(), dt); title.bootFrame(shown, bootP); }
+    if (phase === 'boot' && bootP) { shown = chase(shown, bootP.fraction(), dt, skip && skip.asked() ? 16 : 5); title.bootFrame(shown, bootP, dt); }
   }
   requestAnimationFrame(frame);
 }

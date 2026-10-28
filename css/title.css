@@ -241,24 +241,50 @@ body.revealing #app>:not(#stage):not(#title):not(#boot):not(#offline){transition
 
 
 /* ---- progress screen ---- */
-.boot{display:grid;place-items:center;padding:24px;background-color:var(--paper-2);background-image:var(--grain),radial-gradient(ellipse at 50% 42%,var(--paper),var(--paper-2) 70%)}
-.bt-wrap{width:min(520px,100%);text-align:center}
-.bt-crest{width:76px;height:76px;margin:0 auto 14px;display:grid;place-items:center;animation:tt-bob 3.2s ease-in-out infinite}
-.bt-crest .emblem{width:76px;height:76px;filter:drop-shadow(0 4px 0 var(--ink))}
-.bt-title{font-size:clamp(30px,5vw,40px);margin-bottom:24px}
-.bt-track{position:relative;height:26px;border:2.5px solid var(--ink);border-radius:16px;background:var(--paper);box-shadow:0 4px 0 var(--ink);overflow:visible}
-.bt-track>i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:13px;background:repeating-linear-gradient(135deg,var(--sage) 0 9px,#B9D08C 9px 18px);background-size:26px 26px;animation:bt-slide 1.1s linear infinite;box-shadow:inset 0 -5px 0 rgba(43,38,32,.12)}
-@keyframes bt-slide{to{background-position:26px 0}}
-.bt-track>b{position:absolute;top:-26px;left:0;width:34px;height:34px;margin-left:-17px;filter:drop-shadow(0 3px 0 rgba(43,38,32,.3));animation:tt-bob 1.1s ease-in-out infinite}
+.boot{display:grid;place-items:center;padding:24px 24px 250px;background-color:var(--paper-2);background-image:var(--grain),radial-gradient(ellipse at 50% 42%,var(--paper),var(--paper-2) 70%);overflow:hidden;cursor:pointer}
+/* the faded print behind everything: small hand-drawn town doodles, tiled and drifting very slowly */
+.bt-pattern{position:absolute;inset:0;pointer-events:none;background:var(--text);opacity:.075;-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='240'%20height='240'%20viewBox='0%200%20240%20240'%20fill='none'%20stroke='black'%20stroke-width='2.4'%20stroke-linejoin='round'%20stroke-linecap='round'%3E%3Cpath%20d='M30%2062V40H64V62M26%2041L47%2022L68%2041M54%2028V20H60V30'/%3E%3Cpath%20d='M42%2062V52H50V62'/%3E%3Cpath%20d='M150%2070V50H178V70M146%2051L164%2034L182%2051'/%3E%3Cpath%20d='M160%2070V62H168V70'/%3E%3Ccircle%20cx='214'%20cy='52'%20r='11'/%3E%3Cpath%20d='M214%2052V70'/%3E%3Cpath%20d='M92%20158V132M92%20132Q92%20124%2098%20124'/%3E%3Ccircle%20cx='98'%20cy='120'%20r='4'/%3E%3Ccircle%20cx='28'%20cy='150'%20r='10'/%3E%3Cpath%20d='M28%20160V176'/%3E%3Cpath%20d='M120%20196V176H146V196M116%20177L133%20162L150%20177'/%3E%3Cpath%20d='M200%20168V148H224V168M196%20149L212%20134L228%20149'/%3E%3Cpath%20d='M190%20112q4-6%209%200t9%200'/%3E%3Cpath%20d='M58%20104q5-7%2011%200t11%200'/%3E%3Cpath%20d='M128%20108l2.5%206%206%20.5-4.6%204%201.5%206-5.4-3.4-5.4%203.4%201.5-6-4.6-4%206-.5Z'/%3E%3Cpath%20d='M10%20212q10-10%2020%200M96%20224q10-10%2020%200'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='240'%20height='240'%20viewBox='0%200%20240%20240'%20fill='none'%20stroke='black'%20stroke-width='2.4'%20stroke-linejoin='round'%20stroke-linecap='round'%3E%3Cpath%20d='M30%2062V40H64V62M26%2041L47%2022L68%2041M54%2028V20H60V30'/%3E%3Cpath%20d='M42%2062V52H50V62'/%3E%3Cpath%20d='M150%2070V50H178V70M146%2051L164%2034L182%2051'/%3E%3Cpath%20d='M160%2070V62H168V70'/%3E%3Ccircle%20cx='214'%20cy='52'%20r='11'/%3E%3Cpath%20d='M214%2052V70'/%3E%3Cpath%20d='M92%20158V132M92%20132Q92%20124%2098%20124'/%3E%3Ccircle%20cx='98'%20cy='120'%20r='4'/%3E%3Ccircle%20cx='28'%20cy='150'%20r='10'/%3E%3Cpath%20d='M28%20160V176'/%3E%3Cpath%20d='M120%20196V176H146V196M116%20177L133%20162L150%20177'/%3E%3Cpath%20d='M200%20168V148H224V168M196%20149L212%20134L228%20149'/%3E%3Cpath%20d='M190%20112q4-6%209%200t9%200'/%3E%3Cpath%20d='M58%20104q5-7%2011%200t11%200'/%3E%3Cpath%20d='M128%20108l2.5%206%206%20.5-4.6%204%201.5%206-5.4-3.4-5.4%203.4%201.5-6-4.6-4%206-.5Z'/%3E%3Cpath%20d='M10%20212q10-10%2020%200M96%20224q10-10%2020%200'/%3E%3C/svg%3E");-webkit-mask-size:240px 240px;mask-size:240px 240px;animation:bt-drift 90s linear infinite}
+.boot::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 46%,transparent 30%,var(--paper-2) 100%);opacity:.7}
+@keyframes bt-drift{to{-webkit-mask-position:240px 240px;mask-position:240px 240px}}
+.bt-wrap{position:relative;z-index:2;width:min(540px,100%);text-align:center;animation:bt-rise .7s cubic-bezier(.2,.9,.3,1) both}
+@keyframes bt-rise{from{opacity:0;transform:translateY(14px)}}
+.bt-crest{width:84px;height:84px;margin:0 auto 12px;display:grid;place-items:center;animation:tt-bob 3.2s ease-in-out infinite}
+.bt-crest .emblem{width:84px;height:84px;filter:drop-shadow(0 4px 0 var(--ink))}
+.bt-title{font-size:clamp(32px,5.2vw,44px);margin-bottom:26px;text-shadow:0 3px 0 rgb(var(--line) / .12)}
+.bt-track{position:relative;height:30px;border:2.5px solid var(--ink);border-radius:16px;box-shadow:0 4px 0 var(--ink);overflow:visible;background:#EADFC6}
+/* a ribbon of cloth: the cream is unsewn, the terracotta is sewn, both with stitched edges */
+
+.bt-track::before{content:"";position:absolute;left:8px;right:8px;top:50%;height:0;border-top:2px dashed rgba(43,38,32,.28);transform:translateY(-1px)}
+.bt-track>i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:13px;background:linear-gradient(90deg,rgba(255,255,255,.0),rgba(255,255,255,.0)),#C96F4F;box-shadow:inset 0 -5px 0 rgba(43,38,32,.16);overflow:hidden}
+.bt-track>i::after{content:"";position:absolute;left:8px;right:6px;top:50%;border-top:2px dashed rgba(255,248,238,.8);transform:translateY(-1px)}
+.bt-track>b{position:absolute;top:-24px;left:0;width:34px;height:34px;margin-left:-17px;z-index:3;filter:drop-shadow(0 3px 0 rgba(43,38,32,.3));animation:tt-bob 1.1s ease-in-out infinite}
 .bt-track>b svg{width:100%;height:100%}
-.bt-cap{margin:24px 0 16px;min-height:1.6em;font-family:var(--display);font-variation-settings:"SOFT" 100,"WONK" 1;font-style:italic;font-weight:600;font-size:20px;color:var(--text)}
-.bt-steps{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px 10px;justify-content:center;font-size:12.5px;color:var(--ink-soft)}
-.bt-steps li{padding:3px 10px 3px 8px;border:1.5px dashed rgb(var(--line) / .3);border-radius:10px;transition:background .3s,color .3s,border-color .3s}
+/* a small flag goes up at the end of each step */
+.bt-flag{position:absolute;bottom:100%;width:0;height:24px;margin-left:-2.5px;border-left:2.5px solid var(--ink);z-index:2;transform-origin:50% 100%;transition:transform .25s ease-out}
+.bt-flag[data-s="todo"]{transform:scaleY(0)}
+.bt-flag::after{content:"";position:absolute;left:0;top:0;width:15px;height:11px;background:var(--fc,#B8472E);border:2.5px solid var(--ink);border-left:0;clip-path:polygon(0 0,100% 0,72% 50%,100% 100%,0 100%);transform-origin:0 0;transform:scaleX(0)}
+.bt-flag[data-s="done"]::after{animation:bt-unfurl .45s cubic-bezier(.3,1.5,.5,1) forwards;transform:scaleX(1)}
+@keyframes bt-unfurl{from{transform:scaleX(0) rotate(-12deg)}}
+.bt-cap{margin:26px 0 14px;min-height:1.6em;font-family:var(--display);font-variation-settings:"SOFT" 100,"WONK" 1;font-style:italic;font-weight:600;font-size:21px;color:var(--text)}
+.bt-steps{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px 10px;justify-content:center;font-size:13px;color:var(--ink-soft)}
+.bt-steps li{padding:4px 11px 4px 9px;border:1.5px dashed rgb(var(--line) / .35);border-radius:11px;background:rgb(var(--line) / .04);transition:background .15s,color .15s,border-color .15s}
 .bt-steps li::before{content:"○ "}
-.bt-steps li[data-s="doing"]{color:var(--text);border-style:solid;border-color:var(--ink)}
-.bt-steps li[data-s="doing"]::before{content:"● "}
-.bt-steps li[data-s="done"]{background:var(--sage);color:var(--text);border-style:solid;border-color:var(--ink)}
+.bt-steps li[data-s="doing"]{color:var(--text);border-style:solid;border-color:var(--ink);background:var(--paper);box-shadow:0 2px 0 var(--ink)}
+.bt-steps li[data-s="doing"]::before{content:"● ";animation:bt-pulse 1s ease-in-out infinite}
+.bt-steps li[data-s="done"]{background:var(--sage);color:var(--text);border-style:solid;border-color:var(--ink);animation:bt-pop .3s ease-out}
 .bt-steps li[data-s="done"]::before{content:"✓ "}
+@keyframes bt-pulse{50%{opacity:.3}}
+@keyframes bt-pop{40%{transform:scale(1.05)}}
+.bt-tip{margin:20px auto 0;max-width:420px;font-size:13px;line-height:1.45;color:var(--ink-soft)}
+.bt-tip:empty{display:none}
+.bt-tip:not(:empty)::before{content:"Did you know? ";font-weight:700;color:var(--text)}
+.bt-street{position:absolute;left:0;right:0;bottom:44px;width:100%;height:232px;pointer-events:none;z-index:1}
+/* the earth under the road, where the skip hint sits clear of the drawing */
+.bt-foot{position:absolute;left:0;right:0;bottom:0;height:46px;z-index:1;border-top:2.5px solid var(--ink);background:color-mix(in oklab,var(--ink) 16%,var(--paper-2));pointer-events:none}
+.bt-hint{position:absolute;z-index:3;left:50%;bottom:7px;transform:translateX(-50%);display:flex;align-items:center;gap:8px;margin:0;padding:5px 14px;border:2px solid var(--ink);border-radius:14px;background:var(--paper);box-shadow:0 3px 0 var(--ink);font-size:12.5px;font-weight:600;color:var(--text);white-space:nowrap;animation:bt-hint 2.4s ease-in-out infinite}
+@keyframes bt-hint{50%{transform:translateX(-50%) translateY(-2px)}}
+.boot.skipping .bt-hint{animation:none;background:var(--sage)}
+@media (max-height:620px){.boot{padding-bottom:200px}.bt-street{height:190px}.bt-tip,.bt-crest{display:none}}
 
 @media (max-width:900px){
   .title{justify-content:center}

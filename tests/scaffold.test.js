@@ -85,3 +85,13 @@ test('a placed building keeps its old look under the scaffolding and pops to the
   assert.equal(levelOf(), lv + 1, 'the new level after the reveal');
   assert.equal(raised, 1, 'the reveal pops; it never raises a second scaffold');
 });
+
+test('every level-up goes through the scaffold queue and ends with green arrows', () => {
+  const lots = readFileSync(new URL('../src/render/systems/lots.js', import.meta.url), 'utf8');
+  assert.match(lots, /l\[1\] > oldLevel/, 'any level increase, not only the player\'s, is an upgrade');
+  assert.match(lots, /!inView\(l\)/, 'upgrades out of sight finish without a show');
+  assert.match(lots, /MAX_QUEUE/, 'a big skip is capped');
+  assert.match(lots, /sys\('arrows'\)\?\.burst/, 'the reveal throws arrows');
+  const reg = readFileSync(new URL('../src/render/systems/index.js', import.meta.url), 'utf8');
+  assert.match(reg, /import arrows from '\.\/arrows\.js'/);
+});

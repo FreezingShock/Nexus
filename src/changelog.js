@@ -1,6 +1,6 @@
-// The changelog: every release, newest first, shown under Changes on the title screen. One entry per release, and every
-// pull request that changes something a player can see or hear adds a line to the newest entry (or opens a new entry
-// with the version bump). tests/changelog.test.js checks that the newest entry is the version in src/version.js, so a
+// The changelog: every release, newest first, shown under Changes on the title screen. One entry per release. Feature PRs do not
+// edit this file: they add release-notes/<topic>.json, and `node scripts/release.mjs` folds those into a new entry when
+// a release is cut. tests/changelog.test.js checks that the newest entry is the version in src/version.js, so a
 // release can never ship without its notes.
 //
 // An entry: { v, date ('YYYY-MM-DD'), name (a short cozy title), blurb (one sentence), items }.
@@ -16,9 +16,54 @@ export const KINDS = {
 
 export const CHANGELOG = [
   {
+    v: '0.15.0', date: '2026-10-28', name: 'Easier to play',
+    blurb: 'Welcome cards, a calendar with a Year view, camera and access settings, a grouped tool bar and build menu, a loading screen, and smoother roads and zoning.',
+    items: [
+      { k: 'better', t: 'Welcome card polish: a big centred Let\'s go button, tabs that sit inside the card instead of off its edge, a tidier Look around strip, a real icon for the demand bars, and no Back button on a first-run card.' },
+      { k: 'better', t: 'A clearer welcome for new mayors: it opens right after Play as a small card with coloured step tiles using the real toolbar icons and keys, plus a Your numbers tab explaining Coins, Parts, Happiness, the demand bars and Goals.' },
+      { k: 'fix', t: 'Starting a new town now brings the welcome postcard and the first-steps glow back.' },
+      { k: 'better', t: 'The calendar panel has a big month name, a Month, Year and Decorations tab, and a strip showing last month, this one and next.' },
+      { k: 'new', t: 'The Year tab lays the twelve months out by season with their festivals, marks where you are, and a click on any month fast-forwards to its first day.' },
+      { k: 'new', t: 'Every seasonal decoration set (Snoopy Days, Fourth of July, Halloween, Christmas) can be put up from the Decorations tab at any time of year, and put away again.' },
+      { k: 'better', t: 'Decorations are a simple on or off now, and on means all out. Towns that had a little or cozy are now on.' },
+      { k: 'look', t: 'Scrollbars across the game are slim paper tracks with a rounded, outlined thumb, in both light and dark paper.' },
+      { k: 'new', t: 'Settings has a Controls page: set how fast the camera pans, turns and zooms, flip the mouse wheel, hide the shortcut hint, or reset everything to the usual.' },
+      { k: 'new', t: 'Settings has an Access page with three text sizes for the top bar, tool bar, cards and pages.' },
+      { k: 'new', t: 'A Calm motion choice stills page flips, floating numbers, hearts and sparkles, whether or not your computer asks for it.' },
+      { k: 'look', t: 'Red-green safe and blue-yellow safe colours for the traffic tint, in steps of lightness as well as colour, with the legend following along.' },
+      { k: 'fix', t: 'The Buildings and Decor bookmark tabs now stay put beside the menu and fit its height.', pr: 177 },
+      { k: 'better', t: 'The Buildings and Decor menus now have big bookmark tabs on their left edge; hover one to see the section name.' },
+      { k: 'better', t: 'Switching sections in the Buildings and Decor menus now slides just the cards, with redrawn section icons and tabs that suit dark mode.', pr: 181 },
+      { k: 'better', t: 'The Buildings and Decor tabs slide out from behind the menu, stay joined to it, and always open on the first section.' },
+      { k: 'new', t: 'Bulldoze box: hold Shift and drag with the Bulldoze tool to clear everything in an area. A preview shows what goes and what the roads give back, big clears ask first, and Ctrl+Z brings the whole box back at once.' },
+      { k: 'fix', t: 'Every toolbar menu now slides into every other one, not only across groups.' },
+      { k: 'fix', t: 'Switching tools with a menu open no longer leaves a blank band under the new menu or old bookmark tabs behind.' },
+      { k: 'better', t: 'Switching tools while a menu is open now slides the new menu in from the side and brings its bookmark tabs out from behind it.' },
+      { k: 'look', t: 'The loading bar is now a stitched ribbon that gets sewn as your town loads, with a little flag raised at the end of each step, and the finished-step chips pop in more gently.' },
+      { k: 'fix', t: 'The loading ribbon now sews all the way to its end before your town opens, and each step\'s flag stands up only when its step is done.' },
+      { k: 'new', t: 'A new loading screen: a faded print of tiny town doodles behind, and a little street along the bottom where roads are laid and houses go up, scaffolds and all. It is still while Keep it calm is on.' },
+      { k: 'new', t: 'The progress chips are worded differently each time you open your town, and you can click anywhere (or press Space) to skip the wait. Nothing starts until your town is really ready.' },
+      { k: 'better', t: 'The loading screen\'s street now builds with the progress bar, so the road and every house are finished just as your town opens. The skip hint has its own strip under the road, and the dark patches in the dark-mode sky are gone.' },
+      { k: 'look', t: 'The level-up arrows are now inked mint-green arrows with a soft highlight and a gentle glow, matching the town\'s look.' },
+      { k: 'new', t: 'Roads can now be drawn straight through zoned houses, which clear to make way. One undo brings them back.' },
+      { k: 'new', t: 'Drawing a road shows what it clears in rose and ghosts of the buildings that could grow beside it. Zone paint that loses its road fades with a puff and its coins come back.' },
+      { k: 'better', t: 'Every building upgrade now gets the scaffolding, including homes that level up on their own and ones that grow while you skip ahead in the calendar. Many at once start one after another, and ones out of sight just finish quietly.' },
+      { k: 'new', t: 'When an upgrade is revealed, a few soft green up-arrows float up from the roof.' },
+      { k: 'better', t: 'Traffic is now a view instead of a tool: the eye button in the top bar (or T) switches it on and off with one click, with a small legend that sits above the date.' },
+      { k: 'new', t: 'Demand view: click the Demand plaque in the top bar to shade zoned ground by home, shop and workshop. Click it again to switch it off, and V cycles through the views.', pr: 171 },
+      { k: 'better', t: 'Zoning ghost buildings are drawn far more cheaply, so painting zones no longer lags.' },
+      { k: 'new', t: 'While you paint a zone, see-through ghost buildings show what could grow on the tiles beside a road.' },
+      { k: 'better', t: 'Zones only paint tiles with a road right beside them, so you are never charged for paint that could not grow. Left-out tiles show rose while you drag.' },
+    ],
+  },
+  {
     v: '0.14.0', date: '2026-10-27', name: 'Kite weather',
     blurb: 'An optional spring season for a certain beagle: red doghouses, kites and a lazy piano.',
     items: [
+      { k: 'look', t: 'The bookmark tabs on the right edge of pages (Settings, Town journal and the rest) now sit fully in view instead of tucking half behind the page.' },
+      { k: 'fix', t: 'The Town journal row in the menu now shows its icon and name, and the journal page lists each month with its entries directly on the page instead of boxes inside boxes.' },
+      { k: 'better', t: 'The toolbar is grouped into Build, Community and Land, with a small caption over each group and a divider between them.' },
+      { k: 'new', t: 'Roads and Decor show a little padlock while some of their items are still locked, a green dot once your Parts can open one, and hovering says which one opens next and what it costs.' },
       { k: 'new', t: 'Snoopy Days, a spring season that builds up to the Blossom Fair. It is on for every town, and you can switch it off in the calendar\'s Decorations section.' },
       { k: 'look', t: 'During Snoopy Days a red doghouse sits by many front doors with the beagle sitting up on the roof (now and then as the flying ace), and kites fly over the rooftops on thin strings.' },
       { k: 'look', t: 'Townsfolk come out as white beagles with long black ears, and a few as flying aces in a brown cap and red scarf.' },

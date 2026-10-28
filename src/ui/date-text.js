@@ -1,7 +1,7 @@
 // Words and choices for the date plaque and the skip panel. Pure (no DOM), so the node tests cover them.
 import { MONTH_NAMES, MONTH_SHORT, SEASONS, clockText, seasonOfMonth } from '../core/calendar.js';
 import { HOLIDAYS, MARKET, holidayOn, marketOn, nextHolidayDay } from '../core/holidays.js';
-import { eventLine, eventOn, nextEventStart, runningEvents } from '../core/events.js';
+import { EVENTS, eventLine, eventOn, nextEventStart, runningEvents } from '../core/events.js';
 
 const cap = (w) => w.charAt(0).toUpperCase() + w.slice(1);
 export const seasonName = (state) => cap(SEASONS[seasonOfMonth(state.month)]);
@@ -63,7 +63,9 @@ export function yearRibbon(state, monthDays) {
     const h = HOLIDAYS.find((x) => !x.weather && x.month === m), ev = runningEvents(state.festive && state.festive.optIn).find((e) => e.months.includes(m));
     // an event month shows the event (its peak holiday's glyph); other months their festival
     const id = ev ? ev.peak : h ? h.id : '', name = ev ? ev.name + ' season' : h ? h.name : '';
-    return { month: m, short, season: SEASONS[seasonOfMonth(m)], current: m === state.month, holiday: id, name, event: ev ? ev.id : '' };
+    // the first day of this month the next time it comes round (a click fast-forwards there); none for the month under way
+    const ahead = (m - state.month + 12) % 12, day = ahead ? state.dayIdx - ((state.dayOfMonth || 1) - 1) + ahead * monthDays : -1;
+    return { month: m, short, season: SEASONS[seasonOfMonth(m)], current: m === state.month, holiday: id, name, event: ev ? ev.id : '', day, inDays: ahead ? day - state.dayIdx : 0 };
   });
 }
 
@@ -75,7 +77,7 @@ export function nextMonthSkip(state, monthDays) {
 // The festive season for the calendar: the event under way (with how dressed the town is), or the next one to come.
 //   { now: true, id, name, line, cover, accent }  or  { now: false, id, name, inDays, line }  or null
 export function eventInfo(state, monthDays) {
-  const optIn = state.festive && state.festive.optIn, ev = eventOn(state.dayIdx, monthDays, optIn);
+  const optIn = state.festive && state.festive.optIn, ev = eventOn(state.dayIdx, monthDays, optIn, state.festive && state.festive.show);
   if (ev) return { now: true, id: ev.id, name: ev.event.name, line: eventLine(ev), cover: ev.cover, accent: ev.event.accent };
   const nx = nextEventStart(state.dayIdx, monthDays, optIn);
   if (!nx) return null;
@@ -84,3 +86,15 @@ export function eventInfo(state, monthDays) {
 }
 export const coverText = (cover) => (cover >= 1 ? 'Every street is dressed up' : 'Decorations up on ' + Math.round(cover * 100) + '% of the town');
 export { clockText };
+
+// The seasonal decoration sets for the Decorations tab, in the order they come round the year. A set is `up` while the
+// calendar has it on (in season, or switched on by the player), `showing` when the player put it up out of season.
+//   { id, name, months ('April'), state: 'locked' | 'ready' | 'season' | 'showing' }
+export function decorSets(state, monthDays) {
+  const f = state.festive || {}, nat = eventOn(state.dayIdx || 0, monthDays, f.optIn);
+  return [...EVENTS].sort((a, b) => a.months[0] - b.months[0]).map((e) => {
+    const unlocked = (f.unlocked || []).includes(e.id);
+    const st = !unlocked ? 'locked' : f.show === e.id ? 'showing' : nat && nat.id === e.id ? 'season' : 'ready';
+    return { id: e.id, name: e.name, optIn: !!e.optIn, months: e.months.map((m) => MONTH_NAMES[m]).join(' and '), state: st };
+  });
+}

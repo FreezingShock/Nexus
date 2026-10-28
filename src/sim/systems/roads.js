@@ -9,6 +9,8 @@ import { gradeRoute } from '../../world/grade.js';
 import { editable } from '../../world/land.js';
 import { terrainSeed } from '../../world/terrain.js';
 import { applyMoves, landPrice, restore } from './land.js';
+import { encodeZones, ZONE_DEFS } from '../zones.js';
+import { strandedAfter } from '../../world/road-zones.js';
 
 const UNDO_DEPTH = 24;
 const PROTECTED = starterProtected();   // the bridge and the road into the tunnel: bulldozing refuses them
@@ -26,28 +28,32 @@ function syncGrid({ grid, state }) {
 // Writes a planned stroke: charges, records the undo step, moves trees and zone paint out of the way, tells the world.
 // `grade` (world/grade.js): the earthworks a climbing road needs, paid with the road and undone with it.
 function layRoad(ctx, plan, kind, grade = null) {
-  const { state, grid, emit, note, charge, sim } = ctx;
+  const { state, grid, emit, note, charge, sim, refresh } = ctx;
   if (!plan.tiles.length) return;
   const works = grade ? landPrice(grade.earth) : 0;
   if (!charge(plan.cost + works)) return;
   const land = grade && grade.moves.size ? applyMoves(ctx, grade.moves) : null;
-  const next = { ...state.roads }, prev = [], cleared = [];
+  const next = { ...state.roads }, prev = [], zones = [], lots = [];
   for (const e of plan.tiles) {
     prev.push({ idx: e.idx, old: e.old });
     const rec = { t: e.t, p: (e.old ? e.old.p : 0) + e.price };
     if (e.d !== undefined) rec.d = e.d;
     next[e.idx] = rec;
     grid.road[e.idx] = ROAD_KIND[e.t];
-    if (grid.zone[e.idx]) { grid.zone[e.idx] = 0; cleared.push([e.gx, e.gz]); }
+    // Paint under the road goes, and a grown house with it; the undo step keeps both so they come back together.
+    if (grid.zone[e.idx]) { zones.push([e.idx, grid.zone[e.idx]]); grid.zone[e.idx] = 0; }
+    if (grid.lot[e.idx] === e.idx + 1) { const l = state.lots.find(([j]) => j === e.idx); if (l) lots.push(l.slice()); grid.lot[e.idx] = 0; }
   }
+  if (lots.length) state.lots = state.lots.filter(([j]) => !lots.some((l) => l[0] === j));
+  if (zones.length) { state.zones = encodeZones(grid.zone); state.zoneRev++; sim.zoning?.recount?.(); refresh(); }
   state.roads = next;
   // Trees on the new road give way; the undo step brings them back.
   const tk = takeOnTiles(state.trees, new Set(plan.tiles.map((e) => e.idx)));
   if (tk.taken.length) state.trees = tk.kept;
-  sim.roadUndo.push({ prev, paid: plan.cost + works, trees: tk.taken, land, seq: sim.nextSeq() }); if (sim.roadUndo.length > UNDO_DEPTH) sim.roadUndo.shift();
+  sim.roadUndo.push({ prev, paid: plan.cost + works, trees: tk.taken, land, zones, lots, seq: sim.nextSeq() }); if (sim.roadUndo.length > UNDO_DEPTH) sim.roadUndo.shift();
   note('road');
   emit({ type: 'roadsChanged', kind, tiles: plan.tiles.map((e) => [e.gx, e.gz]), cost: plan.cost + works });
-  if (cleared.length) sim.dispatch({ type: 'clearZoneTiles', tiles: cleared });
+  if (lots.length) emit({ type: 'toast', text: lots.length + (lots.length > 1 ? ' buildings' : ' building') + ' cleared for the road' });
 }
 
 export default {
@@ -106,7 +112,7 @@ export default {
     // tiles: [gx, gz] list. Half of what each tile cost comes back; the starter streets refund nothing. The bridge and the
     // tunnel road are skipped (PROTECTED), so a sweep across them removes only the rest.
     bulldozeRoad(ctx, { tiles }) {
-      const { state, grid, emit, sim, syncDisplay } = ctx;
+      const { state, grid, emit, sim, syncDisplay, refresh } = ctx;
       if (!Array.isArray(tiles) || tiles.length > MAX_STROKE * 2 || !tiles.every(isTile)) return;
       const next = { ...state.roads }, prev = [], gone = [];
       let refund = 0;
@@ -118,8 +124,12 @@ export default {
         delete next[idx]; grid.road[idx] = 0;
       }
       if (!gone.length) return;
+      // Empty paint that leaned on these streets has no road beside it any more: it fades, and its paint cost comes back.
+      const faded = strandedAfter(grid, prev.map((p) => p.idx)), zones = [];
+      for (const i of faded) { zones.push([i, grid.zone[i]]); refund += ZONE_DEFS[grid.zone[i]].cost; grid.zone[i] = 0; }
+      if (zones.length) { state.zones = encodeZones(grid.zone); state.zoneRev++; sim.zoning?.recount?.(); refresh(); emit({ type: 'zoneFaded', tiles: faded.map((i) => [i % GRID_N, Math.floor(i / GRID_N)]) }); }
       state.roads = next; state.coins += refund; syncDisplay();
-      sim.roadUndo.push({ prev, paid: -refund, seq: sim.nextSeq() }); if (sim.roadUndo.length > UNDO_DEPTH) sim.roadUndo.shift();
+      sim.roadUndo.push({ prev, paid: -refund, zones, seq: sim.nextSeq() }); if (sim.roadUndo.length > UNDO_DEPTH) sim.roadUndo.shift();
       emit({ type: 'roadsChanged', kind: 'erase', tiles: gone, cost: -refund });
     },
 
@@ -135,6 +145,9 @@ export default {
       }
       state.roads = next; state.coins = Math.max(0, state.coins + e.paid); syncDisplay();
       state.trees = putTrees(state.trees, e.trees || []);
+      if (e.zones && e.zones.length) { for (const [i, z] of e.zones) grid.zone[i] = z; }
+      if (e.lots && e.lots.length) for (const l of e.lots) if (!state.lots.some(([j]) => j === l[0])) { state.lots.push(l); grid.lot[l[0]] = l[0] + 1; }
+      if ((e.zones && e.zones.length) || (e.lots && e.lots.length)) { state.zones = encodeZones(grid.zone); state.zoneRev++; sim.zoning?.recount?.(); ctx.refresh(); }
       if (e.land) restore(ctx, e.land); // the cut and fill the road made goes back too
       emit({ type: 'roadsChanged', kind: 'undo', tiles, cost: -e.paid });
     },

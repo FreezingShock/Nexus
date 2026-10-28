@@ -1,6 +1,6 @@
 // The Zones tool: pick a zone (or the eraser), drag a rectangle on the grid, release to paint.
 // Reads sim state, sends paintZone / clearZone, and drives the tileview render system for the grid and the preview.
-import { GRID_N, inBounds, worldToTile } from '../../world/grid.js';
+import { GRID_N, inBounds, rectTiles, tileCenter, worldToTile } from '../../world/grid.js';
 import { demandCard, demandWord } from '../hud-detail.js';
 import { ZONE_DEFS } from '../../sim/zones.js';
 import { $, fmt } from '../format.js';
@@ -25,6 +25,16 @@ export default {
     let active = false, brush = 1, drag = null, hoverTile = null, last = null, flashed = false, acc = 0;
 
     const def = () => ZONE_DEFS[brush];
+    // The see-through building hint: over the dragged rectangle, or the hovered tile. Never shown for the eraser.
+    function ghosts() {
+      const g = scene.sys('zone-ghost');
+      if (!g) return;
+      if (!active || !brush) return g.hide();
+      // the ghost keeps a signature of the brush, so a pointer move inside the same tile or rectangle costs nothing
+      if (drag) g.show(rectTiles(drag.a, drag.b), brush, drag.a + '-' + drag.b);
+      else if (hoverTile) g.show([hoverTile], brush, String(hoverTile));
+      else g.hide();
+    }
     const clampTile = (t) => [Math.max(0, Math.min(GRID_N - 1, t[0])), Math.max(0, Math.min(GRID_N - 1, t[1]))];
     function tileAt(e) {
       const p = scene.ground(e.clientX, e.clientY);
@@ -40,13 +50,14 @@ export default {
       tag.style.transform = `translate(${Math.max(8, x)}px, ${Math.min(e.clientY + 22, innerHeight - 70)}px)`;
     }
     function describe(e) {
+      ghosts();
       if (drag) {
         const r = view().preview({ a: drag.a, b: drag.b, mode: brush ? 'paint' : 'erase', zone: brush });
         drag.result = r;
         if (!brush) return label(e, r.n ? `Erase · ${r.n} tile${r.n > 1 ? 's' : ''}` : 'Nothing painted here');
-        if (!r.n) return label(e, r.blocked ? 'Only open ground can be zoned' : 'Already painted', !!r.blocked);
+        if (!r.n) return label(e, r.noRoad ? 'Zones need a road right beside them' : r.blocked ? 'Only open ground can be zoned' : 'Already painted', !!(r.noRoad || r.blocked));
         const cost = sim.zoning.costOf(brush, r.n), poor = cost > sim.state.coins;
-        label(e, `${def().name} · ${r.n} tile${r.n > 1 ? 's' : ''} · ${fmt(cost)} coins` + (r.blocked ? ` · ${r.blocked} blocked` : '') + (poor ? ' · not enough coins' : ''), poor);
+        label(e, `${def().name} · ${r.n} tile${r.n > 1 ? 's' : ''} · ${fmt(cost)} coins` + (r.blocked ? ` · ${r.blocked} blocked` : '') + (r.noRoad ? ` · ${r.noRoad} left out, no road beside` : '') + (poor ? ' · not enough coins' : ''), poor);
       } else if (hoverTile) {
         view().hover(hoverTile, brush);
         const open = sim.grid.isOpen(hoverTile[0], hoverTile[1]);
@@ -86,15 +97,15 @@ export default {
       e.stopPropagation();
       commit();
     };
-    const onLeave = () => { if (!drag) { hoverTile = null; view().hover(null, brush); tag.hidden = true; } };
+    const onLeave = () => { if (!drag) { scene.sys('zone-ghost')?.hide(); hoverTile = null; view().hover(null, brush); tag.hidden = true; } };
     function commit() {
-      const d = drag; drag = null; tag.hidden = true;
+      const d = drag; drag = null; tag.hidden = true; scene.sys('zone-ghost')?.hide();
       flashed = false;
       send(brush ? { type: 'paintZone', zone: brush, a: d.a, b: d.b } : { type: 'clearZone', a: d.a, b: d.b });
       if (!flashed) view().clearPreview();
       hoverTile = null;
     }
-    function cancel() { drag = null; tag.hidden = true; view().clearPreview(); }
+    function cancel() { drag = null; tag.hidden = true; scene.sys('zone-ghost')?.hide(); view().clearPreview(); }
 
     // ---- flyout: a strip of zone tiles. Demand lives in the top widget, so the tiles stay small ----
     function renderFly() {
@@ -103,7 +114,7 @@ export default {
       f.classList.add('zfly');
       const tiles = ZONE_DEFS.slice(1).map((z, i) => zoneCard({ id: z.id, name: z.name, price: `${z.cost} coins a tile`, key: String(i + 1), pressed: brush === z.id, tip: z.sub })).join('') +
         zoneCard({ id: 0, name: 'Eraser', price: 'Free', key: '0', pressed: brush === 0, tip: 'Clears zones back to open ground' });
-      f.innerHTML = `<div class="rhead"><b class="ptitle">Zones</b><span class="rhint">Drag on the map to paint · buildings grow near roads · ${n} tile${n === 1 ? '' : 's'} · ${st.count} building${st.count === 1 ? '' : 's'}</span></div>` +
+      f.innerHTML = `<div class="rhead"><b class="ptitle">Zones</b><span class="rhint">Drag on the map to paint · only tiles beside a road are painted · ${n} tile${n === 1 ? '' : 's'} · ${st.count} building${st.count === 1 ? '' : 's'}</span></div>` +
         `<div class="strip zone-strip">${tiles}</div>`;
       f.querySelectorAll('[data-zone]').forEach((b) => { b.onclick = () => { setBrush(Number(b.dataset.zone)); }; });
     }
@@ -123,7 +134,7 @@ export default {
     }
     function leave() {
       $('fly').classList.remove('zfly');
-      active = false; drag = null; hoverTile = null; tag.hidden = true;
+      active = false; drag = null; hoverTile = null; tag.hidden = true; scene.sys('zone-ghost')?.hide();
       view().showGrid(false); view().clearPreview();
       stage.removeEventListener('pointerdown', onDown, true);
       stage.removeEventListener('pointermove', onMove, true);
@@ -136,6 +147,8 @@ export default {
       onTool(t, was) { if (t === 'zones') enter(); else if (was === 'zones') leave(); },
       onEvent(e) {
         if (e.type === 'zonePainted' || e.type === 'zoneCleared') { flashed = true; view().flash(); }
+        // paint that lost its road fades with a little dust
+        if (e.type === 'zoneFaded') for (const [gx, gz] of e.tiles.slice(0, 24)) { const [x, z] = tileCenter(gx, gz); scene.sys('puffs')?.burst(x, z, 2.4, 8); }
       },
       onKey(e) {
         if (!active) return false;

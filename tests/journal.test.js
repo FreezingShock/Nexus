@@ -89,3 +89,8 @@ test('the page is wired: key, menu row, chime, shortcut row and stylesheet', () 
   assert.ok(row && read(row.file).includes(row.needle));
   assert.match(read('index.html'), /css\/journal\.css/);
 });
+
+test('the journal button is in index.html so the menu can dress it', () => {
+  assert.match(read('index.html'), /id="journalbtn"/);
+  assert.doesNotMatch(read('src/ui/modules/journal.js'), /createElement\('button'\)/);
+});

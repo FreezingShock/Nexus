@@ -55,6 +55,7 @@ export default {
       candidates: () => candidates(grid),
     };
     sim.zoning.painted = countPaint(grid);
+    sim.zoning.recount = () => { sim.zoning.painted = countPaint(grid); };
     // A grown lot answers to its id (lot<tile>) like a placed building: the inspect card, upgrade and bulldoze read it
     // through sim.building and sim.alive. Other ids fall through to the placement system (or the bare sim).
     if (!sim.lotsHooked) {
@@ -91,25 +92,24 @@ export default {
       const def = ZONE_DEFS[zone];
       if (!def || !tileArg(a) || !tileArg(b)) return;
       const todo = [];
-      let blocked = 0;
+      let blocked = 0, noRoad = 0;
       for (const [gx, gz] of rectTiles(a, b)) {
         const i = tileIndex(gx, gz);
         if (!grid.isOpen(gx, gz)) { blocked++; continue; }
-        if (grid.zone[i] !== zone) todo.push(i);
+        if (grid.zone[i] === zone) continue;
+        if (!grid.roadBeside(gx, gz)) { noRoad++; continue; } // paint away from a street could never grow: it is left out, and not charged
+        todo.push(i);
       }
-      if (!todo.length) { emit({ type: 'toast', text: blocked ? 'Only open ground can be zoned' : 'Already painted' }); return; }
+      if (!todo.length) { emit({ type: 'toast', text: noRoad ? 'Zones need a road right beside them' : blocked ? 'Only open ground can be zoned' : 'Already painted' }); return; }
       const afford = Math.min(todo.length, Math.floor(state.coins / def.cost));
       if (afford < 1) { emit({ type: 'toast', text: 'Not enough coins for a ' + def.name.toLowerCase() + ' tile (' + def.cost + ')' }); return; }
       if (!charge(afford * def.cost)) return;
-      let noRoad = 0;
       const prev = [], painted = new Set();
       for (let k = 0; k < afford; k++) {
         const i = todo[k];
         prev.push([i, grid.zone[i]]);
         grid.zone[i] = zone;
         painted.add(i);
-        const [gx, gz] = tileOf(i);
-        if (!grid.roadBeside(gx, gz)) noRoad++;
       }
       // Trees on painted ground give way; undo puts them back.
       const tk = takeOnTiles(state.trees, painted);
@@ -118,7 +118,7 @@ export default {
       ctx.sim.pushUndo({ revert: (c) => revertZones(c, prev, afford * def.cost, [], tk.taken) });
       let text = 'Painted ' + afford + ' ' + def.name.toLowerCase() + ' tile' + (afford > 1 ? 's' : '') + ' · ' + afford * def.cost + ' coins';
       if (afford < todo.length) text += ' · coins ran out';
-      else if (noRoad) text += ' · ' + noRoad + (noRoad > 1 ? ' tiles stay' : ' tile stays') + ' empty until a road runs beside ' + (noRoad > 1 ? 'them' : 'it');
+      if (noRoad) text += ' · ' + noRoad + (noRoad > 1 ? ' tiles' : ' tile') + ' left out, no road beside';
       if (tk.taken.length) text += ' · ' + tk.taken.length + ' tree' + (tk.taken.length > 1 ? 's' : '') + ' cleared';
       emit({ type: 'zonePainted', zone, n: afford, cost: afford * def.cost, noRoad, text });
     },

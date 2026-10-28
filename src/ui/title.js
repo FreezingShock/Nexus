@@ -7,7 +7,9 @@ import { MODES, MODE_LABEL } from '../core/theme.js';
 import { $, fmt } from './format.js';
 import { AUTHOR, VERSION } from '../version.js';
 import { CHANGELOG, KINDS, newSince, kindCounts } from '../changelog.js';
-import { CREDITS, saveLine, tipOfTheDay } from '../core/boot.js';
+import { CREDITS, TIPS, saveLine, tipOfTheDay } from '../core/boot.js';
+import { createBootScene } from './boot-scene.js';
+import { calmer } from '../core/access.js';
 import { createPageSounds } from '../audio/page-sounds.js';
 import { createNotebook, notebookMarkup } from './notebook.js';
 import { createFeedbackBox } from './feedback-box.js';
@@ -78,6 +80,9 @@ const VERSION_COLORS = ['#B8472E', '#5F7A3E', '#C08A2E', '#35566A', '#97553E', '
 
 export function createTitle({ onPlay, onNewTown }) {
   const title = $('title'), boot = $('boot'), play = $('tt-play'), list = $('tt-list');
+  const HINT_SKIP = 'Click anywhere to skip the wait', HINT_SKIPPING = 'Skipping as soon as everything is ready…';
+  let scene = null, skipAsk = () => {};
+  const skipKey = (e) => { if (e.key === ' ' || e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); skipAsk(); } };
   createFeedbackBox(title);
   title.insertAdjacentHTML('beforeend', notebookMarkup('tt'));
   const body = $('tt-sheet-body');
@@ -306,19 +311,51 @@ export function createTitle({ onPlay, onNewTown }) {
     hideTitle() { book.close(); title.hidden = true; setTimeout(() => sounds.dispose(), 1500); },
     // 0..1: how much of the paper curtain covers the town (it hides the cuts between camera shots).
     curtain(v) { $('tt-curtain').style.opacity = String(v); },
-    showBoot(steps) {
+    // `onSkip` is called once when the player clicks (or presses Space, Enter or Escape) on the progress screen.
+    showBoot(steps, onSkip) {
       $('bt-steps').innerHTML = steps.map((s) => `<li data-id="${s.id}" data-s="todo">${esc(s.caption)}</li>`).join('');
+      $('bt-tip').textContent = TIPS[Math.floor(Math.random() * TIPS.length)];
+      // One flag per step, planted where that step's share of the bar ends.
+      const total = steps.reduce((a, x) => a + x.weight, 0) || 1, FLAGS = ['#B8472E', '#8FA65A', '#E6BC62', '#6FA3BD'];
+      let acc = 0;
+      $('bt-track').querySelectorAll('.bt-flag').forEach((f) => f.remove());
+      steps.forEach((x, i) => {
+        acc += x.weight;
+        const f = document.createElement('u');
+        f.className = 'bt-flag'; f.dataset.id = x.id; f.dataset.s = 'todo';
+        f.style.left = `calc(34px + (100% - 34px) * ${(acc / total).toFixed(4)})`; f.style.setProperty('--fc', FLAGS[i % FLAGS.length]);
+        $('bt-track').appendChild(f);
+      });
+      $('bt-hinttext').textContent = HINT_SKIP;
+      boot.classList.remove('skipping');
       boot.hidden = false;
+      scene = createBootScene($('bt-street'), { calm: calmer });
+      skipAsk = () => {
+        if (boot.classList.contains('skipping')) return;
+        boot.classList.add('skipping');
+        $('bt-hinttext').textContent = HINT_SKIPPING;
+        if (onSkip) onSkip();
+      };
+      boot.addEventListener('click', skipAsk);
+      document.addEventListener('keydown', skipKey);
     },
     // Called every frame while the progress screen is up: `shown` is the smoothed bar, `progress` the tracker.
-    bootFrame(shown, progress) {
+    bootFrame(shown, progress, dt) {
       const pct = Math.round(shown * 100);
-      $('bt-fill').style.width = pct + '%';
-      $('bt-house').style.left = pct + '%';
+      // The sewn part is at least the marker's width and is the whole bar at 100%; the marker rides its head, inside the ends.
+      const sewn = (f) => `calc(34px + (100% - 34px) * ${f.toFixed(4)})`;
+      $('bt-fill').style.width = sewn(shown);
+      $('bt-house').style.left = `calc(17px + (100% - 34px) * ${shown.toFixed(4)})`;
       $('bt-track').setAttribute('aria-valuenow', String(pct));
       $('bt-cap').textContent = progress.caption() + (progress.isDone() ? '' : '…');
-      for (const s of progress.steps()) { const li = $('bt-steps').querySelector('[data-id="' + s.id + '"]'); if (li && li.dataset.s !== s.state) li.dataset.s = s.state; }
+      if (scene) scene.frame(dt || 0.016, shown);
+      for (const s of progress.steps()) { const li = $('bt-steps').querySelector('[data-id="' + s.id + '"]'); if (li && li.dataset.s !== s.state) li.dataset.s = s.state; const fl = $('bt-track').querySelector('.bt-flag[data-id="' + s.id + '"]'); if (fl && fl.dataset.s !== s.state) fl.dataset.s = s.state; }
     },
-    hideBoot() { boot.hidden = true; },
+    hideBoot() {
+      boot.hidden = true;
+      boot.removeEventListener('click', skipAsk);
+      document.removeEventListener('keydown', skipKey);
+      setTimeout(() => { if (scene && boot.hidden) { scene.stop(); scene = null; } }, 800);
+    },
   };
 }

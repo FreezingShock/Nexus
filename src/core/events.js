@@ -42,8 +42,14 @@ const FIRST_COVER = 0.35; // the share of buildings dressed on an event's first 
 
 // The event under way on a day number, or null. { id, event, day (0 from the event's first day), length, peakDay (the
 // day within the event its holiday falls on), cover, peak, fireworks, startDay }.
-export function eventOn(dayIdx, monthDays, optIn = null) {
+export function eventOn(dayIdx, monthDays, optIn = null, show = '') {
   const d = dateOfDay(dayIdx, monthDays), md = d.monthDays;
+  // a set the player switched on shows whatever the date: fully dressed, no big day of its own
+  if (show && byId[show]) {
+    const e = byId[show], h = holiday(e.peak);
+    const peakDay = e.months.indexOf(h.month) * md + posOf(h, md);
+    return { id: e.id, event: e, day: peakDay, length: e.months.length * md, peakDay, cover: 1, peak: false, fireworks: false, forced: true, startDay: d.dayIdx };
+  }
   for (const e of running(optIn)) {
     const at = e.months.indexOf(d.month);
     if (at < 0) continue;
@@ -59,7 +65,7 @@ export function eventOn(dayIdx, monthDays, optIn = null) {
 }
 
 // The next day after `from` an event begins (its first day), with the event; a short search, at most a year.
-export function nextEventStart(from, monthDays, optIn = null) {
+export function nextEventStart(from, monthDays, optIn = null) { // (never the forced set: it has no start)
   for (let d = Math.max(0, from) + 1, end = d + 12 * monthDays; d <= end; d++) {
     const ev = eventOn(d, monthDays, optIn);
     if (ev && ev.day === 0) return { dayIdx: d, id: ev.id, name: ev.event.name };
@@ -70,7 +76,9 @@ export function nextEventStart(from, monthDays, optIn = null) {
 // Words for the calendar: "Christmas season · 2 days to Christmas", or "Christmas!" on the day itself.
 export function eventLine(ev) {
   if (!ev) return '';
-  const e = ev.event, toPeak = ev.peakDay - ev.day;
+  const e = ev.event;
+  if (ev.forced) return e.name + ' decorations up';
+  const toPeak = ev.peakDay - ev.day;
   if (toPeak === 0) return e.name + '!';
   if (toPeak > 0) return e.name + ' season · ' + (toPeak === 1 ? 'tomorrow' : 'in ' + toPeak + ' days');
   return e.name + ' season' + (ev.fireworks ? ' · fireworks tonight' : '');

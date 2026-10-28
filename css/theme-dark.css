@@ -46,7 +46,7 @@
 :root[data-theme="dark"] .pf-ladder li.now{background:var(--dk-sel)}
 :root[data-theme="dark"] :is(.opt,.tile).locked{background:color-mix(in oklab,var(--ink) 35%,var(--paper))}
 :root[data-theme="dark"] .tool[aria-pressed="true"] .ico{background:var(--dk-sticker)}
-:root[data-theme="dark"] :is(#roadlabel,#placelabel,#decorlabel,#landlabel).bad,
+:root[data-theme="dark"] :is(#roadlabel,#dozelabel,#placelabel,#decorlabel,#landlabel).bad,
 :root[data-theme="dark"] .tile.short .price,
 :root[data-theme="dark"] .tile.erase .pic{background:var(--dk-bad)}
 :root[data-theme="dark"] .ztag.bad{background-color:var(--dk-bad);color:#F4BBA7}
@@ -110,7 +110,11 @@
 :root[data-theme="dark"] :is(
   .kgroup>h3, .ctrl .ib, .ib[aria-pressed="true"], .ib:active, .nb-chip[aria-pressed="true"],
   .cl-counts i, .cl-fresh, .cl-kind, .tt-ver:hover, .ps-chip, .ps-btn, .ps-card li i,
-  .glist li.full .gl-check, .bt-steps li[data-s="done"], .pf-medal, .pf-ladder li.past span,
+  .glist li.full .gl-check, .bt-steps li[data-s="done"], .boot.skipping .bt-hint, .pf-medal, .pf-ladder li.past span,
   .ph-bar #ph-cine[aria-pressed="true"], .badge, .tool .ico, .mi-ico, .tt-ico, .nb-ico, .ag-gico,
   .fb-kind input:checked+span, .fb-tab.on
 ){color:var(--on-bright)}
+
+/* build-menu bookmark tabs: deep tints with a darker edge of their own colour; the chosen tab glows up to the full tint */
+:root[data-theme="dark"] .ptab{--tb:color-mix(in srgb,var(--tc) 30%,#232C2D);--te:color-mix(in srgb,var(--tb) 45%,#0A0E0F);--tt:#F3EAD7}
+:root[data-theme="dark"] .ptab[aria-pressed="true"]{--tb:color-mix(in srgb,var(--tc) 62%,#232C2D);--tt:#1E1A15}

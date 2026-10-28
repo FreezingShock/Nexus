@@ -1,10 +1,11 @@
 // Your first days (src/ui/first-days.js): the optional list for new players.
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { createSim } from '../src/sim/sim.js';
 import { getLayout } from '../src/world/layout.js';
 import { modelById } from '../src/world/models.js';
-import { HINTS, STEPS, markSeen, nextPulse, FIRST_KEY, advance, countLine, isComplete, isVeteran, loadFirst, sanitize, saveFirst, stepsDoneIn } from '../src/ui/first-days.js';
+import { LOOK, NUMBERS, PATH, STEPS, markSeen, nextPulse, FIRST_KEY, advance, countLine, isComplete, isVeteran, loadFirst, sanitize, saveFirst, stepsDoneIn } from '../src/ui/first-days.js';
 
 const sim = () => createSim({ layout: getLayout(), now: () => Date.UTC(2026, 9, 27, 12) });
 const mem = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), m }; };
@@ -77,7 +78,16 @@ test('the glow points at the next untried tool and moves on', () => {
   assert.equal(nextPulse({ ...sanitize({}), hidden: true }), null);
 });
 
-test('the welcome postcard has three short hints', () => {
-  assert.equal(HINTS.length, 3);
-  for (const h of HINTS) assert.ok(h.head && h.text.length < 120);
+test('the welcome card names every first step and every HUD number', () => {
+  assert.equal(PATH.length, 5);
+  for (const s of PATH) assert.ok(s.tool && s.key && s.head && s.text.length > 40 && s.c, s.head);
+  assert.deepEqual(NUMBERS.map((n) => n.id), ['coins', 'parts', 'happy', 'demand', 'goals']);
+  assert.ok(LOOK.keys.length >= 4);
+  const tools = new Set(STEPS.map((s) => s.tool).filter(Boolean));
+  for (const s of PATH) assert.ok(tools.has(s.tool) || s.tool === 'build', s.tool);
+});
+
+test('starting a new town clears the first-days answer so the welcome returns', () => {
+  const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+  assert.ok(main.includes(`removeItem('${FIRST_KEY}')`));
 });
