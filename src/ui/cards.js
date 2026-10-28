@@ -45,6 +45,11 @@ const ICON_SHAPES = {
   park: '<circle cx="11" cy="8" r="5" fill="#A8C179" stroke="#2B2620" stroke-width="1.8"/><path d="M11 13v6" stroke="#2B2620" stroke-width="2"/>',
   festive: '<path d="M11 2.5l1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.4z" fill="#E6BC62" stroke="#2B2620" stroke-width="1.3" stroke-linejoin="round"/><path d="M11 9l4 4.5h-2l3.5 4.5h-11L9 13.5H7z" fill="#5FA86A" stroke="#2B2620" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 18v2h2v-2" stroke="#2B2620" stroke-width="1.6"/>',
 };
+// Bookmark tabs on the left edge of a build flyout: a big icon on a tinted tab, the section name slides out on hover,
+// focus and for the chosen tab. `attr` is the data attribute the owning module listens for (data-pcat, data-dcat).
+const TAB_TINT = { home: '#E8A87C', shop: '#E3B8A0', work: '#B9C4D6', farm: '#D9C27A', landmark: '#E6BC62', service: '#E39A8E', park: '#A8C179', greenery: '#A8C179', street: '#E6BC62', plaza: '#9FC8D6', festive: '#D98C8C' };
+export const bookmarkTabs = (items, active, attr) => `<div class="ptabs" role="group" aria-label="Section">${items.map((x, i) =>
+  `<button type="button" class="ptab" ${attr}="${x.id}" aria-pressed="${x.id === active}" aria-label="${esc(x.name)}" style="--tc:${TAB_TINT[x.id] || '#E8A87C'};--i:${i}">${categoryIcon(x.id)}<span class="ptab-name">${esc(x.name)}</span></button>`).join('')}</div>`;
 export const categoryIcon = (id) => `<svg viewBox="0 0 22 22" aria-hidden="true">${ICON_SHAPES[id] || ICON_SHAPES.home}</svg>`;
 
 // ---- road swatches: a cross-section of each road type, flat with ink outlines ----
