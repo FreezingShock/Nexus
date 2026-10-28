@@ -19,6 +19,7 @@ export const CHANGELOG = [
     v: '0.15.0', date: '2026-10-28', name: 'Easier to play',
     blurb: 'Settings gets camera and access pages, and the calendar becomes Month, Year and Decorations.',
     items: [
+      { k: 'better', t: 'Welcome card polish: a big centred Let\'s go button, tabs that sit inside the card instead of off its edge, a tidier Look around strip, a real icon for the demand bars, and no Back button on a first-run card.' },
       { k: 'better', t: 'A clearer welcome for new mayors: it opens right after Play as a small card with coloured step tiles using the real toolbar icons and keys, plus a Your numbers tab explaining Coins, Parts, Happiness, the demand bars and Goals.' },
       { k: 'fix', t: 'Starting a new town now brings the welcome postcard and the first-steps glow back.' },
       { k: 'better', t: 'The calendar panel has a big month name, a Month, Year and Decorations tab, and a strip showing last month, this one and next.' },
