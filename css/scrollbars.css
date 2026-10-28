@@ -1,0 +1,14 @@
+/* Scrollbars, everywhere: a slim paper track with a rounded, ink-outlined thumb (terracotta, or mint in dark paper, when
+   held). Colours come from the theme tokens, so dark paper follows on its own. WebKit and Blink get the drawn bar;
+   Firefox gets the thin coloured one. (Chrome 121+ ignores ::-webkit-scrollbar once scrollbar-color is set, so the
+   standard properties only apply where the pseudo-elements do not exist.) */
+@supports not selector(::-webkit-scrollbar){
+  *{scrollbar-width:thin;scrollbar-color:var(--paper-3) transparent}
+}
+::-webkit-scrollbar{width:14px;height:14px}
+::-webkit-scrollbar-track{background:rgb(var(--line) / .06);border-radius:999px;margin:6px}
+::-webkit-scrollbar-thumb{background:var(--paper-3);border:2.5px solid var(--ink);border-radius:999px;background-clip:padding-box;box-shadow:inset 0 0 0 2px var(--paper)}
+::-webkit-scrollbar-thumb:hover{background:var(--terra)}
+::-webkit-scrollbar-thumb:active{background:var(--action)}
+::-webkit-scrollbar-button{display:none;width:0;height:0}
+::-webkit-scrollbar-corner{background:transparent}

@@ -1,8 +1,8 @@
 // The town's festive style (core/festive.js): how much it dresses up, the colours of its lights per event, and which
 // placed buildings keep their lights off. All free: the town decorates itself. A change makes a new state.festive object,
 // so render notices by identity.
-import { AMOUNTS, PALETTES, freshFestive, sanitizeFestive } from '../../core/festive.js';
-import { OPT_IN_EVENTS } from '../../core/events.js';
+import { AMOUNT_IDS, PALETTES, freshFestive, sanitizeFestive } from '../../core/festive.js';
+import { OPT_IN_EVENTS, eventById } from '../../core/events.js';
 import { refreshCalendar } from './calendar.js';
 import { keepsakesOn, sanitizeKeepsakes } from '../../core/keepsakes.js';
 
@@ -37,7 +37,7 @@ export default {
     setFestive({ state, note }, cmd) {
       const f = { ...state.festive, palette: { ...state.festive.palette } };
       let changed = false;
-      if (AMOUNTS.some((a) => a.id === cmd.amount) && cmd.amount !== f.amount) { f.amount = cmd.amount; changed = true; }
+      if (AMOUNT_IDS.includes(cmd.amount) && cmd.amount !== f.amount) { f.amount = cmd.amount; changed = true; }
       if (PALETTES[cmd.event] && PALETTES[cmd.event].some((p) => p.id === cmd.palette) && f.palette[cmd.event] !== cmd.palette) {
         f.palette[cmd.event] = cmd.palette; changed = true;
       }
@@ -55,6 +55,15 @@ export default {
       state.festive = { ...state.festive, optIn };
       refreshCalendar(ctx);
       note('festive', cmd.event);
+    },
+    // { event }: dress the town in an unlocked set whatever the date, or '' to go back to the calendar
+    setEventShow(ctx, cmd) {
+      const { state, note } = ctx, f = state.festive, id = typeof cmd.event === 'string' ? cmd.event : '';
+      if (id && !f.unlocked.includes(id)) return;
+      if (f.show === id) return;
+      state.festive = { ...f, show: id };
+      refreshCalendar(ctx);
+      note('festive', id || 'show-off');
     },
     // { id, on }: a placed building's festive lights
     festiveLights({ state, emit }, cmd) {
