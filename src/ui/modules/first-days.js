@@ -5,9 +5,9 @@
 import { book } from '../book.js';
 import { PAGE_ICONS } from '../page-icons.js';
 import { $ } from '../format.js';
-import { HINTS, advance, isVeteran, loadFirst, markSeen, nextPulse, saveFirst, stepsDoneIn } from '../first-days.js';
+import { LOOK, NUMBERS, PATH, advance, isVeteran, loadFirst, markSeen, nextPulse, saveFirst, stepsDoneIn } from '../first-days.js';
 
-const WELCOME_AFTER_S = 2.5, PULSE_AFTER_S = 8, CHECK_S = 1;
+const WELCOME_AFTER_S = 0.5, PULSE_AFTER_S = 8, CHECK_S = 1;
 
 export default {
   id: 'first-days',
@@ -27,12 +27,25 @@ export default {
     }
     let waited = 0, acc = CHECK_S, welcomePending = !data.welcomed && !data.hidden, lit = null, litFrom = 0;
 
+    // The real toolbar icon and tint for a tool, and the HUD's own badges, so the card matches what is on screen.
+    const toolIcon = (tool) => { const n = document.querySelector('.tool[data-tool="' + tool + '"] .ico'); return n ? { svg: n.innerHTML, c: n.style.getPropertyValue('--c') } : null; };
+    const badge = (id) => { const n = document.querySelector('#' + id + ' .badge svg'); return n ? n.outerHTML : ''; };
+    const NUM_ICON = { coins: () => badge('coinschip'), parts: () => badge('partschip'), happy: () => { const f = document.getElementById('hpface'); return f ? f.outerHTML : ''; }, demand: () => '', goals: () => PAGE_ICONS.goals };
+
+    const steps = () => `<p class="fd-look"><b class="h-disp">${LOOK.head}</b>${LOOK.keys.map(([k, w]) => `<span><kbd>${k}</kbd> ${w}</span>`).join('')}</p>
+      <ol class="fd-path">${PATH.map((s, i) => {
+        const ic = toolIcon(s.tool);
+        return `<li class="fd-tile" style="--tc:${(ic && ic.c) || s.c};--i:${i}"><span class="fd-ico">${ic ? ic.svg : ''}<i>${i + 1}</i></span>
+          <span class="fd-text"><b class="h-disp">${s.head} <kbd>${s.key}</kbd></b><small>${s.text}</small></span></li>`;
+      }).join('')}</ol>`;
+    const numbers = () => `<ul class="fd-path fd-nums">${NUMBERS.map((n, i) => `<li class="fd-tile" style="--tc:${n.c};--i:${i}"><span class="fd-ico">${NUM_ICON[n.id]()}</span>
+        <span class="fd-text"><b class="h-disp">${n.head}</b><small>${n.text}</small></span></li>`).join('')}</ul>`;
+
     book.register('firstdays', {
-      title: 'Welcome, mayor', c: '#A8C179', icon: PAGE_ICONS.goals,
-      sub: () => 'A small village is waiting. Three little hints, and then it is yours.',
-      render: () => `<ol class="fd-hints">${HINTS.map((h, i) => `<li class="fd-hint" style="--i:${i}"><span class="fd-n" aria-hidden="true">${i + 1}</span><span class="fd-text"><b class="h-disp">${h.head}</b><small>${h.text}</small></span></li>`).join('')}</ol>
-        <p class="nb-promise">Nothing here is timed, and nothing is lost if you skip it.</p>
-        <div class="fd-foot"><button class="btn primary" type="button" data-act="go">Let's go</button>
+      title: 'Welcome, mayor', c: '#A8C179', icon: PAGE_ICONS.goals, compact: true,
+      tabs: [{ id: 'steps', label: 'First steps', color: '#D3E4C4', icon: PAGE_ICONS.goals }, { id: 'numbers', label: 'Your numbers', color: '#F2D27A', icon: PAGE_ICONS.milestones }],
+      sub: () => 'A small village is waiting. Here is how to begin, and nothing is timed.',
+      render: ({ tab }) => (tab === 'numbers' ? numbers() : steps()) + `<div class="fd-foot"><button class="btn primary" type="button" data-act="go">Let's go</button>
           <button class="linkbtn" type="button" data-act="hide">No hints, thanks</button></div>`,
       click(e) {
         const act = e.target.closest('[data-act]');
