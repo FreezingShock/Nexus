@@ -1,6 +1,6 @@
 // The Zones tool: pick a zone (or the eraser), drag a rectangle on the grid, release to paint.
 // Reads sim state, sends paintZone / clearZone, and drives the tileview render system for the grid and the preview.
-import { GRID_N, inBounds, worldToTile } from '../../world/grid.js';
+import { GRID_N, inBounds, rectTiles, worldToTile } from '../../world/grid.js';
 import { demandCard, demandWord } from '../hud-detail.js';
 import { ZONE_DEFS } from '../../sim/zones.js';
 import { $, fmt } from '../format.js';
@@ -25,6 +25,15 @@ export default {
     let active = false, brush = 1, drag = null, hoverTile = null, last = null, flashed = false, acc = 0;
 
     const def = () => ZONE_DEFS[brush];
+    // The see-through building hint: over the dragged rectangle, or the hovered tile. Never shown for the eraser.
+    function ghosts() {
+      const g = scene.sys('zone-ghost');
+      if (!g) return;
+      if (!active || !brush) return g.hide();
+      if (drag) g.show(rectTiles(drag.a, drag.b), brush);
+      else if (hoverTile) g.show([hoverTile], brush);
+      else g.hide();
+    }
     const clampTile = (t) => [Math.max(0, Math.min(GRID_N - 1, t[0])), Math.max(0, Math.min(GRID_N - 1, t[1]))];
     function tileAt(e) {
       const p = scene.ground(e.clientX, e.clientY);
@@ -40,6 +49,7 @@ export default {
       tag.style.transform = `translate(${Math.max(8, x)}px, ${Math.min(e.clientY + 22, innerHeight - 70)}px)`;
     }
     function describe(e) {
+      ghosts();
       if (drag) {
         const r = view().preview({ a: drag.a, b: drag.b, mode: brush ? 'paint' : 'erase', zone: brush });
         drag.result = r;
@@ -86,15 +96,15 @@ export default {
       e.stopPropagation();
       commit();
     };
-    const onLeave = () => { if (!drag) { hoverTile = null; view().hover(null, brush); tag.hidden = true; } };
+    const onLeave = () => { if (!drag) { scene.sys('zone-ghost')?.hide(); hoverTile = null; view().hover(null, brush); tag.hidden = true; } };
     function commit() {
-      const d = drag; drag = null; tag.hidden = true;
+      const d = drag; drag = null; tag.hidden = true; scene.sys('zone-ghost')?.hide();
       flashed = false;
       send(brush ? { type: 'paintZone', zone: brush, a: d.a, b: d.b } : { type: 'clearZone', a: d.a, b: d.b });
       if (!flashed) view().clearPreview();
       hoverTile = null;
     }
-    function cancel() { drag = null; tag.hidden = true; view().clearPreview(); }
+    function cancel() { drag = null; tag.hidden = true; scene.sys('zone-ghost')?.hide(); view().clearPreview(); }
 
     // ---- flyout: a strip of zone tiles. Demand lives in the top widget, so the tiles stay small ----
     function renderFly() {
@@ -123,7 +133,7 @@ export default {
     }
     function leave() {
       $('fly').classList.remove('zfly');
-      active = false; drag = null; hoverTile = null; tag.hidden = true;
+      active = false; drag = null; hoverTile = null; tag.hidden = true; scene.sys('zone-ghost')?.hide();
       view().showGrid(false); view().clearPreview();
       stage.removeEventListener('pointerdown', onDown, true);
       stage.removeEventListener('pointermove', onMove, true);
