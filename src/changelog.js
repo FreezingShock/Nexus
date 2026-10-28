@@ -19,6 +19,7 @@ export const CHANGELOG = [
     v: '0.14.0', date: '2026-10-27', name: 'Kite weather',
     blurb: 'An optional spring season for a certain beagle: red doghouses, kites and a lazy piano.',
     items: [
+      { k: 'fix', t: 'The Town journal row in the menu now shows its icon and name, and the journal page lists each month with its entries directly on the page instead of boxes inside boxes.' },
       { k: 'new', t: 'Snoopy Days, a spring season that builds up to the Blossom Fair. It is on for every town, and you can switch it off in the calendar\'s Decorations section.' },
       { k: 'look', t: 'During Snoopy Days a red doghouse sits by many front doors with the beagle sitting up on the roof (now and then as the flying ace), and kites fly over the rooftops on thin strings.' },
       { k: 'look', t: 'Townsfolk come out as white beagles with long black ears, and a few as flying aces in a brown cap and red scarf.' },
