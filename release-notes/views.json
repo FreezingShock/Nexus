@@ -1,0 +1,4 @@
+[
+  { "k": "better", "t": "Traffic is now a view instead of a tool: the eye button in the top bar (or T) switches it on and off with one click, with a small legend that sits above the date." },
+  { "k": "new", "t": "Demand view: click the Demand plaque in the top bar to shade zoned ground by home, shop and workshop. Click it again to switch it off, and V cycles through the views.", "pr": 171 }
+]
