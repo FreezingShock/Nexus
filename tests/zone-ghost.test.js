@@ -1,34 +1,47 @@
-// The zoning ghost: see-through buildings only where something could grow (open ground beside a road), nothing in the sim.
+// The zoning ghost: real models drawn instanced, only where something could grow (open ground beside a road).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from '../vendor/three/three.module.min.js';
 import ghost from '../src/render/systems/zone-ghost.js';
 
-function fakeGrid(open) {
-  return { isOpen: (x, z) => open(x, z), roadBeside: (x, z) => x === 5, roadAt: (x, z) => (x === 4 ? 1 : 0) };
-}
+const fakeGrid = (open) => ({ isOpen: (x, z) => open(x, z), roadBeside: (x) => x === 5, roadAt: (x) => (x === 4 ? 1 : 0) });
 const meshes = (world) => world.children[0].children;
+const shown = (world) => meshes(world).filter((m) => m.visible && m.count > 0);
+const total = (world) => meshes(world).reduce((n, m) => n + (m.visible ? m.count : 0), 0);
 
-test('ghosts appear only on open tiles beside a road, and hide again', () => {
+test('ghosts appear only on open tiles beside a road, as instances, and hide again', () => {
   const world = new THREE.Group();
   const g = ghost.create({ THREE, world, grid: fakeGrid((x) => x !== 7) });
   const root = world.children[0];
-  g.show([[5, 5], [5, 6], [6, 5], [7, 5]], 1);
+  g.show([[5, 5], [5, 6], [6, 5], [7, 5]], 1, 'a');
   assert.equal(root.visible, true);
-  assert.ok(meshes(world).length > 0);
-  for (const m of meshes(world)) assert.ok(!m.material.depthWrite && m.material.transparent && m.material.opacity < 1);
-  g.show([[6, 5], [7, 5]], 1); // no tile beside a road
+  assert.ok(meshes(world).every((m) => m.isInstancedMesh && m.material.transparent && !m.material.depthWrite));
+  assert.ok(total(world) >= 2 && total(world) % 2 === 0 || total(world) > 0);
+  g.show([[6, 5], [7, 5]], 1, 'b'); // no tile beside a road
   assert.equal(root.visible, false);
-  assert.equal(meshes(world).length, 0);
-  g.show([[5, 5]], 2); g.hide();
+  assert.equal(shown(world).length, 0);
+  g.show([[5, 5]], 2, 'c'); g.hide();
   assert.equal(root.visible, false);
 });
 
-test('the same tiles give the same ghosts (no re-roll while a drag grows)', () => {
+test('an unchanged brush costs nothing, and the same tiles give the same ghosts', () => {
   const world = new THREE.Group();
   const g = ghost.create({ THREE, world, grid: fakeGrid(() => true) });
-  g.show([[5, 5], [5, 6]], 3);
-  const a = meshes(world).map((m) => m.geometry.attributes.position.count).join();
-  g.show([[5, 5], [5, 6]], 3);
-  assert.equal(meshes(world).map((m) => m.geometry.attributes.position.count).join(), a);
+  g.show([[5, 5], [5, 6]], 3, 's');
+  const snap = () => shown(world).map((m) => m.count + ':' + Array.from(m.instanceMatrix.array.slice(0, 16 * m.count)).join()).join('|');
+  const a = snap();
+  g.show([[5, 5], [5, 6]], 3, 's');
+  assert.equal(snap(), a);
+  g.hide(); g.show([[5, 5], [5, 6]], 3, 's2');
+  assert.equal(snap(), a);
+});
+
+test('buildings are built once per zone, never per brush move', () => {
+  const world = new THREE.Group();
+  const g = ghost.create({ THREE, world, grid: fakeGrid(() => true) });
+  g.show([[5, 5]], 1, 'x');
+  const n = meshes(world).length, geos = meshes(world).map((m) => m.geometry);
+  for (let i = 0; i < 20; i++) g.show([[5, i], [5, i + 1]], 1, 'm' + i);
+  assert.equal(meshes(world).length, n);
+  assert.ok(meshes(world).every((m, i) => m.geometry === geos[i]));
 });

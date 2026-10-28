@@ -30,8 +30,9 @@ export default {
       const g = scene.sys('zone-ghost');
       if (!g) return;
       if (!active || !brush) return g.hide();
-      if (drag) g.show(rectTiles(drag.a, drag.b), brush);
-      else if (hoverTile) g.show([hoverTile], brush);
+      // the ghost keeps a signature of the brush, so a pointer move inside the same tile or rectangle costs nothing
+      if (drag) g.show(rectTiles(drag.a, drag.b), brush, drag.a + '-' + drag.b);
+      else if (hoverTile) g.show([hoverTile], brush, String(hoverTile));
       else g.hide();
     }
     const clampTile = (t) => [Math.max(0, Math.min(GRID_N - 1, t[0])), Math.max(0, Math.min(GRID_N - 1, t[1]))];
