@@ -5,7 +5,7 @@
 import { DECOR_CATS, MAX_DECOR, MAX_DRAG, decorById, decorCost, decorIn, decorRefund, isOpen, offSale, problemAt, problemText, takenSet } from '../../world/decor.js';
 import { rectTiles, worldToTile } from '../../world/grid.js';
 import { $, fmt } from '../format.js';
-import { bookmarkTabs, coins, esc, tileCard } from '../cards.js';
+import { bookmarkTabs, coins, paintFly, esc, tileCard } from '../cards.js';
 import { decorThumb } from '../../render/thumbs.js';
 
 const COIN = '<i class="coin"></i>';
@@ -58,21 +58,16 @@ export default {
     // What the tiles show right now; the flyout is redrawn only when this changes, so the strip keeps its scroll.
     const sigOf = () => cat + '|' + kind + '|' + owned() + '|' + sim.state.decorUnlocks.join() + '|' + sim.state.event + (sim.state.keepsakes || []).join() + '|' + decorIn(cat).map((d) => (isOpen(d, sim.state.decorUnlocks) ? sim.state.coins < decorCost(d, owned()) : sim.state.parts < d.parts) ? 1 : 0).join('');
     let flySig = '';
-    function render() {
+    function render(swap = false) {
       flySig = sigOf();
-      const keep = fly.querySelector('.strip');
-      const left = keep ? keep.scrollLeft : 0;
       const d = decorById(kind);
       const detail = erasing() ? 'Click or drag over decorations to clear them' : d.sub;
-      const tabs = bookmarkTabs(DECOR_CATS, cat, 'data-dcat');
-      fly.innerHTML = `<div class="pbar">${tabs}<div class="strip">${tiles()}</div></div>` +
-        `<div class="pfoot"><b class="ptitle">${esc(DECOR_CATS.find((c) => c.id === cat).name)}</b>` +
+      const foot = `<b class="ptitle">${esc(DECOR_CATS.find((c) => c.id === cat).name)}</b>` +
         `<button type="button" class="tog" id="dturn" title="Turn the piece (V)">Turn · V</button>` +
         `<span class="pdetail" title="${esc(detail)}">${esc(detail)}</span>` +
-        `<span class="dhint">${owned()} placed</span></div>`;
+        `<span class="dhint">${owned()} placed</span>`;
+      paintFly(fly, 'd', { tabs: bookmarkTabs(DECOR_CATS, cat, 'data-dcat'), strip: tiles(), foot, attr: 'data-dcat', active: cat }, swap);
       fly.hidden = false;
-      const strip = fly.querySelector('.strip');
-      if (strip) strip.scrollLeft = left;
     }
     fly.addEventListener('click', (e) => {
       if (!on) return;
@@ -80,7 +75,7 @@ export default {
       if (!t || !fly.contains(t)) return;
       e.stopPropagation();
       if (t.id === 'dturn') { turn(); return; }
-      if (t.dataset.dcat) { cat = t.dataset.dcat; if (!erasing()) kind = decorIn(cat)[0].id; render(); dirty = true; return; }
+      if (t.dataset.dcat) { cat = t.dataset.dcat; if (!erasing()) kind = decorIn(cat)[0].id; render(true); dirty = true; return; }
       const k = t.dataset.dk;
       const def = decorById(k);
       const shut = def && offSale(def, sim.state);
@@ -174,7 +169,7 @@ export default {
 
     function activate() {
       if (on) return;
-      on = true; render();
+      on = true; cat = DECOR_CATS[0].id; kind = decorIn(cat)[0].id; render();
       stage.addEventListener('pointermove', onMove, true); stage.addEventListener('pointerdown', onDown, true);
       stage.addEventListener('pointerup', onUp, true); stage.addEventListener('pointerleave', onLeave);
       dirty = true;

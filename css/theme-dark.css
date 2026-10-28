@@ -114,3 +114,7 @@
   .ph-bar #ph-cine[aria-pressed="true"], .badge, .tool .ico, .mi-ico, .tt-ico, .nb-ico, .ag-gico,
   .fb-kind input:checked+span, .fb-tab.on
 ){color:var(--on-bright)}
+
+/* build-menu bookmark tabs: deep tints with a darker edge of their own colour; the chosen tab glows up to the full tint */
+:root[data-theme="dark"] .ptab{--tb:color-mix(in srgb,var(--tc) 30%,#232C2D);--te:color-mix(in srgb,var(--tb) 45%,#0A0E0F);--tt:#F3EAD7}
+:root[data-theme="dark"] .ptab[aria-pressed="true"]{--tb:color-mix(in srgb,var(--tc) 62%,#232C2D);--tt:#1E1A15}

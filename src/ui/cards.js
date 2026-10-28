@@ -33,18 +33,58 @@ export function detailText(def) {
 
 // ---- category icons (small, one colour, ink outline) ----
 const ICON_SHAPES = {
-  home: '<path d="M4 12L11 5l7 7v7H4z" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.8" stroke-linejoin="round"/><rect x="9" y="14" width="4" height="5" fill="#2B2620" opacity=".7"/>',
-  shop: '<rect x="4" y="9" width="14" height="10" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.8"/><path d="M3 9h16l-1.5-4h-13z" fill="#B8472E" stroke="#2B2620" stroke-width="1.8" stroke-linejoin="round"/>',
-  work: '<path d="M3 18V9l4-3 4 3 4-3 4 3v9z" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.8" stroke-linejoin="round"/><rect x="14" y="3" width="3" height="6" fill="#2B2620" opacity=".7"/>',
-  landmark: '<rect x="7" y="4" width="8" height="14" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.8"/><path d="M6 4h10l-5-3z" fill="#E6BC62" stroke="#2B2620" stroke-width="1.5" stroke-linejoin="round"/>',
+  // Homes: a cottage with a terracotta roof, chimney, window and door
+  home: '<rect x="14" y="3" width="3" height="5" fill="#C9B48F" stroke="#2B2620" stroke-width="1.5"/><path d="M2.5 11.5L11 3.5l8.5 8z" fill="#C4573A" stroke="#2B2620" stroke-width="1.7" stroke-linejoin="round"/><rect x="4.5" y="11.5" width="13" height="8" fill="#F6E7C6" stroke="#2B2620" stroke-width="1.7"/><rect x="9.5" y="14" width="3.2" height="5.5" fill="#7A4B2E" stroke="#2B2620" stroke-width="1.3"/><rect x="5.8" y="13" width="2.6" height="2.6" fill="#9CCBDD" stroke="#2B2620" stroke-width="1.1"/><rect x="13.8" y="13" width="2.6" height="2.6" fill="#9CCBDD" stroke="#2B2620" stroke-width="1.1"/>',
+  // Shops: a striped awning over a shop window
+  shop: '<rect x="3.5" y="9.5" width="15" height="10" fill="#F6E7C6" stroke="#2B2620" stroke-width="1.7"/><path d="M2.5 9.5l1.5-5.5h14l1.5 5.5z" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.7" stroke-linejoin="round"/><path d="M6.2 4l-.9 5.5M10 4v5.5M13.8 4l.9 5.5" stroke="#C4573A" stroke-width="2.2"/><rect x="5.5" y="12" width="6" height="4.5" fill="#9CCBDD" stroke="#2B2620" stroke-width="1.2"/><rect x="13" y="12" width="3" height="7.5" fill="#7A4B2E" stroke="#2B2620" stroke-width="1.2"/>',
+  // Workplaces: an office block with rows of windows
+  work: '<rect x="5" y="2.5" width="12" height="17" fill="#B9C4D6" stroke="#2B2620" stroke-width="1.7"/><g fill="#FBF6EA" stroke="#2B2620" stroke-width="1"><rect x="7.2" y="5" width="2.6" height="2.4"/><rect x="12.2" y="5" width="2.6" height="2.4"/><rect x="7.2" y="9.2" width="2.6" height="2.4"/><rect x="12.2" y="9.2" width="2.6" height="2.4"/></g><rect x="9.3" y="14.5" width="3.4" height="5" fill="#2B2620"/><path d="M2.5 19.5h17" stroke="#2B2620" stroke-width="1.8" stroke-linecap="round"/>',
+  // Farms: a red barn with a cross-braced door and a hay roof line
+  farm: '<path d="M3 19.5V9.5L11 3l8 6.5v10z" fill="#C4573A" stroke="#2B2620" stroke-width="1.7" stroke-linejoin="round"/><rect x="7" y="11.5" width="8" height="8" fill="#F6E7C6" stroke="#2B2620" stroke-width="1.4"/><path d="M7 11.5l8 8M15 11.5l-8 8" stroke="#2B2620" stroke-width="1.3"/><circle cx="11" cy="7.8" r="1.2" fill="#F6E7C6" stroke="#2B2620" stroke-width="1"/>',
+  // Landmarks: a clock tower with a gold roof and flag
+  landmark: '<path d="M11 1v3.5" stroke="#2B2620" stroke-width="1.4"/><path d="M11 1.2l3 1.2-3 1.2z" fill="#C4573A" stroke="#2B2620" stroke-width="1"/><path d="M6.5 8.5L11 4l4.5 4.5z" fill="#E6BC62" stroke="#2B2620" stroke-width="1.6" stroke-linejoin="round"/><rect x="7" y="8.5" width="8" height="11" fill="#E9DDBF" stroke="#2B2620" stroke-width="1.7"/><circle cx="11" cy="12" r="2.6" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.3"/><path d="M11 10.4V12l1.1.8" fill="none" stroke="#2B2620" stroke-width="1.1" stroke-linecap="round"/><path d="M4.5 19.5h13" stroke="#2B2620" stroke-width="1.8" stroke-linecap="round"/>',
   service: '<rect x="3" y="3" width="16" height="16" rx="5" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.8"/><path d="M11 7v8M7 11h8" stroke="#B8472E" stroke-width="2.6" stroke-linecap="round"/>',
-  farm: '<rect x="3" y="12" width="16" height="7" fill="#E2C27A" stroke="#2B2620" stroke-width="1.8"/><path d="M7 12v7M11 12v7M15 12v7" stroke="#B0AA66" stroke-width="1.4"/><path d="M4 12V8l3-3 3 3v4z" fill="#B8472E" stroke="#2B2620" stroke-width="1.6" stroke-linejoin="round"/>',
-  greenery: '<circle cx="7" cy="12" r="4" fill="#7BA25C" stroke="#2B2620" stroke-width="1.6"/><circle cx="13" cy="9" r="4.5" fill="#8FB86C" stroke="#2B2620" stroke-width="1.6"/><path d="M4 18h14" stroke="#2B2620" stroke-width="1.8" stroke-linecap="round"/>',
-  street: '<path d="M11 19V8" stroke="#2B2620" stroke-width="2" stroke-linecap="round"/><rect x="7.5" y="2.5" width="7" height="7" rx="1.5" fill="#F2D27A" stroke="#2B2620" stroke-width="1.8"/><path d="M7 19h8" stroke="#2B2620" stroke-width="2" stroke-linecap="round"/>',
-  plaza: '<path d="M3 16h16l-2 3H5z" fill="#CFC7B6" stroke="#2B2620" stroke-width="1.8" stroke-linejoin="round"/><path d="M11 16V8M11 8c-3 0-4 3-5 5M11 8c3 0 4 3 5 5" fill="none" stroke="#2B2620" stroke-width="1.8" stroke-linecap="round"/><ellipse cx="11" cy="16" rx="7" ry="1.6" fill="#8FC4D8" stroke="#2B2620" stroke-width="1.4"/>',
   park: '<circle cx="11" cy="8" r="5" fill="#A8C179" stroke="#2B2620" stroke-width="1.8"/><path d="M11 13v6" stroke="#2B2620" stroke-width="2"/>',
-  festive: '<path d="M11 2.5l1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.4z" fill="#E6BC62" stroke="#2B2620" stroke-width="1.3" stroke-linejoin="round"/><path d="M11 9l4 4.5h-2l3.5 4.5h-11L9 13.5H7z" fill="#5FA86A" stroke="#2B2620" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 18v2h2v-2" stroke="#2B2620" stroke-width="1.6"/>',
+  // Greenery: a round tree and a bush
+  greenery: '<rect x="9.8" y="12" width="2.4" height="7" fill="#7A4B2E" stroke="#2B2620" stroke-width="1.3"/><circle cx="10.5" cy="8" r="5.6" fill="#8FB86C" stroke="#2B2620" stroke-width="1.7"/><circle cx="8.6" cy="6.8" r="1.2" fill="#B5D68F"/><path d="M3 19.5h16" stroke="#2B2620" stroke-width="1.8" stroke-linecap="round"/>',
+  // Street: a lamp post with a gold lantern
+  street: '<path d="M11 19.5V8.5" stroke="#2B2620" stroke-width="2.2" stroke-linecap="round"/><path d="M7.5 19.5h7" stroke="#2B2620" stroke-width="2" stroke-linecap="round"/><path d="M7 8.5h8l-1.2-5.5H8.2z" fill="#F2D27A" stroke="#2B2620" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.2 3L11 1.2 13.8 3" fill="#2B2620" stroke="#2B2620" stroke-width="1.2" stroke-linejoin="round"/>',
+  // Plaza: a fountain with a water jet
+  plaza: '<path d="M11 14V8" stroke="#2B2620" stroke-width="1.6"/><path d="M11 8c-2.8-.2-3.6 2-4.4 3.5M11 8c2.8-.2 3.6 2 4.4 3.5" fill="none" stroke="#5FA8C8" stroke-width="1.8" stroke-linecap="round"/><path d="M3 13.5h16l-2 5.5H5z" fill="#E9DDBF" stroke="#2B2620" stroke-width="1.7" stroke-linejoin="round"/><ellipse cx="11" cy="13.5" rx="8" ry="2" fill="#8FC4D8" stroke="#2B2620" stroke-width="1.5"/>',
+  // Festive: a fir with a gold star and baubles
+  festive: '<path d="M11 3l1 2.2 2.4.3-1.8 1.6.5 2.4L11 8.3 8.9 9.5l.5-2.4L7.6 5.5 10 5.2z" fill="#F2D27A" stroke="#2B2620" stroke-width="1.1" stroke-linejoin="round"/><path d="M11 7.5l4.8 5h-2.3l3.8 5.5H4.7l3.8-5.5H6.2z" fill="#5FA86A" stroke="#2B2620" stroke-width="1.6" stroke-linejoin="round"/><circle cx="9.5" cy="14.5" r="1" fill="#C4573A"/><circle cx="13" cy="16.2" r="1" fill="#F2D27A"/><rect x="10" y="18" width="2" height="2.2" fill="#7A4B2E" stroke="#2B2620" stroke-width="1"/>',
 };
+// Paints a build flyout without rebuilding it: the frame and tabs are made once per `key` (the tool and its sections);
+// after that only the pressed tab, the footer and the card row change. With `swap`, the card row fades and slides into
+// the next group instead of snapping. `attr` is the tab's data attribute, `active` the chosen section id.
+export function paintFly(fly, key, { tabs, strip, foot, attr, active }, swap) {
+  const bar = fly.querySelector(':scope > .pbar'), st = bar && bar.querySelector('.strip'), pf = fly.querySelector(':scope > .pfoot');
+  if (!st || !pf || fly.dataset.shell !== key) {
+    fly.innerHTML = `<div class="pbar">${tabs}<div class="strip">${strip}</div></div><div class="pfoot">${foot}</div>`;
+    fly.dataset.shell = key;
+    return;
+  }
+  for (const b of fly.querySelectorAll('.ptab')) b.setAttribute('aria-pressed', String(b.getAttribute(attr) === active));
+  pf.innerHTML = foot;
+  const calm = typeof document !== 'undefined' && document.documentElement.dataset.motion === 'calm';
+  const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  st._next = strip;
+  if (!swap || calm || reduced || typeof st.animate !== 'function') {
+    const left = st.scrollLeft;
+    st.innerHTML = strip;
+    st.scrollLeft = swap ? 0 : left;
+    return;
+  }
+  if (st._swapping) return;
+  st._swapping = true;
+  const out = st.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-12px)' }], { duration: 90, easing: 'ease-in', fill: 'forwards' });
+  out.finished.then(() => {
+    st.innerHTML = st._next; st.scrollLeft = 0; st._swapping = false;
+    out.cancel();
+    st.animate([{ opacity: 0, transform: 'translateX(14px)' }, { opacity: 1, transform: 'none' }], { duration: 200, easing: 'cubic-bezier(.2,.8,.3,1)' });
+  }, () => { st._swapping = false; });
+}
+
 // Bookmark tabs on the left edge of a build flyout: a big icon on a tinted tab, the section name slides out on hover,
 // focus and for the chosen tab. `attr` is the data attribute the owning module listens for (data-pcat, data-dcat).
 const TAB_TINT = { home: '#E8A87C', shop: '#E3B8A0', work: '#B9C4D6', farm: '#D9C27A', landmark: '#E6BC62', service: '#E39A8E', park: '#A8C179', greenery: '#A8C179', street: '#E6BC62', plaza: '#9FC8D6', festive: '#D98C8C' };

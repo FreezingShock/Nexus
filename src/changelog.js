@@ -19,6 +19,7 @@ export const CHANGELOG = [
     v: '0.15.0', date: '2026-10-28', name: 'Easier to play',
     blurb: 'Settings gets camera and access pages, and the calendar becomes Month, Year and Decorations.',
     items: [
+      { k: 'fix', t: 'Starting a new town now brings the welcome postcard and the first-steps glow back.' },
       { k: 'better', t: 'The calendar panel has a big month name, a Month, Year and Decorations tab, and a strip showing last month, this one and next.' },
       { k: 'new', t: 'The Year tab lays the twelve months out by season with their festivals, marks where you are, and a click on any month fast-forwards to its first day.' },
       { k: 'new', t: 'Every seasonal decoration set (Snoopy Days, Fourth of July, Halloween, Christmas) can be put up from the Decorations tab at any time of year, and put away again.' },
