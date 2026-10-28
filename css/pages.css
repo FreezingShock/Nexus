@@ -61,7 +61,7 @@
 .pp-auto{background:linear-gradient(135deg,#FBF6EA 50%,#2B3638 50%)}
 
 /* First days (modules/first-days.js): the welcome card, tinted tiles with the real toolbar icons, and the soft glow */
-.fd-look{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:0 0 12px;padding:8px 14px;border:2px dashed rgb(var(--line) / .35);border-radius:14px;background:color-mix(in srgb,var(--sage) 22%,var(--paper));font-size:13.5px;font-weight:700}
+.fd-look{display:flex;flex-wrap:nowrap;align-items:center;gap:6px 14px;white-space:nowrap;margin:0 0 12px;padding:8px 14px;border:2px dashed rgb(var(--line) / .35);border-radius:14px;background:color-mix(in srgb,var(--sage) 22%,var(--paper));font-size:13.5px;font-weight:700}
 .fd-look b{font-size:16px;margin-right:2px}
 .fd-path{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .fd-path .fd-tile:last-child:nth-child(odd){grid-column:1 / -1}
@@ -73,7 +73,12 @@
 .fd-text{flex:1;display:flex;flex-direction:column;gap:3px;min-width:0}
 .fd-text b{font-size:17px}
 .fd-text small{font-size:13px;line-height:1.35;color:var(--text);opacity:.82}
-.fd-foot{display:flex;align-items:center;gap:16px;margin-top:14px}
+.fd-tabs{display:flex;gap:8px;margin:0 0 12px}
+.fd-tab{flex:1;height:40px;border:2.5px solid var(--ink);border-radius:12px;background:var(--paper-2);color:var(--text);font-weight:800;font-size:15px;box-shadow:0 3px 0 var(--ink)}
+.fd-tab[aria-selected="true"]{background:color-mix(in srgb,var(--tc) 70%,var(--paper));translate:0 2px;box-shadow:0 1px 0 var(--ink)}
+.fd-text b{display:flex;align-items:center;gap:8px}
+.nb-sheet .btn.fd-go{display:block;min-width:240px;height:58px;margin:18px auto 0;font-size:20px}
+.nb-sheet.compact .nb-back{display:none}
 @media (max-width:700px){.fd-path{grid-template-columns:1fr}}
 .tool.hint-glow .ico{box-shadow:0 0 0 3px rgba(230,188,98,.85);animation:hint-glow 2.2s ease-in-out infinite}
 @keyframes hint-glow{50%{box-shadow:0 0 0 7px rgba(230,188,98,.25)}}

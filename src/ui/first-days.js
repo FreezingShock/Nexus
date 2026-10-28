@@ -64,7 +64,7 @@ export function advance(data, nowDone) {
 
 // The welcome card. Tab one is a short path of first steps, each tinted like its toolbar tile; tab two says what the numbers
 // along the top mean. `c` is a fallback tint (the real one is read from the toolbar), `tool` picks the real toolbar icon.
-export const LOOK = { head: 'Look around', keys: [['Drag', 'move'], ['Scroll', 'zoom'], ['Q', 'turn left'], ['E', 'turn right'], ['F', 'fly low']] };
+export const LOOK = { head: 'Look around', keys: [['Drag', 'move'], ['Scroll', 'zoom'], ['Q E', 'turn'], ['F', 'fly low']] };
 
 export const PATH = [
   { tool: 'roads', key: 'R', c: '#D8CDB4', head: 'Lay a road', text: 'Click where it starts, then where it ends. Roads find their own bends, and a street is what everything else grows beside.' },

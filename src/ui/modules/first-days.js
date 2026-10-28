@@ -30,7 +30,7 @@ export default {
     // The real toolbar icon and tint for a tool, and the HUD's own badges, so the card matches what is on screen.
     const toolIcon = (tool) => { const n = document.querySelector('.tool[data-tool="' + tool + '"] .ico'); return n ? { svg: n.innerHTML, c: n.style.getPropertyValue('--c') } : null; };
     const badge = (id) => { const n = document.querySelector('#' + id + ' .badge svg'); return n ? n.outerHTML : ''; };
-    const NUM_ICON = { coins: () => badge('coinschip'), parts: () => badge('partschip'), happy: () => { const f = document.getElementById('hpface'); return f ? f.outerHTML : ''; }, demand: () => '', goals: () => PAGE_ICONS.goals };
+    const NUM_ICON = { coins: () => badge('coinschip'), parts: () => badge('partschip'), happy: () => { const f = document.getElementById('hpface'); return f ? f.outerHTML : ''; }, demand: () => '<svg viewBox="0 0 32 32" fill="none" stroke="#2B2620" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="17" width="5.5" height="10" rx="1.5" fill="#A8C179"/><rect x="13.2" y="9" width="5.5" height="18" rx="1.5" fill="#E3A08E"/><rect x="21.5" y="13" width="5.5" height="14" rx="1.5" fill="#E6BC62"/><path d="M4 28.5H28"/></svg>', goals: () => PAGE_ICONS.goals };
 
     const steps = () => `<p class="fd-look"><b class="h-disp">${LOOK.head}</b>${LOOK.keys.map(([k, w]) => `<span><kbd>${k}</kbd> ${w}</span>`).join('')}</p>
       <ol class="fd-path">${PATH.map((s, i) => {
@@ -41,17 +41,19 @@ export default {
     const numbers = () => `<ul class="fd-path fd-nums">${NUMBERS.map((n, i) => `<li class="fd-tile" style="--tc:${n.c};--i:${i}"><span class="fd-ico">${NUM_ICON[n.id]()}</span>
         <span class="fd-text"><b class="h-disp">${n.head}</b><small>${n.text}</small></span></li>`).join('')}</ul>`;
 
+    // Two chips at the top of the card switch between the tabs (side bookmarks would hang off the edge of a small card).
+    let cur = 'steps';
+    const chips = () => `<div class="fd-tabs" role="tablist">${[['steps', 'First steps', '#D3E4C4'], ['numbers', 'Your numbers', '#F2D27A']].map(([id, label, c]) => `<button class="fd-tab" type="button" role="tab" data-go="${id}" aria-selected="${cur === id}" style="--tc:${c}">${label}</button>`).join('')}</div>`;
+
     book.register('firstdays', {
       title: 'Welcome, mayor', c: '#A8C179', icon: PAGE_ICONS.goals, compact: true,
-      tabs: [{ id: 'steps', label: 'First steps', color: '#D3E4C4', icon: PAGE_ICONS.goals }, { id: 'numbers', label: 'Your numbers', color: '#F2D27A', icon: PAGE_ICONS.milestones }],
-      sub: () => 'A small village is waiting. Here is how to begin, and nothing is timed.',
-      render: ({ tab }) => (tab === 'numbers' ? numbers() : steps()) + `<div class="fd-foot"><button class="btn primary" type="button" data-act="go">Let's go</button>
-          <button class="linkbtn" type="button" data-act="hide">No hints, thanks</button></div>`,
+      sub: () => 'A small village is waiting. Here is how to begin.',
+      opened() { cur = 'steps'; },
+      render: () => chips() + (cur === 'numbers' ? numbers() : steps()) + '<button class="btn primary fd-go" type="button" data-act="go">Let\'s go</button>',
       click(e) {
-        const act = e.target.closest('[data-act]');
-        if (!act) return;
-        if (act.dataset.act === 'hide') { data = { ...data, hidden: true }; save(); light(null); }
-        book.close();
+        const go = e.target.closest('[data-go]');
+        if (go) { cur = go.dataset.go; book.refresh(); return; }
+        if (e.target.closest('[data-act="go"]')) book.close();
       },
     });
 
