@@ -16,17 +16,14 @@ export const KINDS = {
 
 export const CHANGELOG = [
   {
-    v: '0.15.0', date: '2026-10-28', name: 'A calmer calendar',
-    blurb: 'The calendar is split into Month, Year and Decorations, and any season you have earned can be put up whenever you like.',
+    v: '0.15.0', date: '2026-10-28', name: 'Easier to play',
+    blurb: 'Settings gets camera and access pages, and the calendar becomes Month, Year and Decorations.',
     items: [
       { k: 'better', t: 'The calendar panel has a big month name, a Month, Year and Decorations tab, and a strip showing last month, this one and next.' },
       { k: 'new', t: 'The Year tab lays the twelve months out by season with their festivals, marks where you are, and a click on any month fast-forwards to its first day.' },
       { k: 'new', t: 'Every seasonal decoration set (Snoopy Days, Fourth of July, Halloween, Christmas) can be put up from the Decorations tab at any time of year, and put away again.' },
       { k: 'better', t: 'Decorations are a simple on or off now, and on means all out. Towns that had a little or cozy are now on.' },
       { k: 'look', t: 'Scrollbars across the game are slim paper tracks with a rounded, outlined thumb, in both light and dark paper.' },
-    v: '0.15.0', date: '2026-10-28', name: 'Easier to play',
-    blurb: 'Settings gets two new pages so the game fits more people: camera controls and access options.',
-    items: [
       { k: 'new', t: 'Settings has a Controls page: set how fast the camera pans, turns and zooms, flip the mouse wheel, hide the shortcut hint, or reset everything to the usual.' },
       { k: 'new', t: 'Settings has an Access page with three text sizes for the top bar, tool bar, cards and pages.' },
       { k: 'new', t: 'A Calm motion choice stills page flips, floating numbers, hearts and sparkles, whether or not your computer asks for it.' },
