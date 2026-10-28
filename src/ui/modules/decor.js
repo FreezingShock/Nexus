@@ -169,7 +169,7 @@ export default {
 
     function activate() {
       if (on) return;
-      on = true; render();
+      on = true; cat = DECOR_CATS[0].id; kind = decorIn(cat)[0].id; render();
       stage.addEventListener('pointermove', onMove, true); stage.addEventListener('pointerdown', onDown, true);
       stage.addEventListener('pointerup', onUp, true); stage.addEventListener('pointerleave', onLeave);
       dirty = true;

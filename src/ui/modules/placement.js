@@ -221,7 +221,8 @@ export default {
       if (ui.tool === tool) return;
       const had = ui.tool;
       ui.tool = tool;
-      if (!cats().some((c) => c.id === ui.cat)) { ui.cat = cats()[0].id; ui.model = modelsIn(ui.cat)[0].id; ui.size = 0; }
+      // every open starts on the first section
+      ui.cat = cats()[0].id; ui.model = modelsIn(ui.cat)[0].id; ui.size = 0;
       render();
       if (!had) {
         stage.addEventListener('pointermove', onMove, true); stage.addEventListener('pointerdown', onDown, true);
