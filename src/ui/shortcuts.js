@@ -9,7 +9,7 @@ export const TOOL_INFO = {
   build: ['Buildings', 'place a house, shop or landmark'],
   services: ['Services', 'clinics, schools and police'],
   parks: ['Parks', 'green space for the streets around'],
-  bulldoze: ['Bulldoze', 'click a building to clear it'],
+  bulldoze: ['Bulldoze', 'click a building to clear it, Shift-drag a box'],
   districts: ['Districts', 'name a neighbourhood and paint it'],
   decor: ['Decor', 'benches, lamps, fountains and flowers'],
   terrain: ['Terrain', 'raise, lower, flatten and smooth the land'],

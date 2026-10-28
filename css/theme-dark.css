@@ -46,7 +46,7 @@
 :root[data-theme="dark"] .pf-ladder li.now{background:var(--dk-sel)}
 :root[data-theme="dark"] :is(.opt,.tile).locked{background:color-mix(in oklab,var(--ink) 35%,var(--paper))}
 :root[data-theme="dark"] .tool[aria-pressed="true"] .ico{background:var(--dk-sticker)}
-:root[data-theme="dark"] :is(#roadlabel,#placelabel,#decorlabel,#landlabel).bad,
+:root[data-theme="dark"] :is(#roadlabel,#dozelabel,#placelabel,#decorlabel,#landlabel).bad,
 :root[data-theme="dark"] .tile.short .price,
 :root[data-theme="dark"] .tile.erase .pic{background:var(--dk-bad)}
 :root[data-theme="dark"] .ztag.bad{background-color:var(--dk-bad);color:#F4BBA7}

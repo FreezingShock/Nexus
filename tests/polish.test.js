@@ -117,7 +117,7 @@ test('reward chips keep big numbers short', () => {
 });
 
 test('every toast goes through the notes module, and note events skip the plain toast', () => {
-  assert.match(read('src/ui/ui.js'), /if \(e\.text && !isNoteEvent\(e\)\) hud\.toast/);
+  assert.match(read('src/ui/ui.js'), /if \(e\.text && !sim\.hush && !isNoteEvent\(e\)\) hud\.toast/);
   assert.match(read('src/ui/hud.js'), /useToasts\(fn\)/);
   assert.match(read('src/ui/modules/notes.js'), /hud\.useToasts\(/);
   assert.match(read('src/ui/modules/notes.js'), /burst\(gains, kinds\)/, 'rewards fly into the counters like the postcard');
