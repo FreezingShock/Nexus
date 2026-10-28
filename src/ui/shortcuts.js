@@ -34,7 +34,7 @@ export const SHORTCUT_GROUPS = [
     { keys: ['Ctrl', 'Z'], text: 'Undo the last step: road, building, zone, district, tree or bulldoze (a waiting road start goes first)', file: 'src/ui/modules/road-tool.js', needle: "send({ type: 'undo' })" },
   ] },
   { title: 'Views', rows: [
-    { keys: ['V'], text: 'Cycle the views: Normal, Traffic, Demand (the chip at the bottom right picks one too)', file: 'src/ui/modules/views.js', needle: "k === 'v'" },
+    { keys: ['V'], text: 'Cycle the views: Normal, Traffic, Demand (the eye in the top bar is Traffic, the Demand plaque is Demand)', file: 'src/ui/modules/views.js', needle: "k === 'v'" },
     { keys: ['T'], text: 'Traffic view: roads tinted by how full they are', file: 'src/ui/modules/views.js', needle: "k === 't'" },
   ] },
   { title: 'Zones and buildings', rows: [

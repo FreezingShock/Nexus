@@ -1,14 +1,9 @@
-/* Views: an eye button in the top bar (#vw-chip), its drop-down list, and the legend card for the active view. */
+/* Views: an eye button in the top bar (#vw-chip), the Demand plaque's pressed look, and the legend card for the active view. */
 #vw-chip{--tc:#E6D3F0}
 #vw-chip[aria-pressed="true"],#vw-chip[aria-expanded="true"]{--tc:#FBE4B8;transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
-.vw-menu{position:absolute;top:calc(100% + 14px);right:0;z-index:30;display:flex;flex-direction:column;gap:4px;padding:8px;min-width:230px}
-.vw-menu[hidden],.vw-legend[hidden]{display:none}
-.vw-menu button{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:8px 40px 8px 12px;border:2px solid transparent;border-radius:12px;background:none;color:var(--text);font:inherit;text-align:left;cursor:pointer}
-.vw-menu button b{font-weight:800;font-size:15px}
-.vw-menu button small{font-size:12.5px;color:var(--ink-soft)}
-.vw-menu button:hover{background:var(--paper-2)}
-.vw-menu button[aria-checked="true"]{background:#FBE4B8;border-color:var(--ink);box-shadow:0 2px 0 var(--ink)}
-.vw-menu kbd{position:absolute;top:8px;right:10px;font:800 11px var(--body);color:var(--ink-soft)}
+.vw-legend[hidden]{display:none}
+#demandw{cursor:pointer}
+#demandw.viewing{outline:3px solid #E6BC62;outline-offset:2px}
 .vw-legend{position:absolute;right:max(16px,env(safe-area-inset-right,0px));bottom:max(18px,env(safe-area-inset-bottom,0px));width:300px;max-width:calc(100vw - 32px);padding:14px 16px 14px}
 .vw-legend .rhead{display:flex;flex-direction:column;gap:2px;margin-bottom:10px}
 .vw-legend .lanes{display:flex;flex-wrap:wrap;gap:8px}
