@@ -43,3 +43,9 @@ test('the tools sit in named groups, and the lock hint only speaks for gated too
   const all = { ...fresh, roadUnlocks: ['bike', 'one', 'bus', 'free'] };
   assert.equal(lockHint('roads', all).tip, '');
 });
+
+test('each tool tile appears exactly once (a union merge once doubled the bar)', () => {
+  const html = read('index.html');
+  for (const t of TOOLS) assert.equal(html.split(`data-tool="${t}"`).length - 1, 1, t);
+  assert.equal((html.match(/class="tool"/g) || []).length, TOOLS.length);
+});
