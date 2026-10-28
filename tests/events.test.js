@@ -84,13 +84,15 @@ test('the calendar words: the season under way, the next one, and the ribbon', (
   assert.equal(r[3].event, '');
 });
 
-test('Snoopy Days is opt-in: silent until switched on, then it builds to the Blossom Fair', async () => {
+test('Snoopy Days is on by default, can be switched off, and builds to the Blossom Fair', async () => {
   const md = 3, first = dayOfDate(2, 3, 1, md);
-  assert.equal(eventOn(first, md)?.id, undefined, 'off by default');
+  assert.equal(eventOn(first, md)?.id, undefined, 'eventOn without a town list runs only the regular events');
   assert.equal(eventOn(first, md, ['snoopy']).id, 'snoopy');
   assert.equal(yearRibbon({ month: 0, festive: { optIn: [] } }, md)[3].event, '');
   assert.equal(yearRibbon({ month: 0, festive: { optIn: ['snoopy'] } }, md)[3].event, 'snoopy');
   const sim = createSim({ layout: getLayout() });
+  assert.deepEqual(sim.state.festive.optIn, ['snoopy'], 'a new town has it on');
+  sim.dispatch({ type: 'setEventOptIn', event: 'snoopy', on: false });
   assert.deepEqual(sim.state.festive.optIn, []);
   sim.dispatch({ type: 'setEventOptIn', event: 'nope', on: true });
   assert.deepEqual(sim.state.festive.optIn, []);
@@ -102,4 +104,10 @@ test('Snoopy Days is opt-in: silent until switched on, then it builds to the Blo
   assert.deepEqual(sim.state.festive.optIn, []);
   const { sanitizeFestive } = await import('../src/core/festive.js');
   assert.deepEqual(sanitizeFestive({ optIn: ['snoopy', 'christmas', 7] }).optIn, ['snoopy']);
+  // saves from before it existed, and dev saves that never got it offered, arrive with it on
+  assert.deepEqual(sanitizeFestive({ amount: 'all' }).optIn, ['snoopy']);
+  assert.deepEqual(sanitizeFestive({ optIn: [] }).optIn, ['snoopy']);
+  // a town that switched it off keeps it off
+  assert.deepEqual(sanitizeFestive({ optIn: [], offered: ['snoopy'] }).optIn, []);
+  assert.deepEqual(sanitizeFestive({ optIn: [], offered: ['snoopy', 'junk'] }).offered, ['snoopy']);
 });
