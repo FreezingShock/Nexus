@@ -18,12 +18,11 @@ test('the commute line reads well with and without jams', () => {
   assert.match(commuteLine({ eff: 0.8, penalty: -1.5 }), /Commute 80% · jams take 1\.5 coins\/s/);
 });
 
-test('legends: traffic shows the three road classes, demand a row per zone type', () => {
-  const sim = { traffic: { eff: 1, penalty: 0 }, zoning: { demand: () => [0, 0.9, 0.5, 0.1] } };
+test('the Traffic legend shows the three road classes; Demand has no card of its own', () => {
+  const sim = { traffic: { eff: 1, penalty: 0 } };
   const t = legendHtml('traffic', sim);
   for (const w of ['Free', 'Busy', 'Jammed']) assert.ok(t.includes(w), w);
-  const d = legendHtml('demand', sim);
-  assert.match(d, /Wanted/); assert.match(d, /Some room/); assert.match(d, /Plenty for now/);
+  assert.equal(legendHtml('demand', sim), '');
 });
 
 test('the renderer reads the view, not the tool', () => {

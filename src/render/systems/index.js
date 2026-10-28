@@ -26,6 +26,7 @@ import tileview from './tileview.js';
 import trees from './trees.js';
 import turbines from './turbines.js';
 import weather from './weather.js';
+import zoneGhost from './zone-ghost.js';
 
 export const renderSystems = [
   cars,
@@ -53,4 +54,5 @@ export const renderSystems = [
   trees,
   turbines,
   weather,
+  zoneGhost,
 ];
