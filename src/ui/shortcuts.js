@@ -1,7 +1,7 @@
 // Keyboard bindings shown on the shortcut sheet. Tool keys are the real bindings (ui.js reads TOOL_KEYS).
 // Other rows name the file that handles the key, and tests/polish.test.js checks that the key is still there,
 // so the sheet cannot drift from the game.
-export const TOOL_KEYS = { r: 'roads', z: 'zones', b: 'build', c: 'services', p: 'parks', t: 'traffic', x: 'bulldoze', n: 'districts', y: 'decor', u: 'terrain' };
+export const TOOL_KEYS = { r: 'roads', z: 'zones', b: 'build', c: 'services', p: 'parks', x: 'bulldoze', n: 'districts', y: 'decor', u: 'terrain' };
 
 export const TOOL_INFO = {
   roads: ['Roads', 'draw streets and lanes'],
@@ -9,7 +9,6 @@ export const TOOL_INFO = {
   build: ['Buildings', 'place a house, shop or landmark'],
   services: ['Services', 'clinics, schools and police'],
   parks: ['Parks', 'green space for the streets around'],
-  traffic: ['Traffic', 'see how full each road is'],
   bulldoze: ['Bulldoze', 'click a building to clear it'],
   districts: ['Districts', 'name a neighbourhood and paint it'],
   decor: ['Decor', 'benches, lamps, fountains and flowers'],
@@ -33,6 +32,10 @@ export const SHORTCUT_GROUPS = [
     { keys: ['Shift'], text: 'Hold for a straight line', file: 'src/ui/modules/road-tool.js', needle: "e.key === 'Shift'" },
     { keys: ['Esc', 'Right click'], text: 'Step back one pivot, then let go of the start', file: 'src/ui/modules/road-tool.js', needle: "e.key === 'Escape'" },
     { keys: ['Ctrl', 'Z'], text: 'Undo the last step: road, building, zone, district, tree or bulldoze (a waiting road start goes first)', file: 'src/ui/modules/road-tool.js', needle: "send({ type: 'undo' })" },
+  ] },
+  { title: 'Views', rows: [
+    { keys: ['V'], text: 'Cycle the views: Normal, Traffic, Demand (the chip at the bottom right picks one too)', file: 'src/ui/modules/views.js', needle: "k === 'v'" },
+    { keys: ['T'], text: 'Traffic view: roads tinted by how full they are', file: 'src/ui/modules/views.js', needle: "k === 't'" },
   ] },
   { title: 'Zones and buildings', rows: [
     { keys: ['0–4'], text: '0 erases, 1 to 4 pick a zone', file: 'src/ui/modules/zoning.js', needle: '/^[0-4]$/' },

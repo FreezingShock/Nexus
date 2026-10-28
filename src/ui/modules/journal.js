@@ -15,11 +15,8 @@ export default {
   order: 200, // after the road tool, which keeps J for Replace while drawing
   create({ sim }) {
     const s = sim.state;
-    const btn = document.createElement('button');
-    btn.className = 'ib'; btn.id = 'journalbtn';
-    btn.setAttribute('aria-label', 'Town journal'); btn.setAttribute('aria-expanded', 'false');
-    btn.innerHTML = '<i class="dot" aria-hidden="true" hidden></i>';
-    $('settingsbtn').before(btn);
+    // The button lives in index.html: the menu (order 100) dresses its rows before this module (order 200) is created.
+    const btn = $('journalbtn');
     const dot = btn.querySelector('.dot');
     let fresh = false;
 

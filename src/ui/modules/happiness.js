@@ -7,7 +7,7 @@ import { topRight } from '../slot.js';
 import { GRID_HALF, TILE } from '../../world/grid.js';
 import { faceSvg, hoverHtml, moodStep, panelHtml, pipsHtml } from '../happiness-view.js';
 
-const calmer = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+import { calmer } from '../../core/access.js';
 
 export default {
   id: 'happiness',

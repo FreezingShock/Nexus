@@ -34,10 +34,10 @@
 .nb-sheet.has-tabs{width:min(860px,calc(100vw - 190px));translate:calc(-50% - 60px) -50%}
 .nb-sheet.has-tabs[hidden]{translate:calc(-50% - 60px) -50%}
 .nb-tabs{position:absolute;left:calc(100% - 3px);top:96px;z-index:-1;display:flex;flex-direction:column;gap:10px}
-.nb-tab{display:flex;align-items:center;gap:8px;width:132px;height:50px;padding:0 12px 0 14px;border:2.5px solid var(--ink);border-left:0;border-radius:0 16px 16px 0;background:var(--tc);font-weight:800;font-size:14.5px;text-align:left;color:var(--text);box-shadow:0 4px 0 var(--ink);translate:-14px 0;transition:translate .18s cubic-bezier(.2,.8,.3,1),filter .15s;filter:saturate(.75) brightness(.97)}
+.nb-tab{display:flex;align-items:center;gap:8px;width:140px;height:50px;padding:0 14px 0 14px;border:2.5px solid var(--ink);border-left:0;border-radius:0 16px 16px 0;background:var(--tc);font-weight:800;font-size:14.5px;text-align:left;color:var(--text);box-shadow:0 4px 0 var(--ink);translate:0 0;transition:translate .18s cubic-bezier(.2,.8,.3,1),filter .15s;filter:saturate(.75) brightness(.97)}
 .nb-tab:nth-child(odd){rotate:.6deg}.nb-tab:nth-child(even){rotate:-.5deg}
-.nb-tab:hover{translate:-6px 0;filter:none}
-.nb-tab[aria-selected="true"]{translate:0 0;filter:none;width:140px}
+.nb-tab:hover{translate:4px 0;filter:none}
+.nb-tab[aria-selected="true"]{translate:8px 0;filter:none;width:140px}
 .nb-tab:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
 .nb-tab svg{flex:none;width:24px;height:24px;padding:3px;border-radius:8px;background:var(--paper);border:2px solid var(--ink)}
 .nb-sheet:not([hidden]) .nb-tab{animation:nb-tab-in .4s cubic-bezier(.2,.8,.3,1) both;animation-delay:calc(.3s + var(--i,0) * .06s)}
