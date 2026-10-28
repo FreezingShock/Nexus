@@ -29,3 +29,17 @@ test('the chevron controls the bar and the sheet and module are wired', () => {
   assert.match(js, /try \{ return localStorage/);
   assert.match(read('src/ui/modules/index.js'), /toolbar-fold/);
 });
+
+test('the tools sit in named groups, and the lock hint only speaks for gated tools', async () => {
+  const html = read('index.html');
+  for (const g of ['Build', 'Community', 'Land']) assert.match(html, new RegExp(`class="gcap">${g}<`));
+  assert.match(read('src/ui/modules/index.js'), /toolbar-groups/);
+  const { lockHint } = await import('../src/ui/toolbar-hints.js');
+  const fresh = { roadUnlocks: [], decorUnlocks: [], parts: 0, event: null, keepsakes: [] };
+  assert.equal(lockHint('zones', fresh).locked, 0);
+  const shut = lockHint('roads', fresh);
+  assert.ok(shut.locked > 0 && !shut.ready && /Parts/.test(shut.tip));
+  assert.ok(lockHint('roads', { ...fresh, parts: 1e9 }).ready);
+  const all = { ...fresh, roadUnlocks: ['bike', 'one', 'bus', 'free'] };
+  assert.equal(lockHint('roads', all).tip, '');
+});
