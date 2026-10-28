@@ -1,8 +1,9 @@
 // The little street along the foot of the progress screen: a road is laid, then houses go up lot by lot (stakes, scaffold,
-// walls rising, roof dropping in, windows lighting, a tree or a lamp), rest a moment, fade, and a new street begins.
-// Plain canvas 2D, drawn from code, no images. Calm motion draws the finished street once and stays still.
+// walls rising, roof dropping in, windows lighting, a tree or a lamp). The street is driven by the load progress, so the
+// last house is finished exactly when loading is. Plain canvas 2D, drawn from code, no images. Calm motion draws the
+// finished street once and stays still.
 
-export const SCENE_H = 168;
+export const SCENE_H = 232, K = 1.35; // canvas height in px, and how much the drawing is scaled up
 const LOT_W = 96, GROUND = 38; // a lot's width, and the strip of road and verge under the houses
 const WALLS = ['#F3E7D3', '#EAE1D5', '#E6C98A', '#D9B9A0', '#C9D6B0', '#E8D5C0'];
 const ROOFS = ['#B8472E', '#97553E', '#C96F4F', '#35566A', '#7A6A58'];
@@ -11,6 +12,8 @@ const WOOD = '#A07A4A';
 const ease = (x) => { x = Math.min(1, Math.max(0, x)); return x * x * (3 - 2 * x); };
 const back = (x) => { x = Math.min(1, Math.max(0, x)); const c = 1.7; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
 const span = (u, a, b) => Math.min(1, Math.max(0, (u - a) / (b - a)));
+
+import { chase } from '../core/boot.js';
 
 // A small seeded random, so a street is the same whenever it is redrawn.
 export function seeded(seed) {
@@ -29,34 +32,35 @@ export function streetOf(cycle, n) {
   });
 }
 
-// The times of one street, in seconds: lots start `step` apart, each takes BUILD, then the finished street rests and fades.
-export const BUILD = 3.4, REST = 2.6, FADE = 0.8;
-export function timeline(n, width) {
+// The times of one street, in seconds of build: lots start `step` apart and each takes BUILD. The load progress 0..1 maps
+// onto 0..lastEnds, so a finished load is a finished street.
+export const BUILD = 3.4;
+export function timeline(n) {
   const step = Math.min(0.72, 9 / Math.max(1, n));
-  const lastEnds = 0.5 + (n - 1) * step + BUILD;
-  return { step, lastEnds, total: lastEnds + REST + FADE, restAt: lastEnds + 0.1, width };
+  return { step, lastEnds: 0.5 + (n - 1) * step + BUILD };
 }
 
 export function createBootScene(canvas, opts = {}) {
   const ctx = canvas.getContext('2d');
   if (!ctx) return { frame() {}, stop() {} };
   const calm = opts.calm || (() => false);
-  const colors = { ink: '#2B2620', paper: '#FBF6EA', sage: '#8FA65A', hill: '#A8C179', road: '#8A8173' };
+  const colors = { ink: '#2B2620', paper: '#FBF6EA', text: '#2B2620', sage: '#8FA65A', hill: '#A8C179', road: '#8A8173' };
   const readColors = () => {
     try {
       const cs = getComputedStyle(canvas);
-      for (const k of ['ink', 'paper']) { const v = cs.getPropertyValue('--' + k).trim(); if (v) colors[k] = v; }
+      for (const k of ['ink', 'paper', 'text']) { const v = cs.getPropertyValue('--' + k).trim(); if (v) colors[k] = v; }
     } catch { /* keep the defaults */ }
   };
-  let W = 0, H = SCENE_H, dpr = 1, t = 0, cycle = 0, street = [], tl = timeline(1, 0), drewStill = false, colored = false;
+  let W = 0, WL = 0, H = SCENE_H, HL = SCENE_H / K, dpr = 1, t = 0, amb = 0, cycle = Math.floor(Math.random() * 1e6), street = [], tl = timeline(1), drewStill = false, colored = false;
 
   function size() {
     const w = Math.max(1, Math.round(canvas.clientWidth));
     if (w === W && canvas.width) return false;
     W = w; dpr = Math.min(2, (typeof devicePixelRatio === 'number' && devicePixelRatio) || 1);
     canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
-    const n = Math.ceil(W / LOT_W) + 1;
-    tl = timeline(n, W); street = streetOf(cycle, n);
+    WL = W / K;
+    const n = Math.ceil(WL / LOT_W) + 1;
+    tl = timeline(n); street = streetOf(cycle, n);
     return true;
   }
 
@@ -122,35 +126,32 @@ export function createBootScene(canvas, opts = {}) {
     }
   }
 
-  function paint(time) {
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, W, H);
+  function paint(time, amb) {
+    ctx.setTransform(dpr * K, 0, 0, dpr * K, 0, 0);
+    ctx.clearRect(0, 0, WL, HL);
     ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.strokeStyle = colors.ink;
-    const gy = H - GROUND;
+    const gy = HL - GROUND;
     // far hills and a few slow clouds, faint
     ctx.save(); ctx.globalAlpha = 0.32; ctx.fillStyle = colors.hill;
     ctx.beginPath(); ctx.moveTo(0, gy);
-    for (let x = 0; x <= W + 20; x += 20) ctx.lineTo(x, gy - 34 - 22 * Math.sin(x / 150 + 1) - 12 * Math.sin(x / 61));
-    ctx.lineTo(W, gy); ctx.fill(); ctx.restore();
-    ctx.save(); ctx.globalAlpha = 0.5; ctx.fillStyle = colors.paper;
+    for (let x = 0; x <= WL + 20; x += 20) ctx.lineTo(x, gy - 34 - 22 * Math.sin(x / 150 + 1) - 12 * Math.sin(x / 61));
+    ctx.lineTo(WL, gy); ctx.fill(); ctx.restore();
+    ctx.save(); ctx.globalAlpha = 0.13; ctx.fillStyle = colors.text;
     for (let i = 0; i < 3; i++) {
-      const cx = ((time * (6 + i * 3) + i * W * 0.37) % (W + 140)) - 70, cy = 22 + i * 17;
+      const cx = ((amb * (6 + i * 3) + i * WL * 0.37) % (WL + 140)) - 70, cy = 22 + i * 17;
       ctx.beginPath(); ctx.ellipse(cx, cy, 34, 8, 0, 0, 6.2832); ctx.ellipse(cx - 14, cy - 5, 16, 8, 0, 0, 6.2832); ctx.ellipse(cx + 12, cy - 6, 18, 9, 0, 0, 6.2832); ctx.fill();
     }
     ctx.restore();
 
-    // the street, fading out at the end of its rest
-    const fade = 1 - span(time, tl.restAt + REST - 0.2, tl.total);
-    ctx.globalAlpha = Math.max(0, Math.min(1, fade));
     // verge and road
-    const roadX = Math.min(W, Math.max(0, ((time - 0.2) / tl.step) * LOT_W + LOT_W * 0.3));
-    ctx.fillStyle = colors.sage; ctx.globalAlpha *= 0.9; ctx.fillRect(0, gy, W, 10); ctx.globalAlpha = Math.max(0, Math.min(1, fade));
+    const roadX = Math.min(WL, Math.max(0, ((time - 0.2) / tl.step) * LOT_W + LOT_W * 0.3));
+    ctx.fillStyle = colors.sage; ctx.fillRect(0, gy, WL, 10);
     if (roadX > 0) {
       ctx.fillStyle = colors.road; ctx.fillRect(0, gy + 10, roadX, GROUND - 10 - 6);
       ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, gy + 10); ctx.lineTo(roadX, gy + 10); ctx.moveTo(0, gy + GROUND - 6); ctx.lineTo(roadX, gy + GROUND - 6); ctx.stroke();
       ctx.save(); ctx.strokeStyle = '#FBF6EA'; ctx.lineWidth = 2.5; ctx.setLineDash([12, 12]); ctx.lineDashOffset = 0;
       ctx.beginPath(); ctx.moveTo(0, gy + 24); ctx.lineTo(roadX, gy + 24); ctx.stroke(); ctx.restore();
-      if (roadX < W && time < tl.lastEnds) { // a cone stands where the road ends
+      if (roadX < WL && time < tl.lastEnds) { // a cone stands where the road ends
         ctx.save(); ctx.translate(roadX + 6, gy + 26); poly([[-7, 0], [0, -17], [7, 0]], '#E08A3C', 1.8); rect(-9, 0, 18, 4, '#7A6A58', 1.6); ctx.restore();
       }
     }
@@ -163,23 +164,24 @@ export function createBootScene(canvas, opts = {}) {
       house(street[i], x, gy + 2, {
         stakes: span(u, 0, 0.4), wall: span(u, 0.4, 1.7), scaf: 1 - span(u, 1.7, 2.3), roof: span(u, 1.7, 2.4),
         detail: span(u, 2.3, 2.9), extra: span(u, 2.7, 3.4), lit,
-      }, time);
+      }, amb);
     }
-    ctx.globalAlpha = 1;
   }
 
   return {
-    frame(dt) {
+    // `progress` is the load progress 0..1; the street catches up to it smoothly and never goes back.
+    frame(dt, progress = 0) {
       if (!colored) { readColors(); colored = true; }
       const resized = size();
       if (calm()) { // one finished street, and no motion
-        if (resized || !drewStill) { t = tl.restAt; paint(t); drewStill = true; }
+        if (resized || !drewStill) { t = tl.lastEnds; paint(t, 0); drewStill = true; }
         return;
       }
       drewStill = false;
-      t += Math.min(dt, 0.1);
-      if (t >= tl.total) { t = 0; cycle++; street = streetOf(cycle, street.length); }
-      paint(t);
+      dt = Math.min(dt, 0.1); amb += dt;
+      const p = Math.min(1, Math.max(0, progress));
+      t = chase(t, p * tl.lastEnds, dt, p >= 0.999 ? 10 : 4);
+      paint(t, amb);
     },
     refreshColors: readColors,
     stop() { ctx.clearRect(0, 0, canvas.width, canvas.height); },
