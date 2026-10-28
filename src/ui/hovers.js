@@ -7,7 +7,6 @@ export const HOVER_TIPS = [
   ['[data-tool="build"]', 'Buildings (B): place a house, shop or landmark on a plot.'],
   ['[data-tool="services"]', 'Services (C): clinics, schools and police make nearby streets happier.'],
   ['[data-tool="parks"]', 'Parks (P): green space that lifts the homes around it.'],
-  ['[data-tool="traffic"]', 'Traffic (T): see how full each road is.'],
   ['[data-tool="bulldoze"]', 'Bulldoze (X): click a building to clear it.'],
   ['#pause', 'Pause the town. Nothing is lost.'],
   ['#speed', 'Game speed. Click to cycle.'],

@@ -25,6 +25,7 @@ import shortcutSheet from './shortcut-sheet.js';
 import sound from './sound.js';
 import terrain from './terrain.js';
 import toolbarFold from './toolbar-fold.js';
+import toolbarGroups from './toolbar-groups.js';
 import tooltips from './tooltips.js';
 import townPage from './town-page.js';
 import zoning from './zoning.js';
@@ -54,6 +55,7 @@ export const uiModules = [
   sound,
   terrain,
   toolbarFold,
+  toolbarGroups,
   tooltips,
   townPage,
   zoning,
