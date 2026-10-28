@@ -163,6 +163,11 @@ export function createScene({ stage, layout, grid, onPick, onCancel = () => {} }
       for (const m of mods) if (m.quality) m.quality(rs);
     },
 
+    // Access settings (core/access.js), applied live to every system with an access(a) hook.
+    setAccess(a) { for (const m of mods) if (m.access) m.access(a); },
+    // Controls settings (core/controls.js): camera speeds and the wheel direction.
+    setControls(c) { camera.setTuning({ pan: c.panSpeed, zoom: c.zoomSpeed, turn: c.turnSpeed, invert: c.invertZoom }); },
+
     // Renders the town to a 4:3 target and copies it into `dest` (the postcard photo).
     snapshot(dest) {
       if (!snapTarget) snapTarget = new THREE.WebGLRenderTarget(SNAP_W, SNAP_H);

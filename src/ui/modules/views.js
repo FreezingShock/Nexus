@@ -23,7 +23,7 @@ export function commuteLine(m) {
 export function legendHtml(view, sim) {
   if (view === 'traffic') {
     return `<div class="rhead"><b class="ptitle">Traffic</b><span class="rhint">Roads are tinted by how full they are</span></div>` +
-      `<div class="lanes">${chip('#9DB37C', 'Free')}${chip('#D9B45F', 'Busy')}${chip('#B8472E', 'Jammed')}</div>` +
+      `<div class="lanes">${chip('var(--tr-free)', 'Free')}${chip('var(--tr-busy)', 'Busy')}${chip('var(--tr-jam)', 'Jammed')}</div>` +
       `<p class="vw-note" id="vw-commute">${commuteLine(sim.traffic)}</p>`;
   }
   const d = sim.zoning.demand();
