@@ -21,6 +21,8 @@ export const CHANGELOG = [
     items: [
       { k: 'better', t: 'The toolbar is grouped into Build, Community and Land, with a small caption over each group and a divider between them.' },
       { k: 'new', t: 'Roads and Decor show a little padlock while some of their items are still locked, a green dot once your Parts can open one, and hovering says which one opens next and what it costs.' },
+      { k: 'better', t: 'Traffic is now a view instead of a tool. The new Views chip at the bottom right (or V) switches the town between Normal, Traffic and Demand, each with a small legend. Press T to flip Traffic on and off.' },
+      { k: 'new', t: 'Demand view: zoned ground is shaded by home, shop and workshop with a legend that says which kind the town wants next.' },
       { k: 'new', t: 'Snoopy Days, a spring season that builds up to the Blossom Fair. It is on for every town, and you can switch it off in the calendar\'s Decorations section.' },
       { k: 'look', t: 'During Snoopy Days a red doghouse sits by many front doors with the beagle sitting up on the roof (now and then as the flying ace), and kites fly over the rooftops on thin strings.' },
       { k: 'look', t: 'Townsfolk come out as white beagles with long black ears, and a few as flying aces in a brown cap and red scarf.' },

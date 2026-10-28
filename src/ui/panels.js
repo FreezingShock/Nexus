@@ -108,17 +108,13 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
 
   // ---- flyout ----
   // Roads, Zones, Districts, Buildings, Services and Parks fill the flyout themselves (their modules render it when they
-  // open). This function fills it for Traffic and Bulldoze, and hides it for every other tool.
-  const legend = (c, n) => `<span class="lchip"><i style="background:${c}"></i>${n}</span>`;
+  // open). This function fills it for Bulldoze, and hides it for every other tool.
   // Bulldoze has no menu: a single hint chip above the toolbar says what the tool does.
   const BULLDOZE_HINT = 'Click a building or tree, or drag over roads · Ctrl+Z brings it back · Esc stops';
   function setFly(tool) {
     const f = $('fly');
     f.classList.remove('bdchip');
-    if (tool === 'traffic') {
-      f.innerHTML = `<div class="rhead"><b class="ptitle">Traffic</b><span class="rhint">Roads are tinted by how full they are</span></div><div class="lanes">${legend('#9DB37C', 'Free')}${legend('#D9B45F', 'Busy')}${legend('#B8472E', 'Jammed')}</div>`;
-      f.hidden = false;
-    } else if (tool === 'bulldoze') {
+    if (tool === 'bulldoze') {
       f.innerHTML = `<span class="bdtext">${BULLDOZE_HINT}</span>`;
       f.classList.add('bdchip');
       f.hidden = false;
