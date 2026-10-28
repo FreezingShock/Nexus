@@ -17,6 +17,8 @@ import { shortDate } from './ui/date-text.js';
 import { summary as milestoneSummary } from './sim/achievements.js';
 import { createProfileStore } from './core/profile.js';
 import { createThemeStore } from './core/theme.js';
+import { createControlsStore } from './core/controls.js';
+import { createAccessStore, applyAccess } from './core/access.js';
 
 const AUTOSAVE_MS = 45000;
 const SKIP_KEY = 'nexus.skiptitle';
@@ -34,10 +36,16 @@ const takeSkip = () => { try { const v = sessionStorage.getItem(SKIP_KEY); sessi
 const skipTitle = takeSkip() || params.get('title') === '0';
 
 let phase = 'title'; // 'title' (warm-up, then waiting), 'boot' (progress screen), 'play'
-let sim, state, scene, ui = null, loaded, quality, calendar, sound, profile;
+let sim, state, scene, ui = null, loaded, quality, calendar, sound, profile, controls;
 // Light or dark paper for the UI. Made first, before the title, so nothing is ever drawn in the wrong colours.
+// Access settings repaint the page before the first frame, so text size and colours never flash.
+const access = createAccessStore({ storage: browserStorage, onChange: (a) => { applyAccess(a, document.documentElement); scene && scene.setAccess(a); } });
+applyAccess(access.get(), document.documentElement);
 const theme = createThemeStore({ storage: browserStorage, root: document.documentElement, media: typeof matchMedia === 'function' ? (q) => matchMedia(q) : null });
 let saveBlocked = false, lastSaved = null, saveFailing = false;
+
+// The controls that live in the page rather than the camera: the shortcut hint.
+const applyControls = (c) => { document.documentElement.dataset.hint = c.keyHint ? 'on' : 'off'; };
 
 // ---- saving ----
 const save = () => {
@@ -52,6 +60,8 @@ const actions = {
   get sound() { return sound; },
   get profile() { return profile; },
   get theme() { return theme; },
+  get access() { return access; },
+  get controls() { return controls; },
   exportSave() {
     const blob = new Blob([exportText(sim.prepareSave(), Date.now())], { type: 'application/json' });
     const a = document.createElement('a');
@@ -117,6 +127,9 @@ async function warmUp() {
     calendar = createCalendarStore({ storage: browserStorage, onChange: (o) => sim.setCalendar(o) });
     sim.setCalendar(calendar.get());
     sound = createSoundStore({ storage: browserStorage });
+    controls = createControlsStore({ storage: browserStorage, onChange: (c) => { scene.setControls(c); applyControls(c); } });
+    scene.setControls(controls.get()); applyControls(controls.get());
+    scene.setAccess(access.get());
     profile = createProfileStore({ storage: browserStorage }); // the mayor: kept per browser, outlasts any one town
     profile.firstTown();
     noteBests();

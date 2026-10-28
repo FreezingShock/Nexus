@@ -35,7 +35,7 @@ export function flightAt(p, t) {
 }
 
 const centre = (el) => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, ok: r.width > 0 && r.height > 0 }; };
-const reduced = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; } };
+import { calmer as reduced } from '../core/access.js';
 
 // from: the button. kinds: [{ key: 'coins', amount, target (the HUD badge), icon (svg markup), onLand(share, last) }].
 export function burst(from, kinds) {

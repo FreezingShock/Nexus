@@ -26,6 +26,7 @@ export function createCamera() {
   };
   const free = { pos: { x: 0, y: 0, z: 0 }, vel: { x: 0, y: 0, z: 0 }, yaw: ISO.az, pitch: 0 };
   const keys = new Set();
+  const tune = { pan: 1, zoom: 1, turn: 1, invert: false }; // Controls settings (core/controls.js)
   let mode = 'iso', w = 1, h = 1;
 
   const place = () => {
@@ -68,9 +69,9 @@ export function createCamera() {
       const it = intentOf(keys);
       if (mode === 'iso') {
         const spin = orbitSpin(it, step);
-        view.taz += spin.dAz;
-        view.telev = clamp(view.telev + spin.dElev, view.lo, ISO.elevMax);
-        const m = orbitMove(it, view.az, (2 * view.half) / view.zoom, step);
+        view.taz += spin.dAz * tune.turn;
+        view.telev = clamp(view.telev + spin.dElev * tune.turn, view.lo, ISO.elevMax);
+        const m = orbitMove(it, view.az, (2 * view.half) / view.zoom, step * tune.pan);
         view.ttx = clamp(view.ttx + m.dx, -TOWN_LIMIT, TOWN_LIMIT);
         view.ttz = clamp(view.ttz + m.dz, -TOWN_LIMIT, TOWN_LIMIT);
         view.az = approach(view.az, view.taz, 12, step);
@@ -148,8 +149,8 @@ export function createCamera() {
         return;
       }
       if (shift) {
-        view.taz -= dx * 0.008;
-        view.telev = clamp(view.telev + dy * 0.004, view.lo, ISO.elevMax);
+        view.taz -= dx * 0.008 * tune.turn;
+        view.telev = clamp(view.telev + dy * 0.004 * tune.turn, view.lo, ISO.elevMax);
         return;
       }
       api.pan(dx, dy, pxHeight);
@@ -157,18 +158,21 @@ export function createCamera() {
     // Wheel. In the orbit view it zooms. In free-fly it moves forward and back.
     wheel(deltaY) {
       if (mode === 'fly') {
-        const fw = lookDir(free.yaw, free.pitch), k = -deltaY * 0.04;
+        const fw = lookDir(free.yaw, free.pitch), k = -deltaY * 0.04 * tune.zoom * (tune.invert ? -1 : 1);
         free.pos = flyMove({ x: free.pos.x + fw.x * k, y: free.pos.y + fw.y * k, z: free.pos.z + fw.z * k }, { x: 0, y: 0, z: 0 }, 0);
         return;
       }
-      api.zoomBy(deltaY < 0 ? 1.12 : 0.89);
+      const inward = (deltaY < 0) !== tune.invert;
+      api.zoomBy(inward ? 1.12 ** tune.zoom : 0.89 ** tune.zoom);
     },
 
     pan(dx, dy, pxHeight) {
-      const k = (2 * view.half / view.zoom) / pxHeight, az = view.az, se = Math.sin(view.elev);
+      const k = tune.pan * (2 * view.half / view.zoom) / pxHeight, az = view.az, se = Math.sin(view.elev);
       view.ttx = view.tx = clamp(view.tx - Math.cos(az) * dx * k - Math.sin(az) * dy * k / se, -TOWN_LIMIT, TOWN_LIMIT);
       view.ttz = view.tz = clamp(view.tz + Math.sin(az) * dx * k - Math.cos(az) * dy * k / se, -TOWN_LIMIT, TOWN_LIMIT);
     },
+    // Controls settings: speeds are multipliers around 1; invert flips the wheel.
+    setTuning(t) { tune.pan = t.pan ?? 1; tune.zoom = t.zoom ?? 1; tune.turn = t.turn ?? 1; tune.invert = !!t.invert; },
     zoomBy(f) { view.tzoom = zoomStep(view.tzoom, f); },
     // Steps the view a quarter turn (kept for the design kit). Held Q and E now rotate continuously.
     rotate(d) { view.taz += d * Math.PI / 2; },

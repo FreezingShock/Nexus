@@ -16,6 +16,16 @@ export const KINDS = {
 
 export const CHANGELOG = [
   {
+    v: '0.15.0', date: '2026-10-28', name: 'Easier to play',
+    blurb: 'Settings gets two new pages so the game fits more people: camera controls and access options.',
+    items: [
+      { k: 'new', t: 'Settings has a Controls page: set how fast the camera pans, turns and zooms, flip the mouse wheel, hide the shortcut hint, or reset everything to the usual.' },
+      { k: 'new', t: 'Settings has an Access page with three text sizes for the top bar, tool bar, cards and pages.' },
+      { k: 'new', t: 'A Calm motion choice stills page flips, floating numbers, hearts and sparkles, whether or not your computer asks for it.' },
+      { k: 'look', t: 'Red-green safe and blue-yellow safe colours for the traffic tint, in steps of lightness as well as colour, with the legend following along.' },
+    ],
+  },
+  {
     v: '0.14.0', date: '2026-10-27', name: 'Kite weather',
     blurb: 'An optional spring season for a certain beagle: red doghouses, kites and a lazy piano.',
     items: [

@@ -11,6 +11,7 @@ import { mountGraphics } from './graphics.js';
 import { mountAtmos } from './atmos.js';
 import { mountSound } from './sound-settings.js';
 import { mountTheme } from './theme-settings.js';
+import { mountControls, mountAccess } from './prefs-settings.js';
 
 const CLOSE_SVG = '<svg width="16" height="16" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2L12 12M12 2L2 12" stroke="#2B2620" stroke-width="2.2" stroke-linecap="round"/></svg>';
 
@@ -19,6 +20,8 @@ const TABS = [
   { id: 'sky', label: 'Sky', color: '#F6DDA0', icon: PAGE_ICONS.sky, line: 'Season, weather and the time of day.' },
   { id: 'gfx', label: 'Graphics', color: '#D3E4C4', icon: PAGE_ICONS.gfx, line: 'Light or dark paper, and how the town is drawn.' },
   { id: 'snd', label: 'Sound', color: '#F2C9BA', icon: PAGE_ICONS.snd, line: 'Music, the bustle of the streets and the little clicks.' },
+  { id: 'ctl', label: 'Controls', color: '#E8D2A8', icon: PAGE_ICONS.ctl, line: 'How fast the camera moves, turns and zooms.' },
+  { id: 'acc', label: 'Access', color: '#D8CBE4', icon: PAGE_ICONS.acc, line: 'Bigger text, calmer motion and colours that are easy to tell apart.' },
   { id: 'town', label: 'Town', color: '#D2E3EE', icon: PAGE_ICONS.town, line: 'Saves, copies and a fresh start.' },
 ];
 const tabHead = (t) => `<header class="pg-band" style="--tc:${t.color}"><span class="pg-band-ico">${t.icon}</span><span><b class="h-disp">${t.label}</b><small>${t.line}</small></span></header>`;
@@ -116,7 +119,7 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
     const f = $('fly');
     f.classList.remove('bdchip');
     if (tool === 'traffic') {
-      f.innerHTML = `<div class="rhead"><b class="ptitle">Traffic</b><span class="rhint">Roads are tinted by how full they are</span></div><div class="lanes">${legend('#9DB37C', 'Free')}${legend('#D9B45F', 'Busy')}${legend('#B8472E', 'Jammed')}</div>`;
+      f.innerHTML = `<div class="rhead"><b class="ptitle">Traffic</b><span class="rhint">Roads are tinted by how full they are</span></div><div class="lanes">${legend('var(--tr-free)', 'Free')}${legend('var(--tr-busy)', 'Busy')}${legend('var(--tr-jam)', 'Jammed')}</div>`;
       f.hidden = false;
     } else if (tool === 'bulldoze') {
       f.innerHTML = `<span class="bdtext">${BULLDOZE_HINT}</span>`;
@@ -125,7 +128,7 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
     } else f.hidden = true;
   }
 
-  // ---- settings: a notebook page with bookmark tabs for Graphics, Sound and Town ----
+  // ---- settings: a notebook page with bookmark tabs for Sky, Graphics, Sound, Controls, Access and Town ----
   // Town holds the autosave status, export, import, restore and start over. Destructive steps ask first, on the page.
   let actions = null; // what main.js lends the page: stores and save actions
   let asking = null; // a question on the page: { tab, title, text, ok, onOk, danger }
@@ -155,7 +158,7 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
       const t = TABS.find((x) => x.id === tab);
       if (asking) return askHtml(asking);
       if (!actions) return tabHead(t);
-      return tabHead(t) + (tab === 'sky' ? '<div id="atmos" class="pg-sky"></div>' : tab === 'gfx' ? '<div id="paper"></div><div id="gfx" class="pg-gfx"></div>' : tab === 'snd' ? '<div id="snd" class="pg-snd"></div>' : townTab());
+      return tabHead(t) + (tab === 'sky' ? '<div id="atmos" class="pg-sky"></div>' : tab === 'gfx' ? '<div id="paper"></div><div id="gfx" class="pg-gfx"></div>' : tab === 'snd' ? '<div id="snd" class="pg-snd"></div>' : tab === 'ctl' ? '<div id="ctl" class="pg-pf"></div>' : tab === 'acc' ? '<div id="acc" class="pg-pf"></div>' : townTab());
     },
     opened({ tab }) {
       if (asking || !actions) return;
@@ -163,6 +166,8 @@ export function createPanels({ sim, send, toast, onClose, setTool }) {
       if (tab === 'gfx' && actions.theme) mountTheme($('paper'), actions.theme);
       if (tab === 'gfx' && actions.quality) mountGraphics($('gfx'), actions.quality);
       if (tab === 'snd' && actions.sound) mountSound($('snd'), actions.sound);
+      if (tab === 'ctl' && actions.controls) mountControls($('ctl'), actions.controls, { openKeys: () => book.open('shortcuts') });
+      if (tab === 'acc' && actions.access) mountAccess($('acc'), actions.access);
     },
     closed() { asking = null; $('settingsbtn').setAttribute('aria-expanded', 'false'); },
     click(e) {

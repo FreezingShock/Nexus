@@ -30,7 +30,7 @@ export function floatEvery(effects) { return effects >= 1 ? 4 : effects > 0 ? 9 
 // The label for a gain: "+12", "+1.4K". Under one coin there is nothing to show.
 export function gainLabel(n) { return n >= 1 ? '+' + fmtCompact(n) : ''; }
 
-const calmer = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+import { calmer } from '../../core/access.js';
 const mk = (cls, text) => { const n = document.createElement('div'); n.className = cls; if (text) n.textContent = text; return n; };
 
 export default {
