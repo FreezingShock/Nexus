@@ -29,6 +29,7 @@ export const CHANGELOG = [
     v: '0.14.0', date: '2026-10-27', name: 'Kite weather',
     blurb: 'An optional spring season for a certain beagle: red doghouses, kites and a lazy piano.',
     items: [
+      { k: 'look', t: 'The bookmark tabs on the right edge of pages (Settings, Town journal and the rest) now sit fully in view instead of tucking half behind the page.' },
       { k: 'fix', t: 'The Town journal row in the menu now shows its icon and name, and the journal page lists each month with its entries directly on the page instead of boxes inside boxes.' },
       { k: 'better', t: 'The toolbar is grouped into Build, Community and Land, with a small caption over each group and a divider between them.' },
       { k: 'new', t: 'Roads and Decor show a little padlock while some of their items are still locked, a green dot once your Parts can open one, and hovering says which one opens next and what it costs.' },
