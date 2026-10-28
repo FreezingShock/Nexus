@@ -47,7 +47,7 @@ export function createUi({ sim, scene, actions }) {
     const done = beginFlySwitch($('fly'), was, t);
     panels.setFly(t);
     for (const m of mods) if (m.onTool) m.onTool(t, was);
-    done();
+    Promise.resolve().then(done); // after the microtask that lets the Buildings, Services and Parks module follow the toolbar
   }
   function toggleSettings() {
     if (panels.settingsOpen()) { panels.hideSettings(); return; }
