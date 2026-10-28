@@ -73,7 +73,11 @@ const actions = {
   importPick() { $('importfile').click(); },
   previewPostcard() { ui.previewPostcard(); },
   // Start over moves the town into the backup slot first, so Settings can restore it.
-  reset() { saveBlocked = true; if (profile) profile.newTown(); clearSave(); reloadIntoTown(); },
+  reset() {
+    saveBlocked = true; if (profile) profile.newTown(); clearSave();
+    try { localStorage.removeItem('nexus.firstdays.v1'); } catch { /* a blocked store just keeps the old answer */ } // a new town gets its welcome again
+    reloadIntoTown();
+  },
   restore() {
     saveBlocked = true;
     if (restoreBackup(undefined, Date.now())) reloadIntoTown();

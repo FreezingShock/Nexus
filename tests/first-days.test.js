@@ -1,5 +1,6 @@
 // Your first days (src/ui/first-days.js): the optional list for new players.
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { createSim } from '../src/sim/sim.js';
 import { getLayout } from '../src/world/layout.js';
@@ -80,4 +81,9 @@ test('the glow points at the next untried tool and moves on', () => {
 test('the welcome postcard has three short hints', () => {
   assert.equal(HINTS.length, 3);
   for (const h of HINTS) assert.ok(h.head && h.text.length < 120);
+});
+
+test('starting a new town clears the first-days answer so the welcome returns', () => {
+  const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+  assert.ok(main.includes(`removeItem('${FIRST_KEY}')`));
 });
