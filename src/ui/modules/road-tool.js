@@ -6,11 +6,13 @@
 // Pointer handling follows docs/GRID.md: capture-phase listeners on the stage while the tool is active, button 0 only,
 // so right and middle drag still pan and the wheel still zooms.
 import { ROAD_TYPES } from '../../sim/catalog.js';
-import { inBounds, tileIndex, worldToTile } from '../../world/grid.js';
+import { inBounds, tileIndex, tileOf, worldToTile } from '../../world/grid.js';
+import { clearedBy, strandedAfter, wakenedBy } from '../../world/road-zones.js';
 import { BLOCK_TEXT, chooseRoute, dirOf, planStroke, roadBlock, roadEnds, roadRun } from '../../world/roadnet.js';
 import { starterProtected } from '../../world/starter.js';
 import { $, fmt } from '../format.js';
 import { roadSwatch, tileCard } from '../cards.js';
+import { ZONE_DEFS } from '../../sim/zones.js';
 import { playCue } from '../../audio/cuehub.js';
 
 const costOf = (id) => ROAD_TYPES.find((r) => r.id === id).cost;
@@ -19,7 +21,7 @@ const BLUE = 0x8FB8D6, RED = 0xE3A08E, TERRA = 0xB8472E, GOLD = 0xE6BC62;
 const PIVOT_KEY = ' ', FLIP_KEY = 'l', REPLACE_KEY = 'j';
 const TILE_METRES = 12;                 // how long one tile of road reads in the cost label
 const PROTECTED = starterProtected();   // the bridge and the tunnel road: Replace leaves them as they are
-const PAINT_LAYERS = ['hover', 'start', 'pivot', 'join', 'ends', 'bad'];
+const PAINT_LAYERS = ['hover', 'start', 'pivot', 'join', 'ends', 'bad', 'clear'];
 const near = (a, b) => a[0] === b[0] && a[1] === b[1];
 const manhattan = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
 
@@ -40,6 +42,7 @@ export default {
 
     const drawing = () => tool() === 'roads', erasing = () => tool() === 'bulldoze';
     const overlay = () => scene.sys('grid-overlay'), roadsView = () => scene.sys('roads');
+    const hideGhosts = () => scene.sys('zone-ghost')?.hide();
     const blockAt = (gx, gz) => roadBlock(sim.grid, sim.layout, state, gx, gz);
     const isRoad = (t) => state.roads[tileIndex(t[0], t[1])] !== undefined;
     const unlocked = (r) => !r.unlockParts || state.roadUnlocks.includes(r.id);
@@ -98,17 +101,22 @@ export default {
       if (erasing()) {
         const tiles = erase ? [...erase.tiles.values()] : (hover && isRoad(hover) ? [hover] : []);
         paint(grid, 'hover', tiles.map((t) => [t[0], t[1], RED]), { opacity: 0.55, outline: true });
-        for (const n of PAINT_LAYERS.filter((n) => n !== 'hover')) paint(grid, n, []);
-        rv.clearPreview();
+        for (const n of PAINT_LAYERS.filter((n) => n !== 'hover' && n !== 'clear')) paint(grid, n, []);
+        rv.clearPreview(); hideGhosts();
+        // empty paint that leans on these streets fades with them (sim/systems/roads.js), so it shows first
+        const fade = strandedAfter(sim.grid, tiles.map((t) => tileIndex(t[0], t[1])));
+        paint(grid, 'clear', fade.map((i) => [...tileOf(i), RED]), { opacity: 0.45, outline: true });
         if (!tiles.length) { label.hidden = true; return; }
         let back = 0; for (const t of tiles) back += Math.floor(state.roads[tileIndex(t[0], t[1])].p / 2);
-        say(`${coin}<b>+₵ ${fmt(back)}</b><small>${tiles.length} ${tiles.length === 1 ? 'road' : 'roads'} back</small><em>Bulldoze</em>`);
+        for (const i of fade) back += ZONE_DEFS[sim.grid.zone[i]].cost;
+        say(`${coin}<b>+₵ ${fmt(back)}</b><small>${tiles.length} ${tiles.length === 1 ? 'road' : 'roads'} back</small><em>Bulldoze</em>` +
+          (fade.length ? `<small>${fade.length} zone ${fade.length === 1 ? 'tile fades' : 'tiles fade'}</small>` : ''));
         return;
       }
 
       if (replace) {
         for (const n of PAINT_LAYERS.filter((n) => n !== 'hover' && n !== 'join')) paint(grid, n, []);
-        previewLen = 0;
+        previewLen = 0; hideGhosts();
         const r = replacePlan();
         if (!r) {
           paint(grid, 'join', []); rv.clearPreview();
@@ -131,7 +139,7 @@ export default {
       if (!route) {
         // no start yet: the tile under the cursor, whether a road could start there, and the dead ends worth carrying on
         for (const n of PAINT_LAYERS.filter((n) => n !== 'hover' && n !== 'ends')) paint(grid, n, []);
-        rv.clearPreview();
+        rv.clearPreview(); hideGhosts();
         previewLen = 0;
         if (endsRev !== rev) { ends = roadEnds(state.roads); endsRev = rev; }
         paint(grid, 'ends', ends.map((t) => [t[0], t[1], BLUE]), { opacity: 0.3, outline: true });
@@ -156,6 +164,13 @@ export default {
       paint(grid, 'pivot', pivots.map((p) => [p[0], p[1], GOLD]), { opacity: 0.8, outline: true });
       const joins = plan.joins.filter((t) => !near(t, anchor));
       paint(grid, 'join', joins.map((t) => [t[0], t[1], BLUE]), { opacity: 0.5, outline: true });
+      // Zone paint and grown houses on the way give way (the sim clears them), and paint the new road runs beside can start to grow.
+      const idxs = plan.tiles.map((e) => tileIndex(e.gx, e.gz));
+      const cut = bad ? { houses: [], paint: [] } : clearedBy(sim.grid, idxs);
+      paint(grid, 'clear', cut.paint.map((i) => [...tileOf(i), RED]), { opacity: 0.6, outline: true });
+      const woke = bad ? [] : wakenedBy(sim.grid, idxs);
+      const ghosts = scene.sys('zone-ghost');
+      if (ghosts) { if (woke.length) ghosts.showPainted(woke.map(tileOf), key, new Set(idxs)); else ghosts.hide(); }
       const onCursor = plan.problems.some((p) => near(p.at, hover));
       paint(grid, 'hover', [[hover[0], hover[1], onCursor ? RED : BLUE]], { opacity: 0.4, outline: true });
 
@@ -167,6 +182,7 @@ export default {
         pivots.length ? `${pivots.length} ${pivots.length === 1 ? 'pivot' : 'pivots'}` : '',
         shift ? 'straight' : flip ? 'bend flipped' : '',
         joins.length ? `${joins.length} ${joins.length === 1 ? 'junction' : 'junctions'}` : '',
+        cut.houses.length ? `${cut.houses.length} ${cut.houses.length === 1 ? 'house clears' : 'houses clear'}` : '',
         plan.works ? `earthworks ₵ ${fmt(plan.works)}` : '',
       ].filter(Boolean).map((s) => `<small>${s}</small>`).join('');
       say(`${coin}<b>−₵ ${fmt(plan.cost)}</b><small>${plan.length} ${plan.length === 1 ? 'tile' : 'tiles'} · ${fmt(plan.length * TILE_METRES)} m</small><em>${short()}</em>${notes}` +
@@ -176,7 +192,7 @@ export default {
       const grid = overlay(), rv = roadsView();
       if (grid) for (const n of PAINT_LAYERS) grid.paint(n, []);
       if (rv) rv.clearPreview();
-      label.hidden = true; lastKey = '';
+      hideGhosts(); label.hidden = true; lastKey = '';
     }
     // Drops the pivot, then the start, then nothing. Returns false when there was nothing to step back from.
     function stepBack() {

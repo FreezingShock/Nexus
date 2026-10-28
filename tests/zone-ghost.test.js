@@ -45,3 +45,14 @@ test('buildings are built once per zone, never per brush move', () => {
   assert.equal(meshes(world).length, n);
   assert.ok(meshes(world).every((m, i) => m.geometry === geos[i]));
 });
+
+test('showPainted ghosts painted empty tiles of any zone, facing the road being drawn', () => {
+  const world = new THREE.Group();
+  const zones = { '5,5': 1, '5,6': 2 };
+  const grid = { ...fakeGrid(() => true), zoneAt: (x, z) => zones[x + ',' + z] || 0 };
+  const g = ghost.create({ THREE, world, grid });
+  g.showPainted([[5, 5], [5, 6], [5, 7]], 'road', new Set([96 * 5 + 6]));
+  assert.equal(world.children[0].visible, true);
+  g.showPainted([[5, 7]], 'none');
+  assert.equal(world.children[0].visible, false);
+});
