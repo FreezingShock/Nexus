@@ -1,0 +1,4 @@
+[
+  { "k": "new", "t": "Roads can now be drawn straight through zoned houses, which clear to make way. One undo brings them back." },
+  { "k": "new", "t": "Drawing a road shows what it clears in rose and ghosts of the buildings that could grow beside it. Zone paint that loses its road fades with a puff and its coins come back." }
+]

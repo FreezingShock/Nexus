@@ -1,6 +1,6 @@
 // The Zones tool: pick a zone (or the eraser), drag a rectangle on the grid, release to paint.
 // Reads sim state, sends paintZone / clearZone, and drives the tileview render system for the grid and the preview.
-import { GRID_N, inBounds, rectTiles, worldToTile } from '../../world/grid.js';
+import { GRID_N, inBounds, rectTiles, tileCenter, worldToTile } from '../../world/grid.js';
 import { demandCard, demandWord } from '../hud-detail.js';
 import { ZONE_DEFS } from '../../sim/zones.js';
 import { $, fmt } from '../format.js';
@@ -147,6 +147,8 @@ export default {
       onTool(t, was) { if (t === 'zones') enter(); else if (was === 'zones') leave(); },
       onEvent(e) {
         if (e.type === 'zonePainted' || e.type === 'zoneCleared') { flashed = true; view().flash(); }
+        // paint that lost its road fades with a little dust
+        if (e.type === 'zoneFaded') for (const [gx, gz] of e.tiles.slice(0, 24)) { const [x, z] = tileCenter(gx, gz); scene.sys('puffs')?.burst(x, z, 2.4, 8); }
       },
       onKey(e) {
         if (!active) return false;

@@ -55,6 +55,7 @@ export default {
       candidates: () => candidates(grid),
     };
     sim.zoning.painted = countPaint(grid);
+    sim.zoning.recount = () => { sim.zoning.painted = countPaint(grid); };
     // A grown lot answers to its id (lot<tile>) like a placed building: the inspect card, upgrade and bulldoze read it
     // through sim.building and sim.alive. Other ids fall through to the placement system (or the bare sim).
     if (!sim.lotsHooked) {

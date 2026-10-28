@@ -8,6 +8,8 @@
 import { GRID_N, inBounds, tileIndex } from './grid.js';
 import { starterStreetTiles } from './starter.js';
 
+const PLACED_LOT = 40000; // grid.lot values from here up are placed buildings (src/world/placement.js LOT_BASE); below are grown houses
+
 // Direction index -> grid step. 0 east (+x), 1 south (+z), 2 west (-x), 3 north (-z).
 export const DIRS = [[1, 0], [0, 1], [-1, 0], [0, -1]];
 export const opposite = (d) => (d + 2) & 3;
@@ -259,7 +261,7 @@ export function planStroke({ path, type, roads, blockedBy = () => null, costOf }
 
 // ---- what may hold a road ----
 // Why a road cannot go on this tile, or null when it can. Roads may cover zone paint (the paint clears) and may
-// replace other roads, but not water, hills, farmland, or a lot that is built (a starter or player building, or grown).
+// replace other roads, but not water, hills, farmland, or a placed building (a starter or player one). Grown houses give way.
 // `layout` and `state` are kept for the callers; buildings are on the grid's lot layer, so only the grid is read here.
 export function roadBlock(grid, layout, state, gx, gz) {
   if (!inBounds(gx, gz)) return 'bounds';
@@ -267,7 +269,7 @@ export function roadBlock(grid, layout, state, gx, gz) {
   if (b === 1) return 'water';
   if (b === 2) return 'steep'; // only cliffs: on a hillside the road grades its own way (world/grade.js)
   if (b === 3) return 'farm';
-  if (grid.lotAt(gx, gz)) return 'lot';
+  if (grid.lotAt(gx, gz) >= PLACED_LOT) return 'lot'; // a grown house gives way to a road (sim/systems/roads.js clears it)
   return null;
 }
 
