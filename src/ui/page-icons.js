@@ -24,6 +24,10 @@ export const PAGE_ICONS = {
   gfx: svg('<rect x="4" y="5" width="20" height="17" rx="2" fill="#FBF6EA"/><path d="M4 18l5.5-5.5 4 4 3-3L24 21" fill="#A8C179"/><circle cx="18.5" cy="9.5" r="2" fill="#E6BC62"/>'),
   // a speaker with two waves (Sound)
   snd: svg('<path d="M4.5 11v6h4l5.5 4.5v-15L8.5 11Z" fill="#E3A08E"/><path d="M18 10.5a5 5 0 0 1 0 7M21 7.5a9 9 0 0 1 0 13"/>'),
+  // a compass rose with four arrows
+  ctl: svg('<circle cx="14" cy="14" r="9.5" fill="#D2E3EE"/><path d="M14 5.5v17M5.5 14h17"/><path d="M14 3.8l-2.4 3h4.8ZM14 24.2l-2.4-3h4.8ZM3.8 14l3-2.4v4.8ZM24.2 14l-3-2.4v4.8Z" fill="#B8472E" stroke-width="1.3"/><circle cx="14" cy="14" r="2.2" fill="#FBF6EA"/>'),
+  // an eye over a big and a little A
+  acc: svg('<path d="M2.5 14s4.2-7 11.5-7 11.5 7 11.5 7-4.2 7-11.5 7S2.5 14 2.5 14Z" fill="#FBF6EA"/><circle cx="14" cy="14" r="4.6" fill="#8FB8D6"/><circle cx="14" cy="14" r="1.8" fill="#2B2620"/><circle cx="15.6" cy="12.4" r=".8" fill="#FBF6EA" stroke-width="0"/>'),
   // a house with a key (Town and saves)
   town: GROUP_ICONS.town,
   // a stack of three medals (every milestone)

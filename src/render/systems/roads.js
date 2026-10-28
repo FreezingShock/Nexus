@@ -10,9 +10,10 @@ import { hash } from '../../world/terrain.js';
 import { Acc, ASPHALT, emitTiles, groundY, roadMaterial, tileWorld } from '../road-mesh.js';
 import { allocInstanceColors } from '../geom.js';
 import { createLandWatch } from '../land-watch.js';
+import { trafficRgb } from '../../core/access.js';
 
 const CHUNK = 24, PER_ROW = GRID_N / CHUNK;
-const TRAFFIC = [null, [0.616, 0.702, 0.486], [0.851, 0.706, 0.373], [0.722, 0.278, 0.18]]; // by class: free, busy, jammed
+let TRAFFIC = [null, ...trafficRgb('standard')]; // by class: free, busy, jammed; the Access setting swaps the set
 const WAVES = 5, WAVE_GAP = 0.07, POP_S = 0.4;
 const MAX_LAMPS = 260, MAX_PUFFS = 80;
 
@@ -218,7 +219,7 @@ export default {
           else for (const i of moved.tiles) if (roads[i]) dirty.add(chunkOf(i));
           rebuildDirty();
         }
-        const want = f.tool === 'traffic';
+        const want = f.view === 'traffic';
         if (want !== traffic) { traffic = want; for (const c of chunks.values()) tint(c); }
         if (traffic && grid.loadRev !== seenLoad) { seenLoad = grid.loadRev; for (const c of chunks.values()) tint(c); }
         // pop waves
@@ -235,6 +236,11 @@ export default {
         for (let k = puffQueue.length - 1; k >= 0; k--) if (puffQueue[k].at <= clock) { spawnPuff(puffQueue[k].i, puffQueue[k].col); puffQueue.splice(k, 1); }
         if (puffs.length) stepPuffs(f.dt); else if (puffMesh.count) puffMesh.count = 0;
         if (ghost) ghostMat.opacity = 0.7 + 0.08 * Math.sin(clock * 5);
+      },
+      // Colour-blind-friendly traffic colours (Settings > Access): repaint the tint when the set changes.
+      access(a) {
+        TRAFFIC = [null, ...trafficRgb(a.colors)];
+        if (traffic) for (const c of chunks.values()) tint(c);
       },
     };
   },

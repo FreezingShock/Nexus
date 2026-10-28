@@ -112,7 +112,7 @@ export const hoppers = (d) => (d > 0 ? Math.min(3, d) : 0);
 export const FLY_GAP_S = 0.7; // a new number flies at most this often; arrivals in between join the next one
 
 const PERSON = '<svg viewBox="0 0 14 18" aria-hidden="true"><circle cx="7" cy="4.4" r="3.2" fill="#FBF6EA" stroke="#2B2620" stroke-width="1.6"/><path d="M1.6 17c0-4 2.4-6.6 5.4-6.6s5.4 2.6 5.4 6.6Z" fill="#E3A08E" stroke="#2B2620" stroke-width="1.6" stroke-linejoin="round"/></svg>';
-const calmer = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+import { calmer } from '../../core/access.js';
 
 export default {
   id: 'population',
