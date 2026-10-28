@@ -7,7 +7,7 @@ import { loadGame, writeSave, clearSave, exportText, importText, restoreBackup, 
 import { createQualityStore, detectEnv } from './core/quality.js';
 import { createCalendarStore } from './core/calendar.js';
 import { createSoundStore } from './audio/mix.js';
-import { createProgress, chase, atLeast, shotAt, WARM_STEPS, PLAY_STEPS, MIN_STEP_MS, REVEAL_HOLD_MS } from './core/boot.js';
+import { createProgress, chase, atLeast, shotAt, pickSteps, createSkip, WARM_STEPS, PLAY_STEPS, MIN_STEP_MS, REVEAL_HOLD_MS } from './core/boot.js';
 import { cinePose, LOW_TILT } from './render/photo-math.js';
 import { ISO } from './render/camera-math.js';
 import { createTitle } from './ui/title.js';
@@ -157,7 +157,7 @@ function noteBests() {
 const PROFILE_EVERY_MS = 15000; // time played is counted in these steps, only while the tab is showing
 
 // ---- play: the progress screen, then the town ----
-let bootP = null, shown = 0, base = null;
+let bootP = null, shown = 0, base = null, skip = null;
 let titleT = 0, shotIx = -1, shotBase = null;
 // A cut: the camera jumps to the next shot's viewpoint while the paper curtain covers the town.
 function cutTo(sh) {
@@ -174,9 +174,11 @@ async function play() {
   phase = 'boot';
   title.hideTitle();
   await sleep(260); // the title card has gone before the progress screen arrives
-  bootP = createProgress(PLAY_STEPS);
-  title.showBoot(PLAY_STEPS);
-  const run = (id, fn) => { bootP.begin(id); return atLeast(MIN_STEP_MS, async () => { const r = await fn(); bootP.done(id); return r; }); };
+  const steps = pickSteps(PLAY_STEPS); // one wording per step, picked at random this load
+  bootP = createProgress(steps);
+  skip = createSkip();
+  title.showBoot(steps, () => skip.request()); // a skip only hurries the waiting; every step still finishes first
+  const run = (id, fn) => { bootP.begin(id); return atLeast(MIN_STEP_MS, async () => { const r = await fn(); bootP.done(id); return r; }, skip.wait); };
 
   await run('away', async () => {
     // ?away=<seconds> forces an offline return for testing
@@ -199,8 +201,8 @@ async function play() {
     if (params.has('debug')) window.__nexus = { sim, scene, ui, layout: sim.layout };
   });
 
-  while (shown < 0.999) await sleep(40); // the bar finishes its walk
-  await sleep(REVEAL_HOLD_MS);
+  while (shown < 0.999 && !skip.asked()) await sleep(40); // the bar finishes its walk
+  if (skip.asked()) { shown = 1; await sleep(160); } else await skip.wait(REVEAL_HOLD_MS);
   open();
 }
 
@@ -263,7 +265,7 @@ function frame(now) {
     v.ttx = p.tx; v.ttz = p.tz; v.taz = p.az; v.telev = Math.max(p.elev, LOW_TILT);
     title.curtain(sh.curtain);
     scene.frame(dt, t, dt, state, null);
-    if (phase === 'boot' && bootP) { shown = chase(shown, bootP.fraction(), dt); title.bootFrame(shown, bootP); }
+    if (phase === 'boot' && bootP) { shown = chase(shown, bootP.fraction(), dt, skip && skip.asked() ? 16 : 5); title.bootFrame(shown, bootP, dt); }
   }
   requestAnimationFrame(frame);
 }

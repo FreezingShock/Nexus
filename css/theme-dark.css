@@ -110,7 +110,7 @@
 :root[data-theme="dark"] :is(
   .kgroup>h3, .ctrl .ib, .ib[aria-pressed="true"], .ib:active, .nb-chip[aria-pressed="true"],
   .cl-counts i, .cl-fresh, .cl-kind, .tt-ver:hover, .ps-chip, .ps-btn, .ps-card li i,
-  .glist li.full .gl-check, .bt-steps li[data-s="done"], .pf-medal, .pf-ladder li.past span,
+  .glist li.full .gl-check, .bt-steps li[data-s="done"], .boot.skipping .bt-hint, .pf-medal, .pf-ladder li.past span,
   .ph-bar #ph-cine[aria-pressed="true"], .badge, .tool .ico, .mi-ico, .tt-ico, .nb-ico, .ag-gico,
   .fb-kind input:checked+span, .fb-tab.on
 ){color:var(--on-bright)}
