@@ -2,6 +2,7 @@
 // To add a feature, create a file in this folder with a default export, then run `npm run registry`.
 // Hook shapes are documented in docs/EXTENDING.md. Modules run in order of their optional `order` number, then file name.
 import achievements from './achievements.js';
+import bulldozeArea from './bulldoze-area.js';
 import calendar from './calendar.js';
 import core from './core.js';
 import decor from './decor.js';
@@ -24,6 +25,7 @@ import zoning from './zoning.js';
 
 export const systems = [
   achievements,
+  bulldozeArea,
   calendar,
   core,
   decor,

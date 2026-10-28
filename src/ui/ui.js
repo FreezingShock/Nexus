@@ -90,7 +90,7 @@ export function createUi({ sim, scene, actions }) {
 
   // sim events -> feedback
   sim.subscribe((e) => {
-    if (e.text && !isNoteEvent(e)) hud.toast(e.text, e.kind); // milestones and rewards get a reward strip instead
+    if (e.text && !sim.hush && !isNoteEvent(e)) hud.toast(e.text, e.kind); // milestones and rewards get a reward strip instead
     for (const m of mods) if (m.onEvent) m.onEvent(e);
     if (e.type === 'upgraded') { scene.pop(e.id); if (panels.ui.selected === e.id) panels.showInspect(e.id); }
     else if (e.type === 'bulldozed') { if (panels.ui.selected === e.id) select(null); }
