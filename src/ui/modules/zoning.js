@@ -55,9 +55,9 @@ export default {
         const r = view().preview({ a: drag.a, b: drag.b, mode: brush ? 'paint' : 'erase', zone: brush });
         drag.result = r;
         if (!brush) return label(e, r.n ? `Erase · ${r.n} tile${r.n > 1 ? 's' : ''}` : 'Nothing painted here');
-        if (!r.n) return label(e, r.blocked ? 'Only open ground can be zoned' : 'Already painted', !!r.blocked);
+        if (!r.n) return label(e, r.noRoad ? 'Zones need a road right beside them' : r.blocked ? 'Only open ground can be zoned' : 'Already painted', !!(r.noRoad || r.blocked));
         const cost = sim.zoning.costOf(brush, r.n), poor = cost > sim.state.coins;
-        label(e, `${def().name} · ${r.n} tile${r.n > 1 ? 's' : ''} · ${fmt(cost)} coins` + (r.blocked ? ` · ${r.blocked} blocked` : '') + (poor ? ' · not enough coins' : ''), poor);
+        label(e, `${def().name} · ${r.n} tile${r.n > 1 ? 's' : ''} · ${fmt(cost)} coins` + (r.blocked ? ` · ${r.blocked} blocked` : '') + (r.noRoad ? ` · ${r.noRoad} left out, no road beside` : '') + (poor ? ' · not enough coins' : ''), poor);
       } else if (hoverTile) {
         view().hover(hoverTile, brush);
         const open = sim.grid.isOpen(hoverTile[0], hoverTile[1]);
@@ -114,7 +114,7 @@ export default {
       f.classList.add('zfly');
       const tiles = ZONE_DEFS.slice(1).map((z, i) => zoneCard({ id: z.id, name: z.name, price: `${z.cost} coins a tile`, key: String(i + 1), pressed: brush === z.id, tip: z.sub })).join('') +
         zoneCard({ id: 0, name: 'Eraser', price: 'Free', key: '0', pressed: brush === 0, tip: 'Clears zones back to open ground' });
-      f.innerHTML = `<div class="rhead"><b class="ptitle">Zones</b><span class="rhint">Drag on the map to paint · buildings grow near roads · ${n} tile${n === 1 ? '' : 's'} · ${st.count} building${st.count === 1 ? '' : 's'}</span></div>` +
+      f.innerHTML = `<div class="rhead"><b class="ptitle">Zones</b><span class="rhint">Drag on the map to paint · only tiles beside a road are painted · ${n} tile${n === 1 ? '' : 's'} · ${st.count} building${st.count === 1 ? '' : 's'}</span></div>` +
         `<div class="strip zone-strip">${tiles}</div>`;
       f.querySelectorAll('[data-zone]').forEach((b) => { b.onclick = () => { setBrush(Number(b.dataset.zone)); }; });
     }

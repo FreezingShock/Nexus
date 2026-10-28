@@ -25,11 +25,15 @@ function paintStrip(sim) {
 
 test('painting charges per tile, fills the grid and survives a save', () => {
   const sim = mk(), before = sim.state.coins;
+  const takes = [];
+  for (let gz = A[1]; gz <= B[1]; gz++) for (let gx = A[0]; gx <= B[0]; gx++) if (sim.grid.isOpen(gx, gz) && sim.grid.roadBeside(gx, gz)) takes.push([gx, gz]);
+  assert.ok(takes.length > 0 && takes.length < AREA, 'the rectangle holds tiles beside the street and tiles away from it');
   sim.dispatch({ type: 'paintZone', zone: 1, a: A, b: B });
-  assert.equal(sim.state.coins, before - ZONE_DEFS[1].cost * AREA);
-  assert.equal(sim.grid.zoneAt(...T), 1);
+  assert.equal(sim.state.coins, before - ZONE_DEFS[1].cost * takes.length, 'only tiles that can grow are charged');
+  assert.equal(sim.grid.zoneAt(...takes[0]), 1);
+  assert.equal(sim.grid.zoneAt(...T), 0, 'a tile with no road beside it is left out');
   const back = createSim({ state: unwrap(wrap(sim.state, 1)).state });
-  assert.equal(back.grid.zoneAt(...T), 1);
+  assert.equal(back.grid.zoneAt(...takes[0]), 1);
   assert.equal(back.grid.zoneAt(0, 0), 0);
 });
 
@@ -41,7 +45,7 @@ test('paint only takes open ground and stops when coins run out', () => {
   const painted = () => sim.state.zones.split('').filter((c) => c === '2').length;
   const before = painted();
   sim.state.coins = 36;
-  sim.dispatch({ type: 'paintZone', zone: 2, a: A, b: B }); // 24 coins each: one tile
+  sim.dispatch({ type: 'paintZone', zone: 2, a: S1, b: S2 }); // 24 coins each: one tile
   assert.equal(sim.state.coins, 12);
   assert.equal(painted(), before + 1);
 });
@@ -106,33 +110,38 @@ function awayTiles(sim) {
   return out;
 }
 
-test('paint away from a street stays painted and empty, however long it waits', () => {
-  const NOW = 1_800_000_000_000;
-  const sim = mk({ now: () => NOW });
+test('paint away from a street is left out and not charged', () => {
+  const sim = mk();
   const away = awayTiles(sim);
   assert.ok(away.two.length > 0 && away.diagonal.length > 0, 'the starter town has both kinds of tile');
-  const tiles = [...away.two.slice(0, 6), ...away.diagonal.slice(0, 3)];
+  const tiles = [...away.two.slice(0, 6), ...away.diagonal.slice(0, 3)], before = sim.state.coins;
   for (const [gx, gz] of tiles) sim.dispatch({ type: 'paintZone', zone: 1, a: [gx, gz], b: [gx, gz] });
-  const STRIP = paintStrip(sim); // a strip that does touch the street keeps growing
-  for (let i = 0; i < 600; i++) sim.tick();
-  sim.catchUp(NOW - 6 * 3600 * 1000);
-  assert.equal(sim.state.lots.length, STRIP, 'only the strip beside the street grew');
-  for (const [gx, gz] of tiles) {
-    assert.equal(sim.grid.zoneAt(gx, gz), 1, 'still painted');
-    assert.equal(sim.grid.lotAt(gx, gz), 0, 'and empty');
-  }
+  assert.equal(sim.state.coins, before, 'nothing charged');
+  for (const [gx, gz] of tiles) assert.equal(sim.grid.zoneAt(gx, gz), 0, 'not painted');
 });
 
-test('a road drawn beside waiting paint lets it grow', () => {
+test('a dragged rectangle paints only the tiles beside a road', () => {
+  const NOW = 1_800_000_000_000;
+  const sim = mk({ now: () => NOW });
+  const STRIP = paintStrip(sim); // paintStrip's strip sits beside the street
+  const sealed = [GRID_HALF + 3, GRID_HALF + 4]; // the second row away from the street, under the strip
+  sim.dispatch({ type: 'paintZone', zone: 1, a: sealed, b: [GRID_HALF + 10, GRID_HALF + 4] });
+  for (let gx = sealed[0]; gx <= GRID_HALF + 10; gx++) assert.equal(sim.grid.zoneAt(gx, sealed[1]), 0);
+  for (let i = 0; i < 600; i++) sim.tick();
+  assert.equal(sim.state.lots.length, STRIP, 'only the strip beside the street grew');
+});
+
+test('a road drawn beside open ground lets paint take there', () => {
   const sim = mk();
   const [gx, gz] = awayTiles(sim).two[0];
   sim.dispatch({ type: 'paintZone', zone: 1, a: [gx, gz], b: [gx, gz] });
-  for (let i = 0; i < 200; i++) sim.tick();
-  assert.equal(sim.grid.lotAt(gx, gz), 0);
+  assert.equal(sim.grid.zoneAt(gx, gz), 0);
   for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { // whichever neighbor is open ground becomes road
     if (sim.grid.isOpen(gx + dx, gz + dz)) { sim.grid.road[tileIndex(gx + dx, gz + dz)] = 1; break; }
   }
   assert.ok(sim.grid.roadBeside(gx, gz), 'the new road touches the tile');
+  sim.dispatch({ type: 'paintZone', zone: 1, a: [gx, gz], b: [gx, gz] });
+  assert.equal(sim.grid.zoneAt(gx, gz), 1);
   for (let i = 0; i < 200 && !sim.grid.lotAt(gx, gz); i++) sim.tick();
   assert.ok(sim.grid.lotAt(gx, gz) > 0, 'now it grows');
 });
@@ -149,15 +158,17 @@ test('a building that already grew stays when its street goes', () => {
   assert.deepEqual(after, before, 'no lot was demolished, and none grew in the freed tiles');
 });
 
-test('the paint toast says tiles away from a street stay empty', () => {
+test('the paint toast says tiles away from a street were left out', () => {
   const sim = mk();
   const [gx, gz] = awayTiles(sim).two[0];
-  let text = '';
-  sim.subscribe((e) => { if (e.type === 'zonePainted') text = e.text; });
+  const text = [], toasts = [];
+  sim.subscribe((e) => { if (e.type === 'zonePainted') text.push(e.text); if (e.type === 'toast') toasts.push(e.text); });
   sim.dispatch({ type: 'paintZone', zone: 1, a: [gx, gz], b: [gx, gz] });
-  assert.match(text, /stays empty until a road runs beside it/);
-  sim.dispatch({ type: 'paintZone', zone: 1, a: S1, b: S1 });
-  assert.doesNotMatch(text, /empty/, 'a tile beside the street gets no warning');
+  assert.deepEqual(toasts, ['Zones need a road right beside them'], 'nothing to paint: a plain toast');
+  sim.dispatch({ type: 'paintZone', zone: 1, a: S1, b: [S1[0] + 1, S1[1] + 2] });
+  assert.match(text[0], /left out, no road beside/, 'a mixed drag says how many tiles were left out');
+  sim.dispatch({ type: 'paintZone', zone: 1, a: [S1[0] + 4, S1[1]], b: [S1[0] + 4, S1[1]] });
+  assert.doesNotMatch(text[1], /left out/, 'a tile beside the street gets no warning');
 });
 
 test('demand stays within bounds and responds to balance', () => {

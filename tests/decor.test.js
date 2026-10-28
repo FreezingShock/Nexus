@@ -5,6 +5,7 @@ import { freshState } from '../src/sim/state.js';
 import { wrap, unwrap } from '../src/sim/save.js';
 import { GRID_HALF } from '../src/world/grid.js';
 import { DECOR, MAX_DECOR, decorById, decorCost, sanitizeDecor } from '../src/world/decor.js';
+import { roadBesideTiles } from './support/road.js';
 
 const mk = () => { const state = freshState(); state.coins = 100000; state.parts = 5000; return createSim({ state }); };
 // open ground east of the starter cottages, as the zoning tests use
@@ -70,6 +71,7 @@ test('a road laid over a decoration makes it go, with the coins back', () => {
   const sim = mk();
   place(sim, 'hedge', T[0], T[1]);
   const c1 = sim.state.coins;
+  roadBesideTiles(sim, [T]);
   sim.dispatch({ type: 'paintZone', zone: 1, a: T, b: T });
   const zoned = sim.state.coins;
   for (let i = 0; i < 4; i++) sim.advance(0.25);

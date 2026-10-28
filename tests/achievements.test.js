@@ -11,6 +11,7 @@ import {
   rewardLine, stagesReached, standing, summary, totalStages, unlockFor,
 } from '../src/sim/achievements.js';
 import { METRICS } from '../src/sim/achievement-metrics.js';
+import { roadBesideTiles } from './support/road.js';
 
 const layout = getLayout();
 const T0 = Date.UTC(2026, 9, 22, 12);
@@ -173,6 +174,7 @@ test('commands pay too: a first upgrade and a first painted row show up without 
   const notes = collect(sim);
   sim.state.coins = 1e6;
   const [gx, gz] = openRow(sim, 12);
+  roadBesideTiles(sim, Array.from({ length: 12 }, (_, k) => [gx + k, gz]));
   sim.dispatch({ type: 'paintZone', zone: 1, a: [gx, gz], b: [gx + 3, gz] });
   assert.equal(sim.state.stats.painted, 4);
   assert.equal(sim.state.ach.done.painted || 0, 0, 'four tiles is short of the first stage');
