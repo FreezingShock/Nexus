@@ -323,7 +323,7 @@ export function createTitle({ onPlay, onNewTown }) {
         acc += x.weight;
         const f = document.createElement('u');
         f.className = 'bt-flag'; f.dataset.id = x.id; f.dataset.s = 'todo';
-        f.style.left = `calc(17px + (100% - 34px) * ${(acc / total).toFixed(4)})`; f.style.setProperty('--fc', FLAGS[i % FLAGS.length]);
+        f.style.left = `calc(34px + (100% - 34px) * ${(acc / total).toFixed(4)})`; f.style.setProperty('--fc', FLAGS[i % FLAGS.length]);
         $('bt-track').appendChild(f);
       });
       $('bt-hinttext').textContent = HINT_SKIP;
@@ -342,10 +342,10 @@ export function createTitle({ onPlay, onNewTown }) {
     // Called every frame while the progress screen is up: `shown` is the smoothed bar, `progress` the tracker.
     bootFrame(shown, progress, dt) {
       const pct = Math.round(shown * 100);
-      // The marker is the head of the sewn part; it stays inside the bar's ends.
-      const at = `calc(17px + (100% - 34px) * ${shown.toFixed(4)})`;
-      $('bt-fill').style.width = at;
-      $('bt-house').style.left = at;
+      // The sewn part is at least the marker's width and is the whole bar at 100%; the marker rides its head, inside the ends.
+      const sewn = (f) => `calc(34px + (100% - 34px) * ${f.toFixed(4)})`;
+      $('bt-fill').style.width = sewn(shown);
+      $('bt-house').style.left = `calc(17px + (100% - 34px) * ${shown.toFixed(4)})`;
       $('bt-track').setAttribute('aria-valuenow', String(pct));
       $('bt-cap').textContent = progress.caption() + (progress.isDone() ? '' : '…');
       if (scene) scene.frame(dt || 0.016, shown);

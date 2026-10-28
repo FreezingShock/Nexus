@@ -260,7 +260,8 @@ body.revealing #app>:not(#stage):not(#title):not(#boot):not(#offline){transition
 .bt-track>b{position:absolute;top:-24px;left:0;width:34px;height:34px;margin-left:-17px;z-index:3;filter:drop-shadow(0 3px 0 rgba(43,38,32,.3));animation:tt-bob 1.1s ease-in-out infinite}
 .bt-track>b svg{width:100%;height:100%}
 /* a small flag goes up at the end of each step */
-.bt-flag{position:absolute;bottom:100%;width:0;height:24px;margin-left:-1px;border-left:2.5px solid var(--ink);z-index:2;transition:opacity .2s}
+.bt-flag{position:absolute;bottom:100%;width:0;height:24px;margin-left:-2.5px;border-left:2.5px solid var(--ink);z-index:2;transform-origin:50% 100%;transition:transform .25s ease-out}
+.bt-flag[data-s="todo"]{transform:scaleY(0)}
 .bt-flag::after{content:"";position:absolute;left:0;top:0;width:15px;height:11px;background:var(--fc,#B8472E);border:2.5px solid var(--ink);border-left:0;clip-path:polygon(0 0,100% 0,72% 50%,100% 100%,0 100%);transform-origin:0 0;transform:scaleX(0)}
 .bt-flag[data-s="done"]::after{animation:bt-unfurl .45s cubic-bezier(.3,1.5,.5,1) forwards;transform:scaleX(1)}
 @keyframes bt-unfurl{from{transform:scaleX(0) rotate(-12deg)}}
