@@ -1,6 +1,6 @@
-// The changelog: every release, newest first, shown under Changes on the title screen. One entry per release, and every
-// pull request that changes something a player can see or hear adds a line to the newest entry (or opens a new entry
-// with the version bump). tests/changelog.test.js checks that the newest entry is the version in src/version.js, so a
+// The changelog: every release, newest first, shown under Changes on the title screen. One entry per release. Feature PRs do not
+// edit this file: they add release-notes/<topic>.json, and `node scripts/release.mjs` folds those into a new entry when
+// a release is cut. tests/changelog.test.js checks that the newest entry is the version in src/version.js, so a
 // release can never ship without its notes.
 //
 // An entry: { v, date ('YYYY-MM-DD'), name (a short cozy title), blurb (one sentence), items }.

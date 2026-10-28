@@ -16,7 +16,7 @@ Each row opens its page in `#tt-sheet`, a big notebook sheet centred over the to
 
 ## Changelog
 
-src/changelog.js holds every release, newest first: `{ v, date, name, blurb, items: [{ k, t, pr }] }`, with kinds new, better, look, sound and fix. **Every PR that changes something a player sees or hears adds a line** to the newest entry, or opens a new entry when it bumps the version. tests/changelog.test.js fails if the newest entry is not src/version.js's version. The Changes row shows a New badge when the game has moved past the version the player last saw (`nexus.seenVersion`).
+src/changelog.js holds every release, newest first: `{ v, date, name, blurb, items: [{ k, t, pr }] }`, with kinds new, better, look, sound and fix. **Feature PRs do not edit it.** A PR that changes something a player sees or hears adds a file under `release-notes/` (see its README), and the release PR runs `node scripts/release.mjs` to fold those into a new entry and bump the version. tests/changelog.test.js fails if the newest entry is not src/version.js's version. The Changes row shows a New badge when the game has moved past the version the player last saw (`nexus.seenVersion`).
 
 ## Mayor profile
 

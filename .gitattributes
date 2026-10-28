@@ -3,7 +3,7 @@
 
 # Append-style files: when two threads add lines at the same place, keep both sides instead of a conflict.
 # tests/repo-hygiene.test.js catches a bad result (leftover conflict markers, a stylesheet link to a missing file).
-index.html merge=union
+# index.html is NOT here: a union merge once kept both the old and new toolbar tiles. Overlapping edits must conflict.
 docs/*.md merge=union
 CONTRIBUTING.md merge=union
 tests/*.test.js merge=union
