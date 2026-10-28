@@ -331,8 +331,10 @@ export function createTitle({ onPlay, onNewTown }) {
     // Called every frame while the progress screen is up: `shown` is the smoothed bar, `progress` the tracker.
     bootFrame(shown, progress, dt) {
       const pct = Math.round(shown * 100);
-      $('bt-fill').style.width = pct + '%';
-      $('bt-house').style.left = `calc(17px + (100% - 34px) * ${(shown).toFixed(4)})`; // the marker stays inside the bar's ends
+      // The roller's front drum is the head of the new road; it stays inside the bar's ends.
+      const at = `calc(9px + (100% - 18px) * ${shown.toFixed(4)})`;
+      $('bt-fill').style.width = at;
+      $('bt-house').style.left = at;
       $('bt-track').setAttribute('aria-valuenow', String(pct));
       $('bt-cap').textContent = progress.caption() + (progress.isDone() ? '' : '…');
       if (scene) scene.frame(dt || 0.016, shown);

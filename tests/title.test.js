@@ -193,3 +193,11 @@ test('the street animation builds the same street for the same seed and lays out
   const tl = timeline(21);
   assert.ok(tl.lastEnds > 5 && tl.lastEnds < 16);
 });
+
+test('the progress bar is a road paved by a steamroller that stays inside the bar', () => {
+  const html = read('index.html'), js = read('src/ui/title.js'), css = read('css/title.css');
+  assert.match(html, /id="bt-house"><svg[^>]*>.*rl-wheel/s);
+  assert.match(js, /\$\('bt-fill'\)\.style\.width = at/);
+  assert.match(js, /\$\('bt-house'\)\.style\.left = at/);
+  assert.match(css, /\.rl-wheel\{[^}]*animation/);
+});
