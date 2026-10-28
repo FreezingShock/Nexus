@@ -315,6 +315,17 @@ export function createTitle({ onPlay, onNewTown }) {
     showBoot(steps, onSkip) {
       $('bt-steps').innerHTML = steps.map((s) => `<li data-id="${s.id}" data-s="todo">${esc(s.caption)}</li>`).join('');
       $('bt-tip').textContent = TIPS[Math.floor(Math.random() * TIPS.length)];
+      // One flag per step, planted where that step's share of the bar ends.
+      const total = steps.reduce((a, x) => a + x.weight, 0) || 1, FLAGS = ['#B8472E', '#8FA65A', '#E6BC62', '#6FA3BD'];
+      let acc = 0;
+      $('bt-track').querySelectorAll('.bt-flag').forEach((f) => f.remove());
+      steps.forEach((x, i) => {
+        acc += x.weight;
+        const f = document.createElement('u');
+        f.className = 'bt-flag'; f.dataset.id = x.id; f.dataset.s = 'todo';
+        f.style.left = `calc(17px + (100% - 34px) * ${(acc / total).toFixed(4)})`; f.style.setProperty('--fc', FLAGS[i % FLAGS.length]);
+        $('bt-track').appendChild(f);
+      });
       $('bt-hinttext').textContent = HINT_SKIP;
       boot.classList.remove('skipping');
       boot.hidden = false;
@@ -331,14 +342,14 @@ export function createTitle({ onPlay, onNewTown }) {
     // Called every frame while the progress screen is up: `shown` is the smoothed bar, `progress` the tracker.
     bootFrame(shown, progress, dt) {
       const pct = Math.round(shown * 100);
-      // The roller's front drum is the head of the new road; it stays inside the bar's ends.
-      const at = `calc(9px + (100% - 18px) * ${shown.toFixed(4)})`;
+      // The marker is the head of the sewn part; it stays inside the bar's ends.
+      const at = `calc(17px + (100% - 34px) * ${shown.toFixed(4)})`;
       $('bt-fill').style.width = at;
       $('bt-house').style.left = at;
       $('bt-track').setAttribute('aria-valuenow', String(pct));
       $('bt-cap').textContent = progress.caption() + (progress.isDone() ? '' : '…');
       if (scene) scene.frame(dt || 0.016, shown);
-      for (const s of progress.steps()) { const li = $('bt-steps').querySelector('[data-id="' + s.id + '"]'); if (li && li.dataset.s !== s.state) li.dataset.s = s.state; }
+      for (const s of progress.steps()) { const li = $('bt-steps').querySelector('[data-id="' + s.id + '"]'); if (li && li.dataset.s !== s.state) li.dataset.s = s.state; const fl = $('bt-track').querySelector('.bt-flag[data-id="' + s.id + '"]'); if (fl && fl.dataset.s !== s.state) fl.dataset.s = s.state; }
     },
     hideBoot() {
       boot.hidden = true;
