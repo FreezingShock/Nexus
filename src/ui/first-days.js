@@ -62,11 +62,24 @@ export function advance(data, nowDone) {
   return { data: { ...data, done: STEPS.map((s) => s.id).filter((id) => done.has(id)) }, fresh };
 }
 
-// The three hints on the welcome postcard.
-export const HINTS = [
-  { head: 'Look around', text: 'Drag to move, scroll to zoom, Q and E to turn.' },
-  { head: 'Build as you like', text: 'The toolbar along the bottom has everything. One tool will glow softly to suggest where to start.' },
-  { head: 'Come back later', text: 'Coins keep arriving while you are away, and a postcard tells you what happened.' },
+// The welcome card. Tab one is a short path of first steps, each tinted like its toolbar tile; tab two says what the numbers
+// along the top mean. `c` is a fallback tint (the real one is read from the toolbar), `tool` picks the real toolbar icon.
+export const LOOK = { head: 'Look around', keys: [['Drag', 'move'], ['Scroll', 'zoom'], ['Q', 'turn left'], ['E', 'turn right'], ['F', 'fly low']] };
+
+export const PATH = [
+  { tool: 'roads', key: 'R', c: '#D8CDB4', head: 'Lay a road', text: 'Click where it starts, then where it ends. Roads find their own bends, and a street is what everything else grows beside.' },
+  { tool: 'zones', key: 'Z', c: '#BFD8C4', head: 'Zone homes beside it', text: 'Paint a strip next to the street. Homes move in and grow by themselves, and shops and workshops follow.' },
+  { tool: 'build', key: 'B', c: '#E3A08E', head: 'Put up a shop or two', text: 'Pick a building and place it on a lot touching a street. Shops and cafés give neighbours somewhere to go.' },
+  { tool: 'parks', key: 'P', c: '#A8C179', head: 'Plant a park', text: 'Green space makes the homes around it happier, and happier homes pay more.' },
+  { tool: 'services', key: 'C', c: '#DCE8EC', head: 'Add a service', text: 'A clinic, school, fire station or police post keeps a whole area content. Click any building later to upgrade it.' },
+];
+
+export const NUMBERS = [
+  { id: 'coins', c: '#E6BC62', head: 'Coins', text: 'Earned every second by your homes, shops and workshops. Spend them on roads, buildings and upgrades. They keep arriving while you are away.' },
+  { id: 'parts', c: '#E3A08E', head: 'Parts', text: 'A slower trickle, mostly from workshops. Bigger roads and some builds ask for Parts, so they are worth saving.' },
+  { id: 'happy', c: '#C9DDB8', head: 'Happiness', text: 'The town mood. Parks, shops and services within reach of a home lift it. Click it to see which homes need what.' },
+  { id: 'demand', c: '#9CC3D5', head: 'Wanted / Plenty', text: 'The demand bars say what the town is asking for: "Wanted" means paint more of that zone, "Plenty for now" means wait.' },
+  { id: 'goals', c: '#F2D27A', head: 'Goals and Charge', text: 'G opens three small daily goals. Building fills Charge, and spending it doubles your coins for a minute. All optional.' },
 ];
 
 // The tool to glow: the first step with a tool that is not done and whose tool the player has not picked up yet.

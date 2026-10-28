@@ -3,7 +3,7 @@
 // its right edge. The title screen and the town both use it (title.js and book.js); styles live in css/notebook.css.
 // It only shows and hides pages: each page brings its own body markup and handlers.
 //
-// A page: { title, sub, c (accent colour), icon (svg), narrow?, tabs?: [{ id, label, color, icon }],
+// A page: { title, sub, c (accent colour), icon (svg), narrow?, compact?, tabs?: [{ id, label, color, icon }],
 //   render(ctx) -> html (ctx: { tab, body }), opened?(ctx), closed?(), click?(e, ctx), input?(e, ctx), change?(e, ctx) }
 // sub may be a function of the page, for a line that changes.
 import { ICONS } from './title-icons.js';
@@ -66,6 +66,7 @@ export function createNotebook({ get, prefix, pages, sounds = null, onShow = () 
     if (p.tabs && !p.tabs.some((t) => t.id === tabOf[name])) tabOf[name] = p.tabs[0].id;
     sheet.style.setProperty('--pg', p.c);
     sheet.classList.toggle('narrow', !!p.narrow);
+    sheet.classList.toggle('compact', !!p.compact);
     sheet.dataset.page = name;
     el('sheet-ico').innerHTML = p.icon || '';
     el('sheet-title').textContent = p.title;

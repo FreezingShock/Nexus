@@ -11,7 +11,7 @@ coloured bookmark tabs down its right edge. A paper rustle and a chime of its ow
 - **Town**: `src/ui/book.js` builds the sheet (prefix `pg`) on a stage over the town and keeps a page registry. Pages:
   - `goals` (`modules/progress.js`): tabs Today (Charge, today's goals, almost there, Renewal) and Milestones
     (`milestone-list.js`). G opens Today, M opens Milestones.
-  - `firstdays` (`modules/first-days.js`, rules in `src/ui/first-days.js`): the welcome postcard, opened once ~2.5 s after Play when
+  - `firstdays` (`modules/first-days.js`, rules in `src/ui/first-days.js`): the welcome card (a `compact` sheet with two tabs: First steps, Your numbers; tiles copy the real toolbar icons), opened once just after Play when
     nothing has been built. The same module softly glows the next suggested toolbar tool (`.hint-glow`) until it is tried. Kept per
     browser under `nexus.firstdays.v1`, so it is not part of the save.
   - `settings` (`panels.js`): tabs Sky, Graphics, Sound, Town. Restore, Start over and Import ask on the page.
