@@ -24,15 +24,15 @@ test('decorations go up day by day and are all up by the holiday, for every mont
   for (const md of [2, 3, 4]) {
     for (const e of EVENTS) {
       const first = dayOfDate(2, e.months[0], 1, md);
-      const days = Array.from({ length: md }, (_, i) => eventOn(first + i, md));
+      const days = Array.from({ length: md }, (_, i) => eventOn(first + i, md, [e.id]));
       assert.ok(days.every((d) => d && d.id === e.id), e.id + ' covers its month');
       assert.equal(days[0].day, 0);
       for (let i = 1; i < md; i++) assert.ok(days[i].cover >= days[i - 1].cover, 'cover never drops');
       const peak = days.find((d) => d.peak && !d.fireworks) || days.find((d) => d.peak);
       assert.equal(holidayOn(first + peak.day, md).id, e.peak, e.id + ' peaks on its holiday (md ' + md + ')');
       assert.equal(peak.cover, 1);
-      assert.equal(eventOn(first - 1, md)?.id === e.id, false, 'not before its month');
-      assert.equal(eventOn(first + md, md)?.id === e.id, false, 'and over after it');
+      assert.equal(eventOn(first - 1, md, [e.id])?.id === e.id, false, 'not before its month');
+      assert.equal(eventOn(first + md, md, [e.id])?.id === e.id, false, 'and over after it');
     }
   }
 });
@@ -82,4 +82,32 @@ test('the calendar words: the season under way, the next one, and the ribbon', (
   assert.equal(r[11].event, 'christmas');
   assert.equal(r[9].holiday, 'halloween');
   assert.equal(r[3].event, '');
+});
+
+test('Snoopy Days is on by default, can be switched off, and builds to the Blossom Fair', async () => {
+  const md = 3, first = dayOfDate(2, 3, 1, md);
+  assert.equal(eventOn(first, md)?.id, undefined, 'eventOn without a town list runs only the regular events');
+  assert.equal(eventOn(first, md, ['snoopy']).id, 'snoopy');
+  assert.equal(yearRibbon({ month: 0, festive: { optIn: [] } }, md)[3].event, '');
+  assert.equal(yearRibbon({ month: 0, festive: { optIn: ['snoopy'] } }, md)[3].event, 'snoopy');
+  const sim = createSim({ layout: getLayout() });
+  assert.deepEqual(sim.state.festive.optIn, ['snoopy'], 'a new town has it on');
+  sim.dispatch({ type: 'setEventOptIn', event: 'snoopy', on: false });
+  assert.deepEqual(sim.state.festive.optIn, []);
+  sim.dispatch({ type: 'setEventOptIn', event: 'nope', on: true });
+  assert.deepEqual(sim.state.festive.optIn, []);
+  sim.dispatch({ type: 'setEventOptIn', event: 'snoopy', on: true });
+  assert.deepEqual(sim.state.festive.optIn, ['snoopy']);
+  sim.skipToDay(first + 1);
+  assert.equal(sim.state.event, 'snoopy');
+  sim.dispatch({ type: 'setEventOptIn', event: 'snoopy', on: false });
+  assert.deepEqual(sim.state.festive.optIn, []);
+  const { sanitizeFestive } = await import('../src/core/festive.js');
+  assert.deepEqual(sanitizeFestive({ optIn: ['snoopy', 'christmas', 7] }).optIn, ['snoopy']);
+  // saves from before it existed, and dev saves that never got it offered, arrive with it on
+  assert.deepEqual(sanitizeFestive({ amount: 'all' }).optIn, ['snoopy']);
+  assert.deepEqual(sanitizeFestive({ optIn: [] }).optIn, ['snoopy']);
+  // a town that switched it off keeps it off
+  assert.deepEqual(sanitizeFestive({ optIn: [], offered: ['snoopy'] }).optIn, []);
+  assert.deepEqual(sanitizeFestive({ optIn: [], offered: ['snoopy', 'junk'] }).offered, ['snoopy']);
 });

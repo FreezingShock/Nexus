@@ -22,18 +22,29 @@ export const EVENTS = [
   { id: 'christmas', name: 'Christmas', months: [11], peak: 'christmas', fireworks: ['nye'], trees: 0.6,
     lights: [0xF6D27A, 0xE0533F, 0x5FA86A, 0x6FA0DC], accent: '#C2483A',
     start: 'Someone hung the first string of lights. The Christmas season has begun.' },
+  // Opt-in: runs while the town has it switched on (state.festive.optIn, the calendar's Decorations section; on by
+// default, so a town can switch it off there). A beagle
+  // with black ears, red doghouses on the doorsteps and kites over the roofs, building up to the Blossom Fair.
+  { id: 'snoopy', name: 'Snoopy Days', optIn: true, months: [3], peak: 'blossom', fireworks: [], trees: 0.2,
+    lights: [0xE0533F, 0xF7F1E3, 0xF3C04F, 0x6FA0DC], accent: '#D9533F',
+    start: 'A red doghouse appeared on a doorstep, and a kite is up over the roofs. Snoopy Days have begun.' },
 ];
 
+// The events the town can switch on, and the ones running for a town that switched on `optIn` (a list of event ids).
+export const OPT_IN_EVENTS = EVENTS.filter((e) => e.optIn);
+const running = (optIn) => EVENTS.filter((e) => !e.optIn || (optIn && optIn.includes(e.id)));
+
 const byId = Object.fromEntries(EVENTS.map((e) => [e.id, e]));
+export const runningEvents = running;
 export const eventById = (id) => byId[id] || null;
 const holiday = (id) => HOLIDAYS.find((h) => h.id === id);
 const FIRST_COVER = 0.35; // the share of buildings dressed on an event's first morning
 
 // The event under way on a day number, or null. { id, event, day (0 from the event's first day), length, peakDay (the
 // day within the event its holiday falls on), cover, peak, fireworks, startDay }.
-export function eventOn(dayIdx, monthDays) {
+export function eventOn(dayIdx, monthDays, optIn = null) {
   const d = dateOfDay(dayIdx, monthDays), md = d.monthDays;
-  for (const e of EVENTS) {
+  for (const e of running(optIn)) {
     const at = e.months.indexOf(d.month);
     if (at < 0) continue;
     const day = at * md + (d.day - 1), length = e.months.length * md;
@@ -48,9 +59,9 @@ export function eventOn(dayIdx, monthDays) {
 }
 
 // The next day after `from` an event begins (its first day), with the event; a short search, at most a year.
-export function nextEventStart(from, monthDays) {
+export function nextEventStart(from, monthDays, optIn = null) {
   for (let d = Math.max(0, from) + 1, end = d + 12 * monthDays; d <= end; d++) {
-    const ev = eventOn(d, monthDays);
+    const ev = eventOn(d, monthDays, optIn);
     if (ev && ev.day === 0) return { dayIdx: d, id: ev.id, name: ev.event.name };
   }
   return null;

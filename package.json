@@ -1,7 +1,7 @@
 {
   "name": "nexus",
   "private": true,
-  "version": "0.13.0",
+  "version": "0.14.0",
   "type": "module",
   "description": "A cozy offline city builder. No runtime dependencies; esbuild only minifies the deploy build.",
   "scripts": {

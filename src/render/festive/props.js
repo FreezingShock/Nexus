@@ -4,6 +4,7 @@
 import * as THREE from '../../../vendor/three/three.module.min.js';
 import { LANG } from '../../world/models.js';
 import { luck } from './strings.js';
+import { doghouse } from './beagle.js';
 
 const { PLINTH, FLOOR_H: FH } = LANG;
 const ORANGE = 0xE07B39, ORANGE2 = 0xC9662B, STEM = 0x4F6B34, FACE = 0x3A2418, GHOST = 0xF4EFE4;
@@ -53,6 +54,12 @@ export function propsFor(event, door, body, seed) {
       out.push([new THREE.ConeGeometry(0.22, 0.55, 6), FIR2, dx - 0.7, PLINTH + 0.45, z]);
       out.push([ball(0.04, 0), GOLD, dx - 0.7, PLINTH + 0.75, z]);
     }
+  } else if (event === 'snoopy') {
+    // a red doghouse by the step, usually with the beagle sitting up on the ridge (now and then as the flying ace),
+    // and (on some houses) a kite up on a string
+    const hx = dx - 0.9, hz = z + 0.2, pet = luck(seed, 51) < 0.8 && (luck(seed, 53) < 0.25 ? 'ace' : true);
+    for (const [geo, c, x, y, zz] of doghouse(0.5, pet)) out.push([geo, c, hx + x, PLINTH + y, hz + zz]);
+    if (luck(seed, 52) < 0.6 && body) kite(body, seed, out);
   } else if (event === 'july4') {
     // a flag on a short pole leaning out from the wall by the door
     const fx = dx + 0.55, fy = PLINTH + 1.15, lean = 0.6;
@@ -63,6 +70,17 @@ export function propsFor(event, door, body, seed) {
     if (body) bunting(body, out);
   }
   return out;
+}
+
+// A kite held up over the roof on a long thin string, with a tail of little bows.
+function kite(body, seed, out) {
+  const x = body.x + (luck(seed, 53) - 0.5) * body.w * 0.6, z = body.z + body.d / 2 + 0.3;
+  const top = body.y0 + body.floors * FH, ky = top + 1.1 + luck(seed, 54) * 0.5, lean = 0.25;
+  const colour = [RED, GOLD, BLUE, CARROT][Math.floor(luck(seed, 55) * 4)];
+  out.push([cyl(0.01, 0.01, ky - top + 0.1), POLE, x, (ky + top) / 2, z, 1, 1, 1, lean]);          // the string
+  out.push([box(0.34, 0.34, 0.02), colour, x - 0.12, ky, z + 0.1, 1, 1, 1, 0, 0, Math.PI / 4]);     // the diamond
+  out.push([box(0.02, 0.4, 0.025), WHITE, x - 0.12, ky, z + 0.115, 1, 1, 1, 0, 0, 0]);              // the spar
+  for (let i = 1; i <= 3; i++) out.push([box(0.07, 0.05, 0.02), i % 2 ? WHITE : RED, x - 0.12 - i * 0.04, ky - 0.28 - i * 0.14, z + 0.1]);
 }
 
 // Triangle pennants along the front, under the eave, in red, white and blue.
