@@ -10,7 +10,7 @@ import { checkLot, freeRect, frontRoadCount, frontRoadDistance, planPlacement, p
 import { buildCost, income } from '../../sim/economy.js';
 import { $, fmt } from '../format.js';
 import { thumbFor } from '../../render/thumbs.js';
-import { categoryIcon, coins, detailText, effectOf, esc, tileCard } from '../cards.js';
+import { bookmarkTabs, coins, detailText, effectOf, esc, tileCard } from '../cards.js';
 
 const TOOLS = { build: 'Buildings', services: 'Services', parks: 'Parks' };
 const COIN = '<i class="coin"></i>';
@@ -50,7 +50,7 @@ export default {
     function render() {
       const d = def(), c = cats();
       const sizes = footprintsOf(d), [a, b] = size();
-      const tabs = c.length > 1 ? `<div class="ptabs" role="group" aria-label="Category">${c.map((x) => `<button type="button" class="tog ptab" data-pcat="${x.id}" aria-pressed="${x.id === ui.cat}" title="${esc(x.name)}" aria-label="${esc(x.name)}">${categoryIcon(x.id)}</button>`).join('')}</div>` : '';
+      const tabs = c.length > 1 ? bookmarkTabs(c, ui.cat, 'data-pcat') : '';
       const tiles = modelsIn(ui.cat).map((m) => tileCard({
         pic: picOf(m.id), title: m.name, price: coins(modelPrice(m)), short: sim.state.coins < modelPrice(m),
         tip: m.sub + (effectOf(m) ? ' · ' + effectOf(m) : ''), pressed: m.id === ui.model, data: { pm: m.id },

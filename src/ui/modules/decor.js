@@ -5,7 +5,7 @@
 import { DECOR_CATS, MAX_DECOR, MAX_DRAG, decorById, decorCost, decorIn, decorRefund, isOpen, offSale, problemAt, problemText, takenSet } from '../../world/decor.js';
 import { rectTiles, worldToTile } from '../../world/grid.js';
 import { $, fmt } from '../format.js';
-import { categoryIcon, coins, esc, tileCard } from '../cards.js';
+import { bookmarkTabs, coins, esc, tileCard } from '../cards.js';
 import { decorThumb } from '../../render/thumbs.js';
 
 const COIN = '<i class="coin"></i>';
@@ -64,7 +64,7 @@ export default {
       const left = keep ? keep.scrollLeft : 0;
       const d = decorById(kind);
       const detail = erasing() ? 'Click or drag over decorations to clear them' : d.sub;
-      const tabs = `<div class="ptabs" role="group" aria-label="Category">${DECOR_CATS.map((c) => `<button type="button" class="tog ptab" data-dcat="${c.id}" aria-pressed="${c.id === cat}" title="${esc(c.name)}" aria-label="${esc(c.name)}">${categoryIcon(c.id)}</button>`).join('')}</div>`;
+      const tabs = bookmarkTabs(DECOR_CATS, cat, 'data-dcat');
       fly.innerHTML = `<div class="pbar">${tabs}<div class="strip">${tiles()}</div></div>` +
         `<div class="pfoot"><b class="ptitle">${esc(DECOR_CATS.find((c) => c.id === cat).name)}</b>` +
         `<button type="button" class="tog" id="dturn" title="Turn the piece (V)">Turn · V</button>` +

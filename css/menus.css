@@ -8,10 +8,22 @@
 .ptitle{font-family:var(--display);font-weight:800;font-variation-settings:"SOFT" 100,"WONK" 1;font-size:18px;line-height:1;flex:0 0 auto}
 
 .pbar{display:flex;gap:10px;align-items:stretch;min-width:0}
-.ptabs{display:flex;flex-direction:column;gap:6px;flex:0 0 auto}
-.ptab{width:40px;height:40px;padding:0;display:grid;place-items:center;border-radius:12px}
-.ptab svg{width:22px;height:22px;display:block}
-.ptab[aria-pressed="true"]{background:var(--sky-soft)}
+/* Section bookmarks: tinted tabs that stick out of the flyout's left edge. A big icon on a paper disc; the section name
+   slides out on hover, focus and for the chosen tab, which also lifts further out with a terracotta edge. */
+.fly:has(>.pbar>.ptabs){overflow:visible}
+.ptabs{position:absolute;right:calc(100% - 4px);top:12px;z-index:-1;display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.ptab{--w:0px;display:flex;align-items:center;gap:0;height:42px;padding:0 6px 0 7px;border:2.5px solid var(--ink);border-right:0;border-radius:16px 0 0 16px;background:color-mix(in srgb,var(--tc) 60%,var(--paper));color:var(--text);font-weight:800;font-size:14px;box-shadow:0 3px 0 var(--ink);translate:6px 0;filter:saturate(.8);transition:translate .18s cubic-bezier(.2,.8,.3,1),filter .15s,background .15s}
+.ptab svg{flex:none;width:30px;height:30px;padding:3px;border-radius:50%;background:var(--paper);border:2px solid var(--ink)}
+.ptab-name{display:block;max-width:0;overflow:hidden;white-space:nowrap;opacity:0;transition:max-width .2s cubic-bezier(.2,.8,.3,1),opacity .15s,margin .2s}
+.ptab:hover,.ptab:focus-visible,.ptab[aria-pressed="true"]{translate:0 0;filter:none}
+.ptab:hover .ptab-name,.ptab:focus-visible .ptab-name,.ptab[aria-pressed="true"] .ptab-name{max-width:120px;opacity:1;margin:0 6px 0 8px}
+.ptab[aria-pressed="true"]{background:var(--tc);border-color:var(--action);box-shadow:0 3px 0 var(--action);translate:-3px 0}
+.ptab:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+.ptab:not([aria-pressed="true"]):not(:hover):not(:focus-visible) .ptab-name{display:none}
+.fly:not([hidden]) .ptab{animation:ptab-in .35s cubic-bezier(.2,.8,.3,1) both;animation-delay:calc(.08s + var(--i,0) * .05s)}
+@keyframes ptab-in{from{opacity:0;translate:30px 0}}
+@media (max-width:900px){.ptabs{position:static;flex-direction:row;flex-wrap:wrap;align-items:stretch;margin:0 0 8px}.ptab{translate:0 0;border:2.5px solid var(--ink);border-radius:14px}.pbar{flex-wrap:wrap}}
+@media (prefers-reduced-motion:reduce){.ptab,.ptab-name{transition:none;animation:none!important}}
 
 .strip{display:flex;gap:9px;overflow-x:auto;overscroll-behavior-x:contain;padding:4px 4px 10px;min-width:0;flex:1 1 auto}
 .strip>*{flex:0 0 auto}
