@@ -137,7 +137,7 @@ export default {
       if (box.dataset.sig === sig) return;
       box.dataset.sig = sig;
       $('dpamount').innerHTML = AMOUNTS.map((a) => `<button type="button" class="segb" role="radio" data-amount="${a.id}" aria-checked="${a.id === f.amount}" title="${a.line}">${a.name}</button>`).join('');
-      // opt-in seasons (Snoopy Days): off until the town switches them on
+      // opt-in seasons (Snoopy Days): on by default, the town can switch them off
       $('dpopt').innerHTML = OPT_IN_EVENTS.map((e) => `<button type="button" class="dpalb" data-optin="${e.id}" aria-pressed="${f.optIn.includes(e.id)}" title="Switch ${e.name} on or off">${iconFor(e.id, 20)}<small>${e.name}</small></button>`).join('');
       const list = PALETTES[id] || [];
       const hx = (n) => '#' + n.toString(16).padStart(6, '0');

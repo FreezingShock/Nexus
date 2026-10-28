@@ -22,7 +22,8 @@ export const EVENTS = [
   { id: 'christmas', name: 'Christmas', months: [11], peak: 'christmas', fireworks: ['nye'], trees: 0.6,
     lights: [0xF6D27A, 0xE0533F, 0x5FA86A, 0x6FA0DC], accent: '#C2483A',
     start: 'Someone hung the first string of lights. The Christmas season has begun.' },
-  // Opt-in: only runs when the town switched it on (state.festive.optIn, the calendar's Decorations section). A beagle
+  // Opt-in: runs while the town has it switched on (state.festive.optIn, the calendar's Decorations section; on by
+// default, so a town can switch it off there). A beagle
   // with black ears, red doghouses on the doorsteps and kites over the roofs, building up to the Blossom Fair.
   { id: 'snoopy', name: 'Snoopy Days', optIn: true, months: [3], peak: 'blossom', fireworks: [], trees: 0.2,
     lights: [0xE0533F, 0xF7F1E3, 0xF3C04F, 0x6FA0DC], accent: '#D9533F',
