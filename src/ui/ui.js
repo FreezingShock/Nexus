@@ -106,6 +106,7 @@ export function createUi({ sim, scene, actions }) {
 
   return {
     tool: () => tool,
+    view: () => { const m = mods.find((x) => x.view); return m ? m.view() : 'normal'; },
     onPick, onCancel,
     hud, postcard, toast: hud.toast,
     showPostcard: () => postcard.show(),

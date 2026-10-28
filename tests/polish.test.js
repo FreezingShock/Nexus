@@ -17,6 +17,7 @@ const uiSrc = readdirSync(join(ROOT, 'src/ui')).filter((f) => f.endsWith('.js'))
 
 test('every tool key is labelled on its tool button in index.html', () => {
   for (const [key, tool] of Object.entries(TOOL_KEYS)) {
+    if (tool === 'traffic') continue; // moved off the bar into the Views chip
     const re = new RegExp(`data-tool="${tool}"[^>]*><kbd>${key.toUpperCase()}</kbd>`);
     assert.match(html, re, `tool ${tool} should show ${key.toUpperCase()}`);
   }
@@ -133,7 +134,7 @@ test('the bottom-left chip says "/ for shortcuts" and / opens the page', () => {
 
 test('tool flyouts sit above the toolbar chevron', () => {
   const ui = read('css/ui.css'), bar = read('css/toolbar.css'), menus = read('css/menus.css');
-  assert.match(bar, /--fly-b:calc\(max\(18px,env\(safe-area-inset-bottom,0px\)\) \+ 112px \+ 34px\)/, 'chevron top (bar + 112px + 24px tab) plus a gap');
+  assert.match(bar, /--fly-b:calc\(max\(18px,env\(safe-area-inset-bottom,0px\)\) \+ 128px \+ 34px\)/, 'chevron top (bar + 128px + 24px tab) plus a gap');
   assert.match(bar, /#toolfold\[aria-expanded="false"\]\)\{--fly-b:/);
   assert.match(ui, /\.fly\{position:absolute;[^}]*bottom:var\(--fly-b\)/);
   assert.match(menus, /\.fly\.bdchip\{[^}]*bottom:var\(--fly-b\)/);

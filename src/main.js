@@ -247,7 +247,7 @@ function frame(now) {
   if (phase === 'play') {
     const alpha = sim.advance(dt);
     const simDt = state.paused ? 0 : dt * state.speed;
-    scene.frame(dt, t, simDt, state, ui.tool());
+    scene.frame(dt, t, simDt, state, ui.tool(), ui.view());
     ui.frame(dt, t, alpha);
     if (ui.postcard.isOpen()) { duskAcc += dt; if (duskAcc > 0.06) { duskAcc = 0; ui.postcard.frame(t); } }
   } else {
