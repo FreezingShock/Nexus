@@ -17,7 +17,7 @@ const uiSrc = readdirSync(join(ROOT, 'src/ui')).filter((f) => f.endsWith('.js'))
 
 test('every tool key is labelled on its tool button in index.html', () => {
   for (const [key, tool] of Object.entries(TOOL_KEYS)) {
-    if (tool === 'traffic') continue; // moved off the bar into the Views chip
+    if (tool === 'traffic') continue; // moved off the bar into the Views button
     const re = new RegExp(`data-tool="${tool}"[^>]*><kbd>${key.toUpperCase()}</kbd>`);
     assert.match(html, re, `tool ${tool} should show ${key.toUpperCase()}`);
   }

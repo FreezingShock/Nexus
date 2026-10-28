@@ -1,5 +1,5 @@
-// Views: a map mode that tints the town to show one thing (traffic or demand) without taking a tool. A chip at the bottom
-// right opens a short list; the active view gets a legend card above the chip. V cycles the views, T toggles Traffic.
+// Views: a map mode that tints the town to show one thing (traffic or demand) without taking a tool. An eye button in the top
+// bar opens a short list; the active view gets a legend card at the bottom right. V cycles the views, T toggles Traffic.
 // The renderer reads ui.view() (roads tint for 'traffic', zone shading for 'demand'); this module only owns the choice.
 import { ZONE_DEFS } from '../../sim/zones.js';
 import { demandWord } from '../hud-detail.js';
@@ -39,13 +39,21 @@ export function legendHtml(view, sim) {
 export default {
   id: 'views',
   create({ sim, tool }) {
-    const root = document.createElement('div');
-    root.id = 'views'; root.className = 'views';
-    root.innerHTML = `<section class="vw-legend card" id="vw-legend" hidden aria-live="polite"></section>` +
-      `<div class="vw-menu card" id="vw-menu" role="menu" hidden>${VIEWS.map((v) => `<button type="button" role="menuitemradio" data-view="${v.id}"><b>${v.name}</b><small>${v.sub}</small>${v.key ? `<kbd>${v.key}</kbd>` : ''}</button>`).join('')}</div>` +
-      `<button type="button" class="vw-chip card" id="vw-chip" aria-haspopup="true" aria-expanded="false" aria-label="Views" title="Views (V)">${EYE}<span>Views</span><kbd>V</kbd></button>`;
-    $('app').appendChild(root);
-    const legend = $('vw-legend'), menu = $('vw-menu'), btn = $('vw-chip');
+    // The button joins the control cluster in the top bar (before the menu button); its short list drops down under the bar,
+    // and the active view's legend card floats at the bottom right.
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'ib'; btn.id = 'vw-chip';
+    btn.setAttribute('aria-haspopup', 'true'); btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-label', 'Views'); btn.title = 'Views (V)';
+    btn.innerHTML = EYE;
+    const bar = document.querySelector('.ctrl'), wrap = $('ctrlwrap') || document.body;
+    bar.insertBefore(btn, $('menubtn'));
+    const menu = document.createElement('div');
+    menu.id = 'vw-menu'; menu.className = 'vw-menu card'; menu.setAttribute('role', 'menu'); menu.hidden = true;
+    menu.innerHTML = VIEWS.map((v) => `<button type="button" role="menuitemradio" data-view="${v.id}"><b>${v.name}</b><small>${v.sub}</small>${v.key ? `<kbd>${v.key}</kbd>` : ''}</button>`).join('');
+    wrap.appendChild(menu);
+    const legend = document.createElement('section');
+    legend.id = 'vw-legend'; legend.className = 'vw-legend card'; legend.hidden = true; legend.setAttribute('aria-live', 'polite');
+    $('app').appendChild(legend);
     let view = 'normal', shown = '', acc = 0;
 
     const setMenu = (on) => { menu.hidden = !on; btn.setAttribute('aria-expanded', String(on)); };
@@ -58,13 +66,12 @@ export default {
     function set(v) {
       view = VIEWS.some((x) => x.id === v) ? v : 'normal';
       menu.querySelectorAll('[data-view]').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.view === view)));
-      root.dataset.view = view;
-      btn.classList.toggle('on', view !== 'normal');
+      btn.setAttribute('aria-pressed', String(view !== 'normal'));
       shown = ''; paintLegend(); setMenu(false);
     }
     btn.onclick = () => setMenu(menu.hidden);
     menu.querySelectorAll('[data-view]').forEach((b) => { b.onclick = () => set(b.dataset.view); });
-    addEventListener('pointerdown', (e) => { if (!menu.hidden && !root.contains(e.target)) setMenu(false); }, true);
+    addEventListener('pointerdown', (e) => { if (!menu.hidden && !btn.contains(e.target) && !menu.contains(e.target)) setMenu(false); }, true);
     set('normal');
 
     return {
