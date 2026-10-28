@@ -196,9 +196,9 @@ test('the street animation builds the same street for the same seed and lays out
 
 test('the progress bar is a stitched ribbon with a flag per step, and the marker stays inside the bar', () => {
   const js = read('src/ui/title.js'), css = read('css/title.css');
-  assert.match(js, /\$\('bt-fill'\)\.style\.width = at/);
-  assert.match(js, /\$\('bt-house'\)\.style\.left = at/);
+  assert.match(js, /\$\('bt-fill'\)\.style\.width = sewn\(shown\)/);
   assert.match(js, /className = 'bt-flag'/);
+  assert.match(js, /sewn = \(f\) => `calc\(34px \+ \(100% - 34px\) \* /); // the sewn part is the whole bar at 100%
   assert.match(css, /\.bt-flag\[data-s="done"\]::after\{[^}]*animation/);
   assert.match(css, /dashed/);
 });
