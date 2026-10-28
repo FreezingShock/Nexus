@@ -1,8 +1,6 @@
 // Views: a map mode that tints the town to show one thing (traffic or demand) without taking a tool. The eye button in the top
 // bar switches Traffic on and off, the Demand plaque switches Demand; the active view gets a legend card at the bottom right. V cycles the views, T toggles Traffic.
 // The renderer reads ui.view() (roads tint for 'traffic', zone shading for 'demand'); this module only owns the choice.
-import { ZONE_DEFS } from '../../sim/zones.js';
-import { demandWord } from '../hud-detail.js';
 import { $ } from '../format.js';
 
 export const VIEWS = [
@@ -26,14 +24,7 @@ export function legendHtml(view, sim) {
       `<div class="lanes">${chip('var(--tr-free)', 'Free')}${chip('var(--tr-busy)', 'Busy')}${chip('var(--tr-jam)', 'Jammed')}</div>` +
       `<p class="vw-note" id="vw-commute">${commuteLine(sim.traffic)}</p>`;
   }
-  const d = sim.zoning.demand();
-  const rows = [1, 2, 3].map((z) => {
-    const p = Math.round(d[z] * 100);
-    return `<div class="vw-row${p >= 70 ? ' hot' : ''}"><span class="dk" style="background:${ZONE_DEFS[z].paint}">${ZONE_DEFS[z].name[0]}</span>` +
-      `<span class="vw-name">${ZONE_DEFS[z].name}</span><span class="dbar" role="img" aria-label="${ZONE_DEFS[z].name} demand ${p}%"><i style="width:${p}%;background:${ZONE_DEFS[z].paint}"></i></span><em>${demandWord(p)}</em></div>`;
-  }).join('');
-  return `<div class="rhead"><b class="ptitle">Demand</b><span class="rhint">Zoned ground is shaded by type</span></div>${rows}` +
-    `<p class="vw-note">Wanted types grow and level up sooner. It never stops growth, only slows it.</p>`;
+  return ''; // Demand has no card of its own: the plaque's hover card already says it
 }
 
 export default {
@@ -53,7 +44,7 @@ export default {
     let view = 'normal', shown = '', acc = 0;
 
     function paintLegend() {
-      if (view === 'normal') { legend.hidden = true; shown = ''; return; }
+      if (view !== 'traffic') { legend.hidden = true; shown = ''; return; }
       const html = legendHtml(view, sim);
       if (html !== shown) { shown = html; legend.innerHTML = html; }
       legend.hidden = false;
@@ -83,7 +74,7 @@ export default {
         return false;
       },
       frame(dt) {
-        if (view === 'normal') return;
+        if (view !== 'traffic') return;
         acc += dt;
         if (acc < 0.5) return;
         acc = 0; paintLegend();
