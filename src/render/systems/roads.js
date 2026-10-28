@@ -218,7 +218,7 @@ export default {
           else for (const i of moved.tiles) if (roads[i]) dirty.add(chunkOf(i));
           rebuildDirty();
         }
-        const want = f.tool === 'traffic';
+        const want = f.view === 'traffic';
         if (want !== traffic) { traffic = want; for (const c of chunks.values()) tint(c); }
         if (traffic && grid.loadRev !== seenLoad) { seenLoad = grid.loadRev; for (const c of chunks.values()) tint(c); }
         // pop waves
