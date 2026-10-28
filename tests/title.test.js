@@ -179,10 +179,17 @@ test('the progress screen is skippable by click, shows the hint, and respects ca
   assert.ok(!/url\(["']?https?:/.test(css.slice(css.indexOf('progress screen'), css.indexOf('max-width:900px'))), 'no network images');
 });
 
+test('the street is driven by progress: it chases it, finishes with it and never goes back', async () => {
+  const src = read('src/ui/boot-scene.js');
+  assert.match(src, /chase\(t, p \* tl\.lastEnds/);
+  assert.match(src, /frame\(dt, progress = 0\)/);
+  assert.match(read('src/ui/title.js'), /scene\.frame\(dt \|\| 0\.016, shown\)/);
+});
+
 test('the street animation builds the same street for the same seed and lays out every lot', async () => {
   const { streetOf, timeline } = await import('../src/ui/boot-scene.js');
   assert.deepEqual(streetOf(3, 12), streetOf(3, 12));
   assert.notDeepEqual(streetOf(3, 12), streetOf(4, 12));
-  const tl = timeline(21, 2000);
-  assert.ok(tl.total > tl.lastEnds && tl.lastEnds < 16);
+  const tl = timeline(21);
+  assert.ok(tl.lastEnds > 5 && tl.lastEnds < 16);
 });

@@ -332,10 +332,10 @@ export function createTitle({ onPlay, onNewTown }) {
     bootFrame(shown, progress, dt) {
       const pct = Math.round(shown * 100);
       $('bt-fill').style.width = pct + '%';
-      $('bt-house').style.left = pct + '%';
+      $('bt-house').style.left = `calc(17px + (100% - 34px) * ${(shown).toFixed(4)})`; // the marker stays inside the bar's ends
       $('bt-track').setAttribute('aria-valuenow', String(pct));
       $('bt-cap').textContent = progress.caption() + (progress.isDone() ? '' : '…');
-      if (scene) scene.frame(dt || 0.016);
+      if (scene) scene.frame(dt || 0.016, shown);
       for (const s of progress.steps()) { const li = $('bt-steps').querySelector('[data-id="' + s.id + '"]'); if (li && li.dataset.s !== s.state) li.dataset.s = s.state; }
     },
     hideBoot() {
