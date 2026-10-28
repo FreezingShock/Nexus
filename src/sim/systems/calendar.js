@@ -52,8 +52,6 @@ export function refreshCalendar(ctx) {
   state.holiday = fest ? fest.id : (state.snowDay === v.date.dayIdx ? FIRST_SNOW.id : '');
   state.market = marketOn(v.date.dayIdx) ? 1 : 0;
   const f = state.festive, natural = eventOn(v.date.dayIdx, v.date.monthDays, f && f.optIn);
-  // reaching a season's big day earns its decoration set for good (the calendar can then dress the town in it any time)
-  if (f && natural && natural.day >= natural.peakDay && !f.unlocked.includes(natural.id)) state.festive = { ...f, unlocked: [...f.unlocked, natural.id] };
   const ev = f && f.show ? eventOn(v.date.dayIdx, v.date.monthDays, f.optIn, f.show) : natural;
   state.event = ev ? ev.id : '';
   state.eventCover = ev ? ev.cover : 0;

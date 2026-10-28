@@ -68,8 +68,7 @@ test('the year ribbon says where each month is, and a click lands on its first d
     assert.equal(d.day, 1, 'on its first day');
     assert.ok(m.inDays > 0 && m.inDays <= 12 * md, 'within a year ahead');
   }
-  const sets = decorSets({ dayIdx: 0, festive: { unlocked: ['snoopy', 'christmas'], show: 'christmas', optIn: ['snoopy'] } }, md);
+  const sets = decorSets({ dayIdx: 0, festive: { unlocked: ['snoopy', 'july4', 'halloween', 'christmas'], show: 'christmas', optIn: ['snoopy'] } }, md);
   assert.deepEqual(sets.map((x) => x.id), ['snoopy', 'july4', 'halloween', 'christmas']);
-  assert.deepEqual(sets.map((x) => x.state), ['ready', 'locked', 'locked', 'showing']);
-  assert.match(sets[1].how, /Fourth of July/);
+  assert.deepEqual(sets.map((x) => x.state), ['ready', 'ready', 'ready', 'showing']);
 });

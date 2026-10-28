@@ -174,7 +174,7 @@ export default {
           : x.state === 'season' ? '<span class="dtag">In season</span>'
           : '<span class="dtag" data-lock="1">Locked</span>';
         const extra = x.optIn && x.state !== 'locked' ? `<label class="dauto"><input type="checkbox" data-optin="${x.id}"${f.optIn.includes(x.id) ? ' checked' : ''}> Every ${x.months}</label>` : '';
-        return `<div class="dset" data-state="${x.state}" data-pick="${x.id}" data-picked="${x.id === picked ? '1' : ''}"><span class="deico">${iconFor(x.id, 24)}</span><div class="dsi"><b class="h-disp">${x.name}</b><small>${x.state === 'locked' ? x.how : x.months}</small>${extra}</div>${act}</div>`;
+        return `<div class="dset" data-state="${x.state}" data-pick="${x.id}" data-picked="${x.id === picked ? '1' : ''}"><span class="deico">${iconFor(x.id, 24)}</span><div class="dsi"><b class="h-disp">${x.name}</b><small>${x.months}</small>${extra}</div>${act}</div>`;
       }).join('');
       const list = PALETTES[picked] || [];
       const hx = (n) => '#' + n.toString(16).padStart(6, '0');

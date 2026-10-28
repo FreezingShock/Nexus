@@ -34,7 +34,7 @@ test('old amounts migrate: a little and cozy become on, none stays off', () => {
 test('old saves and junk come back as the default', () => {
   assert.deepEqual(sanitizeFestive(undefined), freshFestive());
   assert.deepEqual(sanitizeFestive({ amount: 'loud', palette: { christmas: 'neon', halloween: 'potion' }, dark: ['b3', 'x', 'b3', 7] }),
-    { amount: 'all', palette: { halloween: 'potion' }, dark: ['b3'], optIn: ['snoopy'], offered: ['snoopy'], unlocked: ['snoopy'], show: '' });
+    { amount: 'all', palette: { halloween: 'potion' }, dark: ['b3'], optIn: ['snoopy'], offered: ['snoopy'], unlocked: EVENTS.map((e) => e.id), show: '' });
   const s = sanitize({ coins: 5 });
   assert.deepEqual(s.festive, freshFestive(), 'a save from before festive styles');
 });
@@ -59,34 +59,25 @@ test('commands: the style changes for free, and a placed building can switch its
   assert.equal(sim.state.festive.dark.length, 0, 'only real buildings');
 });
 
-test('seasonal sets: earned at the big day, shown any time once unlocked, put away again', async () => {
+test('seasonal sets: every set can be shown any time, and put away again', async () => {
   const { dayOfDate } = await import('../src/core/calendar.js');
   const { eventOn } = await import('../src/core/events.js');
   const sim = createSim({ state: freshState(), layout: getLayout() });
-  const md = 3;
-  assert.deepEqual(sim.state.festive.unlocked, ['snoopy'], 'only the gift to begin with');
-  sim.dispatch({ type: 'setEventShow', event: 'christmas' });
-  assert.equal(sim.state.festive.show, '', 'a locked set cannot be shown');
-  const xmas = dayOfDate(2, 11, 1, md);
-  sim.skipToDay(xmas - 1);
-  assert.equal(sim.state.festive.unlocked.includes('christmas'), false, 'the day before is not enough');
-  sim.skipToDay(xmas + 3);
-  assert.equal(sim.state.festive.unlocked.includes('christmas'), true, 'playing through its big day unlocks it');
-  const june = dayOfDate(3, 5, 1, md);
-  sim.skipToDay(june);
+  assert.deepEqual(sim.state.festive.unlocked.sort(), EVENTS.map((e) => e.id).sort(), 'all sets open from the start');
+  sim.skipToDay(dayOfDate(3, 5, 1, 3));
   assert.equal(sim.state.event, '', 'out of season, nothing up');
   sim.dispatch({ type: 'setEventShow', event: 'christmas' });
-  assert.equal(sim.state.event, 'christmas', 'now shown whatever the date');
+  assert.equal(sim.state.event, 'christmas', 'shown whatever the date');
   assert.equal(sim.state.eventCover, 1);
   assert.equal(sim.state.eventPeak, 0);
+  sim.dispatch({ type: 'setEventShow', event: 'nonsense' });
+  assert.equal(sim.state.festive.show, 'christmas', 'only real sets');
   sim.dispatch({ type: 'setEventShow', event: '' });
   assert.equal(sim.state.event, '', 'put away');
-  assert.equal(eventOn(0, md, null, 'christmas').forced, true);
+  assert.equal(eventOn(0, 3, null, 'christmas').forced, true);
 });
 
-test('keepsakes unlock their set, and the new fields survive sanitize', () => {
-  const f = sanitizeFestive({ unlocked: ['christmas', 'bogus'], show: 'christmas' });
-  assert.deepEqual(f.unlocked.sort(), ['christmas', 'snoopy']);
-  assert.equal(f.show, 'christmas');
-  assert.equal(sanitizeFestive({ show: 'halloween' }).show, '', 'cannot show a locked set');
+test('the show field survives sanitize and junk is dropped', () => {
+  assert.equal(sanitizeFestive({ show: 'christmas' }).show, 'christmas');
+  assert.equal(sanitizeFestive({ show: 'bogus' }).show, '');
 });

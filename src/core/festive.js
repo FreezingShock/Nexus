@@ -1,14 +1,14 @@
 // The town's festive style: how much it dresses up and in which colours, and which buildings keep their lights off.
 // Pure (no DOM, no Three.js). Saved on state.festive by sim/systems/festive.js; render reads it with the event fields.
 //   amount    'all' | 'none'                      decorations are a plain switch: all out, or none (old saves had a little / cozy: both become all)
-//   unlocked  [event ids]                         seasonal sets the town has earned (its holiday played through, or a keepsake)
+//   unlocked  [event ids]                         seasonal sets the calendar may put up any time (every set, for every town)
 //   show      event id or ''                      an unlocked set the player dresses the town in whatever the date
 //   palette   { [event id]: palette key }         (missing means 'classic')
 //   optIn     [event ids]                         opt-in events that are switched on (core/events.js `optIn`)
 //   offered   [event ids]                         opt-in events the town has been given; each starts on once, then
 //                                                 stays as the player left it (so a new one arrives switched on)
 //   dark      [record ids]                        placed buildings whose owner switched their lights off
-import { OPT_IN_EVENTS, eventById } from './events.js';
+import { EVENTS, OPT_IN_EVENTS, eventById } from './events.js';
 
 export const AMOUNT_IDS = ['all', 'none'];
 
@@ -38,7 +38,7 @@ export const PALETTES = {
 };
 
 const OPT_IDS = OPT_IN_EVENTS.map((e) => e.id);
-export const freshFestive = () => ({ amount: 'all', palette: {}, dark: [], optIn: [...OPT_IDS], offered: [...OPT_IDS], unlocked: [...OPT_IDS], show: '' });
+export const freshFestive = () => ({ amount: 'all', palette: {}, dark: [], optIn: [...OPT_IDS], offered: [...OPT_IDS], unlocked: EVENTS.map((e) => e.id), show: '' });
 
 export function sanitizeFestive(raw) {
   const out = freshFestive();
@@ -50,9 +50,7 @@ export function sanitizeFestive(raw) {
   // an opt-in event the save has not been given yet arrives switched on; one it has keeps the player's choice
   const offered = Array.isArray(raw.offered) ? raw.offered : [], on = Array.isArray(raw.optIn) ? raw.optIn : [];
   out.optIn = OPT_IDS.filter((id) => !offered.includes(id) || on.includes(id));
-  // opt-in sets are given to every town; the others are earned
-  const earned = Array.isArray(raw.unlocked) ? raw.unlocked.filter((id) => eventById(id)) : [];
-  out.unlocked = [...new Set([...OPT_IDS, ...earned])];
+  // every set is available to every town, whatever an older save said
   out.show = typeof raw.show === 'string' && out.unlocked.includes(raw.show) ? raw.show : '';
   if (Array.isArray(raw.dark)) out.dark = [...new Set(raw.dark.filter((x) => typeof x === 'string' && /^b\d+$/.test(x)))].slice(0, 2000);
   return out;

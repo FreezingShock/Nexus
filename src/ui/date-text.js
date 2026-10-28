@@ -2,7 +2,6 @@
 import { MONTH_NAMES, MONTH_SHORT, SEASONS, clockText, seasonOfMonth } from '../core/calendar.js';
 import { HOLIDAYS, MARKET, holidayOn, marketOn, nextHolidayDay } from '../core/holidays.js';
 import { EVENTS, eventLine, eventOn, nextEventStart, runningEvents } from '../core/events.js';
-import { KEEPSAKES } from '../core/keepsakes.js';
 
 const cap = (w) => w.charAt(0).toUpperCase() + w.slice(1);
 export const seasonName = (state) => cap(SEASONS[seasonOfMonth(state.month)]);
@@ -90,13 +89,12 @@ export { clockText };
 
 // The seasonal decoration sets for the Decorations tab, in the order they come round the year. A set is `up` while the
 // calendar has it on (in season, or switched on by the player), `showing` when the player put it up out of season.
-//   { id, name, months ('April'), state: 'locked' | 'ready' | 'season' | 'showing', how (words for a locked set) }
+//   { id, name, months ('April'), state: 'locked' | 'ready' | 'season' | 'showing' }
 export function decorSets(state, monthDays) {
   const f = state.festive || {}, nat = eventOn(state.dayIdx || 0, monthDays, f.optIn);
   return [...EVENTS].sort((a, b) => a.months[0] - b.months[0]).map((e) => {
-    const unlocked = (f.unlocked || []).includes(e.id), peak = HOLIDAYS.find((h) => h.id === e.peak), kp = KEEPSAKES.find((k) => k.event === e.id);
+    const unlocked = (f.unlocked || []).includes(e.id);
     const st = !unlocked ? 'locked' : f.show === e.id ? 'showing' : nat && nat.id === e.id ? 'season' : 'ready';
-    return { id: e.id, name: e.name, optIn: !!e.optIn, months: e.months.map((m) => MONTH_NAMES[m]).join(' and '), state: st,
-      how: 'Play through ' + peak.name + (kp ? ' (or visit in ' + kp.when + ')' : '') + ' to unlock' };
+    return { id: e.id, name: e.name, optIn: !!e.optIn, months: e.months.map((m) => MONTH_NAMES[m]).join(' and '), state: st };
   });
 }

@@ -4,9 +4,8 @@
 import { AMOUNT_IDS, PALETTES, freshFestive, sanitizeFestive } from '../../core/festive.js';
 import { OPT_IN_EVENTS, eventById } from '../../core/events.js';
 import { refreshCalendar } from './calendar.js';
-import { KEEPSAKES, keepsakesOn, sanitizeKeepsakes } from '../../core/keepsakes.js';
+import { keepsakesOn, sanitizeKeepsakes } from '../../core/keepsakes.js';
 
-const keepsakeEvent = (id) => (KEEPSAKES.find((k) => k.id === id) || {}).event;
 const CHECK_EVERY = 60; // ticks between looks at the real date (a keepsake can arrive while playing past midnight)
 
 // Playing on a real holiday: the keepsakes in season become the town's, with a postcard. `quiet` skips the postcard.
@@ -14,16 +13,9 @@ function gather({ state, sim, emit }, quiet) {
   const fresh = keepsakesOn(sim.now()).filter((k) => !state.keepsakes.includes(k.id));
   if (!fresh.length) return;
   state.keepsakes = [...state.keepsakes, ...fresh.map((k) => k.id)];
-  unlockSets(state, fresh.map((k) => k.event));
   if (!quiet) for (const k of fresh) {
     emit({ type: 'keepsake', id: k.id, title: 'A keepsake', text: 'Thanks for visiting in ' + k.when + '. The ' + k.name + ' is yours to place from the Festive decorations, any time of year.' });
   }
-}
-
-// Adds seasonal sets to the town's unlocked list (a new state.festive, so render and the calendar notice).
-function unlockSets(state, ids) {
-  const add = ids.filter((id) => eventById(id) && !state.festive.unlocked.includes(id));
-  if (add.length) state.festive = { ...state.festive, unlocked: [...state.festive.unlocked, ...add] };
 }
 
 export default {
@@ -33,17 +25,9 @@ export default {
   init(ctx) {
     const { sim, state } = ctx;
     sim.festiveLightsOn = (id) => !state.festive.dark.includes(id);
-    unlockSets(state, state.keepsakes.map((id) => (keepsakeEvent(id))));
-    ctx.knownSets = state.festive.unlocked.length;
     ctx.keepsakeClock = CHECK_EVERY - 3; // a first look a moment after load, once the postcards are listening
   },
   tick(ctx) {
-    // a set earned while playing (its big day arrived): say so once
-    const sets = ctx.state.festive.unlocked;
-    if (sets.length > ctx.knownSets) {
-      for (const id of sets.slice(ctx.knownSets)) ctx.emit({ type: 'toast', text: eventById(id).name + ' decorations unlocked: switch them on any time in the calendar' });
-      ctx.knownSets = sets.length;
-    }
     if (++ctx.keepsakeClock < CHECK_EVERY) return;
     ctx.keepsakeClock = 0;
     gather(ctx, false);

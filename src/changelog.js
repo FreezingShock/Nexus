@@ -21,7 +21,7 @@ export const CHANGELOG = [
     items: [
       { k: 'better', t: 'The calendar panel has a big month name, a Month, Year and Decorations tab, and a strip showing last month, this one and next.' },
       { k: 'new', t: 'The Year tab lays the twelve months out by season with their festivals, marks where you are, and a click on any month fast-forwards to its first day.' },
-      { k: 'new', t: 'Seasonal decoration sets unlock when your town reaches their big day (or on a keepsake week), and you can put one up in the Decorations tab at any time of year, then put it away again.' },
+      { k: 'new', t: 'Every seasonal decoration set (Snoopy Days, Fourth of July, Halloween, Christmas) can be put up from the Decorations tab at any time of year, and put away again.' },
       { k: 'better', t: 'Decorations are a simple on or off now, and on means all out. Towns that had a little or cozy are now on.' },
       { k: 'look', t: 'Scrollbars across the game are slim paper tracks with a rounded, outlined thumb, in both light and dark paper.' },
     ],
