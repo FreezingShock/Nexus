@@ -1,3 +1,4 @@
+import { calmMotion, tabsIn } from './fly-switch.js';
 // The look shared by every build menu: compact tiles with a picture, a name, a price chip and a key badge, plus the
 // zone vignettes, road swatches and category icons. Pure string builders: no DOM, no THREE, so the markup and the
 // numbers can be tested in node. Colours and sizes live in css/menus.css.
@@ -62,14 +63,13 @@ export function paintFly(fly, key, { tabs, strip, foot, attr, active }, swap) {
   if (!st || !pf || fly.dataset.shell !== key) {
     fly.innerHTML = `<div class="pbar">${tabs}<div class="strip">${strip}</div></div><div class="pfoot">${foot}</div>`;
     fly.dataset.shell = key;
+    if (fly._wasOpen) tabsIn(fly);
     return;
   }
   for (const b of fly.querySelectorAll('.ptab')) b.setAttribute('aria-pressed', String(b.getAttribute(attr) === active));
   pf.innerHTML = foot;
-  const calm = typeof document !== 'undefined' && document.documentElement.dataset.motion === 'calm';
-  const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   st._next = strip;
-  if (!swap || calm || reduced || typeof st.animate !== 'function') {
+  if (!swap || calmMotion() || typeof st.animate !== 'function') {
     const left = st.scrollLeft;
     st.innerHTML = strip;
     st.scrollLeft = swap ? 0 : left;
