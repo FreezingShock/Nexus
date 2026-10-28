@@ -11,6 +11,7 @@ import { roadBlock } from '../src/world/roadnet.js';
 import { sanitizeTrees, seedTrees, speciesOf } from '../src/world/trees.js';
 import { starterReserved } from '../src/world/starter.js';
 import trees from '../src/render/systems/trees.js';
+import { roadBesideTiles } from './support/road.js';
 
 const layout = getLayout();
 const mk = (state = freshState()) => { state.coins = 1e9; return createSim({ state, layout }); };
@@ -79,6 +80,7 @@ test('zoning takes the trees on the painted tiles, and undo puts them back in or
   const before = json(sim.state.trees);
   const cleared = treesOn(sim, gx, gz);
   assert.ok(cleared.length >= 1);
+  roadBesideTiles(sim, [[gx, gz]]);
   sim.dispatch({ type: 'paintZone', zone: 1, a: [gx, gz], b: [gx, gz] });
   assert.equal(treesOn(sim, gx, gz).length, 0, 'the tile is clear');
   assert.equal(sim.grid.zoneAt(gx, gz), 1, 'the tile is painted');
@@ -140,6 +142,7 @@ test('the inspect lookup finds a tree by id and forgets it once cleared', () => 
   const sim = mk();
   const { t, gx, gz } = openTree(sim);
   assert.deepEqual(sim.tree(t.id), t);
+  roadBesideTiles(sim, [[gx, gz]]);
   sim.dispatch({ type: 'paintZone', zone: 2, a: [gx, gz], b: [gx, gz] });
   assert.equal(sim.tree(t.id), null);
 });
@@ -147,6 +150,7 @@ test('the inspect lookup finds a tree by id and forgets it once cleared', () => 
 test('a saved town keeps its trees, and the ones taken stay taken', () => {
   const sim = mk();
   const { t, gx, gz } = openTree(sim);
+  roadBesideTiles(sim, [[gx, gz]]);
   sim.dispatch({ type: 'paintZone', zone: 1, a: [gx, gz], b: [gx, gz] });
   const back = createSim({ state: unwrap(wrap(sim.prepareSave(), 1)).state, layout });
   assert.deepEqual(json(back.state.trees), json(sim.state.trees));
@@ -172,6 +176,7 @@ test('picking finds the tree under a ray, and not one that has been cleared', ()
   const hit = sys.pick(ray);
   assert.ok(hit, 'a tree under the ray');
   assert.equal(hit.id, t.id);
+  roadBesideTiles(sim, [[gx, gz]]);
   sim.dispatch({ type: 'paintZone', zone: 1, a: [gx, gz], b: [gx, gz] });
   sys.frame({ state: sim.state });
   world.updateMatrixWorld(true);
